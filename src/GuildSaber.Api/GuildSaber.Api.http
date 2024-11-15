@@ -1,0 +1,6 @@
+@GuildSaber.Api_HostAddress = http://localhost:5286
+
+GET {{GuildSaber.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

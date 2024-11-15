@@ -1,0 +1,14 @@
+﻿<Solution>
+  <Folder Name="/aspire/">
+    <Project Path="aspire\GuildSaber.AppHost\GuildSaber.AppHost.csproj" Type="Classic C#" />
+    <Project Path="aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj" Type="Classic C#" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src\GuildSaber.Api\GuildSaber.Api.csproj" Type="Classic C#" />
+    <Project Path="src\GuildSaber.Core\GuildSaber.Core.csproj" Type="Classic C#" />
+    <Project Path="src\GuildSaber.Database\GuildSaber.Database.csproj" Type="Classic C#" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test\GuildSaber.Database.UnitTests\GuildSaber.Database.UnitTests.csproj" Type="Classic C#" />
+  </Folder>
+</Solution>

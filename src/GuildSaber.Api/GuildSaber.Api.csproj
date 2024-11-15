@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <NoDefaultLaunchSettingsFile>True</NoDefaultLaunchSettingsFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Features\Debug\" />
+      <Folder Include="Features\OAuth\" />
+      <Folder Include="Features\RankedScore\Get\" />
+      <Folder Include="Features\Users\Delete\" />
+      <Folder Include="Features\Users\Get\" />
+      <Folder Include="Features\Users\GuildStats\" />
+      <Folder Include="Features\Users\Link\" />
+      <Folder Include="Features\Users\Patch\" />
+    </ItemGroup>
+
+</Project>
