@@ -6,7 +6,7 @@ namespace GuildSaber.Database.Models.Player;
 
 public class Player
 {
-    public PlayerId Id { get; init; } = default;
+    public PlayerId Id { get; init; }
     public PlayerInfo Info { get; set; }
     public PlayerHardwareInfo HardwareInfo { get; set; }
     public PlayerLinkedAccounts LinkedAccounts { get; set; }

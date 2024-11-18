@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0"/>
+        <PackageReference Include="Scalar.AspNetCore" Version="1.2.39" />
     </ItemGroup>
 
     <ItemGroup>
@@ -20,6 +21,11 @@
       <Folder Include="Features\Users\GuildStats\" />
       <Folder Include="Features\Users\Link\" />
       <Folder Include="Features\Users\Patch\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj" />
+      <ProjectReference Include="..\GuildSaber.Database\GuildSaber.Database.csproj" />
     </ItemGroup>
 
 </Project>
