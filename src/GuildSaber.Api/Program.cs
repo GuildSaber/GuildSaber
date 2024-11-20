@@ -1,52 +1,23 @@
 using GuildSaber.Database.Contexts;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.AddServiceDefaults()
+    .AddMySqlDbContext<GSDbContext>("mysqldb", static settings => settings.ServerVersion = new MariaDbServerVersion(new Version(10, 6, 11)).ToString());
 builder.Services.AddOpenApi();
 
-builder.AddServiceDefaults()
-    .AddMySqlDbContext<GSDbContext>("");
 var app = builder.Build();
+app.MapDefaultEndpoints()
+    .MapOpenApi();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.MapScalarApiReference(options =>
 {
-    app.MapOpenApi();
-    app.MapScalarApiReference(options =>
-    {
-        options.WithTitle("GuildSaber's Api")
-            .WithTheme(ScalarTheme.Purple)
-            .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch);
-    });
-}
+    options.WithTitle("GuildSaber's Api")
+        .WithTheme(ScalarTheme.Purple)
+        .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch);
+});
 
 app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast");
-
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

@@ -1,7 +1,7 @@
 namespace GuildSaber.Database.Models.Guild;
 
 public readonly record struct GuildJoinRequirements(
-    GuildJoinRequirements.ERequirements Requirements,
+    GuildJoinRequirements.Requirements Flags,
     uint MinRank,
     uint MaxRank,
     uint MinPP,
@@ -9,7 +9,7 @@ public readonly record struct GuildJoinRequirements(
     uint AccountAgeUnix)
 {
     [Flags]
-    public enum ERequirements
+    public enum Requirements
     {
         None = 0,
         Submission = 1 << 0,

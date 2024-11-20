@@ -1,4 +1,4 @@
-﻿namespace GuildSaber.Database.Models.StrongTypes.Implements;
+﻿namespace GuildSaber.Database.Models.StrongTypes.Others;
 
 public readonly record struct DiscordId
 {
@@ -15,4 +15,7 @@ public readonly record struct DiscordId
 
     public static implicit operator ulong(DiscordId id)
         => id._value;
+    
+    public static DiscordId? CreateUnsafe(ulong? value)
+        => value is null ? null : new DiscordId(value.Value);
 }

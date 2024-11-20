@@ -1,12 +1,10 @@
-﻿using CSharpFunctionalExtensions;
+﻿using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
+using CSharpFunctionalExtensions;
 using GuildSaber.Database.Errors;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
-using InsertError = GuildSaber.Core.Errors.Error.DbError.InsertError;
-using UpdateError = GuildSaber.Core.Errors.Error.DbError.UpdateError;
 
-namespace GuildSaber.Database.Helpers;
+namespace GuildSaber.Database.Utils;
 
 public static class EfCoreUtils
 {

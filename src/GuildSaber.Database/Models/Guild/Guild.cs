@@ -1,5 +1,6 @@
 using GuildSaber.Database.Models.Guild.Navigation;
 using GuildSaber.Database.Models.StrongTypes.Abstractions;
+using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -21,7 +22,7 @@ public class GuildConfiguration : IEntityTypeConfiguration<Guild>
     public void Configure(EntityTypeBuilder<Guild> builder)
     {
         builder.Property(x => x.Id).HasGenericConversion<Guild.GuildId, ulong>();
-        builder.ComplexProperty(x => x.Info);
+        builder.ComplexProperty(x => x.Info).Configure(new GuildInfoConfiguration());
         builder.ComplexProperty(x => x.Requirements);
     }
 }

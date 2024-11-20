@@ -41,6 +41,7 @@ public class MemberConfiguration : IEntityTypeConfiguration<Member>
 {
     public void Configure(EntityTypeBuilder<Member> builder)
     {
+        builder.HasKey(x => new { x.GuildId, x.PlayerId });
         builder.HasOne(x => x.Guild)
             .WithMany(x => x.Members)
             .HasForeignKey(x => x.GuildId);

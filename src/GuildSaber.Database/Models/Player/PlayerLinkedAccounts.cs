@@ -1,10 +1,23 @@
-﻿using GuildSaber.Database.Models.StrongTypes.Implements;
-using GuildSaber.Database.Models.StrongTypes.Others;
+﻿using GuildSaber.Database.Models.StrongTypes.Others;
+using GuildSaber.Database.Utils;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GuildSaber.Database.Models.Player;
 
 public readonly record struct PlayerLinkedAccounts(
-    BeatLeaderId BeatLeaderId,
+    BLId BeatLeaderId,
     ScoreSaberId? ScoreSaberId,
     DiscordId? DiscordId
 );
+
+public class PlayerLinkedAccountsConfiguration : IComplexPropertyConfiguration<PlayerLinkedAccounts>
+{
+    public ComplexPropertyBuilder<PlayerLinkedAccounts> Configure(ComplexPropertyBuilder<PlayerLinkedAccounts> builder)
+    {
+        builder.Property(x => x.BeatLeaderId).HasConversion<ulong>(from => from, to => BLId.CreateUnsafe(to)!.Value);
+        builder.Property(x => x.ScoreSaberId).HasConversion<ulong?>(from => from, to => ScoreSaberId.CreateUnsafe(to));
+        builder.Property(x => x.DiscordId).HasConversion<ulong?>(from => from, to => DiscordId.CreateUnsafe(to));
+        
+        return builder;
+    }
+}

@@ -1,4 +1,4 @@
-﻿namespace GuildSaber.Database.Models.StrongTypes.Implements;
+﻿namespace GuildSaber.Database.Models.StrongTypes.Others;
 
 public readonly record struct ScoreSaberId
 {
@@ -15,4 +15,7 @@ public readonly record struct ScoreSaberId
 
     public static implicit operator ulong(ScoreSaberId id)
         => id._value;
+    
+    public static ScoreSaberId? CreateUnsafe(ulong? value)
+        => value is null ? null : new ScoreSaberId(value.Value);
 }

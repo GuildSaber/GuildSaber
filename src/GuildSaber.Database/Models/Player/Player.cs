@@ -1,4 +1,5 @@
 using GuildSaber.Database.Models.StrongTypes.Abstractions;
+using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -23,7 +24,7 @@ public class PlayerConfiguration : IEntityTypeConfiguration<Player>
         builder.Property(x => x.Id).HasGenericConversion<Player.PlayerId, ulong>();
         builder.ComplexProperty(x => x.Info);
         builder.ComplexProperty(x => x.HardwareInfo);
-        builder.ComplexProperty(x => x.LinkedAccounts);
+        builder.ComplexProperty(x => x.LinkedAccounts).Configure(new PlayerLinkedAccountsConfiguration());
         builder.ComplexProperty(x => x.SubscriptionInfo);
     }
-} 
+}

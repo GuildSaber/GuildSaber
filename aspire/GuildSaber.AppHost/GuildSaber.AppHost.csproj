@@ -14,10 +14,15 @@
     <ItemGroup>
         <PackageReference Include="Aspire.Hosting.AppHost" Version="9.0.0"/>
         <PackageReference Include="Aspire.Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\GuildSaber.Api\GuildSaber.Api.csproj" />
+      <ProjectReference Include="..\..\src\GuildSaber.Database\GuildSaber.Database.csproj" />
     </ItemGroup>
 
 </Project>
