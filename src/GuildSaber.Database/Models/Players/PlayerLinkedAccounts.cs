@@ -2,7 +2,7 @@
 using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GuildSaber.Database.Models.Player;
+namespace GuildSaber.Database.Models.Players;
 
 public readonly record struct PlayerLinkedAccounts(
     BLId BeatLeaderId,

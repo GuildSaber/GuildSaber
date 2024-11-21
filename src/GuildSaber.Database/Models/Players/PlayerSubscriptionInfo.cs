@@ -1,4 +1,4 @@
-﻿namespace GuildSaber.Database.Models.Player;
+﻿namespace GuildSaber.Database.Models.Players;
 
 public readonly record struct PlayerSubscriptionInfo(
     PlayerSubscriptionInfo.ESubscriptionTier Tier

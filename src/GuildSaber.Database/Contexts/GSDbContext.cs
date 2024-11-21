@@ -1,9 +1,10 @@
-using GuildSaber.Database.Models.Guild;
-using GuildSaber.Database.Models.Guild.Navigation;
-using GuildSaber.Database.Models.Player;
-using GuildSaber.Database.Models.Song;
-using GuildSaber.Database.Models.SongDifficulty;
-using GuildSaber.Database.Models.SongDifficulty.Navigation;
+using GuildSaber.Database.Models;
+using GuildSaber.Database.Models.Guilds;
+using GuildSaber.Database.Models.Guilds.Navigation;
+using GuildSaber.Database.Models.Players;
+using GuildSaber.Database.Models.Songs;
+using GuildSaber.Database.Models.Songs.SongDifficulties;
+using GuildSaber.Database.Models.Songs.SongDifficulties.GameModes;
 using Microsoft.EntityFrameworkCore;
 
 namespace GuildSaber.Database.Contexts;

@@ -5,7 +5,7 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults()
-    .AddMySqlDbContext<GSDbContext>("mysqldb", static settings => settings.ServerVersion = new MariaDbServerVersion(new Version(10, 6, 11)).ToString());
+    .AddMySqlDbContext<GSDbContext>("mysqldb");
 builder.Services.AddOpenApi();
 
 var app = builder.Build();

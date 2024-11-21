@@ -21,7 +21,6 @@
 
     <ItemGroup>
       <Folder Include="Contexts\Migrations\" />
-      <Folder Include="Models\GuildContext\" />
     </ItemGroup>
 
 </Project>

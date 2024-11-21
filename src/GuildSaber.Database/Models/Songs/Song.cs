@@ -1,9 +1,10 @@
-﻿using GuildSaber.Database.Models.StrongTypes.Abstractions;
+﻿using GuildSaber.Database.Models.Songs.SongDifficulties;
+using GuildSaber.Database.Models.StrongTypes.Abstractions;
 using GuildSaber.Database.Models.StrongTypes.Others;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GuildSaber.Database.Models.Song;
+namespace GuildSaber.Database.Models.Songs;
 
 public class Song
 {
@@ -16,7 +17,7 @@ public class Song
     public SongInfo Info { get; set; }
     public SongStats Stats { get; set; }
 
-    public SongDifficulty.SongDifficulty[] SongDifficulties { get; init; } = null!;
+    public SongDifficulty[] SongDifficulties { get; init; } = null!;
 }
 
 public class SongConfiguration : IEntityTypeConfiguration<Song>

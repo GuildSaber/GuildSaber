@@ -1,10 +1,10 @@
-using GuildSaber.Database.Models.Guild.Navigation;
+using GuildSaber.Database.Models.Guilds.Navigation;
 using GuildSaber.Database.Models.StrongTypes.Abstractions;
 using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GuildSaber.Database.Models.Guild;
+namespace GuildSaber.Database.Models.Guilds;
 
 public class Guild
 {
@@ -13,6 +13,7 @@ public class Guild
     public GuildJoinRequirements Requirements { get; set; }
 
     public IList<Member> Members { get; init; } = null!;
+    public IList<GuildContext> Contexts { get; init; } = null!;
     
     public readonly record struct GuildId(ulong Value) : IStrongType<ulong>;
 }

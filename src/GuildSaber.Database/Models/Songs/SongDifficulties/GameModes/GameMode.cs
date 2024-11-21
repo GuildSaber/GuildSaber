@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GuildSaber.Database.Models.SongDifficulty.Navigation;
+namespace GuildSaber.Database.Models.Songs.SongDifficulties.GameModes;
 
 public class GameMode
 {

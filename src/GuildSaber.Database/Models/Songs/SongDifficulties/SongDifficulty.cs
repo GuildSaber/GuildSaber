@@ -1,10 +1,10 @@
-﻿using GuildSaber.Database.Models.SongDifficulty.Navigation;
+﻿using GuildSaber.Database.Models.Songs.SongDifficulties.GameModes;
 using GuildSaber.Database.Models.StrongTypes.Abstractions;
 using GuildSaber.Database.Models.StrongTypes.Others;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GuildSaber.Database.Models.SongDifficulty;
+namespace GuildSaber.Database.Models.Songs.SongDifficulties;
 
 public class SongDifficulty
 {
@@ -13,10 +13,10 @@ public class SongDifficulty
     public SongDifficultyId Id { get; init; }
     public BLLeaderboardId? BLLeaderboardId { get; init; }
     public GameMode.GameModeId GameModeId { get; init; }
-    public Song.Song.SongId SongId { get; init; }
+    public Song.SongId SongId { get; init; }
 
     public GameMode GameMode { get; init; } = null!;
-    public Song.Song Song { get; init; } = null!;
+    public Song Song { get; init; } = null!;
 }
 
 public class SongDifficultyConfiguration : IEntityTypeConfiguration<SongDifficulty>

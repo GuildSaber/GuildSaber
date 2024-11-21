@@ -2,7 +2,7 @@ using System.Drawing;
 using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GuildSaber.Database.Models.Guild;
+namespace GuildSaber.Database.Models.Guilds;
 
 public readonly record struct GuildInfo(
     string Description,

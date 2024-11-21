@@ -1,6 +1,4 @@
-using System.Xml.Schema;
-
-namespace GuildSaber.Database.Models.Player;
+namespace GuildSaber.Database.Models.Players;
 
 public readonly record struct PlayerHardwareInfo(
     PlayerHardwareInfo.EPlatform Platform,

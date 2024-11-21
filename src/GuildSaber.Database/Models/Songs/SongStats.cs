@@ -1,4 +1,4 @@
-﻿namespace GuildSaber.Database.Models.Song;
+﻿namespace GuildSaber.Database.Models.Songs;
 
 public readonly record struct SongStats(
     float BPM,

@@ -1,14 +1,15 @@
+using GuildSaber.Database.Models.Players;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GuildSaber.Database.Models.Guild.Navigation;
+namespace GuildSaber.Database.Models.Guilds.Navigation;
 
 public class Member
 {
     public Guild.GuildId GuildId { get; init; }
-    public Player.Player.PlayerId PlayerId { get; init; }
+    public Player.PlayerId PlayerId { get; init; }
 
-    public Player.Player Player { get; init; } = null!;
+    public Player Player { get; init; } = null!;
     public Guild Guild { get; init; } = null!;
     
     public EPermission Permissions { get; set; }

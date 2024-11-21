@@ -1,4 +1,4 @@
-namespace GuildSaber.Database.Models.Guild;
+namespace GuildSaber.Database.Models.Guilds;
 
 public readonly record struct GuildJoinRequirements(
     GuildJoinRequirements.Requirements Flags,
