@@ -1,4 +1,5 @@
-﻿using CSharpFunctionalExtensions;
+﻿using System.Diagnostics.CodeAnalysis;
+using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Database.Models.StrongTypes;
 
@@ -16,11 +17,12 @@ public readonly record struct SongHash
         => value switch
         {
             null => Failure<SongHash>("Song hash must not be null."),
-           { Length: not 40 } => Failure<SongHash>("Song hash must be 40 characters long."),
+            { Length: not 40 } => Failure<SongHash>("Song hash must be 40 characters long."),
             _ when !value.All(char.IsLetterOrDigit) => Failure<SongHash>("Song hash must be alphanumeric."),
             _ => Success(new SongHash(value))
         };
 
+    [return: NotNullIfNotNull(nameof(value))]
     public static SongHash? CreateUnsafe(string? value)
         => value is null ? null : new SongHash(value);
 }

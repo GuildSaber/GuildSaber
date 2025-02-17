@@ -1,4 +1,5 @@
-﻿using CSharpFunctionalExtensions;
+﻿using System.Diagnostics.CodeAnalysis;
+using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Database.Models.StrongTypes;
 
@@ -15,6 +16,7 @@ public readonly record struct BLLeaderboardId
     public static Result<BLLeaderboardId> TryCreate(string value) 
         => new BLLeaderboardId(value);
     
+    [return: NotNullIfNotNull(nameof(value))]
     public static BLLeaderboardId? CreateUnsafe(string? value)
         => value is null ? null : new BLLeaderboardId(value);
 }

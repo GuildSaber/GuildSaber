@@ -14,7 +14,7 @@ public class PlayerLinkedAccountsConfiguration : IComplexPropertyConfiguration<P
 {
     public ComplexPropertyBuilder<PlayerLinkedAccounts> Configure(ComplexPropertyBuilder<PlayerLinkedAccounts> builder)
     {
-        builder.Property(x => x.BeatLeaderId).HasConversion<ulong>(from => from, to => BLId.CreateUnsafe(to)!.Value);
+        builder.Property(x => x.BeatLeaderId).HasConversion<ulong>(from => from, to => BLId.CreateUnsafe(to).Value);
         builder.Property(x => x.ScoreSaberId).HasConversion<ulong?>(from => from, to => ScoreSaberId.CreateUnsafe(to));
         builder.Property(x => x.DiscordId).HasConversion<ulong?>(from => from, to => DiscordId.CreateUnsafe(to));
         

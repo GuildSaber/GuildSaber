@@ -1,4 +1,5 @@
-﻿using CSharpFunctionalExtensions;
+﻿using System.Diagnostics.CodeAnalysis;
+using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Database.Models.StrongTypes;
 
@@ -15,6 +16,7 @@ public readonly record struct BeatSaverKey
     public static Result<BeatSaverKey> TryCreate(string value) 
         => new BeatSaverKey(value);
     
+    [return: NotNullIfNotNull(nameof(value))]
     public static BeatSaverKey? CreateUnsafe(string? value)
         => value is null ? null : new BeatSaverKey(value!);
 }

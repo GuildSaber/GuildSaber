@@ -1,4 +1,5 @@
-﻿using CSharpFunctionalExtensions;
+﻿using System.Diagnostics.CodeAnalysis;
+using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Database.Models.StrongTypes;
 
@@ -24,7 +25,8 @@ public readonly record struct ScoreSaberId
 
     public static implicit operator ulong(ScoreSaberId id)
         => id._value;
-
+    
+    [return: NotNullIfNotNull(nameof(value))]
     public static ScoreSaberId? CreateUnsafe(ulong? value)
         => value is null ? null : new ScoreSaberId(value.Value);
 }

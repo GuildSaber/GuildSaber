@@ -5,7 +5,7 @@ namespace GuildSaber.Core.Result;
 public static class RustExtensions
 {
     public class ErrorException(string message) : Exception(message);
-    
+
     /// <summary>
     /// Unwraps the Result object within a Task. If the Result is successful, it returns the value.
     /// If the Result is a failure, it throws an ErrorException with the error message.
@@ -15,13 +15,28 @@ public static class RustExtensions
     /// <param name="self">The Task containing the Result to unwrap.</param>
     /// <returns>The result value if the Result is successful.</returns>
     /// <exception cref="ErrorException">Thrown when the Result is a failure.</exception>
-    public static async Task<T> Unwrap<T, E>(this Task<Result<T, E>> self) 
+    public static async Task<T> Unwrap<T, E>(this Task<Result<T, E>> self)
     {
         var result = await self;
         return result.IsSuccess
             ? result.Value
             : throw new Exception(result.Error!.ToString()!);
     }
+
+    public static async Task<T> Unwrap<T>(this Task<Result<T>> self)
+    {
+        var result = await self;
+        return result.IsSuccess
+            ? result.Value
+            : throw new Exception(result.Error);
+    }
+    
+    public static async Task Unwrap<E>(this Task<UnitResult<E>> self)
+    {
+        var result = await self;
+        if (result.IsFailure) throw new Exception(result.Error!.ToString());
+    }
+
 
     /// <summary>
     /// Unwraps the Result object. If the Result is successful, it returns the value.
@@ -32,10 +47,24 @@ public static class RustExtensions
     /// <param name="self">The Result to unwrap.</param>
     /// <returns>The result value if the Result is successful.</returns>
     /// <exception cref="ErrorException">Thrown when the Result is a failure.</exception>
-    public static T Unwrap<T, E>(this Result<T, E> self) 
+    public static T Unwrap<T, E>(this Result<T, E> self)
         => self.IsSuccess
             ? self.Value
             : throw new ErrorException(self.Error!.ToString()!);
+
+    /// <summary>
+    /// Unwraps the Result object. If the Result is successful, it returns the value.
+    /// If the Result is a failure, it throws an ErrorException with the error message.
+    /// </summary>
+    /// <typeparam name="T">The type of the result value.</typeparam>
+    /// <typeparam name="E">The type of the error. Must be a subtype of ErrorType.</typeparam>
+    /// <param name="self">The Result to unwrap.</param>
+    /// <returns>The result value if the Result is successful.</returns>
+    /// <exception cref="ErrorException">Thrown when the Result is a failure.</exception>
+    public static void Unwrap<T, E>(this UnitResult<E> self)
+    {
+        if (self.IsFailure) throw new ErrorException(self.Error!.ToString()!);
+    }
 
     /// <summary>
     /// Asynchronously unwraps the Result object within a Task. If the Result is successful, it returns the value.
@@ -92,49 +121,12 @@ public static class RustExtensions
     }
 
     /// <summary>
-    /// Checks if the UnitResult object is a failure. If it is, it throws an ErrorException with the error message.
-    /// </summary>
-    /// <typeparam name="E">The type of the error. Must be a subtype of ErrorType.</typeparam>
-    /// <param name="self">The UnitResult to check.</param>
-    /// <exception cref="ErrorException">Thrown when the UnitResult is a failure.</exception>
-    public static void ThrowIfError<E>(this UnitResult<E> self)
-    {
-        if (self.IsFailure) throw new ErrorException(self.Error!.ToString()!);
-    }
-
-    /// <summary>
-    /// Checks if the UnitResult object within a Task is a failure. If it is, it throws an ErrorException with the error
-    /// message.
-    /// </summary>
-    /// <typeparam name="E">The type of the error. Must be a subtype of ErrorType.</typeparam>
-    /// <param name="self">The Task containing the UnitResult to check.</param>
-    /// <exception cref="ErrorException">Thrown when the UnitResult is a failure.</exception>
-    public static async Task ThrowIfError<E>(this Task<UnitResult<E>> self)
-    {
-        var result = await self;
-        if (result.IsFailure) throw new ErrorException(result.Error!.ToString()!);
-    }
-
-    /// <summary>
-    /// Checks if the Result object within a Task is a failure. If it is, it throws an ErrorException with the error
-    /// message.
-    /// </summary>
-    /// <typeparam name="E">The type of the error. Must be a subtype of ErrorType.</typeparam>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="self">The Task containing the Result to check.</param>
-    /// <exception cref="ErrorException">Thrown when the Result is a failure.</exception>
-    public static async Task ThrowIfError<T, E>(this Task<Result<T, E>> self)
-    {
-        var result = await self;
-        if (result.IsFailure) throw new ErrorException(result.Error!.ToString()!);
-    }
-
-    /// <summary>
     /// Throws an ErrorException with the error as a message.
     /// </summary>
     /// <typeparam name="E">The type of the error. Must be a subtype of ErrorType.</typeparam>
+    /// <typeparam name="T"></typeparam>
     /// <param name="self">The error to throw.</param>
     /// <exception cref="ErrorException">Thrown with the error message.</exception>
-    public static void Throw<E>(this E self)
-        => throw new ErrorException(self!.ToString()!);
+    public static void Throw<T>(this T self) where T : IError<T>
+        => throw new ErrorException(self.ToString()!);
 }

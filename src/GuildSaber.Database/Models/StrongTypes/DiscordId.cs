@@ -1,4 +1,5 @@
-﻿using CSharpFunctionalExtensions;
+﻿using System.Diagnostics.CodeAnalysis;
+using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Database.Models.StrongTypes;
 
@@ -21,7 +22,8 @@ public readonly record struct DiscordId
 
     public static implicit operator ulong(DiscordId id)
         => id._value;
-
+    
+    [return: NotNullIfNotNull(nameof(value))]
     public static DiscordId? CreateUnsafe(ulong? value)
         => value is null ? null : new DiscordId(value.Value);
 }
