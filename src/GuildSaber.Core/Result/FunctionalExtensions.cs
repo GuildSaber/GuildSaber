@@ -1,7 +1,8 @@
 ﻿using CSharpFunctionalExtensions;
-using System.Runtime.CompilerServices;
+using GuildSaber.Core.Helpers;
+using static CSharpFunctionalExtensions.Result;
 
-namespace GuildSaber.Core.Helpers;
+namespace GuildSaber.Core.Result;
 
 /// <summary>
 /// Provides a set of extension methods to enhance the functionality of the Result class from the
@@ -9,7 +10,7 @@ namespace GuildSaber.Core.Helpers;
 /// These extensions are designed to address specific needs that are not covered by the original library, making it more
 /// feature-rich and adaptable to various scenarios.
 /// </summary>
-public static class ResultExtensions
+public static class FunctionalExtensions
 {
     /// <summary>
     /// Returns a wrapped task which either provides a failed result when the task throws, or a success result containing a
@@ -22,7 +23,7 @@ public static class ResultExtensions
     /// <returns>A wrapped Task which either fails when the task throws, or returns a Maybe from the task success result.</returns>
     /// <remarks>If it's a value type, it's default value translates to None</remarks>
     public static Task<Result<Maybe<T>, Exception>> TryMaybe<T>(this Task<T?> task)
-        => Result.Try(async () => await task, exception => exception)
+        => Try(async () => await task, exception => exception)
             .Map(value => Check<T>.IsNullOrDefault(value!) ? Maybe<T>.None : Maybe<T>.From(value!));
 
     /// <summary>
@@ -38,45 +39,8 @@ public static class ResultExtensions
     /// success result array.
     /// </returns>
     public static Task<Result<Maybe<T>, Exception>> TryFirstMaybe<T>(this Task<T[]> task)
-        => Result.Try(async () => await task, exception => exception)
+        => Try(async () => await task, exception => exception)
             .Map(value => value.Length is not 0 ? Maybe<T>.From(value[0]) : Maybe<T>.None);
-
-    /*/// <summary>
-    /// Wraps a Task in a Result object to handle potential exceptions.
-    /// </summary>
-    /// <typeparam name="T">The type of the result value of the Task.</typeparam>
-    /// <param name="self">The Task to be wrapped in a Result object.</param>
-    /// <returns>
-    /// A Task that returns a Result object. If the input Task completes successfully, the Result object indicates success and
-    /// contains the result value of the Task.
-    /// If the input Task throws an exception, the Result object indicates failure and contains the exception.
-    /// </returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Task<Result<T, Exception>> Try<T>(this Task<T> self)
-        => Result.Try(async () => await self, exception => exception);
-
-    /// <summary>
-    /// Wraps a Task in a Result object to handle potential exceptions.
-    /// </summary>
-    /// <typeparam name="T">The type of the result value of the Task.</typeparam>
-    /// <param name="self">The Task to be wrapped in a Result object.</param>
-    /// <returns>
-    /// If the input Task completes successfully, A UnitResult indicating success is returned.
-    /// Otherwise, a UnitResult indicating failure is returned, containing the exception.
-    /// </returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static async Task<UnitResult<Exception>> Try(this Task self)
-    {
-        try
-        {
-            await self;
-            return UnitResult.Success<Exception>();
-        }
-        catch (Exception e)
-        {
-            return UnitResult.Failure(e);
-        }
-    }*/
     
     /// <summary>
     /// Reduces a collection of Result objects into a single Result object.
@@ -95,7 +59,7 @@ public static class ResultExtensions
         var temp = new List<T>();
         foreach (var y in results)
         {
-            if (y.IsFailure) return Result.Failure<IEnumerable<T>, E>(y.Error);
+            if (y.IsFailure) return Failure<IEnumerable<T>, E>(y.Error);
             temp.Add(y.Value);
         }
 
@@ -125,12 +89,12 @@ public static class ResultExtensions
         {
             var item = items[i];
             var result = await mapper(item);
-            if (result.IsFailure) return Result.Failure<IReadOnlyCollection<R>, E>(result.Error);
+            if (result.IsFailure) return Failure<IReadOnlyCollection<R>, E>(result.Error);
 
             temp[i] = result.Value;
         }
 
-        return Result.Success<IReadOnlyCollection<R>, E>(temp);
+        return Success<IReadOnlyCollection<R>, E>(temp);
     }
 
     /// <summary>

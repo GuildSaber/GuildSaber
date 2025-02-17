@@ -16,6 +16,8 @@ public class RankedMap
     public GuildContext.GuildContextId ContextId { get; init; }
     public Song.SongId SongId { get; init; }
     public SongDifficulty.SongDifficultyId SongDifficultyId { get; init; }
+    public RankedMapRequirements Requirements { get; init; }
+    
 }
 
 public class RankedMapConfiguration : IEntityTypeConfiguration<RankedMap>

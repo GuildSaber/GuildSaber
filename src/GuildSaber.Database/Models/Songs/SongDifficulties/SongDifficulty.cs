@@ -1,6 +1,6 @@
 ﻿using GuildSaber.Database.Models.Songs.SongDifficulties.GameModes;
+using GuildSaber.Database.Models.StrongTypes;
 using GuildSaber.Database.Models.StrongTypes.Abstractions;
-using GuildSaber.Database.Models.StrongTypes.Others;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

@@ -1,7 +1,6 @@
 ﻿using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using CSharpFunctionalExtensions;
-using GuildSaber.Database.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace GuildSaber.Database.Utils;
@@ -29,7 +28,7 @@ public static class EfCoreUtils
     /// If an exception occurs during the operation, the function returns a Result object on failure state represented by an
     /// InsertError.
     /// </returns>
-    public static async Task<Result<U, EFInsertError>> AddAndSaveAsync<T, U>(
+    public static async Task<Result<U, InsertError>> AddAndSaveAsync<T, U>(
         this DbContext context, Func<T> createEntity, Func<T, U> mapper,
         [CallerMemberName] string callerMemberName = "",
         [CallerFilePath] string callerFilePath = "") where T : class
@@ -39,13 +38,13 @@ public static class EfCoreUtils
             var entity = createEntity();
             context.Set<T>().Add(entity);
             await context.SaveChangesAsync();
-            return Result.Success<U, EFInsertError>(mapper(entity));
+            return Success<U, InsertError>(mapper(entity));
         }
         catch (Exception exception)
         {
-            return Result.Failure<U, EFInsertError>(
-                new EFInsertError(exception,
-                    $"[{callerFilePath}].[{callerMemberName}].[{nameof(AddAndSaveAsync)}]"));
+            return Failure<U, InsertError>(
+                new InsertError(exception, $"[{callerFilePath}].[{callerMemberName}].[{nameof(AddAndSaveAsync)}]")
+            );
         }
     }
 
@@ -61,12 +60,12 @@ public static class EfCoreUtils
     /// If an exception occurs during the operation, the function returns a UnitResult object on failure state represented by
     /// an InsertError.
     /// </returns>
-    public static Task<UnitResult<EFInsertError>> BulkInsert<T>(this DbContext context, IEnumerable<T> inputs)
+    public static Task<UnitResult<InsertError>> BulkInsert<T>(this DbContext context, IEnumerable<T> inputs)
         where T : class
-        => UnitResult.Success<EFInsertError>()
+        => UnitResult.Success<InsertError>()
             .Tap(() => context.Set<T>().AddRange(inputs))
             .TapTry(() => context.SaveChangesAsync(),
-                exception => new EFInsertError(exception)
+                exception => new InsertError(exception)
             );
 
     /// <summary>
@@ -81,13 +80,13 @@ public static class EfCoreUtils
     /// If an exception occurs during the operation, the function returns a UnitResult object on failure state represented by
     /// an InsertError.
     /// </returns>
-    public static Task<UnitResult<EFInsertError>> BulkInsert<T>(
+    public static Task<UnitResult<InsertError>> BulkInsert<T>(
         this DbContext context, IEnumerable<T[]> inputs)
         where T : class
-        => UnitResult.Success<EFInsertError>()
+        => UnitResult.Success<InsertError>()
             .Tap(() => context.Set<T>().AddRange(inputs.SelectMany(x => x)))
             .TapTry(() => context.SaveChangesAsync(),
-                exception => new EFInsertError(exception)
+                exception => new InsertError(exception)
             );
 
     /// <summary>
@@ -101,14 +100,13 @@ public static class EfCoreUtils
     /// If an exception occurs during the operation, the function returns a Result object on failure state represented by
     /// an InsertError.
     /// </returns>
-    public static Task<Result<int, EFInsertError>> BulkInsertAware<T>(
+    public static Task<Result<int, InsertError>> BulkInsertAware<T>(
         this DbContext context, IEnumerable<T> inputs) where T : class
-        => UnitResult.Success<EFInsertError>()
+        => UnitResult.Success<InsertError>()
             .Tap(() => context.Set<T>().AddRange(inputs))
             .MapTry(() => context.SaveChangesAsync(),
-                exception => new EFInsertError(exception)
+                exception => new InsertError(exception)
             );
-
 
     /// <summary>
     /// Asynchronously performs a bulk insert operation on a DbContext and returns the count of inserted elements.
@@ -121,13 +119,13 @@ public static class EfCoreUtils
     /// If an exception occurs during the operation, the function returns a UnitResult object on failure state represented by
     /// an InsertError.
     /// </returns>
-    public static Task<Result<int, EFInsertError>> BulkInsertAware<T>(
+    public static Task<Result<int, InsertError>> BulkInsertAware<T>(
         this DbContext context, IEnumerable<T[]> inputs)
         where T : class
-        => UnitResult.Success<EFInsertError>()
+        => UnitResult.Success<InsertError>()
             .Tap(() => context.Set<T>().AddRange(inputs.SelectMany(x => x)))
             .MapTry(() => context.SaveChangesAsync(),
-                exception => new EFInsertError(exception)
+                exception => new InsertError(exception)
             );
 
     /// <summary>
@@ -142,12 +140,12 @@ public static class EfCoreUtils
     /// If an exception occurs during the operation, the function returns a UnitResult object on failure state represented by
     /// an UpdateError.
     /// </returns>
-    public static Task<UnitResult<EFUpdateError>> BulkUpdate<T>(this DbContext context, IEnumerable<T> inputs)
+    public static Task<UnitResult<UpdateError>> BulkUpdate<T>(this DbContext context, IEnumerable<T> inputs)
         where T : class
-        => UnitResult.Success<EFUpdateError>()
+        => UnitResult.Success<UpdateError>()
             .Tap(() => context.Set<T>().UpdateRange(inputs))
             .TapTry(() => context.SaveChangesAsync(),
-                exception => new EFUpdateError(exception)
+                exception => new UpdateError(exception)
             );
 
     /// <summary>

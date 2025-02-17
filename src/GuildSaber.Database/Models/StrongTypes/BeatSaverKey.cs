@@ -1,6 +1,6 @@
 ﻿using CSharpFunctionalExtensions;
 
-namespace GuildSaber.Database.Models.StrongTypes.Others;
+namespace GuildSaber.Database.Models.StrongTypes;
 
 public readonly record struct BeatSaverKey
 {

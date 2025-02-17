@@ -11,6 +11,6 @@ internal static class Check<A>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool IsNullOrDefault(A value) =>
         IsReferenceType && ReferenceEquals(value, null)
-        || IsNullable && value!.Equals(default)
+        || IsNullable && value!.Equals(null)
         || value!.Equals(default(A));
 }
