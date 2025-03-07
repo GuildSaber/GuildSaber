@@ -14,8 +14,11 @@ public class Guild
 
     public IList<Member> Members { get; init; } = null!;
     public IList<GuildContext> Contexts { get; init; } = null!;
-    
-    public readonly record struct GuildId(ulong Value) : IStrongType<ulong>;
+
+    public readonly record struct GuildId(ulong Value) : IStrongType<ulong>
+    {
+        public static bool TryParse(string from, IFormatProvider formatProvider, out GuildId value) => throw new NotImplementedException();
+    }
 }
 
 public class GuildConfiguration : IEntityTypeConfiguration<Guild>

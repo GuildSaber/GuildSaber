@@ -20,8 +20,8 @@ public class GuildContext
     public enum ContextType
     {
         Default = 0,
-        Tournament = 1,
-        Temporary = 2
+        Tournament = 1 << 0,
+        Temporary = 1 << 1
     }
 }
 
