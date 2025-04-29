@@ -1,7 +1,7 @@
 ﻿using GuildSaber.Database;
 using GuildSaber.Database.Contexts;
 using GuildSaber.Database.Models.Guilds;
-using GuildSaber.Database.Models.Guilds.Navigation;
+using GuildSaber.Database.Models.Guilds.Members;
 using GuildSaber.Database.Models.Players;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;

@@ -1,3 +1,6 @@
+using GuildSaber.Database.Utils;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 namespace GuildSaber.Database.Models.Guilds;
 
 public readonly record struct GuildJoinRequirements(
@@ -19,4 +22,10 @@ public readonly record struct GuildJoinRequirements(
         MaxPP = 1 << 4,
         AccountAgeUnix = 1 << 5
     }
+}
+
+public class GuildJoinRequirementsConfiguration : IComplexPropertyConfiguration<GuildJoinRequirements>
+{
+    public ComplexPropertyBuilder<GuildJoinRequirements> Configure(ComplexPropertyBuilder<GuildJoinRequirements> builder) 
+        => throw new NotImplementedException();
 }

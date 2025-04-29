@@ -1,20 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Sdk Name="Aspire.AppHost.Sdk" Version="9.0.0"/>
+    <Sdk Name="Aspire.AppHost.Sdk" Version="9.2.1"/>
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <IsAspireHost>true</IsAspireHost>
-        <UserSecretsId>117b543a-1826-4365-a930-4cae3af6d982</UserSecretsId>
+        <UserSecretsId>e813a51a-28f4-48c2-b08a-757a148d3c9c</UserSecretsId>
+        <LangVersion>preview</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Hosting.AppHost" Version="9.0.0"/>
-        <PackageReference Include="Aspire.Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.2">
+        <PackageReference Include="Aspire.Hosting.AppHost" Version="9.2.1"/>
+        <PackageReference Include="Aspire.Pomelo.EntityFrameworkCore.MySql" Version="9.2.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.4">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
@@ -22,7 +22,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\GuildSaber.Api\GuildSaber.Api.csproj" />
-      <ProjectReference Include="..\..\src\GuildSaber.Database\GuildSaber.Database.csproj" />
+      <ProjectReference Include="..\..\src\GuildSaber.DiscordBot\GuildSaber.DiscordBot.csproj" />
     </ItemGroup>
 
 </Project>

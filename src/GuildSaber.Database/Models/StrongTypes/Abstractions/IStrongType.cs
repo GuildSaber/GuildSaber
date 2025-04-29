@@ -1,6 +1,4 @@
-﻿using CSharpFunctionalExtensions;
-
-namespace GuildSaber.Database.Models.StrongTypes.Abstractions;
+﻿namespace GuildSaber.Database.Models.StrongTypes.Abstractions;
 
 public interface IStrongType<T>
 {

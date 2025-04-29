@@ -25,6 +25,7 @@ public readonly record struct PlayerHardwareInfo(
         ViveCosmos = 128,
         Quest2 = 256,
         Quest3 = 512,
+        Quest3S = 513,
 
         PicoNeo3 = 33,
         PicoNeo2 = 34,
@@ -63,6 +64,7 @@ public readonly record struct PlayerHardwareInfo(
         Hypereal = 68,
         Varjoaero = 69,
         PSVR2 = 70,
-        Megane1 = 71
+        Megane1 = 71,
+        VarjoXR3 = 72
     }
 }

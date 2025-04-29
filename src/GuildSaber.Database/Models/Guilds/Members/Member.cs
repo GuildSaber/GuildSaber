@@ -2,18 +2,19 @@ using GuildSaber.Database.Models.Players;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GuildSaber.Database.Models.Guilds.Navigation;
+namespace GuildSaber.Database.Models.Guilds.Members;
 
 public class Member
 {
     public Guild.GuildId GuildId { get; init; }
     public Player.PlayerId PlayerId { get; init; }
-
-    public Player Player { get; init; } = null!;
-    public Guild Guild { get; init; } = null!;
     
+    public DateTimeOffset StateSetAt { get; set; }
     public EPermission Permissions { get; set; }
     public EJoinState JoinState { get; set; }
+    
+    public Player Player { get; init; } = null!;
+    public Guild Guild { get; init; } = null!;
     
     [Flags]
     public enum EPermission : uint
@@ -26,7 +27,6 @@ public class Member
         GuildSaberManager = 1 << 30
     }
     
-    [Flags]
     public enum EJoinState : uint
     {
         None      = 0,

@@ -43,7 +43,8 @@ public static class EfCoreUtils
         catch (Exception exception)
         {
             return Failure<U, InsertError>(
-                new InsertError(exception, $"[{callerFilePath}].[{callerMemberName}].[{nameof(AddAndSaveAsync)}]")
+                // ReSharper disable once ExplicitCallerInfoArgument
+                new InsertError(exception, $"{callerMemberName}.[{nameof(AddAndSaveAsync)}]", callerFilePath)
             );
         }
     }

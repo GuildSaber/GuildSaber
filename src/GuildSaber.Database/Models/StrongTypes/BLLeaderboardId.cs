@@ -6,7 +6,7 @@ namespace GuildSaber.Database.Models.StrongTypes;
 public readonly record struct BLLeaderboardId
 {
     private readonly string _value;
-
+    
     private BLLeaderboardId(string value)
         => _value = value;
     

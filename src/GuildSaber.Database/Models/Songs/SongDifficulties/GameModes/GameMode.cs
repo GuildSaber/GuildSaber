@@ -7,7 +7,7 @@ namespace GuildSaber.Database.Models.Songs.SongDifficulties.GameModes;
 public class GameMode
 {
     public GameModeId Id { get; init; }
-    public string Name { get; set; } = null!;
+    public required string Name { get; set; }
     
     public readonly record struct GameModeId(ulong Value) : IStrongType<ulong>;
 }

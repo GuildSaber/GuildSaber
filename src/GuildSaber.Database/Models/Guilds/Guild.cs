@@ -1,4 +1,5 @@
-using GuildSaber.Database.Models.Guilds.Navigation;
+using GuildSaber.Database.Models.Guilds.Boosts;
+using GuildSaber.Database.Models.Guilds.Members;
 using GuildSaber.Database.Models.StrongTypes.Abstractions;
 using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
@@ -11,8 +12,9 @@ public class Guild
     public GuildId Id { get; init; } = default;
     public GuildInfo Info { get; set; }
     public GuildJoinRequirements Requirements { get; set; }
-
+    
     public IList<Member> Members { get; init; } = null!;
+    public IList<Boost> Boosts { get; init; } = null!;
     public IList<GuildContext> Contexts { get; init; } = null!;
 
     public readonly record struct GuildId(ulong Value) : IStrongType<ulong>
@@ -27,6 +29,9 @@ public class GuildConfiguration : IEntityTypeConfiguration<Guild>
     {
         builder.Property(x => x.Id).HasGenericConversion<Guild.GuildId, ulong>();
         builder.ComplexProperty(x => x.Info).Configure(new GuildInfoConfiguration());
-        builder.ComplexProperty(x => x.Requirements);
+        builder.ComplexProperty(x => x.Requirements).Configure(new GuildJoinRequirementsConfiguration());
+        builder.OwnsMany(x => x.Members);
+        builder.OwnsMany(x => x.Boosts);
+        builder.OwnsMany(x => x.Contexts);
     }
 }

@@ -1,9 +1,9 @@
-﻿using GuildSaber.Database.Models.Guilds;
-using GuildSaber.Database.Models.StrongTypes.Abstractions;
+﻿using GuildSaber.Database.Models.StrongTypes.Abstractions;
+using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GuildSaber.Database.Models;
+namespace GuildSaber.Database.Models.Guilds;
 
 public class GuildContext
 {
@@ -11,12 +11,10 @@ public class GuildContext
 
     public GuildContextId Id { get; init; }
     public Guild.GuildId GuildId { get; init; }
+    
     public ContextType Type { get; init; }
     public GuildContextInfo Info { get; set; }
-    public GuildContextId? SyncedId { get; set; }
-
-    public IList<GuildContext> Synced { get; init; } = null!;
-
+    
     public enum ContextType
     {
         Default = 0,
@@ -32,8 +30,6 @@ public class GuildContextConfiguration : IEntityTypeConfiguration<GuildContext>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).HasGenericConversion<GuildContext.GuildContextId, ulong>();
         builder.HasIndex(x => x.GuildId);
-        builder.ComplexProperty(x => x.Info);
-
-        builder.HasOne<GuildContext>().WithMany(x => x.Synced).HasForeignKey(x => x.SyncedId);
+        builder.ComplexProperty(x => x.Info).Configure(new GuildContextInfoConfiguration());
     }
 }
