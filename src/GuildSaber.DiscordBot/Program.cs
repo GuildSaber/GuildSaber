@@ -1,5 +1,4 @@
-﻿using GuildSaber.Database.Contexts;
-using GuildSaber.DiscordBot;
+﻿using GuildSaber.DiscordBot;
 using GuildSaber.DiscordBot.Core.Host;
 using GuildSaber.DiscordBot.Core.Options;
 using Microsoft.Extensions.Configuration;
@@ -11,7 +10,6 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnC
 builder.Configuration.AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true);
 
 builder.AddServiceDefaults();
-builder.AddMySqlDbContext<GSDbContext>("mysqldb");
 builder.Services.AddDiscordBotServices();
 
 builder.Services.AddOptionsWithValidateOnStart<DiscordBotOptions>()

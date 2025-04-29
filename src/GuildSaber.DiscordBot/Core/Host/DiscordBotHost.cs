@@ -24,7 +24,7 @@ public class DiscordBotHost(
     {
         await interactionHandler.InitializeAsync();
         await client.SetGameAsync(options.Value.Status);
-        //await SetupDatabase(dbContext, options.Value);
+        await SetupDatabase(dbContext, options.Value);
 
         client.Log += msg =>
         {
@@ -62,6 +62,7 @@ public class DiscordBotHost(
     /// <param name="options"></param>
     private static async Task SetupDatabase(AppDbContext dbContext, DiscordBotOptions options)
     {
+        await dbContext.Database.EnsureCreatedAsync();
         await dbContext.Database.MigrateAsync();
 
         if (!await dbContext.Users.AnyAsync(x => x.Id == options.ManagerId))

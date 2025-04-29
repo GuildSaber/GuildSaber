@@ -1,13 +1,18 @@
-var builder = DistributedApplication.CreateBuilder(args);
-var mySqlConnectionString = builder.AddConnectionString("mysqldb");
+using Projects;
 
-var apiService = builder.AddProject<Projects.GuildSaber_Api>("api")
+var builder = DistributedApplication.CreateBuilder(args);
+var mySqlConnectionString = builder.AddConnectionString("guildsaber-db");
+
+var apiService = builder.AddProject<GuildSaber_Api>("api")
+    .WithHttpsEndpoint()
     .WithHttpsHealthCheck("/health")
+    .WithExternalHttpEndpoints()
     .WithReference(mySqlConnectionString);
 
-builder.AddProject<Projects.GuildSaber_DiscordBot>("DiscordBot")
-    .WithReference(mySqlConnectionString)
+builder.AddProject<GuildSaber_DiscordBot>("DiscordBot")
     .WithReference(apiService)
+    .WithHttpsEndpoint()
+    .WithHttpsHealthCheck()
     .WaitFor(apiService);
 
 builder.Build().Run();

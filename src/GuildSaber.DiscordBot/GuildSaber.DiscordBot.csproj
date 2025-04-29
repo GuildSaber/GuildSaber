@@ -8,24 +8,24 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Discord.Net" Version="3.17.4" />
-      <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.4" />
+        <PackageReference Include="Discord.Net" Version="3.17.4"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.4"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.4"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj" />
-      <ProjectReference Include="..\GuildSaber.Database\GuildSaber.Database.csproj" />
+        <ProjectReference Include="..\..\aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="appsettings.json" />
-      <Content Include="appsettings.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <None Remove="appsettings.Development.json" />
-      <Content Include="appsettings.Development.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
+        <None Remove="appsettings.json"/>
+        <Content Include="appsettings.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <None Remove="appsettings.Development.json"/>
+        <Content Include="appsettings.Development.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>

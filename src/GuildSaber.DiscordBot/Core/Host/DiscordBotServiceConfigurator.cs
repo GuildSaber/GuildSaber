@@ -25,5 +25,5 @@ public static class DiscordBotServiceConfigurator
         }))
         .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
         .AddSingleton<InteractionHandler>()
-        .AddDbContext<AppDbContext>();
+        .AddSqlite<AppDbContext>("Data Source=app.db;");
 }
