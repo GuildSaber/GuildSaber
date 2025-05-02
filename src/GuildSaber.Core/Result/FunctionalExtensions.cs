@@ -41,7 +41,7 @@ public static class FunctionalExtensions
     public static Task<Result<Maybe<T>, Exception>> TryFirstMaybe<T>(this Task<T[]> task)
         => Try(async () => await task, exception => exception)
             .Map(value => value.Length is not 0 ? Maybe<T>.From(value[0]) : Maybe<T>.None);
-    
+
     /// <summary>
     /// Reduces a collection of Result objects into a single Result object.
     /// </summary>

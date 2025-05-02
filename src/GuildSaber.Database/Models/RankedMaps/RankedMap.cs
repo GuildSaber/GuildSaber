@@ -9,15 +9,13 @@ namespace GuildSaber.Database.Models.RankedMaps;
 
 public class RankedMap
 {
-    public readonly record struct RankedMapId(ulong Value) : IStrongType<ulong>;
-
     public RankedMapId Id { get; init; }
     public Guild.GuildId GuildId { get; init; }
     public GuildContext.GuildContextId ContextId { get; init; }
     public Song.SongId SongId { get; init; }
     public SongDifficulty.SongDifficultyId SongDifficultyId { get; init; }
     public RankedMapRequirements Requirements { get; init; }
-    
+    public readonly record struct RankedMapId(ulong Value) : IStrongType<ulong>;
 }
 
 public class RankedMapConfiguration : IEntityTypeConfiguration<RankedMap>

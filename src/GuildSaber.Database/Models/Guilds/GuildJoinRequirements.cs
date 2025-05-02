@@ -26,6 +26,7 @@ public readonly record struct GuildJoinRequirements(
 
 public class GuildJoinRequirementsConfiguration : IComplexPropertyConfiguration<GuildJoinRequirements>
 {
-    public ComplexPropertyBuilder<GuildJoinRequirements> Configure(ComplexPropertyBuilder<GuildJoinRequirements> builder) 
-        => throw new NotImplementedException();
+    public ComplexPropertyBuilder<GuildJoinRequirements> Configure(
+        ComplexPropertyBuilder<GuildJoinRequirements> builder)
+        => builder;
 }

@@ -13,16 +13,16 @@
 
     <ItemGroup>
         <PackageReference Include="Aspire.Hosting.AppHost" Version="9.2.1"/>
-        <PackageReference Include="Aspire.Pomelo.EntityFrameworkCore.MySql" Version="9.2.1" />
+        <PackageReference Include="Aspire.Pomelo.EntityFrameworkCore.MySql" Version="9.2.1"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.4">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\GuildSaber.Api\GuildSaber.Api.csproj" />
-      <ProjectReference Include="..\..\src\GuildSaber.DiscordBot\GuildSaber.DiscordBot.csproj" />
+        <ProjectReference Include="..\..\src\GuildSaber.Api\GuildSaber.Api.csproj"/>
+        <ProjectReference Include="..\..\src\GuildSaber.DiscordBot\GuildSaber.DiscordBot.csproj"/>
     </ItemGroup>
 
 </Project>

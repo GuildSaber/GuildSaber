@@ -11,7 +11,7 @@ public abstract record Error
         [CallerMemberName] string MemberName = "",
         [CallerFilePath] string FilePath = ""
     ) : Error;
-    
+
     public record ExceptionalError(
         Exception Exception,
         [CallerMemberName] string MemberName = "",

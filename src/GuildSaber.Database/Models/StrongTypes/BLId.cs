@@ -9,7 +9,10 @@ public readonly record struct BLId
 
     private BLId(ulong value)
         => _value = value;
-    
+
+    private static Func<string, string> VerificationUrl =>
+        id => $"https://api.beatleader.xyz/player/{id}/exists";
+
     public static implicit operator ulong(BLId id)
         => id._value;
 
@@ -21,10 +24,7 @@ public readonly record struct BLId
         => Try(() => httpClient.GetAsync(VerificationUrl(id)))
             .Map(response => response.IsSuccessStatusCode);
 
-    private static Func<string, string> VerificationUrl =>
-        id => $"https://api.beatleader.xyz/player/{id}/exists";
-    
-    
+
     [return: NotNullIfNotNull(nameof(value))]
     public static BLId? CreateUnsafe(ulong? value)
         => value is null ? null : new BLId(value.Value);

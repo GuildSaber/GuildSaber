@@ -1,7 +1,3 @@
 ﻿namespace GuildSaber.Database.Models.RankedMaps;
 
-public class RankedMapRating
-{
-   
-}
-
+public class RankedMapRating { }

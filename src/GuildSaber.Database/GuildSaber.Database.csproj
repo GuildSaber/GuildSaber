@@ -9,20 +9,21 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Aspire.Pomelo.EntityFrameworkCore.MySql" Version="9.2.1" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.4" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
+        <PackageReference Include="Aspire.Pomelo.EntityFrameworkCore.MySql" Version="9.2.1"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.4"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0-preview.3.efcore.9.0.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\GuildSaber.Core\GuildSaber.Core.csproj" />
+        <ProjectReference Include="..\GuildSaber.Core\GuildSaber.Core.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Contexts\Migrations\" />
+        <Folder Include="Contexts\Migrations\"/>
     </ItemGroup>
 
 </Project>

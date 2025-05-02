@@ -1,6 +1,5 @@
 ﻿using Discord.Interactions;
 using GuildSaber.DiscordBot.Core.Handlers;
-using GuildSaber.DiscordBot.DAL.Models;
 
 namespace GuildSaber.DiscordBot.Commands.Manager;
 
@@ -11,8 +10,8 @@ public partial class ManagerModuleSlash
 {
     [SlashCommand("print_managers_id", "Print the current managers id")]
     public async Task PrintManagersId() => await RespondAsync(
-        text: Queryable
-            .Where<User>(dbContext.Users, x => x.Permissions.HasFlag(PermissionHandler.EPermissions.Manager))
+        text: dbContext.Users
+            .Where(x => x.Permissions.HasFlag(PermissionHandler.EPermissions.Manager))
             .Select(x => x.Id.ToString()).ToList()
             .Aggregate((x, y) => $"{x}, {y}")
     );

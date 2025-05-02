@@ -4,6 +4,4 @@
 /// The current user joins the guild.
 /// As for other users see <see cref="Members.Post" />
 /// </summary>
-public class Post
-{
-}
+public class Post { }

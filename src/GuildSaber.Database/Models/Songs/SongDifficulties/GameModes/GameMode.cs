@@ -8,7 +8,7 @@ public class GameMode
 {
     public GameModeId Id { get; init; }
     public required string Name { get; set; }
-    
+
     public readonly record struct GameModeId(ulong Value) : IStrongType<ulong>;
 }
 

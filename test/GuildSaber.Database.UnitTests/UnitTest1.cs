@@ -1,5 +1,4 @@
-﻿using CSharpFunctionalExtensions;
-using GuildSaber.Core.Result;
+﻿using GuildSaber.Core.Result;
 using GuildSaber.Database.Models.StrongTypes;
 using Xunit.Abstractions;
 
@@ -12,13 +11,10 @@ public class UnitTest1(ITestOutputHelper testOutputHelper)
     private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
 
     [Fact]
-    public async Task Test1()
-    {
-        await BLId.CreateAsync(123123u, new HttpClient())
-            .Unwrap()
-            .Match(
-                some => _testOutputHelper.WriteLine(some.ToString()),
-                () => _testOutputHelper.WriteLine("no")
-            );
-    }
+    public async Task Test1() => await BLId.CreateAsync(123123u, new HttpClient())
+        .Unwrap()
+        .Match(
+            some => _testOutputHelper.WriteLine(some.ToString()),
+            () => _testOutputHelper.WriteLine("no")
+        );
 }

@@ -17,5 +17,4 @@ builder.Services.AddOptionsWithValidateOnStart<DiscordBotOptions>()
     .ValidateDataAnnotations();
 
 builder.Services.AddHostedService<DiscordBotHost>();
-
 await builder.Build().RunAsync();

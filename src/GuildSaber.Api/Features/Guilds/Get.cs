@@ -1,8 +1,3 @@
-﻿
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
+﻿namespace GuildSaber.Api.Features.Guilds;
 
-namespace GuildSaber.Api.Features.Guilds;
-
-
-public class Get();
+public class Get;

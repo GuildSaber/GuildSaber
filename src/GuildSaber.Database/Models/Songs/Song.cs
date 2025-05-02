@@ -8,8 +8,6 @@ namespace GuildSaber.Database.Models.Songs;
 
 public class Song
 {
-    public readonly record struct SongId(ulong Value) : IStrongType<ulong>;
-
     public SongId Id { get; init; }
     public SongHash Hash { get; init; }
     public BeatSaverKey? BeatSaverKey { get; set; }
@@ -18,6 +16,7 @@ public class Song
     public SongStats Stats { get; set; }
 
     public SongDifficulty[] SongDifficulties { get; init; } = null!;
+    public readonly record struct SongId(ulong Value) : IStrongType<ulong>;
 }
 
 public class SongConfiguration : IEntityTypeConfiguration<Song>

@@ -16,7 +16,7 @@ public class GuildInfoConfiguration : IComplexPropertyConfiguration<GuildInfo>
     {
         builder.Property(x => x.Description).HasMaxLength(100);
         builder.Property(x => x.Color).HasConversion(from => from.ToArgb(), to => Color.FromArgb(to));
-       
+
         return builder;
     }
 }

@@ -4,14 +4,6 @@ public readonly record struct PlayerHardwareInfo(
     PlayerHardwareInfo.EPlatform Platform,
     PlayerHardwareInfo.EHMD HMD)
 {
-    public enum EPlatform
-    {
-        Unk = 0,
-        Steam = 1,
-        OculusNative = 2,
-        OculusPC = 3
-    }
-
     public enum EHMD
     {
         Unknown = 0,
@@ -66,5 +58,13 @@ public readonly record struct PlayerHardwareInfo(
         PSVR2 = 70,
         Megane1 = 71,
         VarjoXR3 = 72
+    }
+
+    public enum EPlatform
+    {
+        Unk = 0,
+        Steam = 1,
+        OculusNative = 2,
+        OculusPC = 3
     }
 }

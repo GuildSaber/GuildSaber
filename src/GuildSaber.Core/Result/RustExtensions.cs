@@ -4,8 +4,6 @@ namespace GuildSaber.Core.Result;
 
 public static class RustExtensions
 {
-    public class ErrorException(string message) : Exception(message);
-
     /// <summary>
     /// Unwraps the Result object within a Task. If the Result is successful, it returns the value.
     /// If the Result is a failure, it throws an ErrorException with the error message.
@@ -30,7 +28,7 @@ public static class RustExtensions
             ? result.Value
             : throw new Exception(result.Error);
     }
-    
+
     public static async Task Unwrap<E>(this Task<UnitResult<E>> self)
     {
         var result = await self;
@@ -82,7 +80,7 @@ public static class RustExtensions
             ? result.Value
             : defaultValue;
     }
-    
+
     public static async Task<Result<T, E>> Try<T, E>(
         Task<T> func,
         Func<Exception, E> errorHandler)
@@ -96,7 +94,7 @@ public static class RustExtensions
             return CSharpFunctionalExtensions.Result.Failure<T, E>(errorHandler(ex));
         }
     }
-    
+
     public static async ValueTask<Result<T, E>> Try<T, E>(
         ValueTask<T> func,
         Func<Exception, E> errorHandler)
@@ -127,7 +125,7 @@ public static class RustExtensions
             ? result.Value
             : defaultValue(result.Error);
     }
-    
+
     public static async ValueTask<T> UnwrapOrElse<T, E>(this ValueTask<Result<T, E>> self, Func<E, T> defaultValue)
     {
         var result = await self;
@@ -165,4 +163,6 @@ public static class RustExtensions
     /// <exception cref="ErrorException">Thrown with the error message.</exception>
     public static void Throw<T>(this T self) where T : IError<T>
         => throw new ErrorException(self.ToString()!);
+
+    public class ErrorException(string message) : Exception(message);
 }

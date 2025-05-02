@@ -9,6 +9,7 @@ public interface IComplexPropertyConfiguration<T>
 
 public static class ComplexPropertyConfigurationExtensions
 {
-    public static ComplexPropertyBuilder<T> Configure<T>(this ComplexPropertyBuilder<T> self, IComplexPropertyConfiguration<T> builder)
+    public static ComplexPropertyBuilder<T> Configure<T>(this ComplexPropertyBuilder<T> self,
+                                                         IComplexPropertyConfiguration<T> builder)
         => builder.Configure(self);
-} 
+}

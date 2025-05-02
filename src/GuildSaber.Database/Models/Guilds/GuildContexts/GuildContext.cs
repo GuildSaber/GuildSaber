@@ -7,20 +7,19 @@ namespace GuildSaber.Database.Models.Guilds;
 
 public class GuildContext
 {
-    public readonly record struct GuildContextId(ulong Value) : IStrongType<ulong>;
-
-    public GuildContextId Id { get; init; }
-    public Guild.GuildId GuildId { get; init; }
-    
-    public ContextType Type { get; init; }
-    public GuildContextInfo Info { get; set; }
-    
     public enum ContextType
     {
         Default = 0,
         Tournament = 1 << 0,
         Temporary = 1 << 1
     }
+
+    public GuildContextId Id { get; init; }
+    public Guild.GuildId GuildId { get; init; }
+
+    public ContextType Type { get; init; }
+    public GuildContextInfo Info { get; set; }
+    public readonly record struct GuildContextId(ulong Value) : IStrongType<ulong>;
 }
 
 public class GuildContextConfiguration : IEntityTypeConfiguration<GuildContext>
