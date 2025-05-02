@@ -2,6 +2,8 @@ using GuildSaber.Database.Models.Guilds;
 using GuildSaber.Database.Models.Guilds.Boosts;
 using GuildSaber.Database.Models.Guilds.Members;
 using GuildSaber.Database.Models.Players;
+using GuildSaber.Database.Models.RankedMaps;
+using GuildSaber.Database.Models.RankedScores;
 using GuildSaber.Database.Models.Songs;
 using GuildSaber.Database.Models.Songs.SongDifficulties;
 using GuildSaber.Database.Models.Songs.SongDifficulties.GameModes;
@@ -22,18 +24,24 @@ public class GSDbContext : DbContext
 
     public DbSet<Player> Players { get; set; }
 
+    public DbSet<RankedMap> RankedMaps { get; set; }
+    public DbSet<RankedScore> RankedScores { get; set; }
+
     public DbSet<Song> Songs { get; set; }
-    public DbSet<GameMode> GameModes { get; set; }
+    public DbSet<SongDifficulty> SongDifficulties { get; set; }
     public DbSet<PlayMode> PlayModes { get; set; }
+    public DbSet<GameMode> GameModes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder) => builder
         .ApplyConfiguration(new GuildConfiguration())
+        .ApplyConfiguration(new GuildContextConfiguration())
+        .ApplyConfiguration(new MemberConfiguration())
         .ApplyConfiguration(new BoostConfiguration())
         .ApplyConfiguration(new PlayerConfiguration())
-        .ApplyConfiguration(new MemberConfiguration())
+        .ApplyConfiguration(new RankedMapConfiguration())
+        .ApplyConfiguration(new RankedScoreConfiguration())
         .ApplyConfiguration(new SongConfiguration())
         .ApplyConfiguration(new SongDifficultyConfiguration())
-        .ApplyConfiguration(new GameModeConfiguration())
         .ApplyConfiguration(new PlayModeConfiguration())
-        .ApplyConfiguration(new GuildContextConfiguration());
+        .ApplyConfiguration(new GameModeConfiguration());
 }

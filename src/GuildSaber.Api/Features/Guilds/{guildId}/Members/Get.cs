@@ -17,13 +17,22 @@ public class Get(GSDbContext dbContext, ILogger logger)
         await Try(dbContext.Members.FirstOrDefaultAsync(x => x.GuildId == guildId && x.PlayerId == playerId), e => e)
             switch
             {
-                { IsFailure: true, Error: var exception } => TypedResults.InternalServerError(exception),
+                { IsFailure: true, Error: var exception } => LogAndReturnError(exception, logger,
+                    "Error getting member {guildId}, {playerId}", guildId, playerId),
                 { Value: var member } => member switch
                 {
                     null => TypedResults.NotFound(),
                     _ => TypedResults.Ok(member)
                 }
             };
+
+    // Might need to display the ids that causes it. + Not 
+    public static InternalServerError<Exception> LogAndReturnError(
+        Exception e, ILogger logger, string? message, params object?[] arg)
+    {
+        logger.LogError(e, message, arg);
+        return TypedResults.InternalServerError(e);
+    }
 
     /* Theory:
     // Assuming generic in using alias gets added alongside unions
