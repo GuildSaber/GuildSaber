@@ -6,6 +6,16 @@ namespace GuildSaber.Database.Models.Guilds.Members;
 
 public class Member
 {
+    public Guild.GuildId GuildId { get; init; }
+    public Player.PlayerId PlayerId { get; init; }
+
+    public DateTimeOffset StateSetAt { get; set; }
+    public EPermission Permissions { get; set; }
+    public EJoinState JoinState { get; set; }
+
+    public Player Player { get; init; } = null!;
+    public Guild Guild { get; init; } = null!;
+
     public enum EJoinState : uint
     {
         None = 0,
@@ -26,16 +36,6 @@ public class Member
         MemberTeam = 1 << 3,
         GuildSaberManager = 1 << 30
     }
-
-    public Guild.GuildId GuildId { get; init; }
-    public Player.PlayerId PlayerId { get; init; }
-
-    public DateTimeOffset StateSetAt { get; set; }
-    public EPermission Permissions { get; set; }
-    public EJoinState JoinState { get; set; }
-
-    public Player Player { get; init; } = null!;
-    public Guild Guild { get; init; } = null!;
 }
 
 public class MemberConfiguration : IEntityTypeConfiguration<Member>

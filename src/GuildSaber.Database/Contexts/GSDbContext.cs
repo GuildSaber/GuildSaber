@@ -3,11 +3,13 @@ using GuildSaber.Database.Models.Guilds.Boosts;
 using GuildSaber.Database.Models.Guilds.Members;
 using GuildSaber.Database.Models.Players;
 using GuildSaber.Database.Models.RankedMaps;
+using GuildSaber.Database.Models.RankedMaps.MapVersions;
+using GuildSaber.Database.Models.RankedMaps.MapVersions.PlayModes;
 using GuildSaber.Database.Models.RankedScores;
+using GuildSaber.Database.Models.Scores;
 using GuildSaber.Database.Models.Songs;
 using GuildSaber.Database.Models.Songs.SongDifficulties;
 using GuildSaber.Database.Models.Songs.SongDifficulties.GameModes;
-using GuildSaber.Database.Models.Songs.SongDifficulties.PlayModes;
 using Microsoft.EntityFrameworkCore;
 
 namespace GuildSaber.Database.Contexts;
@@ -25,11 +27,17 @@ public class GSDbContext : DbContext
     public DbSet<Player> Players { get; set; }
 
     public DbSet<RankedMap> RankedMaps { get; set; }
+    public DbSet<MapVersion> MapVersions { get; set; }
+    public DbSet<PlayMode> PlayModes { get; set; }
+
+    public DbSet<AbstractScore> Scores { get; set; }
+    public DbSet<ScoreSaberScore> ScoreSaberScores { get; set; }
+    public DbSet<BeatLeaderScore> BeatLeaderScores { get; set; }
+
     public DbSet<RankedScore> RankedScores { get; set; }
 
     public DbSet<Song> Songs { get; set; }
     public DbSet<SongDifficulty> SongDifficulties { get; set; }
-    public DbSet<PlayMode> PlayModes { get; set; }
     public DbSet<GameMode> GameModes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder) => builder
@@ -38,7 +46,11 @@ public class GSDbContext : DbContext
         .ApplyConfiguration(new MemberConfiguration())
         .ApplyConfiguration(new BoostConfiguration())
         .ApplyConfiguration(new PlayerConfiguration())
+        .ApplyConfiguration(new AbstractScoreConfiguration())
+        .ApplyConfiguration(new ScoreSaberScoreConfiguration())
+        .ApplyConfiguration(new BeatLeaderScoreConfiguration())
         .ApplyConfiguration(new RankedMapConfiguration())
+        .ApplyConfiguration(new MapVersionConfiguration())
         .ApplyConfiguration(new RankedScoreConfiguration())
         .ApplyConfiguration(new SongConfiguration())
         .ApplyConfiguration(new SongDifficultyConfiguration())

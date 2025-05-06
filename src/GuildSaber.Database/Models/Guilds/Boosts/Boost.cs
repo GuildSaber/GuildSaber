@@ -6,15 +6,6 @@ namespace GuildSaber.Database.Models.Guilds.Boosts;
 
 public class Boost
 {
-    [Flags]
-    public enum EBoostType
-    {
-        Default = 0,
-        Tier1 = 1 << 0,
-        Tier2 = 1 << 1,
-        Tier3 = 1 << 2
-    }
-
     public Player.PlayerId PlayerId { get; init; }
     public Guild.GuildId GuildId { get; init; }
 
@@ -23,6 +14,15 @@ public class Boost
 
     public Player Player { get; init; } = null!;
     public Guild Guild { get; init; } = null!;
+
+    [Flags]
+    public enum EBoostType
+    {
+        Default = 0,
+        Tier1 = 1 << 0,
+        Tier2 = 1 << 1,
+        Tier3 = 1 << 2
+    }
 }
 
 public class BoostConfiguration : IEntityTypeConfiguration<Boost>

@@ -15,17 +15,6 @@ namespace GuildSaber.DiscordBot.Core.Handlers;
 public static class PermissionHandler
 {
     /// <summary>
-    /// Exposed enum flag used for permission management and persistance.
-    /// </summary>
-    [Flags]
-    public enum EPermissions
-    {
-        None = 0,
-        Manager = 1 << 0,
-        Admin = 1 << 1
-    }
-
-    /// <summary>
     /// Check if the user have all the required permission flag set.
     /// </summary>
     public class RequirePermissionAttributeSlash(EPermissions permissions) : PreconditionAttribute
@@ -34,35 +23,47 @@ public static class PermissionHandler
         /// So this is C# but with expression statements as a way to handle conditional logic.
         /// There is less chance to mess it up, but it's a bit hard to write when unused because it's unfamiliar.
         /// </remarks>
-        public override Task<PreconditionResult> CheckRequirementsAsync(
-            IInteractionContext context, ICommandInfo commandInfo,
-            IServiceProvider services) => context.User switch
-        {
-            SocketUser when permissions is EPermissions.None => Success(),
-            SocketUser socketUser => services.GetService<AppDbContext>() switch
+        public override async Task<PreconditionResult> CheckRequirementsAsync(
+            IInteractionContext context, ICommandInfo commandInfo, IServiceProvider services)
+            => context.User switch
             {
-                null => Error("Database not found, please report the issue.", context),
-                var dbContext => dbContext.Users.Find(socketUser.Id) switch
+                SocketUser when permissions is EPermissions.None => Success(),
+                SocketUser socketUser => services.GetService<AppDbContext>() switch
                 {
-                    null => Error("You might not be registered in the database.", context),
-                    var user => user.Permissions.HasFlag(permissions) switch
+                    null => await Error("Database not found, please report the issue.", context),
+                    var dbContext => await dbContext.Users.FindAsync(socketUser.Id) switch
                     {
-                        true => Success(),
-                        false when user.Permissions.HasFlag(EPermissions.Manager) => Success(),
-                        _ => Error("You don't have the required permissions to execute this command.", context)
+                        null => await Error("You might not be registered in the database.", context),
+                        var user => user.Permissions.HasFlag(permissions) switch
+                        {
+                            true => Success(),
+                            false when user.Permissions.HasFlag(EPermissions.Manager) => Success(),
+                            _ => await Error("You don't have the required permissions to execute this command.",
+                                context)
+                        }
                     }
-                }
-            },
-            _ => Error("You are not a valid user.", context)
-        };
+                },
+                _ => await Error("You are not a valid user.", context)
+            };
 
-        private static Task<PreconditionResult> Success()
-            => Task.FromResult(PreconditionResult.FromSuccess());
+        private static PreconditionResult Success()
+            => PreconditionResult.FromSuccess();
 
         private static async Task<PreconditionResult> Error(string message, IInteractionContext context)
         {
             await context.Interaction.RespondAsync(message, ephemeral: true);
             return PreconditionResult.FromError(message);
         }
+    }
+
+    /// <summary>
+    /// Exposed enum flag used for permission management and persistance.
+    /// </summary>
+    [Flags]
+    public enum EPermissions
+    {
+        None = 0,
+        Manager = 1 << 0,
+        Admin = 1 << 1
     }
 }

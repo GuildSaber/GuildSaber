@@ -4,6 +4,8 @@ namespace GuildSaber.Core.Result;
 
 public static class RustExtensions
 {
+    public class ErrorException(string message) : Exception(message);
+
     /// <summary>
     /// Unwraps the Result object within a Task. If the Result is successful, it returns the value.
     /// If the Result is a failure, it throws an ErrorException with the error message.
@@ -163,6 +165,4 @@ public static class RustExtensions
     /// <exception cref="ErrorException">Thrown with the error message.</exception>
     public static void Throw<T>(this T self) where T : IError<T>
         => throw new ErrorException(self.ToString()!);
-
-    public class ErrorException(string message) : Exception(message);
 }

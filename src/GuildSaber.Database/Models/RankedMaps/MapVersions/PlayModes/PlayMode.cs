@@ -2,7 +2,7 @@ using GuildSaber.Database.Models.StrongTypes.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GuildSaber.Database.Models.Songs.SongDifficulties.PlayModes;
+namespace GuildSaber.Database.Models.RankedMaps.MapVersions.PlayModes;
 
 public class PlayMode
 {

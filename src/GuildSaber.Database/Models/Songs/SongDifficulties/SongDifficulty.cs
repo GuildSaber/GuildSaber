@@ -1,5 +1,4 @@
 ﻿using GuildSaber.Database.Models.Songs.SongDifficulties.GameModes;
-using GuildSaber.Database.Models.Songs.SongDifficulties.PlayModes;
 using GuildSaber.Database.Models.StrongTypes;
 using GuildSaber.Database.Models.StrongTypes.Abstractions;
 using Microsoft.EntityFrameworkCore;
@@ -12,11 +11,9 @@ public class SongDifficulty
     public SongDifficultyId Id { get; init; }
     public BLLeaderboardId? BLLeaderboardId { get; init; }
     public GameMode.GameModeId GameModeId { get; init; }
-    public PlayMode.PlayModeId PlayModeId { get; init; }
     public Song.SongId SongId { get; init; }
 
     public GameMode GameMode { get; init; } = null!;
-    public PlayMode PlayMode { get; init; } = null!;
     public Song Song { get; init; } = null!;
     public readonly record struct SongDifficultyId(ulong Value) : IStrongType<ulong>;
 }
@@ -31,7 +28,6 @@ public class SongDifficultyConfiguration : IEntityTypeConfiguration<SongDifficul
             .HasConversion<string?>(from => from, to => BLLeaderboardId.CreateUnsafe(to));
 
         builder.HasOne(x => x.GameMode).WithMany().HasForeignKey(x => x.GameModeId);
-        builder.HasOne(x => x.PlayMode).WithMany().HasForeignKey(x => x.PlayModeId);
         builder.HasOne(x => x.Song).WithMany(x => x.SongDifficulties).HasForeignKey(x => x.SongId);
     }
 }

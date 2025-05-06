@@ -8,6 +8,21 @@ namespace GuildSaber.Database.Utils;
 public static class EfCoreUtils
 {
     /// <summary>
+    /// An ExpressionVisitor that replaces one expression with another in the expression tree.
+    /// </summary>
+    private sealed class ReplaceExpressionVisitor(Expression oldExpression, Expression newExpression)
+        : ExpressionVisitor
+    {
+        /// <summary>
+        /// Visits the children of the UnaryExpression.
+        /// </summary>
+        /// <param name="node">The expression to visit.</param>
+        /// <returns>The modified expression, if it or any subexpression was modified; otherwise, returns the original expression.</returns>
+        public override Expression? Visit(Expression? node)
+            => node == oldExpression ? newExpression : base.Visit(node);
+    }
+
+    /// <summary>
     /// Asynchronously adds an entity to the DbContext and saves the changes.
     /// </summary>
     /// <typeparam name="T">The type of the entity to be added.</typeparam>
@@ -194,21 +209,5 @@ public static class EfCoreUtils
         var right = rightVisitor.Visit(expr2.Body);
 
         return Expression.Lambda<Func<T, bool>>(Expression.AndAlso(left!, right!), parameter);
-    }
-
-
-    /// <summary>
-    /// An ExpressionVisitor that replaces one expression with another in the expression tree.
-    /// </summary>
-    private sealed class ReplaceExpressionVisitor(Expression oldExpression, Expression newExpression)
-        : ExpressionVisitor
-    {
-        /// <summary>
-        /// Visits the children of the UnaryExpression.
-        /// </summary>
-        /// <param name="node">The expression to visit.</param>
-        /// <returns>The modified expression, if it or any subexpression was modified; otherwise, returns the original expression.</returns>
-        public override Expression? Visit(Expression? node)
-            => node == oldExpression ? newExpression : base.Visit(node);
     }
 }

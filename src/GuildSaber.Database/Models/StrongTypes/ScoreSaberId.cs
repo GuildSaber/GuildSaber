@@ -10,7 +10,7 @@ public readonly record struct ScoreSaberId
     private ScoreSaberId(ulong value)
         => _value = value;
 
-    public Result<ScoreSaberId> TryCreate(ulong? value)
+    public static Result<ScoreSaberId> TryCreate(ulong? value)
         => value switch
         {
             null => Failure<ScoreSaberId>("ScoreSaber ID must not be null."),
@@ -18,7 +18,7 @@ public readonly record struct ScoreSaberId
             _ => Success(new ScoreSaberId(value.Value))
         };
 
-    public Result<ScoreSaberId> TryParse(string value)
+    public static Result<ScoreSaberId> TryParse(string value)
         => ulong.TryParse(value, out var parsed)
             ? TryCreate(parsed)
             : Failure<ScoreSaberId>("ScoreSaber ID must be a number.");

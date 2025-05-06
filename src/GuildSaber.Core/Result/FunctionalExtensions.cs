@@ -126,7 +126,9 @@ public static class FunctionalExtensions
                 continue;
             }
 
+#pragma warning disable CFE0001 // Failure case handled above (Analyser bug)
             temp.Add(result.Value);
+#pragma warning restore CFE0001
         }
 
         return (temp, errors);

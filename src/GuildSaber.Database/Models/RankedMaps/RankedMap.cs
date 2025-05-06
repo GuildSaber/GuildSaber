@@ -1,4 +1,5 @@
 ﻿using GuildSaber.Database.Models.Guilds;
+using GuildSaber.Database.Models.RankedMaps.MapVersions;
 using GuildSaber.Database.Models.Songs;
 using GuildSaber.Database.Models.Songs.SongDifficulties;
 using GuildSaber.Database.Models.StrongTypes.Abstractions;
@@ -17,6 +18,7 @@ public class RankedMap
     public SongDifficulty.SongDifficultyId SongDifficultyId { get; init; }
 
     public RankedMapRequirements Requirements { get; init; }
+    public IList<MapVersion> MapVersions { get; init; } = null!;
     public readonly record struct RankedMapId(ulong Value) : IStrongType<ulong>;
 }
 
