@@ -3,7 +3,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GuildSaber.Database.Models.Scores;
 
-public sealed record ScoreSaberScore : AbstractScore;
+public sealed record ScoreSaberScore(
+    string? DeviceHmd,
+    string? DeviceControllerLeft,
+    string? DeviceControllerRight
+) : AbstractScore;
 
 public class ScoreSaberScoreConfiguration : IEntityTypeConfiguration<ScoreSaberScore>
 {

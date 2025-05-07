@@ -15,4 +15,4 @@ namespace GuildSaber.DiscordBot.Commands.Users;
 /// </remarks>
 [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel, InteractionContextType.BotDm)]
 [PermissionHandler.RequirePermissionAttributeSlash(PermissionHandler.EPermissions.None)]
-public partial class UserModuleSlash(AppDbContext dbContext) : InteractionModuleBase<SocketInteractionContext>;
+public partial class UserModuleSlash(AppDbContext DbContext) : InteractionModuleBase<SocketInteractionContext>;

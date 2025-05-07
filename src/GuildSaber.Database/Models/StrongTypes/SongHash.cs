@@ -6,6 +6,7 @@ namespace GuildSaber.Database.Models.StrongTypes;
 public readonly record struct SongHash
 {
     private readonly string _value;
+    public const int MaxLength = 40;
 
     private SongHash(string value)
         => _value = value;
@@ -17,7 +18,7 @@ public readonly record struct SongHash
         => value switch
         {
             null => Failure<SongHash>("Song hash must not be null."),
-            { Length: not 40 } => Failure<SongHash>("Song hash must be 40 characters long."),
+            { Length: not MaxLength } => Failure<SongHash>($"Song hash must be {MaxLength} characters long."),
             _ when !value.All(char.IsLetterOrDigit) => Failure<SongHash>("Song hash must be alphanumeric."),
             _ => Success(new SongHash(value))
         };

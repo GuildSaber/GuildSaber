@@ -1,6 +1,7 @@
 using GuildSaber.Database.Models.Guilds;
 using GuildSaber.Database.Models.Guilds.Boosts;
 using GuildSaber.Database.Models.Guilds.Members;
+using GuildSaber.Database.Models.Guilds.Points;
 using GuildSaber.Database.Models.Players;
 using GuildSaber.Database.Models.RankedMaps;
 using GuildSaber.Database.Models.RankedMaps.MapVersions;
@@ -23,6 +24,7 @@ public class GSDbContext : DbContext
     public DbSet<GuildContext> GuildContexts { get; set; }
     public DbSet<Member> Members { get; set; }
     public DbSet<Boost> Boosts { get; set; }
+    public DbSet<Point> Points { get; set; }
 
     public DbSet<Player> Players { get; set; }
 
@@ -45,6 +47,7 @@ public class GSDbContext : DbContext
         .ApplyConfiguration(new GuildContextConfiguration())
         .ApplyConfiguration(new MemberConfiguration())
         .ApplyConfiguration(new BoostConfiguration())
+        .ApplyConfiguration(new PointConfiguration())
         .ApplyConfiguration(new PlayerConfiguration())
         .ApplyConfiguration(new AbstractScoreConfiguration())
         .ApplyConfiguration(new ScoreSaberScoreConfiguration())
