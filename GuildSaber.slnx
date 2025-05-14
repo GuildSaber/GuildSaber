@@ -5,11 +5,14 @@
     </Folder>
     <Folder Name="/src/">
         <Project Path="src\GuildSaber.Api\GuildSaber.Api.csproj" Type="Classic C#"/>
-        <Project Path="src\GuildSaber.Core\GuildSaber.Core.csproj" Type="Classic C#"/>
+        <Project Path="src\GuildSaber.Common\GuildSaber.Common.csproj" Type="Classic C#"/>
         <Project Path="src\GuildSaber.Database\GuildSaber.Database.csproj" Type="Classic C#"/>
         <Project Path="src\GuildSaber.DiscordBot\GuildSaber.DiscordBot.csproj" Type="Classic C#"/>
     </Folder>
-    <Folder Name="/test/">
-        <Project Path="test\GuildSaber.Database.UnitTests\GuildSaber.Database.UnitTests.csproj" Type="Classic C#"/>
+    <Folder Name="/tests/">
+        <Project Path="tests\GuildSaber.Database.UnitTests\GuildSaber.Database.UnitTests.csproj" Type="Classic C#"/>
+    </Folder>
+    <Folder Name="/tools/">
+        <Project Path="tools\GuildSaber.Migrator\GuildSaber.Migrator.csproj" Type="Classic C#"/>
     </Folder>
 </Solution>

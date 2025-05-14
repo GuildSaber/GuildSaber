@@ -1,7 +1,8 @@
 ﻿using Discord;
 using Discord.Interactions;
+using GuildSaber.Database.Contexts.DiscordBot;
+using GuildSaber.Database.Models.DiscordBot;
 using GuildSaber.DiscordBot.Core.Handlers;
-using GuildSaber.DiscordBot.DAL;
 
 namespace GuildSaber.DiscordBot.Commands.Users;
 
@@ -14,5 +15,5 @@ namespace GuildSaber.DiscordBot.Commands.Users;
 /// to reflect the context and permissions required for the commands to be executed in this module.
 /// </remarks>
 [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel, InteractionContextType.BotDm)]
-[PermissionHandler.RequirePermissionAttributeSlash(PermissionHandler.EPermissions.None)]
-public partial class UserModuleSlash(AppDbContext DbContext) : InteractionModuleBase<SocketInteractionContext>;
+[PermissionHandler.RequirePermissionAttributeSlash(User.EPermissions.None)]
+public partial class UserModuleSlash(DiscordBotDbContext DbContext) : InteractionModuleBase<SocketInteractionContext>;

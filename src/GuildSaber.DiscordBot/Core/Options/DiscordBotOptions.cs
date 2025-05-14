@@ -4,6 +4,8 @@ namespace GuildSaber.DiscordBot.Core.Options;
 
 public class DiscordBotOptions
 {
+    public const string DiscordBotOptionsSectionsKey = "DiscordBotOptions";
+
     [Required] public required ulong Id { get; init; }
     [Required] public required string Name { get; init; }
     [Required] public required string Status { get; init; }

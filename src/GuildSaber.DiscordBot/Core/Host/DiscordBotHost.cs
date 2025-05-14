@@ -1,30 +1,30 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using GuildSaber.Database.Contexts.DiscordBot;
+using GuildSaber.Database.Models.DiscordBot;
 using GuildSaber.DiscordBot.Core.Handlers;
 using GuildSaber.DiscordBot.Core.Options;
-using GuildSaber.DiscordBot.DAL;
-using GuildSaber.DiscordBot.DAL.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace GuildSaber.DiscordBot.Core.Host;
 
 public class DiscordBotHost(
     IOptions<DiscordBotOptions> options,
+    IServiceProvider services,
     DiscordSocketClient client,
     InteractionService interactionService,
     InteractionHandler interactionHandler,
-    AppDbContext dbContext,
     ILogger<DiscordBotHost> logger) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await interactionHandler.InitializeAsync();
         await client.SetGameAsync(options.Value.Status);
-        await SetupDatabase(dbContext, options.Value);
+        var dbContext = services.GetRequiredService<DiscordBotDbContext>();
+
+        await EnsureManagerExistAsync(dbContext, options.Value);
 
         client.Log += msg =>
         {
@@ -60,16 +60,13 @@ public class DiscordBotHost(
     /// </summary>
     /// <param name="dbContext"></param>
     /// <param name="options"></param>
-    private static async Task SetupDatabase(AppDbContext dbContext, DiscordBotOptions options)
+    private static async Task EnsureManagerExistAsync(DiscordBotDbContext dbContext, DiscordBotOptions options)
     {
-        await dbContext.Database.EnsureCreatedAsync();
-        await dbContext.Database.MigrateAsync();
-
         if (!await dbContext.Users.AnyAsync(x => x.Id == options.ManagerId))
             dbContext.Users.Add(new User
             {
                 Id = options.ManagerId,
-                Permissions = PermissionHandler.EPermissions.Manager
+                Permissions = User.EPermissions.Manager
             });
 
         await dbContext.SaveChangesAsync();

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Aspire.Pomelo.EntityFrameworkCore.MySql" Version="9.2.1"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.5"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="Properties\launchSettings.json"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj"/>
+        <ProjectReference Include="..\..\src\GuildSaber.Database\GuildSaber.Database.csproj"/>
+        <ProjectReference Include="..\..\src\GuildSaber.DiscordBot\GuildSaber.DiscordBot.csproj"/>
+    </ItemGroup>
+</Project>

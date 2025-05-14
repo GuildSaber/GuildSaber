@@ -2,8 +2,6 @@
 using Discord.Interactions;
 using Discord.WebSocket;
 using GuildSaber.DiscordBot.Core.Handlers;
-using GuildSaber.DiscordBot.DAL;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace GuildSaber.DiscordBot.Core.Host;
 
@@ -24,6 +22,5 @@ public static class DiscordBotServiceConfigurator
             AlwaysDownloadUsers = true
         }))
         .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
-        .AddSingleton<InteractionHandler>()
-        .AddSqlite<AppDbContext>("Data Source=app.db;");
+        .AddSingleton<InteractionHandler>();
 }

@@ -1,7 +1,7 @@
-﻿using GuildSaber.Database.Contexts;
-using GuildSaber.Database.Models.Guilds;
-using GuildSaber.Database.Models.Guilds.Members;
-using GuildSaber.Database.Models.Players;
+﻿using GuildSaber.Database.Contexts.Server;
+using GuildSaber.Database.Models.Server.Guilds;
+using GuildSaber.Database.Models.Server.Guilds.Members;
+using GuildSaber.Database.Models.Server.Players;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +10,7 @@ namespace GuildSaber.Api.Features.Guilds._guildId_.Members;
 /// <summary>
 /// Get all members of the guild.
 /// </summary>
-public class Get(GSDbContext dbContext, ILogger logger)
+public class Get(ServerDbContext dbContext, ILogger logger)
 {
     public async Task<Results<Ok<Member>, NotFound, InternalServerError<Exception>>> GetMember
         (Guild.GuildId guildId, Player.PlayerId playerId) =>
