@@ -5,7 +5,7 @@ namespace GuildSaber.Database.Models.Server.StrongTypes;
 
 public readonly record struct Description
 {
-    public const int MaxLength = 100;
+    public const int MaxLength = 256;
     private readonly string _value;
 
     private Description(string value)

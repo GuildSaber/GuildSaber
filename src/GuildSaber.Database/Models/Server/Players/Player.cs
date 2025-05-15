@@ -17,6 +17,9 @@ public class Player
     {
         public static bool TryParse(string from, IFormatProvider formatProvider, out PlayerId value)
             => throw new NotImplementedException();
+
+        public static implicit operator ulong(PlayerId id)
+            => id.Value;
     }
 }
 

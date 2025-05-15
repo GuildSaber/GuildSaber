@@ -18,6 +18,9 @@ public class GuildContext
     public IList<Point> Points { get; init; } = null!;
     public readonly record struct GuildContextId(ulong Value) : IStrongType<ulong>;
 
+    /// <summary>
+    /// Maybe this will end up being a type union (from inheritance), but it will fit for now.
+    /// </summary>
     public enum ContextType
     {
         Default = 0,

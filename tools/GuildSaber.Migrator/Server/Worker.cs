@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using GuildSaber.Database.Contexts.Server;
+using GuildSaber.Migrator.Server.Seeders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -62,6 +63,10 @@ public class Worker(
             {
                 await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
+                await GuildSeeder.SeedAsync(dbContext, cancellationToken);
+                await PlayerSeeder.SeedAsync(dbContext, cancellationToken);
+                await GameModeSeeder.SeedAsync(dbContext, cancellationToken);
+                await PlayModeSeeder.SeedAsync(dbContext, cancellationToken);
 
                 await transaction.CommitAsync(cancellationToken);
             }, cancellationToken);

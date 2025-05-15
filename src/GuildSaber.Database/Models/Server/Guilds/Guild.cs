@@ -10,9 +10,9 @@ namespace GuildSaber.Database.Models.Server.Guilds;
 
 public class Guild
 {
-    public GuildId Id { get; init; }
-    public GuildInfo Info { get; set; }
-    public GuildJoinRequirements Requirements { get; set; }
+    public required GuildId Id { get; init; }
+    public required GuildInfo Info { get; set; }
+    public required GuildJoinRequirements Requirements { get; set; }
 
     public IList<GuildContext> Contexts { get; init; } = null!;
     public IList<Member> Members { get; init; } = null!;
@@ -23,6 +23,9 @@ public class Guild
     {
         public static bool TryParse(string from, IFormatProvider formatProvider, out GuildId value)
             => throw new NotImplementedException();
+
+        public static implicit operator ulong(GuildId id)
+            => id.Value;
     }
 }
 

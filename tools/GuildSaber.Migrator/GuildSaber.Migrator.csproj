@@ -20,4 +20,8 @@
         <ProjectReference Include="..\..\src\GuildSaber.Database\GuildSaber.Database.csproj"/>
         <ProjectReference Include="..\..\src\GuildSaber.DiscordBot\GuildSaber.DiscordBot.csproj"/>
     </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="DiscordBot\Seeders\"/>
+    </ItemGroup>
 </Project>

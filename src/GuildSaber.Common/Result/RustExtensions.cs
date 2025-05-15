@@ -51,6 +51,19 @@ public static class RustExtensions
         => self.IsSuccess
             ? self.Value
             : throw new ErrorException(self.Error!.ToString()!);
+    
+    /// <summary>
+    /// Unwraps the Result object. If the Result is successful, it returns the value.
+    /// If the Result is a failure, it throws an ErrorException with the error message.
+    /// </summary>
+    /// <typeparam name="T">The type of the result value.</typeparam>
+    /// <param name="self">The Result to unwrap.</param>
+    /// <returns>The result value if the Result is successful.</returns>
+    /// <exception cref="ErrorException">Thrown when the Result is a failure.</exception>
+    public static T Unwrap<T>(this Result<T> self)
+        => self.IsSuccess
+            ? self.Value
+            : throw new ErrorException(self.Error);
 
     /// <summary>
     /// Unwraps the Result object. If the Result is successful, it returns the value.

@@ -8,7 +8,7 @@ var mariaDb = builder.AddMySql("mariaDB")
     .WithDataVolume();
 mariaDb.WithPhpMyAdmin(option => option.WithParentRelationship(mariaDb), "phpmyadmin");
 
-var guildsaberDb = mariaDb.AddDatabase("guildsaber-db");
+var guildsaberDb = mariaDb.AddDatabase("server-db");
 var discordbotDb = mariaDb.AddDatabase("discordbot-db");
 
 var cache = builder.AddRedis("cache");
