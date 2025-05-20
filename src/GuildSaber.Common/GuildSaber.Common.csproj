@@ -15,4 +15,8 @@
         <PackageReference Include="CSharpFunctionalExtensions.StrongName" Version="3.6.0"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <Folder Include="Services\BeatLeader\StrongTypes\"/>
+    </ItemGroup>
+
 </Project>

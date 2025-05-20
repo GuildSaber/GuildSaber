@@ -25,7 +25,7 @@ public static class PlayerSeeder
             },
             LinkedAccounts = new PlayerLinkedAccounts
             {
-                BeatLeaderId = BLId.CreateUnsafe(76561198126131670).Value,
+                BeatLeaderId = BeatLeaderId.CreateUnsafe(76561198126131670).Value,
                 DiscordId = null,
                 ScoreSaberId = ScoreSaberId.CreateUnsafe(76561198126131670).Value
             },

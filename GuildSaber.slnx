@@ -10,7 +10,7 @@
         <Project Path="src\GuildSaber.DiscordBot\GuildSaber.DiscordBot.csproj" Type="Classic C#"/>
     </Folder>
     <Folder Name="/tests/">
-        <Project Path="tests\GuildSaber.Database.UnitTests\GuildSaber.Database.UnitTests.csproj" Type="Classic C#"/>
+        <Project Path="tests\GuildSaber.UnitTests\GuildSaber.UnitTests.csproj" Type="Classic C#"/>
     </Folder>
     <Folder Name="/tools/">
         <Project Path="tools\GuildSaber.Migrator\GuildSaber.Migrator.csproj" Type="Classic C#"/>

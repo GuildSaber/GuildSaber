@@ -51,7 +51,7 @@ public static class RustExtensions
         => self.IsSuccess
             ? self.Value
             : throw new ErrorException(self.Error!.ToString()!);
-    
+
     /// <summary>
     /// Unwraps the Result object. If the Result is successful, it returns the value.
     /// If the Result is a failure, it throws an ErrorException with the error message.
@@ -102,11 +102,11 @@ public static class RustExtensions
     {
         try
         {
-            return CSharpFunctionalExtensions.Result.Success<T, E>(await func);
+            return Success<T, E>(await func);
         }
         catch (Exception ex)
         {
-            return CSharpFunctionalExtensions.Result.Failure<T, E>(errorHandler(ex));
+            return Failure<T, E>(errorHandler(ex));
         }
     }
 
@@ -116,11 +116,11 @@ public static class RustExtensions
     {
         try
         {
-            return CSharpFunctionalExtensions.Result.Success<T, E>(await func);
+            return Success<T, E>(await func);
         }
         catch (Exception ex)
         {
-            return CSharpFunctionalExtensions.Result.Failure<T, E>(errorHandler(ex));
+            return Failure<T, E>(errorHandler(ex));
         }
     }
 

@@ -1,6 +1,5 @@
 ﻿using CSharpFunctionalExtensions;
 using GuildSaber.Common.Helpers;
-using static CSharpFunctionalExtensions.Result;
 
 namespace GuildSaber.Common.Result;
 

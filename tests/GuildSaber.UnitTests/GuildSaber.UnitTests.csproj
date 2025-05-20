@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
         <LangVersion>preview</LangVersion>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -27,7 +28,13 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\src\GuildSaber.Api\GuildSaber.Api.csproj"/>
         <ProjectReference Include="..\..\src\GuildSaber.Database\GuildSaber.Database.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Common\"/>
+        <Folder Include="DiscordBot\"/>
     </ItemGroup>
 
 </Project>
