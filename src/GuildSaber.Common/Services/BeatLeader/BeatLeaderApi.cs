@@ -15,6 +15,21 @@ public class BeatLeaderApi(HttpClient httpClient)
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
+    /// <summary>
+    /// Generic options for paginated requests with sorting and ordering capabilities.
+    /// </summary>
+    /// <typeparam name="TSortBy">The enum type defining available sort fields.</typeparam>
+    public record struct PaginatedRequestOptions<TSortBy>(
+        int Page = 1,
+        int PageSize = 8,
+        int MaxPage = int.MaxValue,
+        TSortBy SortBy = default,
+        Order Order = Order.Desc
+    ) where TSortBy : struct, Enum
+    {
+        public static readonly PaginatedRequestOptions<TSortBy> Default = new();
+    }
+
     private Uri GetPlayerScoreCompactUrl(ulong playerId, PaginatedRequestOptions<ScoresSortBy> requestOptions)
         => new(
             $"player/{playerId}/scores/compact?page={requestOptions.Page}&count={requestOptions.PageSize}" +
@@ -114,19 +129,4 @@ public class BeatLeaderApi(HttpClient httpClient)
             var response => await Try(()
                 => response.Content.ReadFromJsonAsync<PlayerResponseFullWithStats>(_jsonOptions))
         };
-
-    /// <summary>
-    /// Generic options for paginated requests with sorting and ordering capabilities.
-    /// </summary>
-    /// <typeparam name="TSortBy">The enum type defining available sort fields.</typeparam>
-    public record struct PaginatedRequestOptions<TSortBy>(
-        int Page = 1,
-        int PageSize = 8,
-        int MaxPage = int.MaxValue,
-        TSortBy SortBy = default,
-        Order Order = Order.Desc
-    ) where TSortBy : struct, Enum
-    {
-        public static readonly PaginatedRequestOptions<TSortBy> Default = new();
-    }
 }
