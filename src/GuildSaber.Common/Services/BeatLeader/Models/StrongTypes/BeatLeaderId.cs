@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using CSharpFunctionalExtensions;
 
-namespace GuildSaber.Database.Models.Server.StrongTypes;
+namespace GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 
-public readonly record struct BeatLeaderId
+public readonly record struct BeatLeaderId : IComparable<BeatLeaderId>
 {
     private readonly ulong _value;
 
@@ -13,12 +13,14 @@ public readonly record struct BeatLeaderId
     private static Func<string, string> VerificationUrl =>
         id => $"https://api.beatleader.xyz/player/{id}/exists";
 
+    public int CompareTo(BeatLeaderId other) => _value.CompareTo(other._value);
+
     public static implicit operator ulong(BeatLeaderId id)
         => id._value;
 
     public static Task<Result<Maybe<BeatLeaderId>>> CreateAsync(ulong value, HttpClient httpClient)
         => ExistOnRemote(value.ToString(), httpClient)
-            .Map(exists => exists ? From(new BeatLeaderId(value)) : None);
+            .Map(static (exists, id) => exists ? From(new BeatLeaderId(id)) : None, context: value);
 
     private static Task<Result<bool>> ExistOnRemote(string id, HttpClient httpClient)
         => Try(() => httpClient.GetAsync(VerificationUrl(id)))

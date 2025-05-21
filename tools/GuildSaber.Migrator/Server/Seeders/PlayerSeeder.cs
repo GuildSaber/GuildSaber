@@ -1,3 +1,4 @@
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.Server.StrongTypes;

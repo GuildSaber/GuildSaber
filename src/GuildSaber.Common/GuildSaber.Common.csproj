@@ -8,15 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="CSharpFunctionalExtensions" Version="3.6.0"/>
         <PackageReference Include="CSharpFunctionalExtensions.Analyzers" Version="1.4.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="CSharpFunctionalExtensions.StrongName" Version="3.6.0"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="Services\BeatLeader\StrongTypes\"/>
     </ItemGroup>
 
 </Project>

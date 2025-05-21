@@ -1,9 +1,8 @@
 using System.Linq.Expressions;
 using FluentAssertions;
-using GuildSaber.Api.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models;
-using GuildSaber.Database.Models.Server.StrongTypes;
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.UnitTests.Utils;
 
 namespace GuildSaber.UnitTests.Api.Services;
@@ -28,7 +27,7 @@ public class BeatLeaderApiTests
     {
         // Arrange
         var playerId = _invalidBeatLeaderId;
-        var requestOptions = new BeatLeaderApiBase.PaginatedRequestOptions<ScoresSortBy>
+        var requestOptions = new BeatLeaderApi.PaginatedRequestOptions<ScoresSortBy>
         {
             Page = 1,
             PageSize = 2,
@@ -58,7 +57,7 @@ public class BeatLeaderApiTests
     {
         // Arrange
         var playerId = _validBeatLeaderId;
-        var requestOptions = new BeatLeaderApiBase.PaginatedRequestOptions<ScoresSortBy>
+        var requestOptions = new BeatLeaderApi.PaginatedRequestOptions<ScoresSortBy>
         {
             Page = 1,
             PageSize = 2,
@@ -97,7 +96,7 @@ public class BeatLeaderApiTests
     {
         // Arrange
         var playerId = _validBeatLeaderId;
-        var requestOptions = new BeatLeaderApiBase.PaginatedRequestOptions<ScoresSortBy>
+        var requestOptions = new BeatLeaderApi.PaginatedRequestOptions<ScoresSortBy>
         {
             Page = 1,
             PageSize = 2,
@@ -114,5 +113,18 @@ public class BeatLeaderApiTests
 
             compactScores.Should().NotBeNullOrEmpty("because we expect to receive scores");
         }
+    }
+
+    [Fact]
+    public async Task GetPlayerProfile_ShouldReturnNull_WhenInvalidPlayerId()
+    {
+        // Arrange
+        var playerId = _invalidBeatLeaderId;
+
+        // Act
+        var profile = await _beatLeaderApi.GetPlayerProfile(playerId);
+
+        // Assert
+        profile.Should().SucceedWith(null);
     }
 }

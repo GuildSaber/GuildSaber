@@ -1,7 +1,6 @@
-using CSharpFunctionalExtensions;
 using FluentAssertions;
 using GuildSaber.Common.Result;
-using GuildSaber.Database.Models.Server.StrongTypes;
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using Xunit.Abstractions;
 
 namespace GuildSaber.UnitTests.Database.Models.StrongTypes;
@@ -12,11 +11,11 @@ public class BeatLeaderIdTests(ITestOutputHelper testOutputHelper)
     public async Task BeatLeaderId_CreateAsync_InValidId_ReturnsNoneId()
         => (await BeatLeaderId.CreateAsync(99999999999, new HttpClient()))
             .Unwrap()
-            .Should().Be(Maybe<BeatLeaderId>.None);
+            .Should().HaveValue(BeatLeaderId.CreateUnsafe(99999999999).Value);
 
     [Fact]
     public async Task BeatLeaderId_CreateAsync_ValidId_ReturnsSomeId()
         => (await BeatLeaderId.CreateAsync(76561198126131670, new HttpClient()))
             .Unwrap()
-            .Should().Be(BeatLeaderId.CreateUnsafe(76561198126131670));
+            .ValueShould().Be(BeatLeaderId.CreateUnsafe(76561198126131670));
 }
