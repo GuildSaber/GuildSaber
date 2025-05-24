@@ -125,6 +125,6 @@ public class BeatLeaderApiTests
         var profile = await _beatLeaderApi.GetPlayerProfile(playerId);
 
         // Assert
-        profile.Should().SucceedWith(null);
+        profile.SuccessShould().BeNull("A 404 response should return a null success response");
     }
 }
