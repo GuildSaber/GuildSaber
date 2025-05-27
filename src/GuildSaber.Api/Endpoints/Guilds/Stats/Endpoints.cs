@@ -30,7 +30,6 @@ public class Endpoints : IEndPoints
                     GuildId = x.Id,
                     MemberCount = x.Members.Count,
                     RankedScoreCount = dbContext.RankedScores
-                        .DistinctBy(y => y.RankedMapId)
                         .Count(y => y.GuildId == guildId)
                 }).FirstOrDefaultAsync() switch
             {
