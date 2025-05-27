@@ -21,8 +21,17 @@ public class Guild
 
     public readonly record struct GuildId(ulong Value) : IStrongType<ulong>
     {
-        public static bool TryParse(string from, IFormatProvider formatProvider, out GuildId value)
-            => throw new NotImplementedException();
+        public static bool TryParse(string from, out GuildId value)
+        {
+            if (ulong.TryParse(from, out var id))
+            {
+                value = new GuildId(id);
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
 
         public static implicit operator ulong(GuildId id)
             => id.Value;

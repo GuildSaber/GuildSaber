@@ -33,7 +33,7 @@ public class BeatLeaderApi(HttpClient httpClient)
     private Uri GetPlayerScoreCompactUrl(ulong playerId, PaginatedRequestOptions<ScoresSortBy> requestOptions)
         => new(
             $"player/{playerId}/scores/compact?page={requestOptions.Page}&count={requestOptions.PageSize}" +
-            $"&order={requestOptions.Order}&sort={requestOptions.SortBy}",
+            $"&order={requestOptions.Order}&sortBy={requestOptions.SortBy}",
             UriKind.Relative
         );
 

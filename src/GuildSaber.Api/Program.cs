@@ -1,11 +1,10 @@
-using GuildSaber.Api.Features.Guilds._guildId_.Members;
+using GuildSaber.Api.Endpoints.Internal;
 using GuildSaber.Api.Hangfire;
 using GuildSaber.Api.Hangfire.Configuration;
 using GuildSaber.Database;
 using GuildSaber.Database.Contexts.Server;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
-using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
 using StackExchange.Redis;
 
@@ -19,38 +18,39 @@ var connectionMultiplexer = ConnectionMultiplexer.Connect(builder.Configuration.
 
 builder.AddServiceDefaults();
 builder.Services.AddHangfire((serviceCollection, option) =>
-{
-    option.UseSimpleAssemblyNameTypeSerializer();
-    option.UseRecommendedSerializerSettings();
-    option.UseRedisStorage(connectionMultiplexer);
-    option.UseActivator(new HangfireActivator(serviceCollection));
-    option.UseFilter(new AutomaticRetryAttribute
     {
-        Attempts = builder.Configuration.GetSection(RetryPolicyOptions.RetryPolicyOptionsSectionsKey)
-            .Get<RetryPolicyOptions>()!.MaxRetryAttempts
-    });
-}).AddHangfireServer();
+        option.UseSimpleAssemblyNameTypeSerializer();
+        option.UseRecommendedSerializerSettings();
+        option.UseRedisStorage(connectionMultiplexer);
+        option.UseActivator(new HangfireActivator(serviceCollection));
+        option.UseFilter(new AutomaticRetryAttribute
+        {
+            Attempts = builder.Configuration.GetSection(RetryPolicyOptions.RetryPolicyOptionsSectionsKey)
+                .Get<RetryPolicyOptions>()!.MaxRetryAttempts
+        });
+    }).AddHangfireServer()
+    .AddProblemDetails();
 
 builder.AddMySqlDbContext<ServerDbContext>(connectionName: Constants.ServerDbConnectionStringKey);
 builder.Services.AddOpenApi();
+builder.Services.AddEndpoints<Program>(builder.Configuration);
 
 var app = builder.Build();
+
+app.MapOpenApi();
 app.MapDefaultEndpoints()
-    .MapOpenApi();
+    .MapEndpoints<Program>();
 
 app.MapHangfireDashboard(new DashboardOptions
 {
     Authorization = [new HangFireDashboardAuthorizationFilter()]
 });
 
-app.MapScalarApiReference(options =>
+app.MapScalarApiReference("/", options =>
 {
     options.WithTitle("GuildSaber's Api")
         .WithTheme(ScalarTheme.Purple)
         .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch);
 });
-
-app.MapGet("/guilds/{guildId}/members/{playerId}", ([FromServices] ServerDbContext db, [FromServices] ILogger log) =>
-    new Get(db, log).GetMember);
 
 app.Run();

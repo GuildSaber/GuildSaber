@@ -15,8 +15,17 @@ public class Player
 
     public readonly record struct PlayerId(ulong Value) : IStrongType<ulong>
     {
-        public static bool TryParse(string from, IFormatProvider formatProvider, out PlayerId value)
-            => throw new NotImplementedException();
+        public static bool TryParse(string from, out PlayerId value)
+        {
+            if (ulong.TryParse(from, out var id))
+            {
+                value = new PlayerId(id);
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
 
         public static implicit operator ulong(PlayerId id)
             => id.Value;
