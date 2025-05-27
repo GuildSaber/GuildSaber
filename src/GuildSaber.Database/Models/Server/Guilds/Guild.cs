@@ -1,7 +1,6 @@
 using GuildSaber.Database.Models.Server.Guilds.Boosts;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
-using GuildSaber.Database.Models.Server.StrongTypes.Abstractions;
 using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -19,7 +18,7 @@ public class Guild
     public IList<Boost> Boosts { get; init; } = null!;
     public IList<Point> Points { get; init; } = null!;
 
-    public readonly record struct GuildId(ulong Value) : IStrongType<ulong>
+    public readonly record struct GuildId(ulong Value) : IEFStrongTypedId<GuildId, ulong>
     {
         public static bool TryParse(string from, out GuildId value)
         {

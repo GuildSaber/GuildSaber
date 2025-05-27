@@ -1,4 +1,4 @@
-using GuildSaber.Database.Models.Server.StrongTypes.Abstractions;
+using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -9,7 +9,7 @@ public class PlayMode
     public PlayModeId Id { get; init; }
     public required string Name { get; set; }
 
-    public readonly record struct PlayModeId(ulong Value) : IStrongType<ulong>;
+    public readonly record struct PlayModeId(ulong Value) : IEFStrongTypedId<PlayModeId, ulong>;
 }
 
 public class PlayModeConfiguration : IEntityTypeConfiguration<PlayMode>

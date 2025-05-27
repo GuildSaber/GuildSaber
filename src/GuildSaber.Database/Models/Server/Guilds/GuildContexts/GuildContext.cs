@@ -1,5 +1,4 @@
 ﻿using GuildSaber.Database.Models.Server.Guilds.Points;
-using GuildSaber.Database.Models.Server.StrongTypes.Abstractions;
 using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -16,7 +15,8 @@ public class GuildContext
     public GuildContextInfo Info { get; set; }
 
     public IList<Point> Points { get; init; } = null!;
-    public readonly record struct GuildContextId(ulong Value) : IStrongType<ulong>;
+
+    public readonly record struct GuildContextId(ulong Value) : IEFStrongTypedId<GuildContextId, ulong>;
 
     /// <summary>
     /// Maybe this will end up being a type union (from inheritance), but it will fit for now.

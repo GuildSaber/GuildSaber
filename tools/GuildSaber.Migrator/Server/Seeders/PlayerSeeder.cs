@@ -1,7 +1,7 @@
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Players;
-using GuildSaber.Database.Models.Server.StrongTypes;
+using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore;
 
 namespace GuildSaber.Migrator.Server.Seeders;

@@ -1,4 +1,5 @@
-﻿using GuildSaber.Database.Models.Server.StrongTypes.Abstractions;
+﻿using CSharpFunctionalExtensions;
+using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -9,7 +10,15 @@ public class GameMode
     public GameModeId Id { get; init; }
     public required string Name { get; set; }
 
-    public readonly record struct GameModeId(ulong Value) : IStrongType<ulong>;
+    public readonly record struct GameModeId(ulong Value) : IEFStrongTypedId<GameModeId, ulong>
+    {
+        public static Result<GameModeId> TryCreate(ulong? value) => value switch
+        {
+            null => Failure<GameModeId>("GameMode ID must not be null."),
+            0 => Failure<GameModeId>("GameMode ID must not be 0."),
+            _ => Success(new GameModeId(value.Value))
+        };
+    }
 }
 
 public class GameModeConfiguration : IEntityTypeConfiguration<GameMode>

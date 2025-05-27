@@ -4,7 +4,8 @@ using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.Scores;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
-using GuildSaber.Database.Models.Server.StrongTypes.Abstractions;
+using GuildSaber.Database.Models.StrongTypes;
+using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using GuildId = GuildSaber.Database.Models.Server.Guilds.Guild.GuildId;
@@ -29,7 +30,9 @@ public class RankedScore
     public ScoreId ScoreId { get; set; }
     public ScoreId PrevScoreId { get; set; }
 
-    public readonly record struct RankedScoreId(ulong Value) : IStrongType<ulong>;
+    public EffectiveScore EffectiveScore { get; set; }
+
+    public readonly record struct RankedScoreId(ulong Value) : IEFStrongTypedId<RankedScoreId, ulong>;
 }
 
 public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
@@ -38,6 +41,8 @@ public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).HasGenericConversion<RankedScore.RankedScoreId, ulong>();
+        builder.Property(x => x.EffectiveScore)
+            .HasConversion<ulong>(from => from, to => EffectiveScore.CreateUnsafe(to).Value);
 
         builder.HasOne<Guild>()
             .WithMany().HasForeignKey(x => x.GuildId)

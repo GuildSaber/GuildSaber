@@ -1,4 +1,4 @@
-using GuildSaber.Database.Models.Server.StrongTypes.Abstractions;
+using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using GuildId = GuildSaber.Database.Models.Server.Guilds.Guild.GuildId;
@@ -15,7 +15,7 @@ public class Point
     public CurveSettings CurveSettings { get; set; }
     public WeightingSettings WeightingSettings { get; set; }
 
-    public readonly record struct PointId(int Value) : IStrongType<int>;
+    public readonly record struct PointId(int Value) : IEFStrongTypedId<PointId, int>;
 }
 
 public class PointConfiguration : IEntityTypeConfiguration<Point>

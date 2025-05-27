@@ -1,5 +1,5 @@
 ﻿using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
-using GuildSaber.Database.Models.Server.StrongTypes;
+using GuildSaber.Database.Models.StrongTypes;
 using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

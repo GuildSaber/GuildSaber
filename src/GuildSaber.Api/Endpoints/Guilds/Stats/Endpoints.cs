@@ -28,8 +28,7 @@ public class Endpoints : IEndPoints
                 {
                     GuildId = x.Id,
                     MemberCount = x.Members.Count,
-                    RankedScoreCount = dbContext.RankedScores
-                        .Count(y => y.GuildId == guildId)
+                    RankedScoreCount = dbContext.RankedScores.Count(y => y.GuildId == guildId)
                 }).FirstOrDefaultAsync() switch
             {
                 var response when response.GuildId == new Guild.GuildId(0) => TypedResults.NotFound(),

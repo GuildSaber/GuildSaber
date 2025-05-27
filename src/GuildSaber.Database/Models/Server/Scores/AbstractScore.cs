@@ -1,6 +1,6 @@
 using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
-using GuildSaber.Database.Models.Server.StrongTypes.Abstractions;
+using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SongDifficultyId = GuildSaber.Database.Models.Server.Songs.SongDifficulties.SongDifficulty.SongDifficultyId;
@@ -27,7 +27,7 @@ public abstract record AbstractScore
     public PlayerHardwareInfo.EHMD HMD { get; set; }
     public enum EScoreType : byte { ScoreSaber = 0, BeatLeader = 1 }
 
-    public readonly record struct ScoreId(ulong Value) : IStrongType<ulong>;
+    public readonly record struct ScoreId(ulong Value) : IEFStrongTypedId<ScoreId, ulong>;
 
     [Flags]
     public enum EModifiers

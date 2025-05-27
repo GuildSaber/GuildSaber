@@ -2,7 +2,7 @@
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
 using GuildSaber.Database.Models.Server.Songs;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
-using GuildSaber.Database.Models.Server.StrongTypes.Abstractions;
+using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -19,7 +19,7 @@ public class RankedMap
 
     public RankedMapRequirements Requirements { get; init; }
     public IList<MapVersion> MapVersions { get; init; } = null!;
-    public readonly record struct RankedMapId(ulong Value) : IStrongType<ulong>;
+    public readonly record struct RankedMapId(ulong Value) : IEFStrongTypedId<RankedMapId, ulong>;
 }
 
 public class RankedMapConfiguration : IEntityTypeConfiguration<RankedMap>

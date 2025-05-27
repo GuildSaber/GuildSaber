@@ -17,10 +17,12 @@ public class Endpoints : IEndPoints
             .WithTag("Guilds.Members", description: "Endpoints for managing guild members by guild id.");
 
         group.MapGet("/", async (Guild.GuildId guildId, ServerDbContext dbContext)
-            => await dbContext.Members.Where(x => x.GuildId == guildId).ToListAsync()
-        );
+                => await dbContext.Members.Where(x => x.GuildId == guildId).ToListAsync()
+            ).WithName("GetMembers")
+            .WithSummary("Get all members of a guild.")
+            .WithDescription("Get all members of a guild by guild id.");
 
-        var withPlayerGroup = group.MapGroup("{playerId}")
+        var withPlayerGroup = group.MapGroup("/{playerId}")
             .WithSummary("Endpoints for managing a specific guild member.")
             .WithDescription("Endpoints for managing a specific guild member by player id.");
 

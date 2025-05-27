@@ -1,3 +1,3 @@
 namespace GuildSaber.Api.Endpoints.Guilds.Members;
 
-public class Responses { }
+public static class Responses { }

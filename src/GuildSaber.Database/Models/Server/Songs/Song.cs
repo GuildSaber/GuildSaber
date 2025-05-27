@@ -1,6 +1,6 @@
 ﻿using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
-using GuildSaber.Database.Models.Server.StrongTypes;
-using GuildSaber.Database.Models.Server.StrongTypes.Abstractions;
+using GuildSaber.Database.Models.StrongTypes;
+using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,7 +16,8 @@ public class Song
     public SongStats Stats { get; set; }
 
     public SongDifficulty[] SongDifficulties { get; init; } = null!;
-    public readonly record struct SongId(ulong Value) : IStrongType<ulong>;
+
+    public readonly record struct SongId(ulong Value) : IEFStrongTypedId<SongId, ulong>;
 }
 
 public class SongConfiguration : IEntityTypeConfiguration<Song>
@@ -29,7 +30,8 @@ public class SongConfiguration : IEntityTypeConfiguration<Song>
             .HasConversion<string>(from => from.ToString(), to => SongHash.CreateUnsafe(to).Value)
             .HasMaxLength(40);
         builder.Property(x => x.Id).HasGenericConversion<Song.SongId, ulong>();
-        builder.Property(x => x.BeatSaverKey).HasConversion<string?>(from => from, to => BeatSaverKey.CreateUnsafe(to));
+        builder.Property(x => x.BeatSaverKey)
+            .HasConversion<string?>(from => from, to => BeatSaverKey.CreateUnsafe(to));
         builder.ComplexProperty(x => x.Info);
         builder.ComplexProperty(x => x.Stats);
     }

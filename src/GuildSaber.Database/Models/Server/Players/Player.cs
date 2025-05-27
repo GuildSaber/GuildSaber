@@ -1,4 +1,3 @@
-using GuildSaber.Database.Models.Server.StrongTypes.Abstractions;
 using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -13,7 +12,7 @@ public class Player
     public PlayerLinkedAccounts LinkedAccounts { get; set; }
     public PlayerSubscriptionInfo SubscriptionInfo { get; set; }
 
-    public readonly record struct PlayerId(ulong Value) : IStrongType<ulong>
+    public readonly record struct PlayerId(ulong Value) : IEFStrongTypedId<PlayerId, ulong>
     {
         public static bool TryParse(string from, out PlayerId value)
         {

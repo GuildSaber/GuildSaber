@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using CSharpFunctionalExtensions;
 
-namespace GuildSaber.Database.Models.Server.StrongTypes;
+namespace GuildSaber.Database.Models.StrongTypes;
 
 public readonly record struct EffectiveScore
 {

@@ -1,6 +1,7 @@
-﻿using GuildSaber.Database.Models.Server.Songs.SongDifficulties.GameModes;
-using GuildSaber.Database.Models.Server.StrongTypes;
-using GuildSaber.Database.Models.Server.StrongTypes.Abstractions;
+﻿using CSharpFunctionalExtensions;
+using GuildSaber.Database.Models.Server.Songs.SongDifficulties.GameModes;
+using GuildSaber.Database.Models.StrongTypes;
+using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -15,7 +16,8 @@ public class SongDifficulty
 
     public GameMode GameMode { get; init; } = null!;
     public Song Song { get; init; } = null!;
-    public readonly record struct SongDifficultyId(ulong Value) : IStrongType<ulong>;
+
+    public readonly record struct SongDifficultyId(ulong Value) : IEFStrongTypedId<SongDifficultyId, ulong>;
 }
 
 public class SongDifficultyConfiguration : IEntityTypeConfiguration<SongDifficulty>

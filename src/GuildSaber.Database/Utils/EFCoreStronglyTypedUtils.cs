@@ -1,8 +1,13 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GuildSaber.Database.Models.Server.StrongTypes.Abstractions;
+namespace GuildSaber.Database.Utils;
 
-public static class StrongTypeEFCoreExt
+public interface IEFStrongTypedId<T, TValue> where TValue : struct where T : struct, IEFStrongTypedId<T, TValue>
+{
+    TValue Value { get; init; }
+}
+
+public static class EFCoreStronglyTypedUtils
 {
     /// <summary>
     /// Configures a property of a strongly typed ID to use a value converter.
@@ -18,7 +23,9 @@ public static class StrongTypeEFCoreExt
     /// property type (TProperty) when reading from and writing to the database.
     /// </remarks>
     public static PropertyBuilder<TProperty> HasGenericConversion<TProperty, TType>(
-        this PropertyBuilder<TProperty> propertyBuilder) where TProperty : IStrongType<TType>, new()
+        this PropertyBuilder<TProperty> propertyBuilder)
+        where TProperty : struct, IEFStrongTypedId<TProperty, TType>
+        where TType : struct
         => propertyBuilder.HasConversion(
             v => v.Value,
             v => new TProperty { Value = v }
