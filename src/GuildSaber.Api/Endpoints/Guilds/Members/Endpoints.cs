@@ -1,4 +1,5 @@
 using GuildSaber.Api.Endpoints.Internal;
+using GuildSaber.Api.Extensions;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Members;
@@ -13,9 +14,7 @@ public class Endpoints : IEndPoints
     public static void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("guilds/{guildId}/members")
-            .WithTags("Guilds.Members")
-            .WithSummary("Manage Guild Members")
-            .WithDescription("Endpoints for managing guild members by guild id.");
+            .WithTag("Guilds.Members", description: "Endpoints for managing guild members by guild id.");
 
         group.MapGet("/", async (Guild.GuildId guildId, ServerDbContext dbContext)
             => await dbContext.Members.Where(x => x.GuildId == guildId).ToListAsync()
@@ -29,7 +28,7 @@ public class Endpoints : IEndPoints
             .WithName("GetMember")
             .WithSummary("Get a member of the guild by player id.")
             .WithDescription("Get a member of the guild by player id.");
-        
+
         var atMeGroup = group.MapGroup("/@me")
             .WithSummary("Manage current user's guild membership")
             .WithDescription("Endpoints for managing the current user's guild membership by guild id.");

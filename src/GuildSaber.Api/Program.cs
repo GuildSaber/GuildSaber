@@ -1,4 +1,5 @@
 using GuildSaber.Api.Endpoints.Internal;
+using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Hangfire;
 using GuildSaber.Api.Hangfire.Configuration;
 using GuildSaber.Database;
@@ -32,7 +33,7 @@ builder.Services.AddHangfire((serviceCollection, option) =>
     .AddProblemDetails();
 
 builder.AddMySqlDbContext<ServerDbContext>(connectionName: Constants.ServerDbConnectionStringKey);
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options => options.AddTagDescriptionSupport());
 builder.Services.AddEndpoints<Program>(builder.Configuration);
 
 var app = builder.Build();

@@ -1,4 +1,5 @@
 using GuildSaber.Api.Endpoints.Internal;
+using GuildSaber.Api.Extensions;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -11,9 +12,7 @@ public class Endpoints : IEndPoints
     public static void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/guilds/{guildId}/stats")
-            .WithTags("Guilds.Stats")
-            .WithSummary("Explore Guild Statistics")
-            .WithDescription("Endpoints for exploring guild statistics by guild id.");
+            .WithTag("Guilds.Stats", description: "Endpoints for exploring guild statistics by guild id.");
 
         group.MapGet("/", GetGuildStatsAsync)
             .WithName("GetGuildStats")

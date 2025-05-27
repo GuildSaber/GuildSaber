@@ -1,4 +1,5 @@
 using GuildSaber.Api.Endpoints.Internal;
+using GuildSaber.Api.Extensions;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,9 +10,7 @@ public class Endpoints : IEndPoints
     public static void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/guilds")
-            .WithTags("Guilds")
-            .WithSummary("Endpoints for managing guilds.")
-            .WithDescription("Endpoints for managing guilds in the server.");
+            .WithTag("Guilds", description: "Endpoints for managing guilds in the server.");
 
         group.MapGet("/", (ServerDbContext dbContext) => dbContext.Guilds.ToListAsync())
             .WithName("GetGuilds")
