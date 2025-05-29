@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Diagnostics;
 
-namespace GuildSaber.Database.Utils;
+namespace GuildSaber.Database.Extensions;
 
 public class EFCoreReadOnlyInterceptor : SaveChangesInterceptor
 {

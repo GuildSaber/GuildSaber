@@ -1,6 +1,6 @@
+using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
-using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SongDifficultyId = GuildSaber.Database.Models.Server.Songs.SongDifficulties.SongDifficulty.SongDifficultyId;

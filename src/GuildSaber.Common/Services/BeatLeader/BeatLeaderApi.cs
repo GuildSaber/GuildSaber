@@ -94,7 +94,7 @@ public class BeatLeaderApi(HttpClient httpClient)
     /// - Failure with an error message for other HTTP errors
     /// </remarks>
     public async Task<Result<PlayerResponseFull?>> GetPlayerProfile(BeatLeaderId playerId)
-        => await httpClient.GetAsync($"player/{playerId}?stats=false") switch
+        => await httpClient.GetAsync($"player/{(ulong)playerId}?stats=false") switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<PlayerResponseFull?>(null),
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
@@ -119,7 +119,7 @@ public class BeatLeaderApi(HttpClient httpClient)
     /// - Failure with an error message for other HTTP errors
     /// </remarks>
     public async Task<Result<PlayerResponseFullWithStats?>> GetPlayerProfileWithStats(BeatLeaderId playerId)
-        => await httpClient.GetAsync($"player/{playerId}?stats=true") switch
+        => await httpClient.GetAsync($"player/{(ulong)playerId}?stats=true") switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<PlayerResponseFullWithStats?>(null),
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }

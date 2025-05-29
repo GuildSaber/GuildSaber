@@ -15,7 +15,7 @@ public readonly record struct DiscordId
             ? Failure<DiscordId>("Discord ID must not be 0.")
             : Success(new DiscordId(value));
 
-    public static Result<DiscordId> TryParse(string value)
+    public static Result<DiscordId> TryParse(string? value)
         => ulong.TryParse(value, out var parsed)
             ? TryCreate(parsed)
             : Failure<DiscordId>("Discord ID must be a number.");

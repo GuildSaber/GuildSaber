@@ -2,9 +2,9 @@ using System.Runtime.CompilerServices;
 using CSharpFunctionalExtensions;
 using Microsoft.EntityFrameworkCore;
 
-namespace GuildSaber.Database.Utils;
+namespace GuildSaber.Database.Extensions;
 
-public static class EFCoreMonadicOperationUtils
+public static class EFCoreMonadicOperationExtensions
 {
     /// <summary>
     /// Asynchronously adds an entity to the DbContext and saves the changes.
@@ -83,6 +83,81 @@ public static class EFCoreMonadicOperationUtils
         catch (Exception exception)
         {
             return Failure<U, InsertError>(
+                // ReSharper disable once ExplicitCallerInfoArgument
+                new InsertError(exception, $"{callerMemberName}.[{nameof(AddAndSaveAsync)}]", callerFilePath)
+            );
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously adds an entity to the DbContext and saves the changes.
+    /// </summary>
+    /// <typeparam name="T">The type of the entity to be added.</typeparam>
+    /// <param name="context">The DbContext to which the entity will be added.</param>
+    /// <param name="entity">The entity to be added.</param>
+    /// <param name="callerMemberName">
+    /// The name of the calling method. This parameter is optional and is filled in by the
+    /// compiler.
+    /// </param>
+    /// <param name="callerFilePath">
+    /// The path of the file that contains the calling method. This parameter is optional and is
+    /// filled in by the compiler.
+    /// </param>
+    /// <returns>
+    /// Returns a UnitResult object on failure state represented by an InsertError if the operation fails.
+    /// </returns>
+    public static async Task<UnitResult<InsertError>> AddAndSaveAsync<T>(
+        this DbContext context, T entity,
+        [CallerMemberName] string callerMemberName = "",
+        [CallerFilePath] string callerFilePath = "") where T : class
+    {
+        try
+        {
+            context.Set<T>().Add(entity);
+            await context.SaveChangesAsync();
+            return UnitResult.Success<InsertError>();
+        }
+        catch (Exception exception)
+        {
+            return Failure(
+                // ReSharper disable once ExplicitCallerInfoArgument
+                new InsertError(exception, $"{callerMemberName}.[{nameof(AddAndSaveAsync)}]", callerFilePath)
+            );
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously adds an entity to the DbContext and saves the changes.
+    /// </summary>
+    /// <typeparam name="T">The type of the entity to be added.</typeparam>
+    /// <param name="context">The DbContext to which the entity will be added.</param>
+    /// <param name="createEntity">A function that creates the entity to be added.</param>
+    /// <param name="callerMemberName">
+    /// The name of the calling method. This parameter is optional and is filled in by the
+    /// compiler.
+    /// </param>
+    /// <param name="callerFilePath">
+    /// The path of the file that contains the calling method. This parameter is optional and is
+    /// filled in by the compiler.
+    /// </param>
+    /// <returns>
+    /// Returns a UnitResult object on failure state represented by an InsertError if the operation fails.
+    /// </returns>
+    public static async Task<UnitResult<InsertError>> AddAndSaveAsync<T>(
+        this DbContext context, Func<T> createEntity,
+        [CallerMemberName] string callerMemberName = "",
+        [CallerFilePath] string callerFilePath = "") where T : class
+    {
+        try
+        {
+            var entity = createEntity();
+            context.Set<T>().Add(entity);
+            await context.SaveChangesAsync();
+            return UnitResult.Success<InsertError>();
+        }
+        catch (Exception exception)
+        {
+            return Failure(
                 // ReSharper disable once ExplicitCallerInfoArgument
                 new InsertError(exception, $"{callerMemberName}.[{nameof(AddAndSaveAsync)}]", callerFilePath)
             );

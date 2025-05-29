@@ -1,13 +1,12 @@
-using GuildSaber.Api.Endpoints.Internal;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
-namespace GuildSaber.Api.Endpoints.Guilds.Stats;
+namespace GuildSaber.Api.Features.Guilds.GuildStats;
 
-public class Endpoints : IEndPoints
+public class GuildStatsEndpoints : IEndPoints
 {
     public static void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
@@ -20,11 +19,11 @@ public class Endpoints : IEndPoints
             .WithDescription("Get the statistics of the guild by guild id.");
     }
 
-    private static async Task<Results<Ok<Responses.GuildStatsResponse>, NotFound>> GetGuildStatsAsync
+    private static async Task<Results<Ok<GuildStatsResponses.GuildStatsResponse>, NotFound>> GetGuildStatsAsync
         (Guild.GuildId guildId, ServerDbContext dbContext)
         => await dbContext.Guilds
                 .Where(x => x.Id == guildId)
-                .Select(x => new Responses.GuildStatsResponse
+                .Select(x => new GuildStatsResponses.GuildStatsResponse
                 {
                     GuildId = x.Id,
                     MemberCount = x.Members.Count,

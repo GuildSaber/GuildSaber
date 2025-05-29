@@ -1,3 +1,4 @@
+using GuildSaber.Database.Models.Server.Auth;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Boosts;
 using GuildSaber.Database.Models.Server.Guilds.Members;
@@ -27,6 +28,7 @@ public class ServerDbContext : DbContext
     public DbSet<Point> Points { get; set; }
 
     public DbSet<Player> Players { get; set; }
+    public DbSet<Session> Sessions { get; set; }
 
     public DbSet<RankedMap> RankedMaps { get; set; }
     public DbSet<MapVersion> MapVersions { get; set; }
@@ -49,6 +51,7 @@ public class ServerDbContext : DbContext
         .ApplyConfiguration(new BoostConfiguration())
         .ApplyConfiguration(new PointConfiguration())
         .ApplyConfiguration(new PlayerConfiguration())
+        .ApplyConfiguration(new SessionConfiguration())
         .ApplyConfiguration(new AbstractScoreConfiguration())
         .ApplyConfiguration(new ScoreSaberScoreConfiguration())
         .ApplyConfiguration(new BeatLeaderScoreConfiguration())

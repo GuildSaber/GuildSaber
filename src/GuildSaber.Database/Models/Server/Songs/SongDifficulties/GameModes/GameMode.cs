@@ -1,5 +1,5 @@
 ﻿using CSharpFunctionalExtensions;
-using GuildSaber.Database.Utils;
+using GuildSaber.Database.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

@@ -1,7 +1,6 @@
-﻿using CSharpFunctionalExtensions;
+﻿using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties.GameModes;
 using GuildSaber.Database.Models.StrongTypes;
-using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

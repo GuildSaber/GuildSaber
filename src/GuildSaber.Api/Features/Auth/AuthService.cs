@@ -1,0 +1,109 @@
+using CSharpFunctionalExtensions;
+using GuildSaber.Api.Features.Auth.Settings;
+using GuildSaber.Common.Services.BeatLeader;
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
+using GuildSaber.Database.Contexts.Server;
+using GuildSaber.Database.Extensions;
+using GuildSaber.Database.Models.Mappers.BeatLeader;
+using GuildSaber.Database.Models.Server.Auth;
+using GuildSaber.Database.Models.Server.Players;
+using GuildSaber.Database.Models.StrongTypes;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using MyCSharp.HttpUserAgentParser.AspNetCore;
+using PlayerId = GuildSaber.Database.Models.Server.Players.Player.PlayerId;
+
+namespace GuildSaber.Api.Features.Auth;
+
+public class AuthService(
+    JwtService jwtService,
+    IOptions<SessionSettings> sessionSettings,
+    IHttpUserAgentParserAccessor userAgentParser,
+    BeatLeaderApi beatLeaderApi,
+    ServerDbContext dbContext)
+{
+    public async Task<Maybe<PlayerId>> GetPlayerIdAsync(BeatLeaderId beatLeaderId)
+        => await dbContext.Players
+                .Where(p => p.LinkedAccounts.BeatLeaderId == beatLeaderId)
+                .Select(p => p.Id).FirstOrDefaultAsync() switch
+            {
+                { Value: 0 } => None,
+                var id => From(id)
+            };
+
+    public async Task<Maybe<PlayerId>> GetPlayerIdAsync(DiscordId discordId)
+        => await dbContext.Players
+                .Where(p => p.LinkedAccounts.DiscordId == discordId)
+                .Select(p => p.Id).FirstOrDefaultAsync() switch
+            {
+                { Value: 0 } => None,
+                var id => From(id)
+            };
+
+    private async Task<int> GetValidSessionCountAsync(PlayerId playerId)
+        => await dbContext.Sessions
+            .CountAsync(s => s.PlayerId == playerId && s.IsValid);
+
+    public async Task<Result<string, SessionCreationError>> CreateSession(PlayerId playerId, HttpContext httpContext)
+    {
+        var userAgent = userAgentParser.Get(httpContext);
+        if (userAgent is null)
+            return new MissingUserAgent();
+
+        var sessionCount = await GetValidSessionCountAsync(playerId);
+        var settings = sessionSettings.Value;
+
+        if (sessionCount >= settings.MaxSessionCount)
+            return new TooManyOpenSession(sessionCount, settings.MaxSessionCount);
+
+        var token = jwtService.CreateToken(settings.ExpireAfter);
+        var session = new Session
+        {
+            SessionId = UuidV7.Create(),
+            PlayerId = playerId,
+            IssuedAt = token.IssuedAt,
+            ExpiresAt = token.ExpireAt,
+            Browser = userAgent.Value.Name ?? "Unknown",
+            BrowserVersion = userAgent.Value.Version ?? "Unknown",
+            Platform = userAgent.Value.Platform?.Name ?? "Unknown",
+            IsValid = true
+        };
+
+        var insertResult = await dbContext.AddAndSaveAsync(session);
+        if (insertResult.IsFailure)
+            return new PersistSessionError(insertResult.Error.ToString());
+
+        return token.Token;
+    }
+
+    public async Task<Result<PlayerId>> CreateUserAsync(BeatLeaderId beatleaderId)
+        => await beatLeaderApi.GetPlayerProfileWithStats(beatleaderId)
+            .Bind(blPlayer => blPlayer is null
+                ? Failure<Player>("Player not found on BeatLeader.")
+                : Success(new Player
+                {
+                    Info = new PlayerInfo
+                    {
+                        Username = blPlayer.Name,
+                        AvatarUrl = blPlayer.Avatar,
+                        Country = blPlayer.Country
+                    },
+                    HardwareInfo = new PlayerHardwareInfo
+                    {
+                        HMD = blPlayer.ScoreStats.TopHMD.Map(),
+                        Platform = PlatformMapper.Map(blPlayer.Platform)
+                    },
+                    LinkedAccounts = new PlayerLinkedAccounts(beatleaderId, null, null),
+                    SubscriptionInfo = new PlayerSubscriptionInfo(PlayerSubscriptionInfo.ESubscriptionTier.None)
+                }))
+            .Bind(player => dbContext
+                .AddAndSaveAsync(player, x => x.Id)
+                .MapError(e => e.ToString())
+            );
+}
+
+public abstract record SessionCreationError;
+public record PersistSessionError(string Message) : SessionCreationError;
+public record TooManyOpenSession(int CurrentCount, int MaxCount) : SessionCreationError;
+public record MissingUserAgent : SessionCreationError;
+public record AccountLocked : SessionCreationError;

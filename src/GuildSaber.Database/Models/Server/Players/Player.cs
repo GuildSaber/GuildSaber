@@ -1,4 +1,4 @@
-using GuildSaber.Database.Utils;
+using GuildSaber.Database.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -36,7 +36,8 @@ public class PlayerConfiguration : IEntityTypeConfiguration<Player>
     public void Configure(EntityTypeBuilder<Player> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Id).HasGenericConversion<Player.PlayerId, ulong>();
+        builder.Property(x => x.Id).HasGenericConversion<Player.PlayerId, ulong>()
+            .ValueGeneratedOnAdd();
         builder.ComplexProperty(x => x.Info);
         builder.ComplexProperty(x => x.HardwareInfo);
         builder.ComplexProperty(x => x.LinkedAccounts).Configure(new PlayerLinkedAccountsConfiguration());

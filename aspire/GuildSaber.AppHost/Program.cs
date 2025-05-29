@@ -21,15 +21,16 @@ var migrator = builder.AddProject<GuildSaber_Migrator>("migrator", options => op
 
 var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.ExcludeLaunchProfile = true)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
-    .WithHttpsEndpoint()
+    .WithHttpsEndpoint(port: 7149)
     .WithHttpsHealthCheck("/health")
     .WithExternalHttpEndpoints()
     .WithReference(guildsaberDb).WaitForCompletion(migrator)
     .WithReference(cache).WaitFor(cache)
-    .WithReference("BeatLeader", new Uri("https://api.beatleader.com"))
-    .WithReference("ScoreSaber", new Uri("https://api.scoresaber.com"));
+    .WithReference("beatleader-api", new Uri("https://api.beatleader.com/"))
+    .WithReference("scoresaber-api", new Uri("https://api.scoresaber.com/"));
 
-if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development") apiService.WithHttpEndpoint();
+if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+    apiService.WithHttpEndpoint(port: 5033);
 
 builder.AddProject<GuildSaber_DiscordBot>("discord-bot", option => option.ExcludeLaunchProfile = true)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))

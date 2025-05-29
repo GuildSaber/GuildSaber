@@ -1,3 +1,4 @@
+using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.Players;
@@ -5,7 +6,6 @@ using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.Scores;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using GuildSaber.Database.Models.StrongTypes;
-using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using GuildId = GuildSaber.Database.Models.Server.Guilds.Guild.GuildId;

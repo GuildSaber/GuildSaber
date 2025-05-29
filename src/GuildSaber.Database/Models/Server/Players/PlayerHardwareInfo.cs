@@ -62,9 +62,9 @@ public readonly record struct PlayerHardwareInfo(
 
     public enum EPlatform
     {
-        Unk = 0,
+        Unknown = 0,
         Steam = 1,
-        OculusNative = 2,
-        OculusPC = 3
+        MetaNative = 2,
+        MetaPC = 3
     }
 }

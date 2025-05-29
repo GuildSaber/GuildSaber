@@ -1,8 +1,8 @@
 ﻿using System.Linq.Expressions;
 
-namespace GuildSaber.Database.Utils;
+namespace GuildSaber.Database.Extensions;
 
-public static class EfCoreUtils
+public static class EfCoreExpressionExtensions
 {
     /// <summary>
     /// An ExpressionVisitor that replaces one expression with another in the expression tree.

@@ -1,11 +1,10 @@
-using GuildSaber.Api.Endpoints.Internal;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.EntityFrameworkCore;
 
-namespace GuildSaber.Api.Endpoints.Guilds;
+namespace GuildSaber.Api.Features.Guilds;
 
-public class Endpoints : IEndPoints
+public class GuildEndpoints : IEndPoints
 {
     public static void MapEndpoints(IEndpointRouteBuilder endpoints)
     {

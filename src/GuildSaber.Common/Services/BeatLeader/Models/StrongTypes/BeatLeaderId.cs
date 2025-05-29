@@ -26,6 +26,10 @@ public readonly record struct BeatLeaderId : IComparable<BeatLeaderId>
         => Try(() => httpClient.GetAsync(VerificationUrl(id)))
             .Map(response => response.IsSuccessStatusCode);
 
+    public static Result<BeatLeaderId> TryParseUnsafe(string? value)
+        => ulong.TryParse(value, out var parsed)
+            ? Success(new BeatLeaderId(parsed))
+            : Failure<BeatLeaderId>($"Invalid BeatLeaderId: {value}. It must be a valid unsigned long integer.");
 
     [return: NotNullIfNotNull(nameof(value))]
     public static BeatLeaderId? CreateUnsafe(ulong? value)

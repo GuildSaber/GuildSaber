@@ -68,14 +68,6 @@ public enum HMD
     VarjoXR3 = 72
 }
 
-public enum Platform
-{
-    Unk = 0,
-    Steam = 1,
-    OculusNative = 2,
-    OculusPC = 3
-}
-
 public enum ControllerEnum
 {
     Unknown = 0,

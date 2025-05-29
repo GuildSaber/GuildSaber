@@ -1,13 +1,13 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GuildSaber.Database.Utils;
+namespace GuildSaber.Database.Extensions;
 
 public interface IEFStrongTypedId<T, TValue> where TValue : struct where T : struct, IEFStrongTypedId<T, TValue>
 {
     TValue Value { get; init; }
 }
 
-public static class EFCoreStronglyTypedUtils
+public static class EFCoreStronglyTypedExtensions
 {
     /// <summary>
     /// Configures a property of a strongly typed ID to use a value converter.

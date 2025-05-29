@@ -73,7 +73,7 @@ public class PlayerScoreStats
 
 public interface IWithPlayerScoreStats
 {
-    public PlayerScoreStats Stats { get; init; }
+    public PlayerScoreStats ScoreStats { get; init; }
 }
 
 public class PlayerResponse
@@ -95,7 +95,7 @@ public class PlayerResponse
 public class PlayerResponseWithStats : PlayerResponse, IWithPlayerScoreStats
 
 {
-    public required PlayerScoreStats Stats { get; init; }
+    public required PlayerScoreStats ScoreStats { get; init; }
 }
 
 public class PlayerResponseFull : PlayerResponse
@@ -109,7 +109,7 @@ public class PlayerResponseFull : PlayerResponse
 
 public class PlayerResponseFullWithStats : PlayerResponseFull, IWithPlayerScoreStats
 {
-    public required PlayerScoreStats Stats { get; init; }
+    public required PlayerScoreStats ScoreStats { get; init; }
 }
 
 public class Ban

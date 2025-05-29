@@ -1,8 +1,8 @@
-﻿using GuildSaber.Database.Models.Server.Guilds;
+﻿using GuildSaber.Database.Extensions;
+using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
 using GuildSaber.Database.Models.Server.Songs;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
-using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

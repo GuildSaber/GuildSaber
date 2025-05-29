@@ -1,7 +1,7 @@
+using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds.Boosts;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
-using GuildSaber.Database.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

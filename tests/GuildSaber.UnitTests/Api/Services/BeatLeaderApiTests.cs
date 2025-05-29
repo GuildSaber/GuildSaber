@@ -127,4 +127,43 @@ public class BeatLeaderApiTests
         // Assert
         profile.SuccessShould().BeNull("A 404 response should return a null success response");
     }
+
+    [Fact]
+    public async Task GetPlayerProfile_ShouldReturnValidProfile_WhenValidPlayerId()
+    {
+        // Arrange
+        var playerId = _validBeatLeaderId;
+
+        // Act
+        var profile = await _beatLeaderApi.GetPlayerProfile(playerId);
+
+        // Assert
+        profile.SuccessShould().NotBeNull("A valid player ID should return a non-null profile");
+    }
+
+    [Fact]
+    public async Task GetPlayerProfileWithStats_ShouldReturnNull_WhenInvalidPlayerId()
+    {
+        // Arrange
+        var playerId = _invalidBeatLeaderId;
+
+        // Act
+        var profileWithStats = await _beatLeaderApi.GetPlayerProfileWithStats(playerId);
+
+        // Assert
+        profileWithStats.SuccessShould().BeNull("A 404 response should return a null success response");
+    }
+
+    [Fact]
+    public async Task GetPlayerProfileWithStats_ShouldReturnValidProfile_WhenValidPlayerId()
+    {
+        // Arrange
+        var playerId = _validBeatLeaderId;
+
+        // Act
+        var profileWithStats = await _beatLeaderApi.GetPlayerProfileWithStats(playerId);
+
+        // Assert
+        profileWithStats.SuccessShould().NotBeNull("A valid player ID should return a non-null profile with stats");
+    }
 }

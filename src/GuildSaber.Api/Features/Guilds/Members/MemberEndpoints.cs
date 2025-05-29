@@ -1,4 +1,3 @@
-using GuildSaber.Api.Endpoints.Internal;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
@@ -7,9 +6,9 @@ using GuildSaber.Database.Models.Server.Players;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
-namespace GuildSaber.Api.Endpoints.Guilds.Members;
+namespace GuildSaber.Api.Features.Guilds.Members;
 
-public class Endpoints : IEndPoints
+public class MemberEndpoints : IEndPoints
 {
     public static void MapEndpoints(IEndpointRouteBuilder endpoints)
     {

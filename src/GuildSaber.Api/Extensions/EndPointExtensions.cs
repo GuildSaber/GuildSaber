@@ -1,6 +1,12 @@
 using System.Reflection;
 
-namespace GuildSaber.Api.Endpoints.Internal;
+namespace GuildSaber.Api.Extensions;
+
+public interface IEndPoints
+{
+    public static abstract void MapEndpoints(IEndpointRouteBuilder endpoints);
+    public static virtual void AddServices(IServiceCollection services, IConfiguration configuration) { }
+}
 
 public static class EndPointExtensions
 {
@@ -10,7 +16,7 @@ public static class EndPointExtensions
     public static void MapEndpoints<TMarker>(this IApplicationBuilder app)
         => MapEndpoints(app, typeof(TMarker));
 
-    public static void AddEndpoints(IServiceCollection services, IConfiguration configuration, Type typeMarker)
+    private static void AddEndpoints(IServiceCollection services, IConfiguration configuration, Type typeMarker)
     {
         var endpointsTypes = GetEndpointsTypesFromAssemblyContaining(typeMarker);
 
@@ -19,7 +25,7 @@ public static class EndPointExtensions
                 ?.Invoke(null, [services, configuration]);
     }
 
-    public static void MapEndpoints(IApplicationBuilder app, Type typeMarker)
+    private static void MapEndpoints(IApplicationBuilder app, Type typeMarker)
     {
         var endpointsTypes = GetEndpointsTypesFromAssemblyContaining(typeMarker);
 

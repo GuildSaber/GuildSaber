@@ -1,5 +1,5 @@
-﻿using GuildSaber.Database.Models.Server.Guilds.Points;
-using GuildSaber.Database.Utils;
+﻿using GuildSaber.Database.Extensions;
+using GuildSaber.Database.Models.Server.Guilds.Points;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using GuildId = GuildSaber.Database.Models.Server.Guilds.Guild.GuildId;

@@ -1,4 +1,4 @@
-﻿using GuildSaber.Database.Utils;
+﻿using GuildSaber.Database.Extensions;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GuildSaber.Database.Models.Server.Guilds;
