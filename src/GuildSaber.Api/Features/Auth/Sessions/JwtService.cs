@@ -2,19 +2,27 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using GuildSaber.Api.Features.Auth.Settings;
+using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
-namespace GuildSaber.Api.Features.Auth;
+namespace GuildSaber.Api.Features.Auth.Sessions;
 
-public class JwtService(IOptions<JwtAuthSettings> authSettings)
+public class JwtService(IOptions<JwtAuthSettings> authSettings, TimeProvider timeProvider)
 {
     private readonly JwtAuthSettings _autSettings = authSettings.Value;
-    public readonly record struct JwtTokenInfo(string Token, Guid Identifier, DateTime IssuedAt, DateTime ExpireAt);
+
+    public readonly record struct JwtTokenInfo(
+        string Token,
+        UuidV7 Identifier,
+        DateTimeOffset IssuedAt,
+        DateTimeOffset ExpireAt);
 
     public JwtTokenInfo CreateToken(TimeSpan expiration)
     {
-        var identifier = Guid.NewGuid();
+        var utcNow = timeProvider.GetUtcNow();
+        var expireAt = utcNow.Add(expiration);
+        var identifier = UuidV7.Create(utcNow);
         var tokenHandler = new JwtSecurityTokenHandler();
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -23,8 +31,8 @@ public class JwtService(IOptions<JwtAuthSettings> authSettings)
             Subject = new ClaimsIdentity([
                 new Claim(JwtRegisteredClaimNames.Jti, identifier.ToString())
             ]),
-            IssuedAt = DateTime.UtcNow,
-            Expires = DateTime.UtcNow.Add(expiration),
+            IssuedAt = utcNow.DateTime,
+            Expires = expireAt.DateTime,
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_autSettings.Secret)),
                 SecurityAlgorithms.HmacSha256

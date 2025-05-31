@@ -26,4 +26,7 @@ public readonly record struct DiscordId
     [return: NotNullIfNotNull(nameof(value))]
     public static DiscordId? CreateUnsafe(ulong? value)
         => value is null ? null : new DiscordId(value.Value);
+
+    public override string ToString()
+        => _value.ToString();
 }

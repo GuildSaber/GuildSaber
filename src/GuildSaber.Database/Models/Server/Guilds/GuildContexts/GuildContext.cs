@@ -16,7 +16,26 @@ public class GuildContext
 
     public IList<Point> Points { get; init; } = null!;
 
-    public readonly record struct GuildContextId(ulong Value) : IEFStrongTypedId<GuildContextId, ulong>;
+    public readonly record struct GuildContextId(ulong Value) : IEFStrongTypedId<GuildContextId, ulong>
+    {
+        public static bool TryParse(string from, out GuildContextId value)
+        {
+            if (ulong.TryParse(from, out var id))
+            {
+                value = new GuildContextId(id);
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        public static implicit operator ulong(GuildContextId id)
+            => id.Value;
+
+        public override string ToString()
+            => Value.ToString();
+    }
 
     /// <summary>
     /// Maybe this will end up being a type union (from inheritance), but it will fit for now.

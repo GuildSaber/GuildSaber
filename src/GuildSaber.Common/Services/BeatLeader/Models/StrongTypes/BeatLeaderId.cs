@@ -18,6 +18,9 @@ public readonly record struct BeatLeaderId : IComparable<BeatLeaderId>
     public static implicit operator ulong(BeatLeaderId id)
         => id._value;
 
+    public override string ToString()
+        => _value.ToString();
+
     public static Task<Result<Maybe<BeatLeaderId>>> CreateAsync(ulong value, HttpClient httpClient)
         => ExistOnRemote(value.ToString(), httpClient)
             .Map(static (exists, id) => exists ? From(new BeatLeaderId(id)) : None, context: value);

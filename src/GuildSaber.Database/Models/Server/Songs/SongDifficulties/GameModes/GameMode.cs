@@ -1,5 +1,4 @@
-﻿using CSharpFunctionalExtensions;
-using GuildSaber.Database.Extensions;
+﻿using GuildSaber.Database.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,12 +11,23 @@ public class GameMode
 
     public readonly record struct GameModeId(ulong Value) : IEFStrongTypedId<GameModeId, ulong>
     {
-        public static Result<GameModeId> TryCreate(ulong? value) => value switch
+        public static bool TryParse(string from, out GameModeId value)
         {
-            null => Failure<GameModeId>("GameMode ID must not be null."),
-            0 => Failure<GameModeId>("GameMode ID must not be 0."),
-            _ => Success(new GameModeId(value.Value))
-        };
+            if (ulong.TryParse(from, out var id))
+            {
+                value = new GameModeId(id);
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        public static implicit operator ulong(GameModeId id)
+            => id.Value;
+
+        public override string ToString()
+            => Value.ToString();
     }
 }
 

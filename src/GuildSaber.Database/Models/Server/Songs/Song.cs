@@ -17,7 +17,26 @@ public class Song
 
     public SongDifficulty[] SongDifficulties { get; init; } = null!;
 
-    public readonly record struct SongId(ulong Value) : IEFStrongTypedId<SongId, ulong>;
+    public readonly record struct SongId(ulong Value) : IEFStrongTypedId<SongId, ulong>
+    {
+        public static bool TryParse(string from, out SongId value)
+        {
+            if (ulong.TryParse(from, out var id))
+            {
+                value = new SongId(id);
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        public static implicit operator ulong(SongId id)
+            => id.Value;
+
+        public override string ToString()
+            => Value.ToString();
+    }
 }
 
 public class SongConfiguration : IEntityTypeConfiguration<Song>

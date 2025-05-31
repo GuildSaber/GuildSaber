@@ -1,0 +1,48 @@
+using System.Security.Claims;
+using GuildSaber.Database.Contexts.Server;
+using GuildSaber.Database.Models.Server.Players;
+using Microsoft.AspNetCore.Authentication;
+
+namespace GuildSaber.Api.Features.Auth.Authorization;
+
+/// <summary>
+/// Hydrates the current user's claims with guild permissions based on their player ID.
+/// Added claims will be of the form:
+/// <list type="bullet">
+///     <item>
+///         <description>GuildPermissionClaimType(guildId)</description>
+///     </item>
+///     <item>
+///         <description>PlayerId</description>
+///     </item>
+///     <item>
+///         <description>Manager?</description>
+///     </item>
+/// </list>
+/// </summary>
+/// <param name="dbContext"></param>
+public class PermissionClaimTransformer(ServerDbContext dbContext) : IClaimsTransformation
+{
+    public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
+    {
+        if ((!principal.Identity?.IsAuthenticated ?? true) || principal.Identity is not ClaimsIdentity claimsIdentity)
+            return Task.FromResult(principal);
+
+        var playerIdClaim = claimsIdentity.FindFirst(AuthConstants.PlayerIdClaimType);
+        if (playerIdClaim == null || !Player.PlayerId.TryParse(playerIdClaim.Value, out var playerId))
+            return Task.FromResult(principal);
+
+        var memberPermissions = dbContext.Members
+            .Where(m => m.PlayerId.Value == playerId.Value)
+            .Select(m => new { m.GuildId, m.Permissions })
+            .ToList();
+
+        foreach (var perm in memberPermissions)
+            claimsIdentity.AddClaim(new Claim(
+                AuthConstants.GuildPermissionClaimType(perm.GuildId.Value.ToString()),
+                ((uint)perm.Permissions).ToString())
+            );
+
+        return Task.FromResult(principal);
+    }
+}

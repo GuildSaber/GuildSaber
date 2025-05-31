@@ -29,4 +29,7 @@ public readonly record struct ScoreSaberId
     [return: NotNullIfNotNull(nameof(value))]
     public static ScoreSaberId? CreateUnsafe(ulong? value)
         => value is null ? null : new ScoreSaberId(value.Value);
+
+    public override string ToString()
+        => _value.ToString();
 }

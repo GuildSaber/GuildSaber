@@ -19,4 +19,7 @@ public readonly record struct BeatSaverKey
     [return: NotNullIfNotNull(nameof(value))]
     public static BeatSaverKey? CreateUnsafe(string? value)
         => value is null ? null : new BeatSaverKey(value!);
+
+    public override string ToString()
+        => _value;
 }

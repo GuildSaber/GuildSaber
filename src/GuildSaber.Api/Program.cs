@@ -1,19 +1,22 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
-using AspNet.Security.OAuth.BeatLeader;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth;
+using GuildSaber.Api.Features.Auth.Authorization;
+using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Hangfire;
 using GuildSaber.Api.Hangfire.Configuration;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Database;
 using GuildSaber.Database.Contexts.Server;
+using GuildSaber.Database.Models.StrongTypes;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
-using MyCSharp.HttpUserAgentParser.AspNetCore;
 using MyCSharp.HttpUserAgentParser.AspNetCore.DependencyInjection;
 using MyCSharp.HttpUserAgentParser.DependencyInjection;
 using Scalar.AspNetCore;
@@ -48,60 +51,79 @@ builder.AddServiceDefaults();
 builder.Services.AddHttpUserAgentParser()
     .AddHttpUserAgentParserAccessor();
 builder.Services.AddSingleton<JwtService>();
+builder.Services.AddScoped<IClaimsTransformation, PermissionClaimTransformer>();
+builder.Services.AddScoped<SessionValidator>();
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddSingleton<IAuthorizationHandler, GuildPermissionHandler>();
 builder.Services.AddHttpClient<BeatLeaderApi>(client =>
 {
     client.BaseAddress = new Uri("https+http://beatleader-api");
     client.DefaultRequestHeaders.Add("User-Agent", "GuildSaber");
 });
-builder.Services.AddScoped<AuthService>(services => new AuthService(
-    services.GetRequiredService<JwtService>(),
-    services.GetRequiredService<IOptions<SessionSettings>>(),
-    services.GetRequiredService<IHttpUserAgentParserAccessor>(),
-    services.GetRequiredService<BeatLeaderApi>(),
-    services.GetRequiredService<ServerDbContext>())
-);
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = BeatLeaderAuthenticationDefaults.AuthenticationScheme;
-}).AddBeatLeader(options =>
-{
-    var settings = authSettings.GetSection(nameof(AuthSettings.BeatLeader)).Get<BeatLeaderAuthSettings>()!;
-    options.ClientId = settings.ClientId;
-    options.ClientSecret = settings.ClientSecret;
-    options.SignInScheme = "BeatLeaderCookies";
-    options.SaveTokens = true;
-}).AddCookie("BeatLeaderCookies", options =>
-{
-    options.Cookie.Name = "BeatLeader";
-    options.Cookie.SameSite = SameSiteMode.None;
-}).AddDiscord(options =>
+builder.Services.AddAuthentication(options => { options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme; })
+    .AddBeatLeader(options =>
     {
-        var settings = authSettings.GetSection(nameof(AuthSettings.Discord)).Get<DiscordAuthSettings>()!;
+        var settings = authSettings.GetSection(nameof(AuthSettings.BeatLeader)).Get<BeatLeaderAuthSettings>()!;
         options.ClientId = settings.ClientId;
         options.ClientSecret = settings.ClientSecret;
-        options.SignInScheme = "DiscordCookies";
+        options.SignInScheme = "BeatLeaderCookies";
         options.SaveTokens = true;
-    }
-).AddCookie("DiscordCookies", options =>
-{
-    options.Cookie.Name = "Discord";
-    options.Cookie.SameSite = SameSiteMode.None;
-}).AddJwtBearer(options =>
-{
-    var settings = authSettings.GetSection(nameof(AuthSettings.Jwt)).Get<JwtAuthSettings>()!;
-    options.TokenValidationParameters = new TokenValidationParameters
+    }).AddCookie("BeatLeaderCookies", options =>
     {
-        ValidIssuer = settings.Issuer,
-        ValidAudience = settings.Audience,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.Secret)),
-        ValidateIssuerSigningKey = true,
-        ClockSkew = TimeSpan.Zero
-    };
-});
+        options.Cookie.Name = "BeatLeader";
+        options.Cookie.SameSite = SameSiteMode.None;
+    }).AddDiscord(options =>
+        {
+            var settings = authSettings.GetSection(nameof(AuthSettings.Discord)).Get<DiscordAuthSettings>()!;
+            options.ClientId = settings.ClientId;
+            options.ClientSecret = settings.ClientSecret;
+            options.SignInScheme = "DiscordCookies";
+            options.SaveTokens = true;
+        }
+    ).AddCookie("DiscordCookies", options =>
+    {
+        options.Cookie.Name = "Discord";
+        options.Cookie.SameSite = SameSiteMode.None;
+    }).AddJwtBearer(options =>
+    {
+        var settings = authSettings.GetSection(nameof(AuthSettings.Jwt)).Get<JwtAuthSettings>()!;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidIssuer = settings.Issuer,
+            ValidAudience = settings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.Secret)),
+            ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.Zero
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var sessionValidator = context.HttpContext.RequestServices.GetRequiredService<SessionValidator>();
+                var sessionId = context.Principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                if (sessionId is null)
+                {
+                    context.Fail("Session ID not found in token.");
+                    return;
+                }
+
+                var parseResult = UuidV7.TryParse(sessionId);
+                if (parseResult.TryGetValue(out var sessionUuId))
+                {
+                    context.Fail($"Invalid session ID format: {parseResult.Error}");
+                    return;
+                }
+
+                var sessionResult = await sessionValidator.ValidateSessionAsync(sessionUuId, context.Principal);
+                if (sessionResult.TryGetError(out var error))
+                    context.Fail(error);
+            }
+        };
+    });
 
 builder.Services.AddAuthorization();
+builder.Services.AddGuildAuthorizationPolicies();
 builder.Services.AddHangfire((serviceCollection, option) =>
 {
     option.UseSimpleAssemblyNameTypeSerializer();

@@ -1,4 +1,5 @@
 using CSharpFunctionalExtensions;
+using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
@@ -59,7 +60,7 @@ public class AuthService(
         var token = jwtService.CreateToken(settings.ExpireAfter);
         var session = new Session
         {
-            SessionId = UuidV7.Create(),
+            SessionId = token.Identifier,
             PlayerId = playerId,
             IssuedAt = token.IssuedAt,
             ExpiresAt = token.ExpireAt,
@@ -103,7 +104,7 @@ public class AuthService(
 }
 
 public abstract record SessionCreationError;
-public record PersistSessionError(string Message) : SessionCreationError;
+public record PersistSessionError(string ErrorMessage) : SessionCreationError;
 public record TooManyOpenSession(int CurrentCount, int MaxCount) : SessionCreationError;
 public record MissingUserAgent : SessionCreationError;
 public record AccountLocked : SessionCreationError;

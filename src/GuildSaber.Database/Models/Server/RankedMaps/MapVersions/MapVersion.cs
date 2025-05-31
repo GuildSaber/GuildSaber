@@ -14,6 +14,7 @@ public class MapVersion
         => (SongDifficultyId, PlayModeId, AddedAt, Order) = (songDifficultyId, playModeId, addedAt, order);
 
     private MapVersion() { }
+
     public SongDifficultyId SongDifficultyId { get; init; }
     public PlayModeId PlayModeId { get; init; }
 

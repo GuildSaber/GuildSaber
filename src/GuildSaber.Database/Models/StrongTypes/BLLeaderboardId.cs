@@ -19,4 +19,7 @@ public readonly record struct BLLeaderboardId
     [return: NotNullIfNotNull(nameof(value))]
     public static BLLeaderboardId? CreateUnsafe(string? value)
         => value is null ? null : new BLLeaderboardId(value);
+
+    public override string ToString()
+        => _value;
 }

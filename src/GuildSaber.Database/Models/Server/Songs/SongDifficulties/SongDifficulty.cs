@@ -16,7 +16,26 @@ public class SongDifficulty
     public GameMode GameMode { get; init; } = null!;
     public Song Song { get; init; } = null!;
 
-    public readonly record struct SongDifficultyId(ulong Value) : IEFStrongTypedId<SongDifficultyId, ulong>;
+    public readonly record struct SongDifficultyId(ulong Value) : IEFStrongTypedId<SongDifficultyId, ulong>
+    {
+        public static bool TryParse(string from, out SongDifficultyId value)
+        {
+            if (ulong.TryParse(from, out var id))
+            {
+                value = new SongDifficultyId(id);
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        public static implicit operator ulong(SongDifficultyId id)
+            => id.Value;
+
+        public override string ToString()
+            => Value.ToString();
+    }
 }
 
 public class SongDifficultyConfiguration : IEntityTypeConfiguration<SongDifficulty>

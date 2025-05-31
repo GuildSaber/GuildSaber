@@ -34,6 +34,9 @@ public class Guild
 
         public static implicit operator ulong(GuildId id)
             => id.Value;
+
+        public override string ToString()
+            => Value.ToString();
     }
 }
 

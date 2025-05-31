@@ -2,7 +2,7 @@ using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Database.Models.StrongTypes;
 
-public readonly struct UuidV7
+public readonly record struct UuidV7
 {
     private readonly Guid _value;
 
@@ -23,11 +23,14 @@ public readonly struct UuidV7
             ? Success(new UuidV7(value))
             : Failure<UuidV7>("Invalid Guid format. Must be a version 7.");
 
-    public static implicit operator Guid(UuidV7 id)
-        => id._value;
-
     public static UuidV7? CreateUnsafe(Guid? value)
         => value is null || value.Value.Version != 7
             ? null
             : new UuidV7(value.Value);
+
+    public static implicit operator Guid(UuidV7 id)
+        => id._value;
+
+    public override string ToString()
+        => _value.ToString();
 }

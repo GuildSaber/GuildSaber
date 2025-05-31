@@ -91,6 +91,9 @@ public class AuthEndpoints : IEndPoints
                     AccountLocked => Results.Problem(
                         "Your account is locked. If you haven't initiated this action, please contact support.",
                         statusCode: StatusCodes.Status423Locked),
+                    PersistSessionError(var errorMessage) => Results.Problem(
+                        $"Failed to create session: {errorMessage}",
+                        statusCode: StatusCodes.Status500InternalServerError),
                     _ => Results.UnprocessableEntity("Failed to create session.")
                 }))
             .Match(
@@ -121,6 +124,9 @@ public class AuthEndpoints : IEndPoints
                     AccountLocked => Results.Problem(
                         "Your account is locked. If you haven't initiated this action, please contact support.",
                         statusCode: StatusCodes.Status423Locked),
+                    PersistSessionError(var errorMessage) => Results.Problem(
+                        $"Failed to create session: {errorMessage}",
+                        statusCode: StatusCodes.Status500InternalServerError),
                     _ => Results.UnprocessableEntity("Failed to create session.")
                 }))
             .Match(

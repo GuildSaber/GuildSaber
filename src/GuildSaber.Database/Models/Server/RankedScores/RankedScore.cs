@@ -32,7 +32,26 @@ public class RankedScore
 
     public EffectiveScore EffectiveScore { get; set; }
 
-    public readonly record struct RankedScoreId(ulong Value) : IEFStrongTypedId<RankedScoreId, ulong>;
+    public readonly record struct RankedScoreId(ulong Value) : IEFStrongTypedId<RankedScoreId, ulong>
+    {
+        public static bool TryParse(string from, out RankedScoreId value)
+        {
+            if (ulong.TryParse(from, out var id))
+            {
+                value = new RankedScoreId(id);
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        public static implicit operator ulong(RankedScoreId id)
+            => id.Value;
+
+        public override string ToString()
+            => Value.ToString();
+    }
 }
 
 public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>

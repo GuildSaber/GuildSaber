@@ -5,6 +5,13 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GuildSaber.Database.Models.Server.Auth;
 
+/// <summary>
+/// Represents a player session in the server.
+/// <remarks>
+/// The <see cref="IssuedAt" /> and <see cref="ExpiresAt" /> are identical to the JWT issued at and expiration times.
+/// Therefore, if the JWT is valid, the session is also valid only if <see cref="IsValid" /> is true.
+/// </remarks>
+/// </summary>
 public class Session
 {
     public required UuidV7 SessionId { get; init; }

@@ -26,4 +26,7 @@ public readonly record struct SongHash
     [return: NotNullIfNotNull(nameof(value))]
     public static SongHash? CreateUnsafe(string? value)
         => value is null ? null : new SongHash(value);
+
+    public override string ToString()
+        => _value;
 }

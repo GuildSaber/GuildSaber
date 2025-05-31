@@ -7,10 +7,11 @@ namespace GuildSaber.Database.Models.Server.Players;
 public class Player
 {
     public PlayerId Id { get; init; }
-    public PlayerInfo Info { get; set; }
-    public PlayerHardwareInfo HardwareInfo { get; set; }
-    public PlayerLinkedAccounts LinkedAccounts { get; set; }
-    public PlayerSubscriptionInfo SubscriptionInfo { get; set; }
+    public required PlayerInfo Info { get; set; }
+    public required PlayerHardwareInfo HardwareInfo { get; set; }
+    public required PlayerLinkedAccounts LinkedAccounts { get; set; }
+    public required PlayerSubscriptionInfo SubscriptionInfo { get; set; }
+    public bool IsManager { get; set; }
 
     public readonly record struct PlayerId(ulong Value) : IEFStrongTypedId<PlayerId, ulong>
     {
@@ -28,6 +29,9 @@ public class Player
 
         public static implicit operator ulong(PlayerId id)
             => id.Value;
+
+        public override string ToString()
+            => Value.ToString();
     }
 }
 

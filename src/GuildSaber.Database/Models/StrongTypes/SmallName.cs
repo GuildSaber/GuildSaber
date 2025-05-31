@@ -27,4 +27,7 @@ public readonly record struct SmallName
     [return: NotNullIfNotNull(nameof(value))]
     public static SmallName? CreateUnsafe(string? value)
         => value is null ? null : new SmallName(value);
+
+    public override string ToString()
+        => _value;
 }

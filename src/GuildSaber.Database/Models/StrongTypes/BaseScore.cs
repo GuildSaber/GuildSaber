@@ -26,4 +26,7 @@ public readonly record struct BaseScore
     [return: NotNullIfNotNull(nameof(value))]
     public static BaseScore? CreateUnsafe(ulong? value)
         => value is null ? null : new BaseScore(value.Value);
+
+    public override string ToString()
+        => _value.ToString();
 }

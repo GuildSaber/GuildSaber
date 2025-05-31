@@ -19,7 +19,27 @@ public class RankedMap
 
     public RankedMapRequirements Requirements { get; init; }
     public IList<MapVersion> MapVersions { get; init; } = null!;
-    public readonly record struct RankedMapId(ulong Value) : IEFStrongTypedId<RankedMapId, ulong>;
+
+    public readonly record struct RankedMapId(ulong Value) : IEFStrongTypedId<RankedMapId, ulong>
+    {
+        public static bool TryParse(string from, out RankedMapId value)
+        {
+            if (ulong.TryParse(from, out var id))
+            {
+                value = new RankedMapId(id);
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        public static implicit operator ulong(RankedMapId id)
+            => id.Value;
+
+        public override string ToString()
+            => Value.ToString();
+    }
 }
 
 public class RankedMapConfiguration : IEntityTypeConfiguration<RankedMap>

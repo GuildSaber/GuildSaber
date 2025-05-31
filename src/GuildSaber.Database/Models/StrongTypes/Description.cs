@@ -26,4 +26,7 @@ public readonly record struct Description
     [return: NotNullIfNotNull(nameof(value))]
     public static Description? CreateUnsafe(string? value)
         => value is null ? null : new Description(value);
+
+    public override string ToString()
+        => _value;
 }

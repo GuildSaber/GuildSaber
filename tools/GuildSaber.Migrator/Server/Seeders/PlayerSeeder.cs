@@ -33,7 +33,8 @@ public static class PlayerSeeder
             SubscriptionInfo = new PlayerSubscriptionInfo
             {
                 Tier = PlayerSubscriptionInfo.ESubscriptionTier.None
-            }
+            },
+            IsManager = true
         }
     ];
 

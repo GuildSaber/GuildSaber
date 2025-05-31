@@ -27,7 +27,26 @@ public abstract record AbstractScore
     public PlayerHardwareInfo.EHMD HMD { get; set; }
     public enum EScoreType : byte { ScoreSaber = 0, BeatLeader = 1 }
 
-    public readonly record struct ScoreId(ulong Value) : IEFStrongTypedId<ScoreId, ulong>;
+    public readonly record struct ScoreId(ulong Value) : IEFStrongTypedId<ScoreId, ulong>
+    {
+        public static bool TryParse(string from, out ScoreId value)
+        {
+            if (ulong.TryParse(from, out var id))
+            {
+                value = new ScoreId(id);
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        public static implicit operator ulong(ScoreId id)
+            => id.Value;
+
+        public override string ToString()
+            => Value.ToString();
+    }
 
     [Flags]
     public enum EModifiers

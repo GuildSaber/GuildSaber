@@ -8,7 +8,7 @@ public interface IEndPoints
     public static virtual void AddServices(IServiceCollection services, IConfiguration configuration) { }
 }
 
-public static class EndPointExtensions
+public static class EndPointsExtensions
 {
     public static void AddEndpoints<TMarker>(this IServiceCollection services, IConfiguration configuration)
         => AddEndpoints(services, configuration, typeof(TMarker));

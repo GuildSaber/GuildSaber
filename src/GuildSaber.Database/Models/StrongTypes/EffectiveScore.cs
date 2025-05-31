@@ -26,4 +26,7 @@ public readonly record struct EffectiveScore
     [return: NotNullIfNotNull(nameof(value))]
     public static EffectiveScore? CreateUnsafe(ulong? value)
         => value is null ? null : new EffectiveScore(value.Value);
+
+    public override string ToString()
+        => _value.ToString();
 }

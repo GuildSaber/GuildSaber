@@ -15,7 +15,26 @@ public class Point
     public CurveSettings CurveSettings { get; set; }
     public WeightingSettings WeightingSettings { get; set; }
 
-    public readonly record struct PointId(int Value) : IEFStrongTypedId<PointId, int>;
+    public readonly record struct PointId(int Value) : IEFStrongTypedId<PointId, int>
+    {
+        public static bool TryParse(string from, out PointId value)
+        {
+            if (int.TryParse(from, out var id))
+            {
+                value = new PointId(id);
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        public static implicit operator int(PointId id)
+            => id.Value;
+
+        public override string ToString()
+            => Value.ToString();
+    }
 }
 
 public class PointConfiguration : IEntityTypeConfiguration<Point>
