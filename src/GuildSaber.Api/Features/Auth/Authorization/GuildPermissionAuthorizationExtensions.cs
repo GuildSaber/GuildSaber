@@ -1,11 +1,9 @@
-using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 
 namespace GuildSaber.Api.Features.Auth.Authorization;
 
-public static class GuildAuthorizationExtensions
+public static class GuildPermissionAuthorizationExtensions
 {
-    public const string GuildIdRouteKey = "guildId";
     private const string GuildPermissionPolicyPrefix = "GuildPermission_";
 
     public static IServiceCollection AddGuildAuthorizationPolicies(this IServiceCollection services)
@@ -28,14 +26,5 @@ public static class GuildAuthorizationExtensions
 
     public static RouteHandlerBuilder RequireGuildPermission(
         this RouteHandlerBuilder builder, Member.EPermission requiredPermission)
-        => builder.RequireAuthorization(policyNames: $"{GuildPermissionPolicyPrefix}{requiredPermission}")
-            .AddEndpointFilter(async (context, next) =>
-            {
-                if (!context.HttpContext.Request.RouteValues.TryGetValue(GuildIdRouteKey, out var guildIdString)
-                    || guildIdString is not string guildIdStr
-                    || !Guild.GuildId.TryParse(guildIdStr, out _))
-                    return Results.BadRequest($"Missing or invalid route parameter: {GuildIdRouteKey}");
-
-                return await next(context);
-            });
+        => builder.RequireAuthorization(policyNames: $"{GuildPermissionPolicyPrefix}{requiredPermission}");
 }

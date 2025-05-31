@@ -2,6 +2,7 @@ using System.Security.Claims;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Players;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
 
 namespace GuildSaber.Api.Features.Auth.Authorization;
 
@@ -23,19 +24,19 @@ namespace GuildSaber.Api.Features.Auth.Authorization;
 /// <param name="dbContext"></param>
 public class PermissionClaimTransformer(ServerDbContext dbContext) : IClaimsTransformation
 {
-    public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
+    public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
         if ((!principal.Identity?.IsAuthenticated ?? true) || principal.Identity is not ClaimsIdentity claimsIdentity)
-            return Task.FromResult(principal);
+            return principal;
 
         var playerIdClaim = claimsIdentity.FindFirst(AuthConstants.PlayerIdClaimType);
         if (playerIdClaim == null || !Player.PlayerId.TryParse(playerIdClaim.Value, out var playerId))
-            return Task.FromResult(principal);
+            return principal;
 
-        var memberPermissions = dbContext.Members
-            .Where(m => m.PlayerId.Value == playerId.Value)
+        var memberPermissions = await dbContext.Members
+            .Where(m => m.PlayerId == playerId)
             .Select(m => new { m.GuildId, m.Permissions })
-            .ToList();
+            .ToListAsync();
 
         foreach (var perm in memberPermissions)
             claimsIdentity.AddClaim(new Claim(
@@ -43,6 +44,6 @@ public class PermissionClaimTransformer(ServerDbContext dbContext) : IClaimsTran
                 ((uint)perm.Permissions).ToString())
             );
 
-        return Task.FromResult(principal);
+        return principal;
     }
 }

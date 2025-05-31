@@ -48,6 +48,7 @@ builder.Services
 var connectionMultiplexer = ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("cache")!);
 
 builder.AddServiceDefaults();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpUserAgentParser()
     .AddHttpUserAgentParserAccessor();
 builder.Services.AddSingleton<JwtService>();
@@ -61,7 +62,7 @@ builder.Services.AddHttpClient<BeatLeaderApi>(client =>
     client.DefaultRequestHeaders.Add("User-Agent", "GuildSaber");
 });
 
-builder.Services.AddAuthentication(options => { options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme; })
+builder.Services.AddAuthentication(options => options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme)
     .AddBeatLeader(options =>
     {
         var settings = authSettings.GetSection(nameof(AuthSettings.BeatLeader)).Get<BeatLeaderAuthSettings>()!;
@@ -109,7 +110,7 @@ builder.Services.AddAuthentication(options => { options.DefaultScheme = JwtBeare
                 }
 
                 var parseResult = UuidV7.TryParse(sessionId);
-                if (parseResult.TryGetValue(out var sessionUuId))
+                if (!parseResult.TryGetValue(out var sessionUuId))
                 {
                     context.Fail($"Invalid session ID format: {parseResult.Error}");
                     return;
@@ -122,8 +123,9 @@ builder.Services.AddAuthentication(options => { options.DefaultScheme = JwtBeare
         };
     });
 
-builder.Services.AddAuthorization();
-builder.Services.AddGuildAuthorizationPolicies();
+builder.Services.AddAuthorization()
+    .AddGuildAuthorizationPolicies();
+
 builder.Services.AddHangfire((serviceCollection, option) =>
 {
     option.UseSimpleAssemblyNameTypeSerializer();
