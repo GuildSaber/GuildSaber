@@ -89,18 +89,18 @@ public class AuthEndpoints : IEndPoints
         HttpContext httpContext, LinkGenerator linkGenerator, [FromQuery] string? returnUrl = null)
         => TypedResults.Challenge(new AuthenticationProperties
         {
-            RedirectUri = linkGenerator.GetPathByName(returnUrl is null
-                ? BeatLeaderCallbackName
-                : BeatLeaderCallbackWithRedirectName, new { returnUrl })
+            RedirectUri = returnUrl is null
+                ? linkGenerator.GetPathByName(BeatLeaderCallbackName)
+                : linkGenerator.GetPathByName(BeatLeaderCallbackWithRedirectName, new { returnUrl })
         }, [BeatLeaderAuthenticationDefaults.AuthenticationScheme]);
 
     private static ChallengeHttpResult HandleDiscordLogin(
         HttpContext httpContext, LinkGenerator linkGenerator, [FromQuery] string? returnUrl = null)
         => TypedResults.Challenge(new AuthenticationProperties
         {
-            RedirectUri = linkGenerator.GetPathByName(returnUrl is null
-                ? DiscordCallbackName
-                : DiscordCallbackWithRedirectName, new { returnUrl })
+            RedirectUri = returnUrl is null
+                ? linkGenerator.GetPathByName(DiscordCallbackName)
+                : linkGenerator.GetPathByName(DiscordCallbackWithRedirectName, new { returnUrl })
         }, [DiscordAuthenticationDefaults.AuthenticationScheme]);
 
     private static async Task<Results<Ok<TokenResponse>, ProblemHttpResult>> HandleDiscordCallbackAsync(
