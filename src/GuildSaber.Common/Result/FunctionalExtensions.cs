@@ -347,7 +347,6 @@ public static class FunctionalExtensions
         }
     }
 
-
     /// <summary>
     /// Executes a function within a disposable scope. If the function is successful afterward, it executes an
     /// onSuccess action, otherwise it executes an onError action. If an exception occurs during the execution of the scope, it

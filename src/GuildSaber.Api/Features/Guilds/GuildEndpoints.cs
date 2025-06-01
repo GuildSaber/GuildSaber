@@ -27,7 +27,7 @@ public class GuildEndpoints : IEndPoints
             .RequireGuildPermission(Member.EPermission.GuildSaberManager);
     }
 
-    private static async Task<Results<NoContent, NotFound<string>>> DeleteGuildAsync(
+    private static async Task<Results<NoContent, NotFound>> DeleteGuildAsync(
         Guild.GuildId guildId, ServerDbContext dbContext)
     {
         var affectedRows = await dbContext.Guilds
@@ -36,7 +36,7 @@ public class GuildEndpoints : IEndPoints
 
         return affectedRows > 0
             ? TypedResults.NoContent()
-            : TypedResults.NotFound("blabla");
+            : TypedResults.NotFound();
     }
 
     // get

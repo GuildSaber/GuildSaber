@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Web;
 using AspNet.Security.OAuth.BeatLeader;
 using AspNet.Security.OAuth.Discord;
 using CSharpFunctionalExtensions;
@@ -8,6 +9,7 @@ using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using static GuildSaber.Api.Features.Auth.AuthResponse;
 using IResult = Microsoft.AspNetCore.Http.IResult;
 
@@ -17,6 +19,8 @@ public class AuthEndpoints : IEndPoints
 {
     private const string BeatLeaderCallbackName = "BeatLeaderCallback";
     private const string DiscordCallbackName = "DiscordCallback";
+    private const string BeatLeaderCallbackWithRedirectName = "BeatLeaderCallbackWithRedirect";
+    private const string DiscordCallbackWithRedirectName = "DiscordCallbackWithRedirect";
 
     public static void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
@@ -25,27 +29,54 @@ public class AuthEndpoints : IEndPoints
 
         group.MapGet("/login/beatleader", HandleBeatLeaderLogin)
             .WithName("BeatLeaderLogin")
-            .WithSummary("Initiate the BeatLeader authentication flow.");
+            .WithSummary("Login with BeatLeader")
+            .WithDescription("Initiate the BeatLeader authentication flow with optional callback path.");
 
         group.MapGet("login/discord", HandleDiscordLogin)
             .WithName("DiscordLogin")
-            .WithSummary("Initiate the Discord authentication flow.");
+            .WithSummary("Login with Discord")
+            .WithDescription("Initiate the Discord authentication flow with optional callback path.");
 
-        group.MapGet("/callback/beatleader", HandleBeatLeaderLoginCallbackAsync)
+        group.MapGet("/callback/beatleader", HandleBeatLeaderCallbackAsync)
             .WithName(BeatLeaderCallbackName)
-            .WithSummary("Handle the callback from BeatLeader after authentication.")
+            .WithSummary("Get session token after authenticating with BeatLeader.")
+            .WithDescription("Handles the callback from BeatLeader after authentication and returns a token.")
             .Produces<TokenResponse>()
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces<string>(StatusCodes.Status422UnprocessableEntity)
+            .Produces<ProblemHttpResult>(StatusCodes.Status422UnprocessableEntity)
             .Produces<ProblemHttpResult>(StatusCodes.Status429TooManyRequests)
             .Produces<ProblemHttpResult>(StatusCodes.Status423Locked);
 
         group.MapGet("/callback/discord", HandleDiscordCallbackAsync)
             .WithName(DiscordCallbackName)
-            .WithSummary("Handle the callback from Discord after authentication.")
+            .WithSummary("Get session token after authenticating with Discord.")
+            .WithDescription("Handles the callback from Discord after authentication and returns a token.")
             .Produces<TokenResponse>()
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces<string>(StatusCodes.Status422UnprocessableEntity)
+            .Produces<ProblemHttpResult>(StatusCodes.Status422UnprocessableEntity)
+            .Produces<ProblemHttpResult>(StatusCodes.Status429TooManyRequests)
+            .Produces<ProblemHttpResult>(StatusCodes.Status423Locked);
+
+        group.MapGet("/callback/discord/redirect", HandleDiscordCallbackWithRedirectAsync)
+            .WithName(DiscordCallbackWithRedirectName)
+            .WithSummary("Redirect with session token or error after Discord authentication.")
+            .WithDescription("Handles the callback from Discord after authentication and redirects to a specified path"
+                             + " from the calling origin with ?{token/error}&status as query params.")
+            .Produces<RedirectHttpResult>()
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemHttpResult>(StatusCodes.Status422UnprocessableEntity)
+            .Produces<ProblemHttpResult>(StatusCodes.Status429TooManyRequests)
+            .Produces<ProblemHttpResult>(StatusCodes.Status423Locked);
+
+        group.MapGet("/callback/beatleader/redirect", HandleBeatLeaderCallbackWithRedirectAsync)
+            .WithName(BeatLeaderCallbackWithRedirectName)
+            .WithSummary("Redirect with session token or error after BeatLeader authentication.")
+            .WithDescription(
+                "Handles the callback from BeatLeader after authentication and redirects to a specified path"
+                + " from the calling origin with ?{token/error}&status as query params.")
+            .Produces<RedirectHttpResult>()
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemHttpResult>(StatusCodes.Status422UnprocessableEntity)
             .Produces<ProblemHttpResult>(StatusCodes.Status429TooManyRequests)
             .Produces<ProblemHttpResult>(StatusCodes.Status423Locked);
 
@@ -54,92 +85,145 @@ public class AuthEndpoints : IEndPoints
             .WithSummary("Log out the current user.");
     }
 
-    private static ChallengeHttpResult HandleBeatLeaderLogin(HttpContext httpContext, LinkGenerator linkGenerator)
+    private static ChallengeHttpResult HandleBeatLeaderLogin(
+        HttpContext httpContext, LinkGenerator linkGenerator, [FromQuery] string? returnUrl = null)
         => TypedResults.Challenge(new AuthenticationProperties
         {
-            RedirectUri = linkGenerator.GetPathByName(BeatLeaderCallbackName)
+            RedirectUri = linkGenerator.GetPathByName(returnUrl is null
+                ? BeatLeaderCallbackName
+                : BeatLeaderCallbackWithRedirectName, new { returnUrl })
         }, [BeatLeaderAuthenticationDefaults.AuthenticationScheme]);
 
-    private static ChallengeHttpResult HandleDiscordLogin(HttpContext httpContext, LinkGenerator linkGenerator)
+    private static ChallengeHttpResult HandleDiscordLogin(
+        HttpContext httpContext, LinkGenerator linkGenerator, [FromQuery] string? returnUrl = null)
         => TypedResults.Challenge(new AuthenticationProperties
         {
-            RedirectUri = linkGenerator.GetPathByName(DiscordCallbackName)
+            RedirectUri = linkGenerator.GetPathByName(returnUrl is null
+                ? DiscordCallbackName
+                : DiscordCallbackWithRedirectName, new { returnUrl })
         }, [DiscordAuthenticationDefaults.AuthenticationScheme]);
 
-    private static async Task<IResult> HandleBeatLeaderLoginCallbackAsync(
+    private static async Task<Results<Ok<TokenResponse>, ProblemHttpResult>> HandleDiscordCallbackAsync(
         HttpContext httpContext, AuthService authService)
-        => await AuthenticateAsync(httpContext,
-                BeatLeaderAuthenticationDefaults.AuthenticationScheme)
-            .MapError(_ => Results.Unauthorized())
-            .Bind(claimsPrincipal => BeatLeaderId
-                .TryParseUnsafe(claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier))
-                .MapError(Results.BadRequest))
-            .Bind(beatLeaderId => authService
-                .GetPlayerIdAsync(beatLeaderId)
+    {
+        var authResult = await AuthenticateAsync(httpContext, DiscordAuthenticationDefaults.AuthenticationScheme);
+        if (!authResult.TryGetValue(out var authValue))
+            return TypedResults.Problem("Authentication failed. Please ensure you are logged in with Discord.",
+                statusCode: StatusCodes.Status401Unauthorized);
+
+        return await DiscordCallBackPipeline(httpContext, authService, authValue.claimsPrincipal)
+            .Match(token => token, error => (Results<Ok<TokenResponse>, ProblemHttpResult>)error);
+    }
+
+    private static async Task<Results<Ok<TokenResponse>, ProblemHttpResult>> HandleBeatLeaderCallbackAsync(
+        HttpContext httpContext, AuthService authService)
+    {
+        var authResult = await AuthenticateAsync(httpContext, BeatLeaderAuthenticationDefaults.AuthenticationScheme);
+        if (!authResult.TryGetValue(out var authValue))
+            return TypedResults.Problem("Authentication failed. Please ensure you are logged in with BeatLeader.",
+                statusCode: StatusCodes.Status401Unauthorized);
+
+        return await BeatLeaderCallBackPipeline(httpContext, authService, authValue.claimsPrincipal)
+            .Match(token => token, error => (Results<Ok<TokenResponse>, ProblemHttpResult>)error);
+    }
+
+    private static async Task<Results<RedirectHttpResult, ProblemHttpResult>> HandleDiscordCallbackWithRedirectAsync(
+        HttpContext httpContext, AuthService authService, [FromQuery] string returnUrl)
+    {
+        var authResult = await AuthenticateAsync(httpContext, DiscordAuthenticationDefaults.AuthenticationScheme);
+        if (!authResult.TryGetValue(out var authValue))
+            return TypedResults.Problem("Authentication failed. Please ensure you are logged in with Discord.",
+                statusCode: StatusCodes.Status401Unauthorized);
+
+        var result = await DiscordCallBackPipeline(httpContext, authService, authValue.claimsPrincipal);
+        return BuildCallbackRedirect(result, returnUrl);
+    }
+
+    private static async Task<Results<RedirectHttpResult, ProblemHttpResult>> HandleBeatLeaderCallbackWithRedirectAsync(
+        HttpContext httpContext, AuthService authService, [FromQuery] string returnUrl)
+    {
+        var authResult = await AuthenticateAsync(httpContext, BeatLeaderAuthenticationDefaults.AuthenticationScheme);
+        if (!authResult.TryGetValue(out var authValue))
+            return TypedResults.Problem("Authentication failed. Please ensure you are logged in with BeatLeader.",
+                statusCode: StatusCodes.Status401Unauthorized);
+
+        var result = await BeatLeaderCallBackPipeline(httpContext, authService, authValue.claimsPrincipal);
+        return BuildCallbackRedirect(result, returnUrl);
+    }
+
+    private static RedirectHttpResult BuildCallbackRedirect(
+        Result<Ok<TokenResponse>, ProblemHttpResult> result, string returnUrl)
+    {
+        var uriBuilder = new UriBuilder(returnUrl);
+        var query = HttpUtility.ParseQueryString(uriBuilder.Query);
+        query["status"] = result.IsSuccess ? "200" : result.Error.ProblemDetails.Status.ToString();
+        result.Match(
+            onSuccess: token => query["token"] = HttpUtility.UrlEncode(token.Value.Token),
+            onFailure: problem => query["error"] = HttpUtility.UrlEncode(problem.ProblemDetails.Detail)
+        );
+        uriBuilder.Query = query.ToString();
+
+        return TypedResults.Redirect(uriBuilder.ToString());
+    }
+
+    private static async Task<Result<Ok<TokenResponse>, ProblemHttpResult>> DiscordCallBackPipeline(
+        HttpContext httpContext, AuthService authService, ClaimsPrincipal claimsPrincipal)
+        => await DiscordId.TryParse(claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier))
+            .MapError(_ => TypedResults.Problem("Failed to parse Discord ID from authentication claims.",
+                statusCode: StatusCodes.Status400BadRequest))
+            .Bind(discordId => authService
+                .GetPlayerIdAsync(discordId)
+                .ToResult(() => TypedResults.Problem(
+                    "Discord account is not linked to any player.",
+                    statusCode: StatusCodes.Status422UnprocessableEntity)))
+            .Bind(playerId => authService
+                .CreateSession(playerId, httpContext)
+                .MapError(MapSessionCreationErrorResponse))
+            .Map(token => TypedResults.Ok(new TokenResponse(token)));
+
+    private static async Task<Result<Ok<TokenResponse>, ProblemHttpResult>> BeatLeaderCallBackPipeline(
+        HttpContext httpContext, AuthService authService, ClaimsPrincipal claimsPrincipal)
+        => await BeatLeaderId.TryParseUnsafe(claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier))
+            .MapError(_ => TypedResults.Problem("Failed to parse BeatLeaderId from authentication claims.",
+                statusCode: StatusCodes.Status400BadRequest))
+            .Bind(beatleaderId => authService
+                .GetPlayerIdAsync(beatleaderId)
                 .ToResult(() => "Treating as result")
                 .Compensate(_ => authService
-                    .CreateUserAsync(beatLeaderId)
-                    .MapError(Results.UnprocessableEntity)))
+                    .CreateUserAsync(beatleaderId)
+                    .MapError(error => TypedResults.Problem(error.ToString(),
+                        statusCode: StatusCodes.Status422UnprocessableEntity))))
             .Bind(playerId => authService
                 .CreateSession(playerId, httpContext)
-                .MapError(error => error switch
-                {
-                    TooManyOpenSession(var count, var maxCount) => Results.Problem(
-                        $"You have too many active sessions ({count}/{maxCount}). Please log out from other devices or wait for other sessions to expire.",
-                        title: "Too many active sessions",
-                        statusCode: StatusCodes.Status429TooManyRequests),
-                    AccountLocked => Results.Problem(
-                        "Your account is locked. If you haven't initiated this action, please contact support.",
-                        statusCode: StatusCodes.Status423Locked),
-                    PersistSessionError(var errorMessage) => Results.Problem(
-                        $"Failed to create session: {errorMessage}",
-                        statusCode: StatusCodes.Status500InternalServerError),
-                    _ => Results.UnprocessableEntity("Failed to create session.")
-                }))
-            .Match(
-                token => TypedResults.Ok(new TokenResponse(token)),
-                error => error
-            );
+                .MapError(MapSessionCreationErrorResponse))
+            .Map(token => TypedResults.Ok(new TokenResponse(token)));
 
+    private static ProblemHttpResult MapSessionCreationErrorResponse(SessionCreationError error) => error switch
+    {
+        TooManyOpenSession(var count, var maxCount) => TypedResults.Problem(
+            $"You have too many active sessions ({count}/{maxCount}). Please log out from other devices or wait for other sessions to expire.",
+            title: "Too many active sessions",
+            statusCode: StatusCodes.Status429TooManyRequests),
+        AccountLocked => TypedResults.Problem(
+            "Your account is locked. If you haven't initiated this action, please contact support.",
+            statusCode: StatusCodes.Status423Locked),
+        PersistSessionError(var errorMessage) => TypedResults.Problem(
+            $"Failed to create session: {errorMessage}",
+            statusCode: StatusCodes.Status500InternalServerError),
+        _ => TypedResults.Problem("Failed to create session.",
+            statusCode: StatusCodes.Status500InternalServerError)
+    };
 
-    private static async Task<IResult> HandleDiscordCallbackAsync(
-        HttpContext httpContext, AuthService authService)
-        => await AuthenticateAsync(httpContext,
-                DiscordAuthenticationDefaults.AuthenticationScheme)
-            .MapError(_ => Results.Unauthorized())
-            .Bind(claimsPrincipal => DiscordId
-                .TryParse(claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier))
-                .MapError(Results.InternalServerError))
-            .Bind(beatLeaderId => authService
-                .GetPlayerIdAsync(beatLeaderId)
-                .ToResult(() => Results.UnprocessableEntity("Discord account is not linked to any player.")))
-            .Bind(playerId => authService
-                .CreateSession(playerId, httpContext)
-                .MapError(error => error switch
-                {
-                    TooManyOpenSession(var count, var maxCount) => Results.Problem(
-                        $"You have too many active sessions ({count}/{maxCount}). Please log out from other devices or wait for other sessions to expire.",
-                        title: "Too many active sessions",
-                        statusCode: StatusCodes.Status429TooManyRequests),
-                    AccountLocked => Results.Problem(
-                        "Your account is locked. If you haven't initiated this action, please contact support.",
-                        statusCode: StatusCodes.Status423Locked),
-                    PersistSessionError(var errorMessage) => Results.Problem(
-                        $"Failed to create session: {errorMessage}",
-                        statusCode: StatusCodes.Status500InternalServerError),
-                    _ => Results.UnprocessableEntity("Failed to create session.")
-                }))
-            .Match(
-                token => TypedResults.Ok(new TokenResponse(token)),
-                error => error
-            );
-
-    private static async Task<Result<ClaimsPrincipal>> AuthenticateAsync(HttpContext httpContext, string scheme)
+    private static async Task<Result<(ClaimsPrincipal claimsPrincipal, AuthenticationProperties authProperties)>>
+        AuthenticateAsync(HttpContext httpContext, string scheme)
         => await httpContext.AuthenticateAsync(scheme) switch
         {
-            { Succeeded: false } => Failure<ClaimsPrincipal>("Authentication failed."),
-            { Principal: null } => Failure<ClaimsPrincipal>("Authentication principal is null."),
-            { Principal: var principal } => Success(principal)
+            { Succeeded: false }
+                => Failure<(ClaimsPrincipal, AuthenticationProperties)>("Authentication failed."),
+            { Principal: null }
+                => Failure<(ClaimsPrincipal, AuthenticationProperties)>("Authentication principal is null."),
+            { Principal: var principal, Properties: var properties }
+                => Success((principal, properties))
         };
 
     private static IResult HandleLogoutAsync(HttpContext httpContext)
