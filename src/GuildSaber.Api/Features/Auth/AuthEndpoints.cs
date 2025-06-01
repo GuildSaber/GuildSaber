@@ -7,7 +7,6 @@ using GuildSaber.Api.Extensions;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using static GuildSaber.Api.Features.Auth.AuthResponse;
@@ -43,9 +42,9 @@ public class AuthEndpoints : IEndPoints
             .WithDescription("Handles the callback from BeatLeader after authentication and returns a token.")
             .Produces<TokenResponse>()
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces<ProblemHttpResult>(StatusCodes.Status422UnprocessableEntity)
-            .Produces<ProblemHttpResult>(StatusCodes.Status429TooManyRequests)
-            .Produces<ProblemHttpResult>(StatusCodes.Status423Locked);
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
+            .ProducesProblem(StatusCodes.Status423Locked);
 
         group.MapGet("/callback/discord", HandleDiscordCallbackAsync)
             .WithName(DiscordCallbackName)
@@ -53,9 +52,9 @@ public class AuthEndpoints : IEndPoints
             .WithDescription("Handles the callback from Discord after authentication and returns a token.")
             .Produces<TokenResponse>()
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces<ProblemHttpResult>(StatusCodes.Status422UnprocessableEntity)
-            .Produces<ProblemHttpResult>(StatusCodes.Status429TooManyRequests)
-            .Produces<ProblemHttpResult>(StatusCodes.Status423Locked);
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
+            .ProducesProblem(StatusCodes.Status423Locked);
 
         group.MapGet("/callback/discord/redirect", HandleDiscordCallbackWithRedirectAsync)
             .WithName(DiscordCallbackWithRedirectName)
@@ -64,9 +63,9 @@ public class AuthEndpoints : IEndPoints
                              + " from the calling origin with ?{token/error}&status as query params.")
             .Produces<RedirectHttpResult>()
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces<ProblemHttpResult>(StatusCodes.Status422UnprocessableEntity)
-            .Produces<ProblemHttpResult>(StatusCodes.Status429TooManyRequests)
-            .Produces<ProblemHttpResult>(StatusCodes.Status423Locked);
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
+            .ProducesProblem(StatusCodes.Status423Locked);
 
         group.MapGet("/callback/beatleader/redirect", HandleBeatLeaderCallbackWithRedirectAsync)
             .WithName(BeatLeaderCallbackWithRedirectName)
@@ -76,13 +75,14 @@ public class AuthEndpoints : IEndPoints
                 + " from the calling origin with ?{token/error}&status as query params.")
             .Produces<RedirectHttpResult>()
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces<ProblemHttpResult>(StatusCodes.Status422UnprocessableEntity)
-            .Produces<ProblemHttpResult>(StatusCodes.Status429TooManyRequests)
-            .Produces<ProblemHttpResult>(StatusCodes.Status423Locked);
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
+            .ProducesProblem(StatusCodes.Status423Locked);
 
         group.MapPost("/logout", HandleLogoutAsync)
             .WithName("Logout")
-            .WithSummary("Log out the current user.");
+            .WithSummary("Log out the current user.")
+            .RequireAuthorization();
     }
 
     private static ChallengeHttpResult HandleBeatLeaderLogin(
@@ -226,9 +226,5 @@ public class AuthEndpoints : IEndPoints
                 => Success((principal, properties))
         };
 
-    private static IResult HandleLogoutAsync(HttpContext httpContext)
-        => TypedResults.SignOut(new AuthenticationProperties
-        {
-            RedirectUri = httpContext.Request.PathBase + "/"
-        }, [JwtBearerDefaults.AuthenticationScheme]);
+    private static IResult HandleLogoutAsync(HttpContext httpContext) => throw new NotImplementedException();
 }

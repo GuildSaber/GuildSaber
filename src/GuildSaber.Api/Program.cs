@@ -123,7 +123,8 @@ builder.Services.AddAuthentication(options => options.DefaultScheme = JwtBearerD
         };
     });
 
-builder.Services.AddAuthorization()
+builder.Services.AddAuthorizationBuilder()
+    .AddManagerAuthorizationPolicy()
     .AddGuildAuthorizationPolicies();
 
 builder.Services.AddHangfire((serviceCollection, option) =>
@@ -140,7 +141,12 @@ builder.Services.AddHangfire((serviceCollection, option) =>
 }).AddHangfireServer();
 
 builder.AddMySqlDbContext<ServerDbContext>(connectionName: Constants.ServerDbConnectionStringKey);
-builder.Services.AddOpenApi(options => options.AddTagDescriptionSupport());
+builder.Services.AddOpenApi(options => options
+    .AddBearerSecurityScheme()
+    .AddEndpointsSecuritySchemeResolution()
+    .AddTagDescriptionSupport()
+    .AddScalarTransformers()
+);
 builder.Services.AddEndpoints<Program>(builder.Configuration);
 builder.Services.AddProblemDetails();
 
@@ -158,11 +164,11 @@ app.MapHangfireDashboard(new DashboardOptions
     Authorization = [new HangFireDashboardAuthorizationFilter()]
 });
 
-app.MapScalarApiReference("/", options =>
-{
-    options.WithTitle("GuildSaber's Api")
-        .WithTheme(ScalarTheme.Purple)
-        .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch);
-});
+app.MapScalarApiReference("/", options => options
+    .WithTitle("GuildSaber's Api")
+    .WithTheme(ScalarTheme.Purple)
+    .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch)
+    .AddPreferredSecuritySchemes(JwtBearerDefaults.AuthenticationScheme)
+    .WithPersistentAuthentication());
 
 app.Run();

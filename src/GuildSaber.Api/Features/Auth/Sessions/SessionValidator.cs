@@ -41,7 +41,7 @@ public class SessionValidator(ServerDbContext dbContext)
             .Select(x => x.IsManager)
             .FirstOrDefaultAsync();
 
-        if (isManager) identity.AddClaim(new Claim(AuthConstants.ManagerClaimType, ""));
+        if (isManager) identity.AddClaim(new Claim(ClaimTypes.Role, AuthConstants.ManagerRole));
 
         identity.AddClaim(new Claim(AuthConstants.PlayerIdClaimType, session.PlayerId.ToString()));
         return Success();

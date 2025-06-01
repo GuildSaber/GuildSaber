@@ -33,8 +33,7 @@ public class Member
         GuildLeader = 1 << 0,
         RankingTeam = 1 << 1,
         ScoringTeam = 1 << 2,
-        MemberTeam = 1 << 3,
-        GuildSaberManager = 1 << 30
+        MemberTeam = 1 << 3
     }
 }
 

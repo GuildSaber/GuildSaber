@@ -2,7 +2,6 @@ using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
-using GuildSaber.Database.Models.Server.Guilds.Members;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,7 +23,7 @@ public class GuildEndpoints : IEndPoints
             .WithName("DeleteGuild")
             .WithSummary("Delete a guild.")
             .WithDescription("Delete a guild by its ID.")
-            .RequireGuildPermission(Member.EPermission.GuildSaberManager);
+            .RequireManager();
     }
 
     private static async Task<Results<NoContent, NotFound>> DeleteGuildAsync(

@@ -21,7 +21,7 @@
         </PackageReference>
         <PackageReference Include="MyCSharp.HttpUserAgentParser.AspNetCore" Version="3.0.25"/>
         <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0-preview.3.efcore.9.0.0"/>
-        <PackageReference Include="Scalar.AspNetCore" Version="2.4.3"/>
+        <PackageReference Include="Scalar.AspNetCore.Microsoft" Version="2.4.7"/>
     </ItemGroup>
 
     <ItemGroup>

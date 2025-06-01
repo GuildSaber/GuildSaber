@@ -8,6 +8,18 @@ public class GuildPermissionHandler(IHttpContextAccessor httpContextAccessor)
 {
     private const string GuildIdRouteKey = "guildId";
 
+    /// <summary>
+    /// Handles the authorization requirement for guild permissions.
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="requirement"></param>
+    /// <remarks>
+    /// Returning CompletedTask => Unauthorized
+    /// Returning Succeed => Authorized
+    /// Returning Fail => Forbidden
+    /// No guild ID in route => Unauthorized
+    /// </remarks>
+    /// <returns></returns>
     protected override Task HandleRequirementAsync(
         AuthorizationHandlerContext context, GuildPermissionRequirement requirement)
         => context switch
@@ -15,10 +27,10 @@ public class GuildPermissionHandler(IHttpContextAccessor httpContextAccessor)
             _ when requirement.RequiredPermission == Member.EPermission.None
                 => Succeed(context, requirement),
             { User.Identity: null or { IsAuthenticated: false } }
-                => Task.CompletedTask, // Should mean unauthorized because it doesn't succeed.
+                => Task.CompletedTask,
             { User: var user } => user switch
             {
-                _ when user.FindFirst(AuthConstants.ManagerClaimType) is not null
+                _ when user.IsInRole(AuthConstants.ManagerRole)
                     => Succeed(context, requirement),
                 _ when TryGetGuildId(httpContextAccessor, out var guildId) => user.FindFirst(
                         AuthConstants.GuildPermissionClaimType(guildId)) switch
@@ -29,7 +41,7 @@ public class GuildPermissionHandler(IHttpContextAccessor httpContextAccessor)
                             => Succeed(context, requirement),
                         _ => Fail(context)
                     },
-                _ => Fail(context) // No guild ID in route, so we can't check permissions.
+                _ => Fail(context)
             }
         };
 
@@ -64,11 +76,6 @@ public class GuildPermissionHandler(IHttpContextAccessor httpContextAccessor)
         return Task.CompletedTask;
     }
 
-    /// <summary>
-    /// Should return a Forbidden.
-    /// </summary>
-    /// <param name="context"></param>
-    /// <returns></returns>
     private static Task Fail(AuthorizationHandlerContext context)
     {
         context.Fail();

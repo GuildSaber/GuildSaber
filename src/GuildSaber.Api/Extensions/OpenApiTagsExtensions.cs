@@ -7,7 +7,7 @@ public static class OpenApiTagsExtensions
 {
     private static readonly Dictionary<string, string> _tagDescriptions = new();
 
-    private class TagInfoDocumentTransformer : IOpenApiDocumentTransformer
+    internal sealed class TagInfoDocumentTransformer : IOpenApiDocumentTransformer
     {
         public Task TransformAsync(
             OpenApiDocument document, OpenApiDocumentTransformerContext context,
@@ -49,8 +49,5 @@ public static class OpenApiTagsExtensions
     /// <param name="options">The <see cref="OpenApiOptions" /> to add the tag description support to.</param>
     /// <returns>The same <see cref="OpenApiOptions" /> returned to allow chaining.</returns>
     public static OpenApiOptions AddTagDescriptionSupport(this OpenApiOptions options)
-    {
-        options.AddDocumentTransformer(new TagInfoDocumentTransformer());
-        return options;
-    }
+        => options.AddDocumentTransformer<TagInfoDocumentTransformer>();
 }
