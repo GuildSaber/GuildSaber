@@ -9,9 +9,10 @@ public class Member
     public Guild.GuildId GuildId { get; init; }
     public Player.PlayerId PlayerId { get; init; }
 
-    public DateTimeOffset StateSetAt { get; set; }
-    public EPermission Permissions { get; set; }
-    public EJoinState JoinState { get; set; }
+    public required DateTimeOffset InitializedAt { get; set; }
+    public required DateTimeOffset EditedAt { get; set; }
+    public required EPermission Permissions { get; set; }
+    public required EJoinState JoinState { get; set; }
 
     public Player Player { get; init; } = null!;
     public Guild Guild { get; init; } = null!;

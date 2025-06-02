@@ -27,6 +27,7 @@ public static class GuildSeeder
             {
                 Flags = GuildJoinRequirements.Requirements.Submission
             },
+            Status = Guild.EGuildStatus.Featured,
             Contexts =
             [
                 new GuildContext
@@ -68,6 +69,7 @@ public static class GuildSeeder
                 color: Color.FromArgb(255, 255, 124, 0),
                 createdAt: DateTimeOffset.Now
             ).Unwrap(),
+            Status = Guild.EGuildStatus.Featured,
             Requirements = new GuildJoinRequirements
             {
                 Flags = GuildJoinRequirements.Requirements.None

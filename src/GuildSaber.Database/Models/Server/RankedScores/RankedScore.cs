@@ -64,7 +64,7 @@ public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
             .HasConversion<ulong>(from => from, to => EffectiveScore.CreateUnsafe(to).Value);
 
         builder.HasOne<Guild>()
-            .WithMany().HasForeignKey(x => x.GuildId)
+            .WithMany(x => x.RankedScores).HasForeignKey(x => x.GuildId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne<GuildContext>()

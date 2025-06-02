@@ -52,7 +52,7 @@ public class RankedMapConfiguration : IEntityTypeConfiguration<RankedMap>
         builder.ComplexProperty(x => x.Requirements);
 
         builder.HasOne<Guild>()
-            .WithMany().HasForeignKey(x => x.GuildId)
+            .WithMany(x => x.RankedMaps).HasForeignKey(x => x.GuildId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne<GuildContext>()

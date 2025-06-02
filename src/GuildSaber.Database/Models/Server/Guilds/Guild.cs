@@ -2,6 +2,8 @@ using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds.Boosts;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
+using GuildSaber.Database.Models.Server.RankedMaps;
+using GuildSaber.Database.Models.Server.RankedScores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,11 +14,22 @@ public class Guild
     public required GuildId Id { get; init; }
     public required GuildInfo Info { get; set; }
     public required GuildJoinRequirements Requirements { get; set; }
+    public required EGuildStatus Status { get; init; }
 
     public IList<GuildContext> Contexts { get; init; } = null!;
     public IList<Member> Members { get; init; } = null!;
     public IList<Boost> Boosts { get; init; } = null!;
     public IList<Point> Points { get; init; } = null!;
+    public IList<RankedMap> RankedMaps { get; init; } = null!;
+    public IList<RankedScore> RankedScores { get; init; } = null!;
+
+    public enum EGuildStatus : byte
+    {
+        Unverified = 0,
+        Verified = 1,
+        Featured = 2,
+        Private = 3
+    }
 
     public readonly record struct GuildId(ulong Value) : IEFStrongTypedId<GuildId, ulong>
     {
@@ -61,6 +74,14 @@ public class GuildConfiguration : IEntityTypeConfiguration<Guild>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(x => x.Points)
+            .WithOne().HasForeignKey(x => x.GuildId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(x => x.RankedMaps)
+            .WithOne().HasForeignKey(x => x.GuildId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(x => x.RankedScores)
             .WithOne().HasForeignKey(x => x.GuildId)
             .OnDelete(DeleteBehavior.Cascade);
     }

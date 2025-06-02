@@ -1,5 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth;
 using GuildSaber.Api.Features.Auth.Authorization;
@@ -60,6 +62,14 @@ builder.Services.AddHttpClient<BeatLeaderApi>(client =>
 {
     client.BaseAddress = new Uri("https+http://beatleader-api");
     client.DefaultRequestHeaders.Add("User-Agent", "GuildSaber");
+});
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
 });
 
 builder.Services.AddAuthentication(options => options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme)
