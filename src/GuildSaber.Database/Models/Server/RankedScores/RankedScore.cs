@@ -59,7 +59,9 @@ public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
     public void Configure(EntityTypeBuilder<RankedScore> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Id).HasGenericConversion<RankedScore.RankedScoreId, ulong>();
+        builder.Property(x => x.Id)
+            .HasGenericConversion<RankedScore.RankedScoreId, ulong>()
+            .ValueGeneratedOnAdd();
         builder.Property(x => x.EffectiveScore)
             .HasConversion<ulong>(from => from, to => EffectiveScore.CreateUnsafe(to).Value);
 

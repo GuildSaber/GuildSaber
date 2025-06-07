@@ -9,7 +9,7 @@ public class Member
     public Guild.GuildId GuildId { get; init; }
     public Player.PlayerId PlayerId { get; init; }
 
-    public required DateTimeOffset InitializedAt { get; set; }
+    public required DateTimeOffset InitializedAt { get; init; }
     public required DateTimeOffset EditedAt { get; set; }
     public required EPermission Permissions { get; set; }
     public required EJoinState JoinState { get; set; }

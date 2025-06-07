@@ -36,7 +36,9 @@ public class GameModeConfiguration : IEntityTypeConfiguration<GameMode>
     public void Configure(EntityTypeBuilder<GameMode> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Id).HasGenericConversion<GameMode.GameModeId, ulong>();
+        builder.Property(x => x.Id)
+            .HasGenericConversion<GameMode.GameModeId, ulong>()
+            .ValueGeneratedOnAdd();
         builder.Property(x => x.Name).HasMaxLength(128);
     }
 }

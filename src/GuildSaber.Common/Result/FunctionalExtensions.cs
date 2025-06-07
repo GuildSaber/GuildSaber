@@ -11,6 +11,17 @@ namespace GuildSaber.Common.Result;
 /// </summary>
 public static class FunctionalExtensions
 {
+    // Make a .Apply method that fills the param with the result value if the result is successfull, or map the error with a func if itś an error
+    public static Result<T, E> Apply<T, E>(this Result<T, E> self, Func<T, T> func)
+        => self.IsSuccess
+            ? Success<T, E>(func(self.Value))
+            : Failure<T, E>(self.Error);
+
+    public static Result<T> Apply<T>(this Result<T> self, Func<T, T> func)
+        => self.IsSuccess
+            ? Success(func(self.Value))
+            : Failure<T>(self.Error);
+
     /// <summary>
     /// Returns a wrapped task which either provides a failed result when the task throws, or a success result containing a
     /// Maybe from the task result.

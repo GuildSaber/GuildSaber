@@ -47,7 +47,8 @@ public class RankedMapConfiguration : IEntityTypeConfiguration<RankedMap>
     public void Configure(EntityTypeBuilder<RankedMap> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Id).HasGenericConversion<RankedMap.RankedMapId, ulong>();
+        builder.Property(x => x.Id).HasGenericConversion<RankedMap.RankedMapId, ulong>()
+            .ValueGeneratedOnAdd();
 
         builder.ComplexProperty(x => x.Requirements);
 

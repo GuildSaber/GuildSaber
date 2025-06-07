@@ -13,11 +13,11 @@ public class Player
     public required PlayerSubscriptionInfo SubscriptionInfo { get; set; }
     public bool IsManager { get; set; }
 
-    public readonly record struct PlayerId(ulong Value) : IEFStrongTypedId<PlayerId, ulong>
+    public readonly record struct PlayerId(uint Value) : IEFStrongTypedId<PlayerId, uint>
     {
         public static bool TryParse(string from, out PlayerId value)
         {
-            if (ulong.TryParse(from, out var id))
+            if (uint.TryParse(from, out var id))
             {
                 value = new PlayerId(id);
                 return true;
@@ -27,7 +27,7 @@ public class Player
             return false;
         }
 
-        public static implicit operator ulong(PlayerId id)
+        public static implicit operator uint(PlayerId id)
             => id.Value;
 
         public override string ToString()
@@ -40,7 +40,7 @@ public class PlayerConfiguration : IEntityTypeConfiguration<Player>
     public void Configure(EntityTypeBuilder<Player> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Id).HasGenericConversion<Player.PlayerId, ulong>()
+        builder.Property(x => x.Id).HasGenericConversion<Player.PlayerId, uint>()
             .ValueGeneratedOnAdd();
         builder.ComplexProperty(x => x.Info);
         builder.ComplexProperty(x => x.HardwareInfo);

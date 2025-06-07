@@ -1,3 +1,4 @@
+using GuildSaber.Api.Features.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds;
 
 namespace GuildSaber.Api.Features.Guilds;
@@ -22,7 +23,7 @@ public static class GuildResponses
     );
 
     public readonly record struct Guild(
-        ulong Id,
+        uint Id,
         GuildInfo Info,
         GuildJoinRequirement Requirements,
         Database.Models.Server.Guilds.Guild.EGuildStatus Status
@@ -31,19 +32,12 @@ public static class GuildResponses
     public readonly record struct GuildExtended(
         Guild Guild,
         PointLite[] PointsLite,
-        Category[] Categories
+        CategoryResponses.Category[] Categories
     );
 
     public readonly record struct PointLite(
-        int Id,
+        uint Id,
         ulong GuildId,
         string Name
-    );
-
-    public readonly record struct Category(
-        ulong Id,
-        ulong GuildId,
-        string Name,
-        string? Description
     );
 }

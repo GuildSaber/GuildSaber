@@ -45,10 +45,12 @@ public class SongConfiguration : IEntityTypeConfiguration<Song>
     {
         builder.HasKey(x => x.Id);
         builder.HasIndex(x => x.Hash).IsUnique();
+        builder.Property(x => x.Id)
+            .HasGenericConversion<Song.SongId, ulong>()
+            .ValueGeneratedOnAdd();
         builder.Property(x => x.Hash)
             .HasConversion<string>(from => from.ToString(), to => SongHash.CreateUnsafe(to).Value)
             .HasMaxLength(40);
-        builder.Property(x => x.Id).HasGenericConversion<Song.SongId, ulong>();
         builder.Property(x => x.BeatSaverKey)
             .HasConversion<string?>(from => from, to => BeatSaverKey.CreateUnsafe(to));
         builder.ComplexProperty(x => x.Info);

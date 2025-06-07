@@ -43,7 +43,9 @@ public class SongDifficultyConfiguration : IEntityTypeConfiguration<SongDifficul
     public void Configure(EntityTypeBuilder<SongDifficulty> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Id).HasGenericConversion<SongDifficulty.SongDifficultyId, ulong>();
+        builder.Property(x => x.Id)
+            .HasGenericConversion<SongDifficulty.SongDifficultyId, ulong>()
+            .ValueGeneratedOnAdd();
         builder.Property(x => x.BLLeaderboardId)
             .HasConversion<string?>(from => from, to => BLLeaderboardId.CreateUnsafe(to));
 

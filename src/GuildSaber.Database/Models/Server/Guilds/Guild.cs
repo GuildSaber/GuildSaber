@@ -1,5 +1,6 @@
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds.Boosts;
+using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.RankedMaps;
@@ -22,6 +23,7 @@ public class Guild
     public IList<Point> Points { get; init; } = null!;
     public IList<RankedMap> RankedMaps { get; init; } = null!;
     public IList<RankedScore> RankedScores { get; init; } = null!;
+    public IList<Category> Categories { get; init; } = null!;
 
     public enum EGuildStatus : byte
     {
@@ -31,11 +33,11 @@ public class Guild
         Private = 3
     }
 
-    public readonly record struct GuildId(ulong Value) : IEFStrongTypedId<GuildId, ulong>
+    public readonly record struct GuildId(uint Value) : IEFStrongTypedId<GuildId, uint>
     {
         public static bool TryParse(string from, out GuildId value)
         {
-            if (ulong.TryParse(from, out var id))
+            if (uint.TryParse(from, out var id))
             {
                 value = new GuildId(id);
                 return true;
@@ -45,7 +47,7 @@ public class Guild
             return false;
         }
 
-        public static implicit operator ulong(GuildId id)
+        public static implicit operator uint(GuildId id)
             => id.Value;
 
         public override string ToString()
@@ -57,7 +59,9 @@ public class GuildConfiguration : IEntityTypeConfiguration<Guild>
 {
     public void Configure(EntityTypeBuilder<Guild> builder)
     {
-        builder.Property(x => x.Id).HasGenericConversion<Guild.GuildId, ulong>();
+        builder.Property(x => x.Id)
+            .HasGenericConversion<Guild.GuildId, uint>()
+            .ValueGeneratedOnAdd();
         builder.ComplexProperty(x => x.Info).Configure(new GuildInfoConfiguration());
         builder.ComplexProperty(x => x.Requirements).Configure(new GuildJoinRequirementsConfiguration());
 
@@ -82,6 +86,10 @@ public class GuildConfiguration : IEntityTypeConfiguration<Guild>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(x => x.RankedScores)
+            .WithOne().HasForeignKey(x => x.GuildId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(x => x.Categories)
             .WithOne().HasForeignKey(x => x.GuildId)
             .OnDelete(DeleteBehavior.Cascade);
     }

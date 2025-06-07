@@ -77,7 +77,9 @@ public class AbstractScoreConfiguration : IEntityTypeConfiguration<AbstractScore
     public void Configure(EntityTypeBuilder<AbstractScore> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Id).HasGenericConversion<AbstractScore.ScoreId, ulong>();
+        builder.Property(x => x.Id)
+            .HasGenericConversion<AbstractScore.ScoreId, ulong>()
+            .ValueGeneratedOnAdd();
         builder.HasDiscriminator(x => x.Type)
             .HasValue<ScoreSaberScore>(AbstractScore.EScoreType.ScoreSaber)
             .HasValue<BeatLeaderScore>(AbstractScore.EScoreType.BeatLeader)

@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using CSharpFunctionalExtensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace GuildSaber.Database.Extensions;
 
+[SuppressMessage("ReSharper", "ExplicitCallerInfoArgument")]
 public static class EFCoreMonadicOperationExtensions
 {
     /// <summary>
@@ -41,7 +43,6 @@ public static class EFCoreMonadicOperationExtensions
         catch (Exception exception)
         {
             return Failure<U, InsertError>(
-                // ReSharper disable once ExplicitCallerInfoArgument
                 new InsertError(exception, $"{callerMemberName}.[{nameof(AddAndSaveAsync)}]", callerFilePath)
             );
         }
@@ -83,7 +84,6 @@ public static class EFCoreMonadicOperationExtensions
         catch (Exception exception)
         {
             return Failure<U, InsertError>(
-                // ReSharper disable once ExplicitCallerInfoArgument
                 new InsertError(exception, $"{callerMemberName}.[{nameof(AddAndSaveAsync)}]", callerFilePath)
             );
         }
@@ -120,7 +120,6 @@ public static class EFCoreMonadicOperationExtensions
         catch (Exception exception)
         {
             return Failure(
-                // ReSharper disable once ExplicitCallerInfoArgument
                 new InsertError(exception, $"{callerMemberName}.[{nameof(AddAndSaveAsync)}]", callerFilePath)
             );
         }
@@ -158,7 +157,6 @@ public static class EFCoreMonadicOperationExtensions
         catch (Exception exception)
         {
             return Failure(
-                // ReSharper disable once ExplicitCallerInfoArgument
                 new InsertError(exception, $"{callerMemberName}.[{nameof(AddAndSaveAsync)}]", callerFilePath)
             );
         }
@@ -263,4 +261,134 @@ public static class EFCoreMonadicOperationExtensions
             .TapTry(() => context.SaveChangesAsync(),
                 exception => new UpdateError(exception)
             );
+
+    /// <summary>
+    /// Asynchronously updates an entity in the DbContext and saves the changes.
+    /// </summary>
+    /// <typeparam name="T">The type of the entity to be updated.</typeparam>
+    /// <typeparam name="U">The type of the value to be mapped from the entity.</typeparam>
+    /// <param name="context">The DbContext in which the entity will be updated.</param>
+    /// <param name="entity">The entity to be updated.</param>
+    /// <param name="mapper">A function that maps a value from the updated entity.</param>
+    /// <param name="callerMemberName">The name of the calling method.</param>
+    /// <param name="callerFilePath">The path of the file that contains the calling method.</param>
+    /// <returns>
+    /// A Result object that contains the mapped value from the updated entity if the operation is successful.
+    /// If an exception occurs during the operation, the function returns a Result object on failure state represented by an
+    /// UpdateError.
+    /// </returns>
+    public static async Task<Result<U, UpdateError>> UpdateAndSaveAsync<T, U>(
+        this DbContext context, T entity, Func<T, U> mapper,
+        [CallerMemberName] string callerMemberName = "",
+        [CallerFilePath] string callerFilePath = "") where T : class
+    {
+        try
+        {
+            context.Set<T>().Update(entity);
+            await context.SaveChangesAsync();
+            return Success<U, UpdateError>(mapper(entity));
+        }
+        catch (Exception exception)
+        {
+            return Failure<U, UpdateError>(
+                new UpdateError(exception, $"{callerMemberName}.[{nameof(UpdateAndSaveAsync)}]", callerFilePath)
+            );
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously updates an entity in the DbContext and saves the changes.
+    /// </summary>
+    /// <typeparam name="T">The type of the entity to be updated.</typeparam>
+    /// <typeparam name="U">The type of the value to be mapped from the entity.</typeparam>
+    /// <param name="context">The DbContext in which the entity will be updated.</param>
+    /// <param name="createEntity">A function that creates the entity to be updated.</param>
+    /// <param name="mapper">A function that maps a value from the updated entity.</param>
+    /// <param name="callerMemberName">The name of the calling method.</param>
+    /// <param name="callerFilePath">The path of the file that contains the calling method.</param>
+    /// <returns>
+    /// A Result object that contains the mapped value from the updated entity if the operation is successful.
+    /// If an exception occurs during the operation, the function returns a Result object on failure state represented by an
+    /// UpdateError.
+    /// </returns>
+    public static async Task<Result<U, UpdateError>> UpdateAndSaveAsync<T, U>(
+        this DbContext context, Func<T> createEntity, Func<T, U> mapper,
+        [CallerMemberName] string callerMemberName = "",
+        [CallerFilePath] string callerFilePath = "") where T : class
+    {
+        try
+        {
+            var entity = createEntity();
+            context.Set<T>().Update(entity);
+            await context.SaveChangesAsync();
+            return Success<U, UpdateError>(mapper(entity));
+        }
+        catch (Exception exception)
+        {
+            return Failure<U, UpdateError>(
+                new UpdateError(exception, $"{callerMemberName}.[{nameof(UpdateAndSaveAsync)}]", callerFilePath)
+            );
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously updates an entity in the DbContext and saves the changes.
+    /// </summary>
+    /// <typeparam name="T">The type of the entity to be updated.</typeparam>
+    /// <param name="context">The DbContext in which the entity will be updated.</param>
+    /// <param name="entity">The entity to be updated.</param>
+    /// <param name="callerMemberName">The name of the calling method.</param>
+    /// <param name="callerFilePath">The path of the file that contains the calling method.</param>
+    /// <returns>
+    /// Returns a UnitResult object on failure state represented by an UpdateError if the operation fails.
+    /// </returns>
+    public static async Task<UnitResult<UpdateError>> UpdateAndSaveAsync<T>(
+        this DbContext context, T entity,
+        [CallerMemberName] string callerMemberName = "",
+        [CallerFilePath] string callerFilePath = "") where T : class
+    {
+        try
+        {
+            context.Set<T>().Update(entity);
+            await context.SaveChangesAsync();
+            return UnitResult.Success<UpdateError>();
+        }
+        catch (Exception exception)
+        {
+            return Failure(
+                new UpdateError(exception, $"{callerMemberName}.[{nameof(UpdateAndSaveAsync)}]", callerFilePath)
+            );
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously updates an entity in the DbContext and saves the changes.
+    /// </summary>
+    /// <typeparam name="T">The type of the entity to be updated.</typeparam>
+    /// <param name="context">The DbContext in which the entity will be updated.</param>
+    /// <param name="createEntity">A function that creates the entity to be updated.</param>
+    /// <param name="callerMemberName">The name of the calling method.</param>
+    /// <param name="callerFilePath">The path of the file that contains the calling method.</param>
+    /// <returns>
+    /// Returns a UnitResult object on failure state represented by an UpdateError if the operation fails.
+    /// </returns>
+    public static async Task<UnitResult<UpdateError>> UpdateAndSaveAsync<T>(
+        this DbContext context, Func<T> createEntity,
+        [CallerMemberName] string callerMemberName = "",
+        [CallerFilePath] string callerFilePath = "") where T : class
+    {
+        try
+        {
+            var entity = createEntity();
+            context.Set<T>().Update(entity);
+            await context.SaveChangesAsync();
+            return UnitResult.Success<UpdateError>();
+        }
+        catch (Exception exception)
+        {
+            return Failure(
+                new UpdateError(exception, $"{callerMemberName}.[{nameof(UpdateAndSaveAsync)}]", callerFilePath)
+            );
+        }
+    }
 }

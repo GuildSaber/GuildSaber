@@ -1,6 +1,7 @@
 using GuildSaber.Database.Models.Server.Auth;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Boosts;
+using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.Players;
@@ -26,6 +27,7 @@ public class ServerDbContext : DbContext
     public DbSet<Member> Members { get; set; }
     public DbSet<Boost> Boosts { get; set; }
     public DbSet<Point> Points { get; set; }
+    public DbSet<Category> Categories { get; set; }
 
     public DbSet<Player> Players { get; set; }
     public DbSet<Session> Sessions { get; set; }
@@ -50,6 +52,7 @@ public class ServerDbContext : DbContext
         .ApplyConfiguration(new MemberConfiguration())
         .ApplyConfiguration(new BoostConfiguration())
         .ApplyConfiguration(new PointConfiguration())
+        .ApplyConfiguration(new CategoryConfiguration())
         .ApplyConfiguration(new PlayerConfiguration())
         .ApplyConfiguration(new SessionConfiguration())
         .ApplyConfiguration(new AbstractScoreConfiguration())

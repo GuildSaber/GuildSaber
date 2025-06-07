@@ -16,11 +16,11 @@ public class GuildContext
 
     public IList<Point> Points { get; init; } = null!;
 
-    public readonly record struct GuildContextId(ulong Value) : IEFStrongTypedId<GuildContextId, ulong>
+    public readonly record struct GuildContextId(uint Value) : IEFStrongTypedId<GuildContextId, uint>
     {
         public static bool TryParse(string from, out GuildContextId value)
         {
-            if (ulong.TryParse(from, out var id))
+            if (uint.TryParse(from, out var id))
             {
                 value = new GuildContextId(id);
                 return true;
@@ -30,7 +30,7 @@ public class GuildContext
             return false;
         }
 
-        public static implicit operator ulong(GuildContextId id)
+        public static implicit operator uint(GuildContextId id)
             => id.Value;
 
         public override string ToString()
@@ -53,7 +53,9 @@ public class GuildContextConfiguration : IEntityTypeConfiguration<GuildContext>
     public void Configure(EntityTypeBuilder<GuildContext> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Id).HasGenericConversion<GuildContext.GuildContextId, ulong>();
+        builder.Property(x => x.Id)
+            .HasGenericConversion<GuildContext.GuildContextId, uint>()
+            .ValueGeneratedOnAdd();
         builder.ComplexProperty(x => x.Info).Configure(new GuildContextInfoConfiguration());
 
         builder.HasOne<Guild>()

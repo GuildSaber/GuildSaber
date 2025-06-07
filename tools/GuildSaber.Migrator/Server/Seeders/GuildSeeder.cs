@@ -2,6 +2,7 @@ using System.Drawing;
 using GuildSaber.Common.Result;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
+using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using Microsoft.EntityFrameworkCore;
 using Point = GuildSaber.Database.Models.Server.Guilds.Points.Point;
@@ -45,16 +46,50 @@ public static class GuildSeeder
                         {
                             Id = new Point.PointId(1),
                             GuildId = new Guild.GuildId(1),
-                            Info = new PointInfo
-                            {
-                                Name = "CPP",
-                                Description = "Challenge Pass points. The amount you get per valid map pass is fixed,"
-                                              + "and the total amount you get per map on your profile exponentially decrease."
-                            },
+                            Info = PointInfo.TryCreate(
+                                name: "CPP",
+                                description: "Challenge Pass points. The amount you get per valid map pass is fixed,"
+                                             + "and the total amount you get per map on your profile exponentially decrease."
+                            ).Unwrap(),
                             CurveSettings = CurveSettings.Default,
                             WeightingSettings = WeightingSettings.Default
                         }
                     ]
+                }
+            ],
+            Categories =
+            [
+                new Category
+                {
+                    Id = new Category.CategoryId(1),
+                    Info = CategoryInfo.TryCreate(
+                        name: "Vibro",
+                        description: "The Vibro category, for the most vibro maps."
+                    ).Unwrap()
+                },
+                new Category
+                {
+                    Id = new Category.CategoryId(2),
+                    Info = CategoryInfo.TryCreate(
+                        name: "Tech",
+                        description: "The Tech category, for the most tech maps."
+                    ).Unwrap()
+                },
+                new Category
+                {
+                    Id = new Category.CategoryId(3),
+                    Info = CategoryInfo.TryCreate(
+                        name: "Shitpost",
+                        description: "The Shitpost category, for the most shitpost maps."
+                    ).Unwrap()
+                },
+                new Category
+                {
+                    Id = new Category.CategoryId(4),
+                    Info = CategoryInfo.TryCreate(
+                        name: "Jumps",
+                        description: "The Jumps category, for the most jumps maps."
+                    ).Unwrap()
                 }
             ]
         },
@@ -91,13 +126,12 @@ public static class GuildSeeder
                         {
                             Id = new Point.PointId(2),
                             GuildId = new Guild.GuildId(2),
-                            Info = new PointInfo
-                            {
-                                Name = "RPL",
-                                Description =
-                                    "I've heard that it once had a signification. The amount you get per valid map pass is fixed,"
-                                    + "and the total amount you get per map on your profile exponentially decrease."
-                            },
+                            Info = PointInfo.TryCreate(
+                                name: "RPL",
+                                description:
+                                "The Beat Saber Challenge Community points. The amount you get per valid map pass is fixed,"
+                                + "and the total amount you get per map on your profile exponentially decrease."
+                            ).Unwrap(),
                             CurveSettings = CurveSettings.Default,
                             WeightingSettings = WeightingSettings.Default
                         }

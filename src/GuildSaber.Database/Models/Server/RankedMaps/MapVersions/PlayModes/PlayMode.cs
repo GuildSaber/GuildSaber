@@ -36,7 +36,9 @@ public class PlayModeConfiguration : IEntityTypeConfiguration<PlayMode>
     public void Configure(EntityTypeBuilder<PlayMode> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Id).HasGenericConversion<PlayMode.PlayModeId, ulong>();
+        builder.Property(x => x.Id)
+            .HasGenericConversion<PlayMode.PlayModeId, ulong>()
+            .ValueGeneratedOnAdd();
         builder.Property(x => x.Name).HasMaxLength(128);
     }
 }

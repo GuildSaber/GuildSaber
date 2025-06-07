@@ -25,12 +25,11 @@ public class GuildEndpoints : IEndPoints
         group.MapGet("/{guildId}", GetGuildAsync)
             .WithName("GetGuild")
             .WithSummary("Get a guild")
-            .WithDescription("Get a specific guild by its Id.")
-            .RequireManager();
+            .WithDescription("Get a specific guild by its Id.");
 
         group.MapGet("/{guildId}/extended", GetGuildExtended)
             .WithName("GetGuildExtended")
-            .WithSummary("Get extended guild information")
+            .WithSummary("Get Guild with Extended Information")
             .WithDescription("Get a specific guild with extended information by its Id."
                              + " Which includes additional fields like categories and points.");
 
@@ -68,26 +67,30 @@ public class GuildEndpoints : IEndPoints
         query = ApplySortOrder(query, sortBy, order);
 
         return TypedResults.Ok(await PagedList<GuildResponses.Guild>
-            .CreateAsync(query.Select(guild => guild.Map()), page, pageSize)
+            .CreateAsync(query.Select(GuildMappers.MapGuildExpression), page, pageSize)
         );
     }
 
     private static async Task<Results<Ok<GuildResponses.Guild>, NotFound>> GetGuildAsync(
         Guild.GuildId guildId, ServerDbContext dbContext)
-        => await dbContext.Guilds.FindAsync(guildId) switch
-        {
-            null => TypedResults.NotFound(),
-            var guild => TypedResults.Ok(guild.Map())
-        };
+        => await dbContext.Guilds.Where(x => x.Id == guildId)
+                .Select(GuildMappers.MapGuildExpression)
+                .FirstOrDefaultAsync()
+            switch
+            {
+                { Id: 0 } => TypedResults.NotFound(),
+                var guild => TypedResults.Ok(guild)
+            };
 
     private static async Task<Results<Ok<GuildResponses.GuildExtended>, NotFound>> GetGuildExtended(
         Guild.GuildId guildId, ServerDbContext dbContext)
-        => await dbContext.Guilds
-                .Include(x => x.Points)
-                .FirstOrDefaultAsync(x => x.Id == guildId) switch
+        => await dbContext.Guilds.AsSplitQuery()
+                .Where(x => x.Id == guildId)
+                .Select(GuildMappers.MapGuildExtendedExpression)
+                .FirstOrDefaultAsync() switch
             {
-                null => TypedResults.NotFound(),
-                var guild => TypedResults.Ok(guild.MapExtended())
+                { Guild.Id: 0 } => TypedResults.NotFound(),
+                var guildExtended => TypedResults.Ok(guildExtended)
             };
 
     private static IQueryable<Guild> ApplySortOrder(IQueryable<Guild> query, EGuildSorters sortBy, EOrder order)
