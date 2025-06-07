@@ -46,6 +46,9 @@ builder.Services
 builder.Services
     .AddOptionsWithValidateOnStart<DiscordAuthSettings>()
     .Bind(authSettings.GetSection(nameof(AuthSettings.Discord))).ValidateDataAnnotations();
+builder.Services
+    .AddOptionsWithValidateOnStart<RedirectSettings>()
+    .Bind(authSettings.GetSection(nameof(AuthSettings.Redirect))).ValidateDataAnnotations();
 
 var connectionMultiplexer = ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("cache")!);
 

@@ -36,6 +36,7 @@ builder.AddProject<GuildSaber_DiscordBot>("discord-bot", option => option.Exclud
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
     .WithReference(discordbotDb).WaitFor(migrator)
     .WithReference(apiService).WaitFor(apiService)
-    .WithReference(cache).WaitFor(cache);
+    .WithReference(cache).WaitFor(cache)
+    .WithExplicitStart();
 
 builder.Build().Run();

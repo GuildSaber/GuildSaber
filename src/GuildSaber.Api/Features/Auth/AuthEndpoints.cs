@@ -4,11 +4,13 @@ using AspNet.Security.OAuth.BeatLeader;
 using AspNet.Security.OAuth.Discord;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Extensions;
+using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using static GuildSaber.Api.Features.Auth.AuthResponse;
 using IResult = Microsoft.AspNetCore.Http.IResult;
 
@@ -128,8 +130,13 @@ public class AuthEndpoints : IEndPoints
     }
 
     private static async Task<Results<RedirectHttpResult, ProblemHttpResult>> HandleDiscordCallbackWithRedirectAsync(
-        HttpContext httpContext, AuthService authService, [FromQuery] string returnUrl)
+        HttpContext httpContext, AuthService authService, [FromQuery] string returnUrl,
+        IOptions<RedirectSettings> redirectSettings)
     {
+        if (!IsValidRedirectUrl(returnUrl, redirectSettings))
+            return TypedResults.Problem("Invalid return URL. Please ensure the URL is allowed.",
+                statusCode: StatusCodes.Status400BadRequest);
+
         var authResult = await AuthenticateAsync(httpContext, DiscordAuthenticationDefaults.AuthenticationScheme);
         if (!authResult.TryGetValue(out var authValue))
             return TypedResults.Problem("Authentication failed. Please ensure you are logged in with Discord.",
@@ -140,8 +147,13 @@ public class AuthEndpoints : IEndPoints
     }
 
     private static async Task<Results<RedirectHttpResult, ProblemHttpResult>> HandleBeatLeaderCallbackWithRedirectAsync(
-        HttpContext httpContext, AuthService authService, [FromQuery] string returnUrl)
+        HttpContext httpContext, AuthService authService, [FromQuery] string returnUrl, IOptions<
+            RedirectSettings> redirectSettings)
     {
+        if (!IsValidRedirectUrl(returnUrl, redirectSettings))
+            return TypedResults.Problem("Invalid return URL. Please ensure the URL is allowed.",
+                statusCode: StatusCodes.Status400BadRequest);
+
         var authResult = await AuthenticateAsync(httpContext, BeatLeaderAuthenticationDefaults.AuthenticationScheme);
         if (!authResult.TryGetValue(out var authValue))
             return TypedResults.Problem("Authentication failed. Please ensure you are logged in with BeatLeader.",
@@ -225,6 +237,17 @@ public class AuthEndpoints : IEndPoints
             { Principal: var principal, Properties: var properties }
                 => Success((principal, properties))
         };
+
+    private static bool IsValidRedirectUrl(string returnUrl, IOptions<RedirectSettings> redirectSettings)
+    {
+        if (string.IsNullOrWhiteSpace(returnUrl) || !Uri.TryCreate(returnUrl, UriKind.Absolute, out var uri))
+            return false;
+
+        var returnOrigin = uri.GetLeftPart(UriPartial.Authority);
+
+        return redirectSettings.Value.AllowedOriginUrls
+            .Any(origin => string.Equals(origin, returnOrigin, StringComparison.OrdinalIgnoreCase));
+    }
 
     private static IResult HandleLogoutAsync(HttpContext httpContext) => throw new NotImplementedException();
 }

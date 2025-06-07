@@ -10,6 +10,12 @@ public class AuthSettings
     [Required] public required JwtAuthSettings Jwt { get; init; }
     [Required] public required BeatLeaderAuthSettings BeatLeader { get; init; }
     [Required] public required DiscordAuthSettings Discord { get; init; }
+    [Required] public required RedirectSettings Redirect { get; init; }
+}
+
+public class RedirectSettings
+{
+    public string[] AllowedOriginUrls { get; init; } = [];
 }
 
 public class SessionSettings
