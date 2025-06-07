@@ -27,6 +27,10 @@
 
     <ItemGroup>
         <Folder Include="Features\Debug\"/>
+        <Folder Include="Features\Players\Scores\"/>
+        <Folder Include="Features\RankedMaps\MapVersions\"/>
+        <Folder Include="Features\RankedScores\"/>
+        <Folder Include="Features\Songs\SongDifficulties\"/>
     </ItemGroup>
 
     <ItemGroup>

@@ -9,7 +9,7 @@ public class Member
     public Guild.GuildId GuildId { get; init; }
     public Player.PlayerId PlayerId { get; init; }
 
-    public required DateTimeOffset InitializedAt { get; init; }
+    public required DateTimeOffset CreatedAt { get; init; }
     public required DateTimeOffset EditedAt { get; set; }
     public required EPermission Permissions { get; set; }
     public required EJoinState JoinState { get; set; }
@@ -48,7 +48,7 @@ public class MemberConfiguration : IEntityTypeConfiguration<Member>
             .HasForeignKey(x => x.GuildId);
 
         builder.HasOne(x => x.Player)
-            .WithMany()
+            .WithMany(x => x.Members)
             .HasForeignKey(x => x.PlayerId);
     }
 }

@@ -21,7 +21,8 @@ public class AuthService(
     IOptions<SessionSettings> sessionSettings,
     IHttpUserAgentParserAccessor userAgentParser,
     BeatLeaderApi beatLeaderApi,
-    ServerDbContext dbContext)
+    ServerDbContext dbContext,
+    TimeProvider timeProvider)
 {
     public async Task<Maybe<PlayerId>> GetPlayerIdAsync(BeatLeaderId beatLeaderId)
         => await dbContext.Players
@@ -41,9 +42,9 @@ public class AuthService(
                 var id => From(id)
             };
 
-    private async Task<int> GetValidSessionCountAsync(PlayerId playerId)
+    private async Task<int> GetValidSessionCountAsync(PlayerId playerId, DateTimeOffset currentTime)
         => await dbContext.Sessions
-            .CountAsync(s => s.PlayerId == playerId && s.IsValid);
+            .CountAsync(s => s.PlayerId == playerId && s.IsValid && s.ExpiresAt > currentTime);
 
     public async Task<Result<string, SessionCreationError>> CreateSession(PlayerId playerId, HttpContext httpContext)
     {
@@ -51,7 +52,7 @@ public class AuthService(
         if (userAgent is null)
             return new MissingUserAgent();
 
-        var sessionCount = await GetValidSessionCountAsync(playerId);
+        var sessionCount = await GetValidSessionCountAsync(playerId, timeProvider.GetUtcNow());
         var settings = sessionSettings.Value;
 
         if (sessionCount >= settings.MaxSessionCount)

@@ -8,8 +8,7 @@ public class HostShutdownOnMigrationWorkerStopped(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        while ((!Worker.IsFinished || !Server.Worker.IsFinished)
-               && !stoppingToken.IsCancellationRequested)
+        while ((!Worker.IsFinished || !Server.Worker.IsFinished) && !stoppingToken.IsCancellationRequested)
             await Task.Delay(1000, stoppingToken);
 
         hostApplicationLifetime.StopApplication();

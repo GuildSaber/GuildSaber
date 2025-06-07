@@ -17,7 +17,8 @@ public static class PlayerSeeder
             {
                 Username = "Kuurama",
                 AvatarUrl = "https://avatars.akamai.steamstatic.com/641bb318819718248bb4570d4300949935052ccc_full.jpg",
-                Country = "FR"
+                Country = "FR",
+                CreatedAt = DateTimeOffset.UtcNow
             },
             HardwareInfo = new PlayerHardwareInfo
             {

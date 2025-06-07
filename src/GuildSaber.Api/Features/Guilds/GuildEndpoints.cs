@@ -67,8 +67,7 @@ public class GuildEndpoints : IEndPoints
         query = ApplySortOrder(query, sortBy, order);
 
         return TypedResults.Ok(await PagedList<GuildResponses.Guild>
-            .CreateAsync(query.Select(GuildMappers.MapGuildExpression), page, pageSize)
-        );
+            .CreateAsync(query.Select(GuildMappers.MapGuildExpression), page, pageSize));
     }
 
     private static async Task<Results<Ok<GuildResponses.Guild>, NotFound>> GetGuildAsync(
@@ -97,12 +96,17 @@ public class GuildEndpoints : IEndPoints
         => sortBy switch
         {
             EGuildSorters.Id => query.OrderBy(order, guild => guild.Id),
-            EGuildSorters.Name => query.OrderBy(order, guild => guild.Info.Name),
+            EGuildSorters.Name => query.OrderBy(order, guild => guild.Info.Name)
+                .ThenBy(order, guild => guild.Id),
             EGuildSorters.Popularity => query.OrderBy(order, guild => guild.Status)
-                .ThenBy(order, guild => guild.RankedScores.Count / guild.Members.Count),
-            EGuildSorters.CreationDate => query.OrderBy(order, guild => guild.Info.CreatedAt),
-            EGuildSorters.MemberCount => query.OrderBy(order, guild => guild.Members.Count),
-            EGuildSorters.MapCount => query.OrderBy(order, guild => guild.RankedMaps.Count),
+                .ThenBy(order, guild => guild.RankedScores.Count / guild.Members.Count)
+                .ThenBy(order, guild => guild.Id),
+            EGuildSorters.CreationDate => query.OrderBy(order, guild => guild.Info.CreatedAt)
+                .ThenBy(order, guild => guild.Id),
+            EGuildSorters.MemberCount => query.OrderBy(order, guild => guild.Members.Count)
+                .ThenBy(order, guild => guild.Id),
+            EGuildSorters.MapCount => query.OrderBy(order, guild => guild.RankedMaps.Count)
+                .ThenBy(order, guild => guild.Id),
             _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
         };
 }

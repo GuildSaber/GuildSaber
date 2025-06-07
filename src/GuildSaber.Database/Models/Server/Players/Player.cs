@@ -1,4 +1,5 @@
 using GuildSaber.Database.Extensions;
+using GuildSaber.Database.Models.Server.Guilds.Members;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,6 +13,8 @@ public class Player
     public required PlayerLinkedAccounts LinkedAccounts { get; set; }
     public required PlayerSubscriptionInfo SubscriptionInfo { get; set; }
     public bool IsManager { get; set; }
+
+    public IList<Member> Members { get; init; } = null!;
 
     public readonly record struct PlayerId(uint Value) : IEFStrongTypedId<PlayerId, uint>
     {
@@ -46,5 +49,10 @@ public class PlayerConfiguration : IEntityTypeConfiguration<Player>
         builder.ComplexProperty(x => x.HardwareInfo);
         builder.ComplexProperty(x => x.LinkedAccounts).Configure(new PlayerLinkedAccountsConfiguration());
         builder.ComplexProperty(x => x.SubscriptionInfo);
+
+        builder.HasMany(x => x.Members)
+            .WithOne(x => x.Player)
+            .HasForeignKey(x => x.PlayerId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
