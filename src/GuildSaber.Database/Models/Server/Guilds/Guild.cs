@@ -14,7 +14,7 @@ public class Guild
 {
     public required GuildId Id { get; init; }
     public required GuildInfo Info { get; set; }
-    public required GuildJoinRequirements Requirements { get; set; }
+    public required GuildRequirements Requirements { get; set; }
     public required EGuildStatus Status { get; init; }
 
     public IList<GuildContext> Contexts { get; init; } = null!;

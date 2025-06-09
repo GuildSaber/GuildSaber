@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using GuildSaber.Api.Extensions;
-using GuildSaber.Api.Features.Auth;
+using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Internal;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Players;
@@ -37,9 +37,7 @@ public class PlayerEndpoints : IEndPoints
     private static async Task<Results<Ok<PlayerResponses.PlayerAtMe>, NotFound>> GetPlayerAtMeAsync(
         ServerDbContext dbContext, ClaimsPrincipal claimsPrincipal)
         => await dbContext.Players
-                .Where(x => x.Id == new Player.PlayerId(
-                    uint.Parse(((ClaimsIdentity)claimsPrincipal.Identity!).FindFirst(AuthConstants.PlayerIdClaimType)!
-                        .Value)))
+                .Where(x => x.Id == claimsPrincipal.GetPlayerId())
                 .Select(PlayerMappers.MapPlayerAtMeExpression)
                 .FirstOrDefaultAsync() switch
             {

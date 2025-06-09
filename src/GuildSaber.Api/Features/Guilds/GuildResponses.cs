@@ -14,7 +14,7 @@ public static class GuildResponses
     );
 
     public readonly record struct GuildJoinRequirement(
-        GuildJoinRequirements.Requirements Flags,
+        GuildRequirements.Requirements Flags,
         uint MinRank,
         uint MaxRank,
         uint MinPP,

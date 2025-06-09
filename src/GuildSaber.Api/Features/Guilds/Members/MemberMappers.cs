@@ -16,6 +16,17 @@ public static class MemberMappers
             InitializedAt = self.CreatedAt
         };
 
+    public static MemberResponses.Member Map(this Member self)
+        => new()
+        {
+            GuildId = self.GuildId,
+            PlayerId = self.PlayerId,
+            JoinState = self.JoinState.Map(),
+            Permissions = self.Permissions.Map(),
+            EditedAt = self.EditedAt,
+            InitializedAt = self.CreatedAt
+        };
+
     public static MemberResponses.EJoinState Map(this Member.EJoinState self)
         => self switch
         {

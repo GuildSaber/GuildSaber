@@ -3,8 +3,8 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GuildSaber.Database.Models.Server.Guilds;
 
-public readonly record struct GuildJoinRequirements(
-    GuildJoinRequirements.Requirements Flags,
+public readonly record struct GuildRequirements(
+    GuildRequirements.Requirements Flags,
     uint MinRank,
     uint MaxRank,
     uint MinPP,
@@ -24,9 +24,9 @@ public readonly record struct GuildJoinRequirements(
     }
 }
 
-public class GuildJoinRequirementsConfiguration : IComplexPropertyConfiguration<GuildJoinRequirements>
+public class GuildJoinRequirementsConfiguration : IComplexPropertyConfiguration<GuildRequirements>
 {
-    public ComplexPropertyBuilder<GuildJoinRequirements> Configure(
-        ComplexPropertyBuilder<GuildJoinRequirements> builder)
+    public ComplexPropertyBuilder<GuildRequirements> Configure(
+        ComplexPropertyBuilder<GuildRequirements> builder)
         => builder;
 }
