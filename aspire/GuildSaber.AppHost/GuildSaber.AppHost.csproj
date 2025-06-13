@@ -12,12 +12,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Hosting.AppHost" Version="9.2.1"/>
-        <PackageReference Include="Aspire.Hosting.MySql" Version="9.2.1"/>
-        <PackageReference Include="Aspire.Hosting.Redis" Version="9.2.1"/>
-        <PackageReference Include="Aspire.Hosting.Valkey" Version="9.2.1"/>
-        <PackageReference Include="Aspire.Pomelo.EntityFrameworkCore.MySql" Version="9.2.1"/>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5">
+        <PackageReference Include="Aspire.Hosting.AppHost" Version="9.3.1" />
+        <PackageReference Include="Aspire.Hosting.MySql" Version="9.3.1" />
+        <PackageReference Include="Aspire.Hosting.Redis" Version="9.3.1" />
+        <PackageReference Include="Aspire.Hosting.Valkey" Version="9.3.1" />
+        <PackageReference Include="Aspire.Pomelo.EntityFrameworkCore.MySql" Version="9.3.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.6">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

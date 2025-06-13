@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
-using FluentAssertions;
-using FluentAssertions.Collections;
+using AwesomeAssertions;
+using AwesomeAssertions.Collections;
 using GuildSaber.Common.Services.BeatLeader.Models;
 
 namespace GuildSaber.UnitTests.Utils;

@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using FluentAssertions;
+using AwesomeAssertions;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;

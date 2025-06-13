@@ -1,6 +1,6 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using FluentAssertions;
+using AwesomeAssertions;
 
 namespace GuildSaber.UnitTests.Utils;
 
