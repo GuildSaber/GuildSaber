@@ -2,7 +2,7 @@
 
 namespace GuildSaber.Database.Extensions;
 
-public static class EfCoreExpressionExtensions
+public static class EFCoreExpressionExtensions
 {
     /// <summary>
     /// An ExpressionVisitor that replaces one expression with another in the expression tree.

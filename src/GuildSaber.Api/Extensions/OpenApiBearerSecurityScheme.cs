@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi.Models;
 
@@ -20,12 +21,18 @@ public static class OpenApiBearerSecurityScheme
 
             var requirements = new Dictionary<string, OpenApiSecurityScheme>
             {
-                ["Bearer"] = new()
+                [JwtBearerDefaults.AuthenticationScheme] = new()
                 {
                     Type = SecuritySchemeType.Http,
-                    Scheme = "bearer", // "bearer" refers to the header name here
+                    Name = JwtBearerDefaults.AuthenticationScheme,
+                    Scheme = JwtBearerDefaults.AuthenticationScheme,
                     In = ParameterLocation.Header,
-                    BearerFormat = "Json Web Token"
+                    BearerFormat = "Json Web Token",
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = JwtBearerDefaults.AuthenticationScheme
+                    }
                 }
             };
             document.Components ??= new OpenApiComponents();

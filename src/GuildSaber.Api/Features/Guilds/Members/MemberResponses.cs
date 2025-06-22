@@ -8,7 +8,8 @@ public static class MemberResponses
         DateTimeOffset InitializedAt,
         DateTimeOffset EditedAt,
         EPermission Permissions,
-        EJoinState JoinState
+        EJoinState JoinState,
+        int Priority
     );
 
     public enum EJoinState : uint

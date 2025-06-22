@@ -71,9 +71,7 @@ public class AuthService(
             IsValid = true
         };
 
-        var insertResult = await dbContext.AddAndSaveAsync(session);
-        if (insertResult.IsFailure)
-            return new PersistSessionError(insertResult.Error.ToString());
+        _ = await dbContext.AddAndSaveAsync(session);
 
         return token.Token;
     }
@@ -98,14 +96,11 @@ public class AuthService(
                     LinkedAccounts = new PlayerLinkedAccounts(beatleaderId, null, null),
                     SubscriptionInfo = new PlayerSubscriptionInfo(PlayerSubscriptionInfo.ESubscriptionTier.None)
                 }))
-            .Bind(player => dbContext
-                .AddAndSaveAsync(player, x => x.Id)
-                .MapError(e => e.ToString())
-            );
+            .Map(static (player, dbContext) => dbContext
+                .AddAndSaveAsync(player, x => x.Id), dbContext);
 }
 
 public abstract record SessionCreationError;
-public record PersistSessionError(string ErrorMessage) : SessionCreationError;
 public record TooManyOpenSession(int CurrentCount, int MaxCount) : SessionCreationError;
 public record MissingUserAgent : SessionCreationError;
 public record AccountLocked : SessionCreationError;

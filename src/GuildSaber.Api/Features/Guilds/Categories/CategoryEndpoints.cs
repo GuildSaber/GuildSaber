@@ -4,7 +4,6 @@ using CSharpFunctionalExtensions.HttpResults.ResultExtensions;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Internal;
-using GuildSaber.Common.Result;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds;
@@ -93,8 +92,7 @@ public class CategoryEndpoints : IEndPoints
                   from description in Description.TryCreate(request.Description)
                   select new Category { GuildId = guildId, Info = new CategoryInfo(name, description) })
             .Map(static (category, dbContext) => dbContext
-                .AddAndSaveAsync(category, x => x.Map())
-                .MapError(x => x.ToString()), dbContext)
+                .AddAndSaveAsync(category, x => x.Map()), dbContext)
             .ToCreatedAtRouteHttpResult(
                 GetCategoryName,
                 res => new { guildId, categoryId = res.Id }
@@ -108,8 +106,7 @@ public class CategoryEndpoints : IEndPoints
                   select new Category
                       { Id = categoryId, GuildId = guildId, Info = new CategoryInfo(name, description) })
             .Map(static (category, dbContext) => dbContext
-                .UpdateAndSaveAsync(category, x => x.Map())
-                .MapError(x => x.ToString()), dbContext)
+                .UpdateAndSaveAsync(category, x => x.Map()), dbContext)
             .ToOkHttpResult();
 
     private static async Task<Results<NoContent, NotFound>> DeleteCategoryAsync(

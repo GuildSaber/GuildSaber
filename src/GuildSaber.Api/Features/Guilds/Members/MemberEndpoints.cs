@@ -135,26 +135,17 @@ public class MemberEndpoints : IEndPoints
                 .Conflict(member.Map()),
             JoinResponse.GuildNotFound => TypedResults.Problem(
                 $"Guild with ID {guildId} not found.",
-                statusCode: StatusCodes.Status404NotFound,
-                title: "Guild Not Found"
-            ),
+                statusCode: StatusCodes.Status404NotFound),
             JoinResponse.PlayerNotFound => TypedResults.Problem(
                 $"Player with ID {playerId} not found.",
-                statusCode: StatusCodes.Status404NotFound,
-                title: "Player Not Found"
-            ),
+                statusCode: StatusCodes.Status404NotFound),
             JoinResponse.BeatLeaderProfileNotFound(var blId, var error) => TypedResults.Problem(
                 $"BeatLeader profile with ID {blId} not found. Error: {error}",
-                statusCode: StatusCodes.Status404NotFound,
-                title: "BeatLeader Profile Not Found"),
+                statusCode: StatusCodes.Status404NotFound),
             JoinResponse.RequirementsFailure(var errors) => TypedResults.ValidationProblem(
                 errors: errors,
-                detail: "Failed to meet one or more join requirements",
-                title: "Join Requirements Not Met"),
-            JoinResponse.PersistenceError(var error) => TypedResults.Problem(
-                error,
-                statusCode: StatusCodes.Status500InternalServerError,
-                title: "Error saving member"),
-            _ => throw new ArgumentOutOfRangeException(nameof(memberService.JoinGuildAsync), "Unexpected response type")
+                detail: "Failed to meet one or more join requirements"),
+            _ => throw new ArgumentOutOfRangeException(nameof(memberService.JoinGuildAsync),
+                "Unexpected response from JoinGuildAsync")
         };
 }

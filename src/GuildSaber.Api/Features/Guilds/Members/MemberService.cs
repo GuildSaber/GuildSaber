@@ -25,7 +25,6 @@ public class MemberService(ServerDbContext dbContext, BeatLeaderApi beatLeaderAp
         public record GuildNotFound : JoinResponse;
         public record BeatLeaderProfileNotFound(BeatLeaderId BeatLeaderId, string Error) : JoinResponse;
         public record RequirementsFailure(IEnumerable<KeyValuePair<string, string[]>> Errors) : JoinResponse;
-        public record PersistenceError(string ErrorMessage) : JoinResponse;
     }
 
     /// <summary>
@@ -41,7 +40,6 @@ public class MemberService(ServerDbContext dbContext, BeatLeaderApi beatLeaderAp
     ///     <para><see cref="JoinResponse.PlayerNotFound" /> when the specified player doesn't exist</para>
     ///     <para><see cref="JoinResponse.BeatLeaderProfileNotFound" /> when player's BeatLeader profile cannot be found</para>
     ///     <para><see cref="JoinResponse.RequirementsFailure" /> when player fails to meet guild requirements</para>
-    ///     <para><see cref="JoinResponse.PersistenceError" /> when member entry cannot be saved to database</para>
     /// </returns>
     /// <remarks>
     /// The method validates that the player meets all guild requirements before allowing them to join.
@@ -65,9 +63,8 @@ public class MemberService(ServerDbContext dbContext, BeatLeaderApi beatLeaderAp
                 Permissions = Member.EPermission.None,
                 Priority = await GetNextPriority(context.dbContext, context.playerId)
             }, (playerId, guildId, timeProvider, dbContext))
-            .Bind(member => dbContext
-                .AddAndSaveAsync(member, x => x)
-                .MapError(JoinResponse (ex) => new PersistenceError(ex.ToString())))
+            .Map(async static (member, dbContext) => await dbContext
+                .AddAndSaveAsync(member, x => x), dbContext)
             .Match(
                 member => member.JoinState == Member.EJoinState.Requested
                     ? new Requested(member)
@@ -86,13 +83,13 @@ public class MemberService(ServerDbContext dbContext, BeatLeaderApi beatLeaderAp
     /// </returns>
     private async Task<Result<(GuildRequirements requirements, PlayerResponseFullWithStats blProfile), JoinResponse>>
         ValidateRequirementsAndProfile(Guild.GuildId guildId, Player.PlayerId playerId)
-        => await from guildReq in GetGuildRequirements(dbContext, guildId)
-                     .ToResult(() => (JoinResponse)new GuildNotFound())
-                 from beatLeaderId in GetBeatLeaderId(dbContext, playerId)
-                     .ToResult(() => (JoinResponse)new PlayerNotFound())
-                 from blProfile in beatLeaderApi.GetPlayerProfileWithStats(beatLeaderId)
-                     .MapError(err => (JoinResponse)new BeatLeaderProfileNotFound(beatLeaderId, err))
-                 select (guildReq, blProfile);
+        => await (from guildReq in GetGuildRequirements(dbContext, guildId)
+                      .ToResult(() => (JoinResponse)new GuildNotFound())
+                  from beatLeaderId in GetBeatLeaderId(dbContext, playerId)
+                      .ToResult(() => (JoinResponse)new PlayerNotFound())
+                  from blProfile in beatLeaderApi.GetPlayerProfileWithStats(beatLeaderId)
+                      .MapError(err => (JoinResponse)new BeatLeaderProfileNotFound(beatLeaderId, err))
+                  select (guildReq, blProfile));
 
     /// <summary>
     /// Validates if a player meets all guild requirements based on their BeatLeader profile

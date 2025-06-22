@@ -155,8 +155,9 @@ builder.Services.AddHangfire((serviceCollection, option) =>
 
 builder.AddMySqlDbContext<ServerDbContext>(connectionName: Constants.ServerDbConnectionStringKey);
 builder.Services.AddOpenApi(options => options
+    .AddGlobalProblemDetails()
     .AddBearerSecurityScheme()
-    .AddEndpointsSecuritySchemeResolution()
+    .AddEndpointsHttpSecuritySchemeResolution()
     .AddTagDescriptionSupport()
     .AddScalarTransformers()
 );
@@ -164,6 +165,9 @@ builder.Services.AddEndpoints<Program>(builder.Configuration);
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 
 app.UseAuthentication();
 app.UseAuthorization();

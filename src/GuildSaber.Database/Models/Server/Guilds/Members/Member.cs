@@ -13,7 +13,7 @@ public class Member
     public required DateTimeOffset EditedAt { get; set; }
     public required EPermission Permissions { get; set; }
     public required EJoinState JoinState { get; set; }
-    public int Priority { get; set; }
+    public required int Priority { get; set; }
 
     public Player Player { get; init; } = null!;
     public Guild Guild { get; init; } = null!;

@@ -219,9 +219,6 @@ public class AuthEndpoints : IEndPoints
         AccountLocked => TypedResults.Problem(
             "Your account is locked. If you haven't initiated this action, please contact support.",
             statusCode: StatusCodes.Status423Locked),
-        PersistSessionError(var errorMessage) => TypedResults.Problem(
-            $"Failed to create session: {errorMessage}",
-            statusCode: StatusCodes.Status500InternalServerError),
         _ => TypedResults.Problem("Failed to create session.",
             statusCode: StatusCodes.Status500InternalServerError)
     };

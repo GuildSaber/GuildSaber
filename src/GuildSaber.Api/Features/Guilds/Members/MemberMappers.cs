@@ -13,7 +13,8 @@ public static class MemberMappers
             JoinState = self.JoinState.Map(),
             Permissions = self.Permissions.Map(),
             EditedAt = self.EditedAt,
-            InitializedAt = self.CreatedAt
+            InitializedAt = self.CreatedAt,
+            Priority = self.Priority
         };
 
     public static MemberResponses.Member Map(this Member self)
@@ -24,7 +25,8 @@ public static class MemberMappers
             JoinState = self.JoinState.Map(),
             Permissions = self.Permissions.Map(),
             EditedAt = self.EditedAt,
-            InitializedAt = self.CreatedAt
+            InitializedAt = self.CreatedAt,
+            Priority = self.Priority
         };
 
     public static MemberResponses.EJoinState Map(this Member.EJoinState self)
