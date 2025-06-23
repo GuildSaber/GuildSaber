@@ -1,5 +1,4 @@
 using GuildSaber.Api.Features.Guilds.Categories;
-using GuildSaber.Database.Models.Server.Guilds;
 
 namespace GuildSaber.Api.Features.Guilds;
 
@@ -13,23 +12,31 @@ public static class GuildResponses
         DateTimeOffset CreatedAt
     );
 
-    public readonly record struct GuildJoinRequirement(
-        GuildRequirements.Requirements Flags,
-        uint MinRank,
-        uint MaxRank,
-        uint MinPP,
-        uint MaxPP,
-        uint AccountAgeUnix
+    public readonly record struct GuildRequirements(
+        bool RequireSubmission,
+        uint? MinRank,
+        uint? MaxRank,
+        uint? MinPP,
+        uint? MaxPP,
+        uint? AccountAgeUnix
     );
 
-    public readonly record struct Guild(
+    public record Guild(
         uint Id,
         GuildInfo Info,
-        GuildJoinRequirement Requirements,
-        Database.Models.Server.Guilds.Guild.EGuildStatus Status
+        GuildRequirements Requirements,
+        EGuildStatus Status
     );
 
-    public readonly record struct GuildExtended(
+    public enum EGuildStatus : byte
+    {
+        Unverified = 0,
+        Verified = 1,
+        Featured = 2,
+        Private = 3
+    }
+
+    public record GuildExtended(
         Guild Guild,
         PointLite[] PointsLite,
         CategoryResponses.Category[] Categories

@@ -7,6 +7,7 @@ using GuildSaber.Api.Features.Auth;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
+using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Hangfire;
 using GuildSaber.Api.Hangfire.Configuration;
 using GuildSaber.Common.Services.BeatLeader;
@@ -49,6 +50,14 @@ builder.Services
 builder.Services
     .AddOptionsWithValidateOnStart<RedirectSettings>()
     .Bind(authSettings.GetSection(nameof(AuthSettings.Redirect))).ValidateDataAnnotations();
+
+var guildSettings = builder.Configuration.GetSection(GuildSettings.GuildSettingsSectionKey);
+builder.Services
+    .AddOptionsWithValidateOnStart<GuildSettings>()
+    .Bind(guildSettings).ValidateDataAnnotations();
+builder.Services
+    .AddOptionsWithValidateOnStart<GuildCreationSettings>()
+    .Bind(guildSettings.GetSection(nameof(GuildSettings.Creation))).ValidateDataAnnotations();
 
 var connectionMultiplexer = ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("cache")!);
 

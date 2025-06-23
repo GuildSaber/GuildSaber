@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Internal;
@@ -12,6 +13,11 @@ namespace GuildSaber.Api.Features.Guilds;
 
 public class GuildEndpoints : IEndPoints
 {
+    private const string GetGuildName = "GetGuild";
+
+    public static void AddServices(IServiceCollection services, IConfiguration configuration)
+        => services.AddScoped<GuildService>();
+
     public static void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/guilds")
@@ -22,8 +28,18 @@ public class GuildEndpoints : IEndPoints
             .WithSummary("Get all guilds paginated")
             .WithDescription("Get all guilds in the server, with optional search and sorting.");
 
+        group.MapPost("/", CreateGuildAsync)
+            .WithName("CreateGuild")
+            .WithSummary("Create a guild as the current player")
+            .WithDescription("Create a guild as the current player using their player id from claims.")
+            .Produces<GuildResponses.Guild>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
+            .RequireAuthorization();
+
         group.MapGet("/{guildId}", GetGuildAsync)
-            .WithName("GetGuild")
+            .WithName(GetGuildName)
             .WithSummary("Get a guild")
             .WithDescription("Get a specific guild by its Id.");
 
@@ -69,6 +85,47 @@ public class GuildEndpoints : IEndPoints
         return TypedResults.Ok(await PagedList<GuildResponses.Guild>
             .CreateAsync(query.Select(GuildMappers.MapGuildExpression), page, pageSize));
     }
+
+    /// <inheritdoc cref="GuildService.CreateGuildAsync" />
+    /// <remarks>
+    /// This endpoint:
+    /// <list type="bullet">
+    ///     <item>Returns 201 CreatedAtRoute with guild when guild is created successfully</item>
+    ///     <item>Returns 401 Unauthorized when no valid player ID is found in claims</item>
+    ///     <item>Returns 400 Bad Request with validation details when input validation fails</item>
+    ///     <item>Returns 400 Bad Request with validation details when guild creation requirements aren't met</item>
+    ///     <item>
+    ///     Returns 429 Too Many Requests when the player exceeds the maximum number of guilds they are leader for allowed
+    ///     </item>
+    /// </list>
+    /// </remarks>
+    private static async Task<IResult> CreateGuildAsync(
+        GuildRequests.Guild request, ClaimsPrincipal principal, GuildService service)
+        => principal.GetPlayerId() switch
+        {
+            null => TypedResults.Unauthorized(),
+            var playerId => await service.CreateGuildAsync(playerId.Value, request) switch
+            {
+                GuildService.CreateResponse.Success(var guild) => TypedResults
+                    .CreatedAtRoute(guild.Map(), GetGuildName, new { guildId = guild.Id.Value }),
+                GuildService.CreateResponse.PlayerNotFound => throw new InvalidOperationException(
+                    "Player ID not found in claims. Ensure the player is authenticated."),
+                GuildService.CreateResponse.TooManyGuildsAsLeader(var currentCount, var maxCount) => TypedResults
+                    .Problem(
+                        $"You already are GuildLeader in {currentCount} guilds, which exceeds the maximum allowed of {maxCount}.",
+                        statusCode: StatusCodes.Status429TooManyRequests,
+                        title: "Too many guilds"),
+                GuildService.CreateResponse.ValidationFailure(var errors) => TypedResults
+                    .ValidationProblem(
+                        detail: "Failed to create guild due to validation errors.",
+                        errors: errors),
+                GuildService.CreateResponse.RequirementsFailure (var errors) => TypedResults
+                    .ValidationProblem(
+                        errors: errors,
+                        detail: "Failed to meet one or more guild creation requirements."),
+                _ => throw new InvalidOperationException("Unexpected response type from CreateGuildAsync.")
+            }
+        };
 
     private static async Task<Results<Ok<GuildResponses.Guild>, NotFound>> GetGuildAsync(
         Guild.GuildId guildId, ServerDbContext dbContext)

@@ -12,7 +12,7 @@ namespace GuildSaber.Database.Models.Server.Guilds;
 
 public class Guild
 {
-    public required GuildId Id { get; init; }
+    public GuildId Id { get; init; }
     public required GuildInfo Info { get; set; }
     public required GuildRequirements Requirements { get; set; }
     public required EGuildStatus Status { get; init; }

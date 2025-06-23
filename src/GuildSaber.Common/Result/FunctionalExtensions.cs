@@ -144,264 +144,29 @@ public static class FunctionalExtensions
         return (temp, errors);
     }
 
-    /// <summary>
-    /// Executes a function within a disposable scope. Then, if the function is successful, it executes an onSuccess action,
-    /// otherwise it executes an onError action.
-    /// </summary>
-    /// <typeparam name="T">The type of the success value in the Result object.</typeparam>
-    /// <typeparam name="E">The type of the error value in the Result object.</typeparam>
-    /// <typeparam name="TScoped">The type of the disposable scope.</typeparam>
-    /// <typeparam name="TResult">The type of the success value in the returned Result object.</typeparam>
-    /// <typeparam name="TError">The type of the error value in the returned Result object.</typeparam>
-    /// <param name="self">The Result object to be processed.</param>
-    /// <param name="scopedFunc">A function that creates the disposable scope.</param>
-    /// <param name="f">A function that processes the Result object providing the disposable scope .</param>
-    /// <param name="onSuccess">An action to be executed if the function is successful.</param>
-    /// <param name="onError">An action to be executed if the function fails.</param>
-    /// <returns>A Result object that represents the outcome of the function.</returns>
-    public static Result<TResult, TError> WithTapScope<T, E, TScoped, TResult, TError>(
-        this Result<T, E> self, Func<TScoped> scopedFunc, Func<Result<T, E>, TScoped, Result<TResult, TError>> f,
-        Action<TScoped> onSuccess, Action<TScoped> onError)
-        where TScoped : IDisposable
+    public static async Task<Result<T, E>> WithTapTryScope<T, E, TScoped>(
+        this Task<Result<T, E>> self, Func<TScoped> scopedFunc,
+        Func<T, TScoped, Task> f,
+        Func<TScoped, Task> onCompleted,
+        Func<Exception, TScoped, Task<E>> onException) where TScoped : IDisposable
     {
-        using var scoped = scopedFunc();
-        var result = f(self, scoped);
-
-        if (result.IsSuccess) onSuccess(scoped);
-        else onError(scoped);
-
-        return result;
-    }
-
-    /// <summary>
-    /// Asynchronously executes a function within a disposable scope. Then, if the function is successful, it executes an
-    /// onSuccess
-    /// action,
-    /// otherwise it executes an onError action. The function returns a UnitResult, which represents an operation that does not
-    /// produce a meaningful value.
-    /// </summary>
-    /// <typeparam name="T">The type of the success value in the Result object.</typeparam>
-    /// <typeparam name="E">The type of the error value in the Result object.</typeparam>
-    /// <typeparam name="TScoped">The type of the disposable scope.</typeparam>
-    /// <typeparam name="TError">The type of the error value in the returned UnitResult object.</typeparam>
-    /// <param name="self">The Task that returns a Result object to be processed.</param>
-    /// <param name="scopedFunc">A function that creates the disposable scope asynchronously.</param>
-    /// <param name="f">
-    /// A function that takes a Result object and the disposable scope and returns a Task that returns a Task that returns a
-    /// UnitResult object.
-    /// </param>
-    /// <param name="onSuccess">An action to be executed if the function is successful.</param>
-    /// <param name="onError">An action to be executed if the function fails.</param>
-    /// <returns>A Task that returns a UnitResult object that represents the outcome of the function.</returns>
-    /// <remarks>
-    /// If the scope crashes, the crash will be silent. Use another overload if you want to map its exception.
-    /// </remarks>
-    public static async Task<UnitResult<TError>> WithTapScope<T, E, TScoped, TError>(
-        this Task<Result<T, E>> self, Func<Task<TScoped>> scopedFunc,
-        Func<Result<T, E>, TScoped, Task<UnitResult<TError>>> f,
-        Action<TScoped> onSuccess, Action<TScoped> onError)
-        where TScoped : IDisposable
-    {
+        // Out of the try block because we don't want to hide a potential exception from the caller
         var callerResult = await self;
+        if (!callerResult.TryGetValue(out var value)) return callerResult.Error;
 
-        using var scoped = await scopedFunc();
-        var result = await f(callerResult, scoped);
+        // Same thing, exceptions from the scopedFunc should not be hidden
+        using var scoped = scopedFunc();
 
-        if (result.IsSuccess) onSuccess(scoped);
-        else onError(scoped);
-
-        return result;
-    }
-
-    /// <summary>
-    /// Asynchronously executes a function within a disposable scope. If the function is successful afterward, it executes an
-    /// onSuccess
-    /// action, otherwise it executes an onError action. If an exception occurs during the execution of the scope, it executes
-    /// a mapScopeCrashed function.
-    /// The function returns a UnitResult, which represents an operation that does not produce a meaningful value.
-    /// </summary>
-    /// <typeparam name="T">The type of the success value in the Result object.</typeparam>
-    /// <typeparam name="E">The type of the error value in the Result object.</typeparam>
-    /// <typeparam name="TScoped">The type of the disposable scope.</typeparam>
-    /// <typeparam name="TError">The type of the error value in the returned UnitResult object.</typeparam>
-    /// <param name="self">The Task that returns a Result object to be processed.</param>
-    /// <param name="scopedFunc">A function that creates the disposable scope asynchronously.</param>
-    /// <param name="f">
-    /// A function that takes a Result object and the disposable scope and returns a Task that returns a UnitResult object.
-    /// </param>
-    /// <param name="onSuccess">An action to be executed if the function is successful.</param>
-    /// <param name="onError">An action to be executed if the function fails.</param>
-    /// <param name="mapException">
-    /// A function to be executed if an exception occurs during the execution. It
-    /// takes the exception as a parameter and returns a TError object. It also catches scope execution exceptions.
-    /// </param>
-    /// <returns>A Task that returns a UnitResult object that represents the outcome of the function.</returns>
-    public static async Task<UnitResult<TError>> WithTapScope<T, E, TScoped, TError>(
-        this Task<Result<T, E>> self, Func<Task<TScoped>> scopedFunc,
-        Func<Result<T, E>, TScoped, Task<UnitResult<TError>>> f,
-        Action<TScoped> onSuccess, Action<TScoped> onError,
-        Func<Exception, TError> mapException)
-        where TScoped : IDisposable
-    {
         try
         {
-            var callerResult = await self;
+            await f(value, scoped);
+            await onCompleted(scoped);
 
-            using var scoped = await scopedFunc();
-            var result = await f(callerResult, scoped);
-
-            if (result.IsSuccess) onSuccess(scoped);
-            else onError(scoped);
-
-            return result;
+            return value;
         }
         catch (Exception e)
         {
-            return mapException(e);
-        }
-    }
-
-    /// <summary>
-    /// Executes a function within a disposable scope. If the function is successful afterward, it executes an
-    /// onSuccess action, otherwise it executes an onError action. If an exception occurs during the execution of the scope, it
-    /// executes
-    /// a mapScopeCrashed function. The function returns a UnitResult, which represents an operation that does not produce a
-    /// meaningful value.
-    /// </summary>
-    /// <typeparam name="T">The type of the success value in the Result object.</typeparam>
-    /// <typeparam name="E">The type of the error value in the Result object.</typeparam>
-    /// <typeparam name="TScoped">The type of the disposable scope.</typeparam>
-    /// <typeparam name="TError">The type of the error value in the returned UnitResult object.</typeparam>
-    /// <param name="self">The Result object to be processed.</param>
-    /// <param name="scopedFunc">A function that creates the disposable scope asynchronously.</param>
-    /// <param name="f">
-    /// A function that processes the Result object and the disposable scope and returns a Task that returns a UnitResult
-    /// object.
-    /// </param>
-    /// <param name="onSuccess">An action to be executed if the function is successful.</param>
-    /// <param name="onError">An action to be executed if the function fails.</param>
-    /// <param name="mapException">
-    /// A function to be executed if an exception occurs during the execution of the scope. It
-    /// takes the exception as a parameter and returns a TError object. It also catches scope execution exceptions.
-    /// </param>
-    /// <returns>A Task that returns a UnitResult object that represents the outcome of the function.</returns>
-    public static async Task<UnitResult<TError>> WithTapScope<T, E, TScoped, TError>(
-        this Result<T, E> self, Func<Task<TScoped>> scopedFunc,
-        Func<Result<T, E>, TScoped, Task<UnitResult<TError>>> f,
-        Action<TScoped> onSuccess, Action<TScoped> onError,
-        Func<Exception, TError> mapException)
-        where TScoped : IDisposable
-    {
-        try
-        {
-            using var scoped = await scopedFunc();
-            var result = await f(self, scoped);
-
-            if (result.IsSuccess) onSuccess(scoped);
-            else onError(scoped);
-
-            return result;
-        }
-        catch (Exception e)
-        {
-            return mapException(e);
-        }
-    }
-
-
-    /// <summary>
-    /// Asynchronously executes a function within a disposable scope. If the function is successful afterward, it executes an
-    /// onSuccess action, otherwise it executes an onError action. If an exception occurs during the execution of the scope, it
-    /// executes
-    /// a mapScopeCrashed function. The function returns a Result object, which either contains a success value or an error
-    /// value.
-    /// </summary>
-    /// <typeparam name="T">The type of the success value in the Result object.</typeparam>
-    /// <typeparam name="E">The type of the error value in the Result object.</typeparam>
-    /// <typeparam name="TScoped">The type of the disposable scope.</typeparam>
-    /// <typeparam name="TError">The type of the error value in the returned UnitResult object.</typeparam>
-    /// <typeparam name="TResult">The type of the success value in the returned Result object.</typeparam>
-    /// <param name="self">The Task that returns a Result object to be processed.</param>
-    /// <param name="scopedFunc">A function that creates the disposable scope asynchronously.</param>
-    /// <param name="f">
-    /// A function that takes a Result object and the disposable scope, and returns a Task that returns a Result object.
-    /// </param>
-    /// <param name="onSuccess">An action to be executed if the function is successful.</param>
-    /// <param name="onError">An action to be executed if the function fails.</param>
-    /// <param name="mapException">
-    /// A function to be executed if an exception occurs during the execution of the scope. It
-    /// takes the exception as a parameter and returns a TError object. It also catches scope execution exceptions.
-    /// </param>
-    /// <returns>A Task that returns a Result object that represents the outcome of the function.</returns>
-    public static async Task<Result<TResult, TError>> WithTapScope<T, TResult, E, TScoped, TError>(
-        this Task<Result<T, E>> self, Func<Task<TScoped>> scopedFunc,
-        Func<Result<T, E>, TScoped, Task<Result<TResult, TError>>> f,
-        Action<TScoped> onSuccess, Action<TScoped> onError,
-        Func<Exception, TError> mapException)
-        where TScoped : IDisposable
-    {
-        try
-        {
-            var callerResult = await self;
-
-            using var scoped = await scopedFunc();
-            var result = await f(callerResult, scoped);
-
-            if (result.IsSuccess) onSuccess(scoped);
-            else onError(scoped);
-
-            return result;
-        }
-        catch (Exception e)
-        {
-            return mapException(e);
-        }
-    }
-
-    /// <summary>
-    /// Executes a function within a disposable scope. If the function is successful afterward, it executes an
-    /// onSuccess action, otherwise it executes an onError action. If an exception occurs during the execution of the scope, it
-    /// executes
-    /// a mapScopeCrashed function. The function returns a Result object, which either contains a success value or an error
-    /// value.
-    /// </summary>
-    /// <typeparam name="T">The type of the success value in the Result object.</typeparam>
-    /// <typeparam name="E">The type of the error value in the Result object.</typeparam>
-    /// <typeparam name="TScoped">The type of the disposable scope.</typeparam>
-    /// <typeparam name="TError">The type of the error value in the returned UnitResult object.</typeparam>
-    /// <typeparam name="TResult">The type of the success value in the returned Result object.</typeparam>
-    /// <param name="self">The Result object to be processed.</param>
-    /// <param name="scopedFunc">A function that creates the disposable scope asynchronously.</param>
-    /// <param name="f">
-    /// A function that takes a Result object and the disposable scope, and returns a Task that returns a Result object.
-    /// </param>
-    /// <param name="onSuccess">An action to be executed if the function is successful.</param>
-    /// <param name="onError">An action to be executed if the function fails.</param>
-    /// <param name="mapException">
-    /// A function to be executed if an exception occurs during the execution of the scope. It
-    /// takes the exception as a parameter and returns a TError object. It also catches scope execution exceptions.
-    /// </param>
-    /// <returns>A Task that returns a Result object that represents the outcome of the function.</returns>
-    public static async Task<Result<TResult, TError>> WithTapScope<T, TResult, E, TScoped, TError>(
-        this Result<T, E> self, Func<Task<TScoped>> scopedFunc,
-        Func<Result<T, E>, TScoped, Task<Result<TResult, TError>>> f,
-        Action<TScoped> onSuccess, Action<TScoped> onError,
-        Func<Exception, TError> mapException)
-        where TScoped : IDisposable
-    {
-        try
-        {
-            using var scoped = await scopedFunc();
-            var result = await f(self, scoped);
-
-            if (result.IsSuccess) onSuccess(scoped);
-            else onError(scoped);
-
-            return result;
-        }
-        catch (Exception e)
-        {
-            return mapException(e);
+            return await onException(e, scoped);
         }
     }
 }

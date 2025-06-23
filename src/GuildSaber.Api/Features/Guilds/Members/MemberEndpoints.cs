@@ -114,12 +114,13 @@ public class MemberEndpoints : IEndPoints
     /// <inheritdoc cref="MemberService.JoinGuildAsync" />
     /// <remarks>
     /// This endpoint:
-    /// - Returns 200 OK with member details when player joins successfully
-    /// - Returns 202 Accepted with member details when join request submitted for approval
-    /// - Returns 409 Conflict with member details when player is already a member
-    /// - Returns 400 Bad Request with validation details when requirements aren't met
-    /// - Returns 404 Not Found with problem details when guild, player or BeatLeader profile is not found
-    /// - Returns 500 Internal Server Error when database persistence fails (e.g., due to a server error)
+    /// <list type="bullet">
+    ///     <item>Returns 200 OK with member details when player joins successfully.</item>
+    ///     <item>Returns 202 Accepted with member details when join request is submitted for approval.</item>
+    ///     <item>Returns 409 Conflict with member details when player is already a member.</item>
+    ///     <item>Returns 400 Bad Request with validation details when requirements aren't met.</item>
+    ///     <item>Returns 404 Not Found with problem details when guild, player or BeatLeader profile is not found.</item>
+    /// </list>
     /// </remarks>
     private static async Task<IResult> JoinGuildAsync(
         Guild.GuildId guildId, Player.PlayerId playerId,
@@ -144,8 +145,8 @@ public class MemberEndpoints : IEndPoints
                 statusCode: StatusCodes.Status404NotFound),
             JoinResponse.RequirementsFailure(var errors) => TypedResults.ValidationProblem(
                 errors: errors,
-                detail: "Failed to meet one or more join requirements"),
+                detail: "Failed to meet one or more join requirements."),
             _ => throw new ArgumentOutOfRangeException(nameof(memberService.JoinGuildAsync),
-                "Unexpected response from JoinGuildAsync")
+                "Unexpected response from JoinGuildAsync.")
         };
 }

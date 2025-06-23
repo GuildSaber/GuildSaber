@@ -46,6 +46,7 @@ public class CategoryEndpoints : IEndPoints
             .WithName("CreateCategory")
             .WithSummary("Create a category for a guild.")
             .WithDescription("Create a category for a guild by its Id.")
+            .ProducesProblem(statusCode: StatusCodes.Status400BadRequest)
             .RequireGuildPermission(Member.EPermission.RankingTeam);
 
         guildsGroup.MapPut("/{categoryId}", UpdateCategoryAsync)
@@ -65,10 +66,11 @@ public class CategoryEndpoints : IEndPoints
         Category.CategoryId categoryId, ServerDbContext dbContext)
         => await dbContext.Categories.Where(x => x.Id == categoryId)
                 .Select(CategoryMappers.MapCategoryExpression)
+                .Cast<CategoryResponses.Category?>()
                 .FirstOrDefaultAsync() switch
             {
-                { Id: 0 } => TypedResults.NotFound(),
-                var category => TypedResults.Ok(category)
+                null => TypedResults.NotFound(),
+                var category => TypedResults.Ok(category.Value)
             };
 
     private static async Task<Ok<PagedList<CategoryResponses.Category>>> GetCategoriesPaginatedAsync(

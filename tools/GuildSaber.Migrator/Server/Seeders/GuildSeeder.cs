@@ -26,7 +26,7 @@ public static class GuildSeeder
             ).Unwrap(),
             Requirements = new GuildRequirements
             {
-                Flags = GuildRequirements.Requirements.Submission
+                RequireSubmission = true
             },
             Status = Guild.EGuildStatus.Featured,
             Contexts =
@@ -107,7 +107,12 @@ public static class GuildSeeder
             Status = Guild.EGuildStatus.Featured,
             Requirements = new GuildRequirements
             {
-                Flags = GuildRequirements.Requirements.None
+                RequireSubmission = false,
+                MinRank = 10,
+                MaxRank = 200,
+                MinPP = 0,
+                MaxPP = 10000,
+                AccountAgeUnix = (uint?)TimeSpan.FromDays(365 * 6).Seconds
             },
             Contexts =
             [

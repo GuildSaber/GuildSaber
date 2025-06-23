@@ -1,5 +1,4 @@
 using CSharpFunctionalExtensions;
-using GuildSaber.Api.Extensions;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
@@ -9,7 +8,7 @@ using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Players;
 using Microsoft.EntityFrameworkCore;
-using static GuildSaber.Database.Models.Server.Guilds.GuildRequirements.Requirements;
+using static GuildSaber.Database.Models.Server.Guilds.GuildRequirementsExtensions.GuildRequirement;
 using static GuildSaber.Api.Features.Guilds.Members.MemberService.JoinResponse;
 
 namespace GuildSaber.Api.Features.Guilds.Members;
@@ -57,14 +56,14 @@ public class MemberService(ServerDbContext dbContext, BeatLeaderApi beatLeaderAp
                 GuildId = context.guildId,
                 CreatedAt = context.timeProvider.GetUtcNow(),
                 EditedAt = context.timeProvider.GetUtcNow(),
-                JoinState = x.requirements.Flags.HasFlag(Submission)
+                JoinState = x.requirements.RequireSubmission
                     ? Member.EJoinState.Requested
                     : Member.EJoinState.Joined,
                 Permissions = Member.EPermission.None,
                 Priority = await GetNextPriority(context.dbContext, context.playerId)
             }, (playerId, guildId, timeProvider, dbContext))
             .Map(async static (member, dbContext) => await dbContext
-                .AddAndSaveAsync(member, x => x), dbContext)
+                .AddAndSaveAsync(member), dbContext)
             .Match(
                 member => member.JoinState == Member.EJoinState.Requested
                     ? new Requested(member)
@@ -100,16 +99,21 @@ public class MemberService(ServerDbContext dbContext, BeatLeaderApi beatLeaderAp
     /// Success if all requirements are met, or Failure with specific validation errors when requirements are not met
     /// </returns>
     private static UnitResult<IEnumerable<KeyValuePair<string, string[]>>> GetRequirementsErrorAsFailure(
-        GuildRequirements requirements, PlayerResponseFullWithStats profile) => requirements.Flags.GetFlags()
-            .Select<GuildRequirements.Requirements, KeyValuePair<string, string[]>?>(reqEnum
+        GuildRequirements requirements, PlayerResponseFullWithStats profile) => requirements.Collect()
+            .Select<GuildRequirementsExtensions.GuildRequirement, KeyValuePair<string, string[]>?>(reqEnum
                 => reqEnum switch
                 {
+                    RequireSubmission => null, // Technically not an error
                     MinRank when profile.Rank < requirements.MinRank => new KeyValuePair<string, string[]>(
                         nameof(MinRank),
-                        [$"Your rank ({profile.Rank}) is below the minimum required rank ({requirements.MinRank})."]),
+                        [
+                            $"Your rank ({profile.Rank}) is below the minimum required rank ({requirements.MinRank})."
+                        ]),
                     MaxRank when profile.Rank > requirements.MaxRank => new KeyValuePair<string, string[]>(
                         nameof(MaxRank),
-                        [$"Your rank ({profile.Rank}) is above the maximum allowed rank ({requirements.MaxRank})."]),
+                        [
+                            $"Your rank ({profile.Rank}) is above the maximum allowed rank ({requirements.MaxRank})."
+                        ]),
                     MinPP when profile.Pp < requirements.MinPP => new KeyValuePair<string, string[]>(nameof(MinPP),
                         [$"Your PP ({profile.Pp}) is below the minimum required PP ({requirements.MinPP})."]),
                     MaxPP when profile.Pp > requirements.MaxPP => new KeyValuePair<string, string[]>(nameof(MaxPP),
@@ -157,14 +161,14 @@ public class MemberService(ServerDbContext dbContext, BeatLeaderApi beatLeaderAp
     /// </returns>
     private static async Task<Maybe<BeatLeaderId>> GetBeatLeaderId(
         ServerDbContext dbContext, Player.PlayerId playerId)
-    {
-        var blId = await dbContext.Players
-            .Where(x => x.Id == playerId)
-            .Select(x => x.LinkedAccounts.BeatLeaderId)
-            .FirstOrDefaultAsync();
-
-        return blId == 0 ? Maybe<BeatLeaderId>.None : blId;
-    }
+        => await dbContext.Players.Where(x => x.Id == playerId)
+                .Select(x => x.LinkedAccounts.BeatLeaderId)
+                .Cast<BeatLeaderId?>()
+                .FirstOrDefaultAsync() switch
+            {
+                null => Maybe<BeatLeaderId>.None,
+                var beatLeaderId => From(beatLeaderId.Value)
+            };
 
     /// <summary>
     /// Checks if a player is already a member of a specific guild
@@ -194,7 +198,7 @@ public class MemberService(ServerDbContext dbContext, BeatLeaderApi beatLeaderAp
     /// <remarks>
     /// There is indeed more optimized way to do this, but if it works, and don't cause problem, don't touch it.
     /// </remarks>
-    private static async Task<int> GetNextPriority(ServerDbContext dbContext, Player.PlayerId playerId)
+    public static async Task<int> GetNextPriority(ServerDbContext dbContext, Player.PlayerId playerId)
         => (await dbContext.Members
                 .Where(x => x.PlayerId == playerId)
                 .Select(x => x.Priority)

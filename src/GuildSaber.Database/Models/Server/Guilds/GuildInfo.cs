@@ -8,15 +8,11 @@ namespace GuildSaber.Database.Models.Server.Guilds;
 
 public readonly record struct GuildInfo
 {
-    private GuildInfo(Name_5_50 name, Name_2_6 smallName, Description description, Color color,
-                      DateTimeOffset createdAt)
-        => (Name, SmallName, Description, Color, CreatedAt) = (name, smallName, description, color, createdAt);
-
-    public Name_5_50 Name { get; init; }
-    public Name_2_6 SmallName { get; init; }
-    public Description Description { get; init; }
-    public Color Color { get; init; }
-    public DateTimeOffset CreatedAt { get; init; }
+    public required Name_5_50 Name { get; init; }
+    public required Name_2_6 SmallName { get; init; }
+    public required Description Description { get; init; }
+    public required Color Color { get; init; }
+    public required DateTimeOffset CreatedAt { get; init; }
 
     public static Result<GuildInfo> TryCreate
         (string name, string smallName, string description, Color color, DateTimeOffset createdAt)
@@ -28,9 +24,14 @@ public readonly record struct GuildInfo
                 { description: { IsFailure: true, Error: var error } } => Failure<GuildInfo>(error),
                 { color.IsEmpty: true } => Failure<GuildInfo>("GuildInfo.Color must not be empty"),
                 { createdAt.UtcTicks: 0 } => Failure<GuildInfo>("GuildInfo.CreatedAt must not be 0"),
-                var x => Success(
-                    new GuildInfo(x.name.Value, x.smallName.Value, x.description.Value, x.color, x.createdAt)
-                )
+                var x => Success(new GuildInfo
+                {
+                    Name = x.name.Value,
+                    SmallName = x.smallName.Value,
+                    Description = x.description.Value,
+                    Color = x.color,
+                    CreatedAt = x.createdAt
+                })
             };
 }
 
