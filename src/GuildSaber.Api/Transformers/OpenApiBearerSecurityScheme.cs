@@ -25,7 +25,7 @@ public static class OpenApiBearerSecurityScheme
                 {
                     Type = SecuritySchemeType.Http,
                     Name = JwtBearerDefaults.AuthenticationScheme,
-                    Scheme = JwtBearerDefaults.AuthenticationScheme,
+                    Scheme = "bearer",
                     In = ParameterLocation.Header,
                     BearerFormat = "Json Web Token",
                     Reference = new OpenApiReference

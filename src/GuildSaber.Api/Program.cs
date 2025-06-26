@@ -184,7 +184,6 @@ builder.Services.AddProblemDetails(options =>
     };
 });
 
-
 var app = builder.Build();
 
 app.UseExceptionHandler();
