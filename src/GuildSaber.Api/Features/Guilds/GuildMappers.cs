@@ -110,7 +110,7 @@ public static class GuildMappers
         AccountAgeUnix = self.AccountAgeUnix
     };
 
-    public static GuildRequirements Map(this GuildRequests.GuildRequirements self) => new()
+    public static GuildRequirements Map(this GuildRequests.CreateGuildRequirements self) => new()
     {
         RequireSubmission = self.RequireSubmission,
         MinRank = self.MinRank,

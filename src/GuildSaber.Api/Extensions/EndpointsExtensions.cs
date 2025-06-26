@@ -2,13 +2,13 @@ using System.Reflection;
 
 namespace GuildSaber.Api.Extensions;
 
-public interface IEndPoints
+public interface IEndpoints
 {
     public static abstract void MapEndpoints(IEndpointRouteBuilder endpoints);
     public static virtual void AddServices(IServiceCollection services, IConfiguration configuration) { }
 }
 
-public static class EndPointsExtensions
+public static class EndpointsExtensions
 {
     public static void AddEndpoints<TMarker>(this IServiceCollection services, IConfiguration configuration)
         => AddEndpoints(services, configuration, typeof(TMarker));
@@ -21,7 +21,7 @@ public static class EndPointsExtensions
         var endpointsTypes = GetEndpointsTypesFromAssemblyContaining(typeMarker);
 
         foreach (var type in endpointsTypes)
-            type.GetMethod(nameof(IEndPoints.AddServices))
+            type.GetMethod(nameof(IEndpoints.AddServices))
                 ?.Invoke(null, [services, configuration]);
     }
 
@@ -30,13 +30,11 @@ public static class EndPointsExtensions
         var endpointsTypes = GetEndpointsTypesFromAssemblyContaining(typeMarker);
 
         foreach (var type in endpointsTypes)
-            type.GetMethod(nameof(IEndPoints.MapEndpoints))
+            type.GetMethod(nameof(IEndpoints.MapEndpoints))
                 ?.Invoke(null, [app]);
     }
 
     private static IEnumerable<TypeInfo> GetEndpointsTypesFromAssemblyContaining(Type typeMarker)
         => typeMarker.Assembly.DefinedTypes
-            .Where(x => x is { IsAbstract: false, IsInterface: false }
-                        && typeof(IEndPoints).IsAssignableFrom(x)
-            );
+            .Where(x => x is { IsAbstract: false, IsInterface: false } && typeof(IEndpoints).IsAssignableFrom(x));
 }

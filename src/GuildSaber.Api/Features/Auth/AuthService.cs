@@ -12,7 +12,6 @@ using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MyCSharp.HttpUserAgentParser.AspNetCore;
-using PlayerId = GuildSaber.Database.Models.Server.Players.Player.PlayerId;
 
 namespace GuildSaber.Api.Features.Auth;
 
@@ -27,7 +26,8 @@ public class AuthService(
     public async Task<Maybe<PlayerId>> GetPlayerIdAsync(BeatLeaderId beatLeaderId)
         => await dbContext.Players
                 .Where(p => p.LinkedAccounts.BeatLeaderId == beatLeaderId)
-                .Select(p => p.Id).FirstOrDefaultAsync() switch
+                .Select(p => p.Id)
+                .FirstOrDefaultAsync() switch
             {
                 { Value: 0 } => None,
                 var id => From(id)
@@ -36,7 +36,8 @@ public class AuthService(
     public async Task<Maybe<PlayerId>> GetPlayerIdAsync(DiscordId discordId)
         => await dbContext.Players
                 .Where(p => p.LinkedAccounts.DiscordId == discordId)
-                .Select(p => p.Id).FirstOrDefaultAsync() switch
+                .Select(p => p.Id)
+                .FirstOrDefaultAsync() switch
             {
                 { Value: 0 } => None,
                 var id => From(id)

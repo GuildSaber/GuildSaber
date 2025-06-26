@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using CSharpFunctionalExtensions;
 using GuildSaber.Database.Contexts.Server;
-using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,7 +8,7 @@ namespace GuildSaber.Api.Features.Auth.Sessions;
 
 public class SessionValidator(ServerDbContext dbContext)
 {
-    private readonly record struct SessionLightDto(UuidV7 SessionId, Player.PlayerId PlayerId, bool IsValid);
+    private readonly record struct SessionLightDto(UuidV7 SessionId, PlayerId PlayerId, bool IsValid);
 
     /// <summary>
     /// Validates session existence and validity in database.

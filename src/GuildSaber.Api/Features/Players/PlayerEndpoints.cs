@@ -3,14 +3,16 @@ using System.Security.Claims;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Internal;
+using GuildSaber.Api.Transformers;
 using GuildSaber.Database.Contexts.Server;
-using GuildSaber.Database.Models.Server.Players;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using static GuildSaber.Api.Features.Players.PlayerResponses;
+using ServerPlayer = GuildSaber.Database.Models.Server.Players.Player;
 
 namespace GuildSaber.Api.Features.Players;
 
-public class PlayerEndpoints : IEndPoints
+public class PlayerEndpoints : IEndpoints
 {
     public static void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
@@ -34,7 +36,7 @@ public class PlayerEndpoints : IEndPoints
             .RequireAuthorization();
     }
 
-    private static async Task<Results<Ok<PlayerResponses.PlayerAtMe>, NotFound>> GetPlayerAtMeAsync(
+    private static async Task<Results<Ok<PlayerAtMe>, NotFound>> GetPlayerAtMeAsync(
         ServerDbContext dbContext, ClaimsPrincipal claimsPrincipal)
         => await dbContext.Players
                 .Where(x => x.Id == claimsPrincipal.GetPlayerId())
@@ -45,17 +47,18 @@ public class PlayerEndpoints : IEndPoints
                 var player => TypedResults.Ok(player)
             };
 
-    private static async Task<Results<Ok<PlayerResponses.Player>, NotFound>> GetPlayerAsync(
-        Player.PlayerId playerId, ServerDbContext dbContext)
+    private static async Task<Results<Ok<Player>, NotFound>> GetPlayerAsync(
+        PlayerId playerId, ServerDbContext dbContext)
         => await dbContext.Players.Where(x => x.Id == playerId)
                 .Select(PlayerMappers.MapPlayerExpression)
+                .Cast<Player?>()
                 .FirstOrDefaultAsync() switch
             {
-                { Id: 0 } => TypedResults.NotFound(),
-                var player => TypedResults.Ok(player)
+                null => TypedResults.NotFound(),
+                var player => TypedResults.Ok(player.Value)
             };
 
-    private static async Task<Results<Ok<PagedList<PlayerResponses.Player>>, ProblemHttpResult>> GetPlayersAsync(
+    private static async Task<Ok<PagedList<Player>>> GetPlayersAsync(
         ServerDbContext dbContext,
         [Range(1, int.MaxValue)] int page = 1,
         [Range(1, 100)] int pageSize = 10,
@@ -67,14 +70,18 @@ public class PlayerEndpoints : IEndPoints
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(x => x.Info.Username.Contains(search) || x.Info.Country.Contains(search));
 
-        query = ApplySortOrder(query, sortBy, order);
-
-        return TypedResults.Ok(await PagedList<PlayerResponses.Player>
-            .CreateAsync(query.Select(PlayerMappers.MapPlayerExpression), page, pageSize));
+        return TypedResults.Ok(await query
+            .ApplySortOrder(sortBy, order)
+            .Select(PlayerMappers.MapPlayerExpression)
+            .ToPagedListAsync(page, pageSize)
+        );
     }
+}
 
-    private static IQueryable<Player> ApplySortOrder(
-        IQueryable<Player> query, PlayerRequests.EPlayerSorters sortBy, EOrder order) => sortBy switch
+public static class PlayerExtensions
+{
+    public static IQueryable<ServerPlayer> ApplySortOrder(
+        this IQueryable<ServerPlayer> query, PlayerRequests.EPlayerSorters sortBy, EOrder order) => sortBy switch
     {
         PlayerRequests.EPlayerSorters.Id => query.OrderBy(order, x => x.Id),
         PlayerRequests.EPlayerSorters.CreationDate => query.OrderBy(order, x => x.Info.CreatedAt)

@@ -41,14 +41,14 @@ public static class MemberMappers
             _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
         };
 
-    public static MemberResponses.EPermission Map(this Member.EPermission self)
+    public static MemberResponses.EPermission Map(this EPermission self)
         => self switch
         {
-            Member.EPermission.None => MemberResponses.EPermission.None,
-            Member.EPermission.GuildLeader => MemberResponses.EPermission.GuildLeader,
-            Member.EPermission.RankingTeam => MemberResponses.EPermission.RankingTeam,
-            Member.EPermission.ScoringTeam => MemberResponses.EPermission.ScoringTeam,
-            Member.EPermission.MemberTeam => MemberResponses.EPermission.MemberTeam,
+            EPermission.None => MemberResponses.EPermission.None,
+            EPermission.GuildLeader => MemberResponses.EPermission.GuildLeader,
+            EPermission.RankingTeam => MemberResponses.EPermission.RankingTeam,
+            EPermission.ScoringTeam => MemberResponses.EPermission.ScoringTeam,
+            EPermission.MemberTeam => MemberResponses.EPermission.MemberTeam,
             _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
         };
 }

@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 
-namespace GuildSaber.Api.Extensions;
+namespace GuildSaber.Api.Transformers;
 
 public static class ProblemResponseTransformer
 {
@@ -50,8 +50,7 @@ public static class ProblemResponseTransformer
                     // Maybe from a lib or the user has defined it.
                     if (content.Schema.Example is not null) continue;
 
-                    operation.Responses[response.Key].Content["application/problem+json"]
-                        .Schema.Example = example;
+                    content.Schema.Example = example;
 
                     continue;
                 }
@@ -65,10 +64,6 @@ public static class ProblemResponseTransformer
                         {
                             Schema = new OpenApiSchema
                             {
-                                Annotations = new Dictionary<string, object>
-                                {
-                                    ["x-schema-id"] = new OpenApiString("ProblemDetails")
-                                },
                                 Reference = new OpenApiReference
                                 {
                                     Type = ReferenceType.Schema,

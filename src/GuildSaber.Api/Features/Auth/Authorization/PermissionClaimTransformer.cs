@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using GuildSaber.Database.Contexts.Server;
-using GuildSaber.Database.Models.Server.Players;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,7 +29,7 @@ public class PermissionClaimTransformer(ServerDbContext dbContext) : IClaimsTran
             return principal;
 
         var playerIdClaim = claimsIdentity.FindFirst(AuthConstants.PlayerIdClaimType);
-        if (playerIdClaim == null || !Player.PlayerId.TryParse(playerIdClaim.Value, out var playerId))
+        if (playerIdClaim == null || !PlayerId.TryParse(playerIdClaim.Value, out var playerId))
             return principal;
 
         var memberPermissions = await dbContext.Members

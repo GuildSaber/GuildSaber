@@ -3,15 +3,16 @@ using System.Security.Claims;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Internal;
+using GuildSaber.Api.Transformers;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
-using static GuildSaber.Api.Features.Guilds.GuildRequests;
-using Guild = GuildSaber.Database.Models.Server.Guilds.Guild;
+using ServerGuild = GuildSaber.Database.Models.Server.Guilds.Guild;
+using static GuildSaber.Api.Features.Guilds.GuildResponses;
 
 namespace GuildSaber.Api.Features.Guilds;
 
-public class GuildEndpoints : IEndPoints
+public class GuildEndpoints : IEndpoints
 {
     private const string GetGuildName = "GetGuild";
 
@@ -32,7 +33,7 @@ public class GuildEndpoints : IEndPoints
             .WithName("CreateGuild")
             .WithSummary("Create a guild as the current player")
             .WithDescription("Create a guild as the current player using their player id from claims.")
-            .Produces<GuildResponses.Guild>(StatusCodes.Status201Created)
+            .Produces<Guild>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
@@ -56,8 +57,7 @@ public class GuildEndpoints : IEndPoints
             .RequireManager();
     }
 
-    private static async Task<Results<NoContent, NotFound>> DeleteGuildAsync(
-        Guild.GuildId guildId, ServerDbContext dbContext)
+    private static async Task<Results<NoContent, NotFound>> DeleteGuildAsync(GuildId guildId, ServerDbContext dbContext)
     {
         var affectedRows = await dbContext.Guilds
             .Where(x => x.Id == guildId)
@@ -68,22 +68,23 @@ public class GuildEndpoints : IEndPoints
             : TypedResults.NotFound();
     }
 
-    private static async Task<Ok<PagedList<GuildResponses.Guild>>> GetGuildsAsync(
+    private static async Task<Ok<PagedList<Guild>>> GetGuildsAsync(
         ServerDbContext dbContext,
         [Range(1, int.MaxValue)] int page = 1,
         [Range(1, 100)] int pageSize = 10,
         string? search = null,
-        EGuildSorters sortBy = EGuildSorters.Popularity,
+        GuildRequests.EGuildSorters sortBy = GuildRequests.EGuildSorters.Popularity,
         EOrder order = EOrder.Desc)
     {
         var query = dbContext.Guilds.AsQueryable();
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(x => ((string)x.Info.Name).Contains(search));
 
-        query = ApplySortOrder(query, sortBy, order);
-
-        return TypedResults.Ok(await PagedList<GuildResponses.Guild>
-            .CreateAsync(query.Select(GuildMappers.MapGuildExpression), page, pageSize));
+        return TypedResults.Ok(await query
+            .ApplySortOrder(sortBy, order)
+            .Select(GuildMappers.MapGuildExpression)
+            .ToPagedListAsync(page, pageSize)
+        );
     }
 
     /// <inheritdoc cref="GuildService.CreateGuildAsync" />
@@ -100,7 +101,7 @@ public class GuildEndpoints : IEndPoints
     /// </list>
     /// </remarks>
     private static async Task<IResult> CreateGuildAsync(
-        GuildRequests.Guild request, ClaimsPrincipal principal, GuildService service)
+        GuildRequests.CreateGuild request, ClaimsPrincipal principal, GuildService service)
         => principal.GetPlayerId() switch
         {
             null => TypedResults.Unauthorized(),
@@ -127,8 +128,8 @@ public class GuildEndpoints : IEndPoints
             }
         };
 
-    private static async Task<Results<Ok<GuildResponses.Guild>, NotFound>> GetGuildAsync(
-        Guild.GuildId guildId, ServerDbContext dbContext)
+    private static async Task<Results<Ok<Guild>, NotFound>> GetGuildAsync(
+        GuildId guildId, ServerDbContext dbContext)
         => await dbContext.Guilds.Where(x => x.Id == guildId)
                 .Select(GuildMappers.MapGuildExpression)
                 .FirstOrDefaultAsync()
@@ -138,8 +139,8 @@ public class GuildEndpoints : IEndPoints
                 var guild => TypedResults.Ok(guild)
             };
 
-    private static async Task<Results<Ok<GuildResponses.GuildExtended>, NotFound>> GetGuildExtended(
-        Guild.GuildId guildId, ServerDbContext dbContext)
+    private static async Task<Results<Ok<GuildExtended>, NotFound>> GetGuildExtended(
+        GuildId guildId, ServerDbContext dbContext)
         => await dbContext.Guilds.AsSplitQuery()
                 .Where(x => x.Id == guildId)
                 .Select(GuildMappers.MapGuildExtendedExpression)
@@ -148,22 +149,25 @@ public class GuildEndpoints : IEndPoints
                 { Guild.Id: 0 } => TypedResults.NotFound(),
                 var guildExtended => TypedResults.Ok(guildExtended)
             };
+}
 
-    private static IQueryable<Guild> ApplySortOrder(IQueryable<Guild> query, EGuildSorters sortBy, EOrder order)
-        => sortBy switch
-        {
-            EGuildSorters.Id => query.OrderBy(order, guild => guild.Id),
-            EGuildSorters.Name => query.OrderBy(order, guild => guild.Info.Name)
-                .ThenBy(order, guild => guild.Id),
-            EGuildSorters.Popularity => query.OrderBy(order, guild => guild.Status)
-                .ThenBy(order, guild => guild.RankedScores.Count / guild.Members.Count)
-                .ThenBy(order, guild => guild.Id),
-            EGuildSorters.CreationDate => query.OrderBy(order, guild => guild.Info.CreatedAt)
-                .ThenBy(order, guild => guild.Id),
-            EGuildSorters.MemberCount => query.OrderBy(order, guild => guild.Members.Count)
-                .ThenBy(order, guild => guild.Id),
-            EGuildSorters.MapCount => query.OrderBy(order, guild => guild.RankedMaps.Count)
-                .ThenBy(order, guild => guild.Id),
-            _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
-        };
+public static class GuildExtensions
+{
+    public static IQueryable<ServerGuild> ApplySortOrder(
+        this IQueryable<ServerGuild> query, GuildRequests.EGuildSorters sortBy, EOrder order) => sortBy switch
+    {
+        GuildRequests.EGuildSorters.Id => query.OrderBy(order, guild => guild.Id),
+        GuildRequests.EGuildSorters.Name => query.OrderBy(order, guild => guild.Info.Name)
+            .ThenBy(order, guild => guild.Id),
+        GuildRequests.EGuildSorters.Popularity => query.OrderBy(order, guild => guild.Status)
+            .ThenBy(order, guild => guild.RankedScores.Count / guild.Members.Count)
+            .ThenBy(order, guild => guild.Id),
+        GuildRequests.EGuildSorters.CreationDate => query.OrderBy(order, guild => guild.Info.CreatedAt)
+            .ThenBy(order, guild => guild.Id),
+        GuildRequests.EGuildSorters.MemberCount => query.OrderBy(order, guild => guild.Members.Count)
+            .ThenBy(order, guild => guild.Id),
+        GuildRequests.EGuildSorters.MapCount => query.OrderBy(order, guild => guild.RankedMaps.Count)
+            .ThenBy(order, guild => guild.Id),
+        _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
+    };
 }

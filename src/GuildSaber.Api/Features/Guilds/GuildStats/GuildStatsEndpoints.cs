@@ -1,12 +1,13 @@
 using GuildSaber.Api.Extensions;
+using GuildSaber.Api.Transformers;
 using GuildSaber.Database.Contexts.Server;
-using GuildSaber.Database.Models.Server.Guilds;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using static GuildSaber.Api.Features.Guilds.GuildStats.GuildStatsResponses;
 
 namespace GuildSaber.Api.Features.Guilds.GuildStats;
 
-public class GuildStatsEndpoints : IEndPoints
+public class GuildStatsEndpoints : IEndpoints
 {
     public static void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
@@ -19,18 +20,14 @@ public class GuildStatsEndpoints : IEndPoints
             .WithDescription("Get the statistics of the guild by guild id.");
     }
 
-    private static async Task<Results<Ok<GuildStatsResponses.GuildStatsResponse>, NotFound>> GetGuildStatsAsync
-        (Guild.GuildId guildId, ServerDbContext dbContext)
-        => await dbContext.Guilds
-                .Where(x => x.Id == guildId)
-                .Select(x => new GuildStatsResponses.GuildStatsResponse
-                {
-                    GuildId = x.Id,
-                    MemberCount = x.Members.Count,
-                    RankedScoreCount = dbContext.RankedScores.Count(y => y.GuildId == guildId)
-                }).FirstOrDefaultAsync() switch
-            {
-                var response when response.GuildId == new Guild.GuildId(0) => TypedResults.NotFound(),
-                var stats => TypedResults.Ok(stats)
-            };
+    private static async Task<Results<Ok<GuildStatsResponse>, NotFound>> GetGuildStatsAsync
+        (GuildId guildId, ServerDbContext dbContext) => await dbContext.Guilds
+            .Where(x => x.Id == guildId)
+            .Select(GuildStatsMappers.MapGuildStatsExpression)
+            .Cast<GuildStatsResponse?>()
+            .FirstOrDefaultAsync() switch
+        {
+            null => TypedResults.NotFound(),
+            var stats => TypedResults.Ok(stats.Value)
+        };
 }

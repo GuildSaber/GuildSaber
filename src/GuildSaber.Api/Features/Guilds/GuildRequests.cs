@@ -12,7 +12,7 @@ public static class GuildRequests
         MemberCount = 5
     }
 
-    public record GuildRequirements(
+    public record CreateGuildRequirements(
         bool RequireSubmission,
         uint? MinRank,
         uint? MaxRank,
@@ -21,15 +21,15 @@ public static class GuildRequests
         uint? AccountAgeUnix
     );
 
-    public record GuildInfo(
+    public record CreateGuildInfo(
         string Name,
         string SmallName,
         string Description,
         int Color
     );
 
-    public record Guild(
-        GuildInfo Info,
-        GuildRequirements Requirements
+    public record CreateGuild(
+        CreateGuildInfo Info,
+        CreateGuildRequirements Requirements
     );
 }

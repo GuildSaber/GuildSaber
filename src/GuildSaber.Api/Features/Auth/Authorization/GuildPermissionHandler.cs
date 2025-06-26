@@ -1,4 +1,3 @@
-using GuildSaber.Database.Models.Server.Guilds.Members;
 using Microsoft.AspNetCore.Authorization;
 
 namespace GuildSaber.Api.Features.Auth.Authorization;
@@ -24,7 +23,7 @@ public class GuildPermissionHandler(IHttpContextAccessor httpContextAccessor)
         AuthorizationHandlerContext context, GuildPermissionRequirement requirement)
         => context switch
         {
-            _ when requirement.RequiredPermission == Member.EPermission.None
+            _ when requirement.RequiredPermission == EPermission.None
                 => Succeed(context, requirement),
             { User.Identity: null or { IsAuthenticated: false } }
                 => Task.CompletedTask,
@@ -36,7 +35,7 @@ public class GuildPermissionHandler(IHttpContextAccessor httpContextAccessor)
                         AuthConstants.GuildPermissionClaimType(guildId)) switch
                     {
                         { Value: { } value }
-                            when Enum.TryParse<Member.EPermission>(value.AsSpan(), out var permission)
+                            when Enum.TryParse<EPermission>(value.AsSpan(), out var permission)
                                  && permission.HasFlag(requirement.RequiredPermission)
                             => Succeed(context, requirement),
                         _ => Fail(context)

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi.Models;
 
-namespace GuildSaber.Api.Extensions;
+namespace GuildSaber.Api.Transformers;
 
 public static class OpenApiTagsExtensions
 {

@@ -22,7 +22,7 @@ var migrator = builder.AddProject<GuildSaber_Migrator>("migrator", options => op
 var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.ExcludeLaunchProfile = true)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
     .WithHttpsEndpoint(port: 7149)
-    .WithHttpsHealthCheck("/health")
+    .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints()
     .WithReference(guildsaberDb).WaitForCompletion(migrator)
     .WithReference(cache).WaitFor(cache)

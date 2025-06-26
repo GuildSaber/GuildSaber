@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi.Models;
 
-namespace GuildSaber.Api.Extensions;
+namespace GuildSaber.Api.Transformers;
 
 public static class OpenApiBearerSecurityScheme
 {
@@ -46,8 +46,5 @@ public static class OpenApiBearerSecurityScheme
     /// <param name="options">The <see cref="OpenApiOptions" /> to add Bearer security scheme to.</param>
     /// <returns>The same <see cref="OpenApiOptions" /> returned to allow chaining.</returns>
     public static OpenApiOptions AddBearerSecurityScheme(this OpenApiOptions options)
-    {
-        options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
-        return options;
-    }
+        => options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
 }

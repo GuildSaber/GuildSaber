@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi.Models;
 
-namespace GuildSaber.Api.Extensions;
+namespace GuildSaber.Api.Transformers;
 
 public static class OpenApiEndpointsSecuritySchemeResolution
 {
@@ -59,8 +59,5 @@ public static class OpenApiEndpointsSecuritySchemeResolution
     /// <param name="options">The <see cref="OpenApiOptions" /> to add endpoints security scheme resolution to.</param>
     /// <returns>The same <see cref="OpenApiOptions" /> returned to allow chaining.</returns>
     public static OpenApiOptions AddEndpointsHttpSecuritySchemeResolution(this OpenApiOptions options)
-    {
-        options.AddOperationTransformer<EndpointsHttpSecuritySchemeResolutionTransformer>();
-        return options;
-    }
+        => options.AddOperationTransformer<EndpointsHttpSecuritySchemeResolutionTransformer>();
 }

@@ -10,6 +10,7 @@ using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Hangfire;
 using GuildSaber.Api.Hangfire.Configuration;
+using GuildSaber.Api.Transformers;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Database;
 using GuildSaber.Database.Contexts.Server;

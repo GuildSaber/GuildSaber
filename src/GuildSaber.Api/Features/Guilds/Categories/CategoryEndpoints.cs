@@ -4,18 +4,20 @@ using CSharpFunctionalExtensions.HttpResults.ResultExtensions;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Internal;
+using GuildSaber.Api.Transformers;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
-using GuildSaber.Database.Models.Server.Guilds;
-using GuildSaber.Database.Models.Server.Guilds.Categories;
-using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using CategoryId = GuildSaber.Database.Models.Server.Guilds.Categories.Category.CategoryId;
+using ServerCategory = GuildSaber.Database.Models.Server.Guilds.Categories.Category;
+using ServerCategoryInfo = GuildSaber.Database.Models.Server.Guilds.Categories.CategoryInfo;
+using static GuildSaber.Api.Features.Guilds.Categories.CategoryResponses;
 
 namespace GuildSaber.Api.Features.Guilds.Categories;
 
-public class CategoryEndpoints : IEndPoints
+public class CategoryEndpoints : IEndpoints
 {
     public const string GetCategoryName = "GetCategory";
 
@@ -47,52 +49,54 @@ public class CategoryEndpoints : IEndPoints
             .WithSummary("Create a category for a guild.")
             .WithDescription("Create a category for a guild by its Id.")
             .ProducesProblem(statusCode: StatusCodes.Status400BadRequest)
-            .RequireGuildPermission(Member.EPermission.RankingTeam);
+            .RequireGuildPermission(EPermission.RankingTeam);
 
         guildsGroup.MapPut("/{categoryId}", UpdateCategoryAsync)
             .WithName("UpdateCategory")
             .WithSummary("Update a category of a guild.")
             .WithDescription("Update a category of a guild by its Id.")
-            .RequireGuildPermission(Member.EPermission.RankingTeam);
+            .RequireGuildPermission(EPermission.RankingTeam);
 
         guildsGroup.MapDelete("/{categoryId}", DeleteCategoryAsync)
             .WithName("DeleteCategory")
             .WithSummary("Delete a category of a guild.")
             .WithDescription("Delete a category of a guild by its Id.")
-            .RequireGuildPermission(Member.EPermission.RankingTeam);
+            .RequireGuildPermission(EPermission.RankingTeam);
     }
 
-    private static async Task<Results<Ok<CategoryResponses.Category>, NotFound>> GetCategoryAsync(
-        Category.CategoryId categoryId, ServerDbContext dbContext)
+    private static async Task<Results<Ok<Category>, NotFound>> GetCategoryAsync(
+        CategoryId categoryId, ServerDbContext dbContext)
         => await dbContext.Categories.Where(x => x.Id == categoryId)
                 .Select(CategoryMappers.MapCategoryExpression)
-                .Cast<CategoryResponses.Category?>()
+                .Cast<Category?>()
                 .FirstOrDefaultAsync() switch
             {
                 null => TypedResults.NotFound(),
                 var category => TypedResults.Ok(category.Value)
             };
 
-    private static async Task<Ok<PagedList<CategoryResponses.Category>>> GetCategoriesPaginatedAsync(
+    private static async Task<Ok<PagedList<Category>>> GetCategoriesPaginatedAsync(
         ServerDbContext dbContext,
         [Range(1, int.MaxValue)] int page = 1,
         [Range(1, 100)] int pageSize = 10)
-        => TypedResults.Ok(await PagedList<CategoryResponses.Category>.CreateAsync(
-            dbContext.Categories.OrderBy(x => x.Id).Select(CategoryMappers.MapCategoryExpression), page, pageSize));
+        => TypedResults.Ok(await dbContext.Categories
+            .OrderBy(x => x.Id)
+            .Select(CategoryMappers.MapCategoryExpression)
+            .ToPagedListAsync(page, pageSize));
 
-    private static async Task<Ok<CategoryResponses.Category[]>> GetCategoriesFromGuildAsync(
-        Guild.GuildId guildId, ServerDbContext dbContext)
+    private static async Task<Ok<Category[]>> GetCategoriesFromGuildAsync(
+        GuildId guildId, ServerDbContext dbContext)
         => TypedResults.Ok(await dbContext.Categories
             .Where(x => x.GuildId == guildId)
             .OrderBy(x => x.Id)
             .Select(CategoryMappers.MapCategoryExpression)
             .ToArrayAsync());
 
-    private static async Task<Results<CreatedAtRoute<CategoryResponses.Category>, ProblemHttpResult>>
-        CreateCategoryAsync(Guild.GuildId guildId, CategoryRequests.CreateCategory request, ServerDbContext dbContext)
+    private static async Task<Results<CreatedAtRoute<Category>, ProblemHttpResult>>
+        CreateCategoryAsync(GuildId guildId, CategoryRequests.CreateCategory request, ServerDbContext dbContext)
         => await (from name in Name_2_50.TryCreate(request.Name)
                   from description in Description.TryCreate(request.Description)
-                  select new Category { GuildId = guildId, Info = new CategoryInfo(name, description) })
+                  select new ServerCategory { GuildId = guildId, Info = new ServerCategoryInfo(name, description) })
             .Map(static (category, dbContext) => dbContext
                 .AddAndSaveAsync(category, x => x.Map()), dbContext)
             .ToCreatedAtRouteHttpResult(
@@ -100,19 +104,19 @@ public class CategoryEndpoints : IEndPoints
                 res => new { guildId, categoryId = res.Id }
             );
 
-    private static async Task<Results<Ok<CategoryResponses.Category>, ProblemHttpResult>> UpdateCategoryAsync(
-        Guild.GuildId guildId, Category.CategoryId categoryId, CategoryRequests.UpdateCategory request,
+    private static async Task<Results<Ok<Category>, ProblemHttpResult>> UpdateCategoryAsync(
+        GuildId guildId, CategoryId categoryId, CategoryRequests.UpdateCategory request,
         ServerDbContext dbContext)
         => await (from name in Name_2_50.TryCreate(request.Name)
                   from description in Description.TryCreate(request.Description)
-                  select new Category
-                      { Id = categoryId, GuildId = guildId, Info = new CategoryInfo(name, description) })
+                  select new ServerCategory
+                      { Id = categoryId, GuildId = guildId, Info = new ServerCategoryInfo(name, description) })
             .Map(static (category, dbContext) => dbContext
                 .UpdateAndSaveAsync(category, x => x.Map()), dbContext)
             .ToOkHttpResult();
 
     private static async Task<Results<NoContent, NotFound>> DeleteCategoryAsync(
-        Guild.GuildId guildId, Category.CategoryId categoryId, ServerDbContext dbContext)
+        GuildId guildId, CategoryId categoryId, ServerDbContext dbContext)
     {
         var affectedRows = await dbContext.Categories
             .Where(x => x.GuildId == guildId && x.Id == categoryId)

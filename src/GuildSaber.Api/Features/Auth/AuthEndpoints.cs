@@ -5,6 +5,7 @@ using AspNet.Security.OAuth.Discord;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Settings;
+using GuildSaber.Api.Transformers;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Authentication;
@@ -16,7 +17,7 @@ using IResult = Microsoft.AspNetCore.Http.IResult;
 
 namespace GuildSaber.Api.Features.Auth;
 
-public class AuthEndpoints : IEndPoints
+public class AuthEndpoints : IEndpoints
 {
     private const string BeatLeaderCallbackName = "BeatLeaderCallback";
     private const string DiscordCallbackName = "DiscordCallback";

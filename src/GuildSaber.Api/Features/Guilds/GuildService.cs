@@ -43,7 +43,7 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
     /// Guild names must be between 5-50 characters and descriptions must be valid.
     /// All newly created guilds start with an Unverified status.
     /// </remarks>
-    public async Task<CreateResponse> CreateGuildAsync(Player.PlayerId playerId, GuildRequests.Guild request)
+    public async Task<CreateResponse> CreateGuildAsync(PlayerId playerId, GuildRequests.CreateGuild request)
         => await GetPlayerSubscriptionInfo(playerId)
             .ToResult(CreateResponse () => new CreateResponse.PlayerNotFound())
             .Check(async _ => await GetLeadedGuildCountAsync(playerId) switch
@@ -70,7 +70,7 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
                                 PlayerId = x.playerId,
                                 CreatedAt = currTime,
                                 EditedAt = currTime,
-                                Permissions = Member.EPermission.GuildLeader,
+                                Permissions = EPermission.GuildLeader,
                                 JoinState = Member.EJoinState.None,
                                 Priority = await MemberService.GetNextPriority(x.dbContext, x.playerId)
                             });
@@ -85,7 +85,7 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
     /// Validates the guild creation request and constructs a new Guild object
     /// </summary>
     private static Result<Guild, List<KeyValuePair<string, string[]>>> MakeGuildAndValidate(
-        GuildRequests.Guild request)
+        GuildRequests.CreateGuild request)
     {
         var nameResult = Name_5_50.TryCreate(request.Info.Name);
         var descriptionResult = Description.TryCreate(request.Info.Description);
@@ -93,16 +93,16 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
         List<KeyValuePair<string, string[]>> validationErrors = [];
         if (!nameResult.TryGetValue(out var name))
             validationErrors.Add(new KeyValuePair<string, string[]>(
-                nameof(GuildRequests.GuildInfo.Name), [nameResult.Error]));
+                nameof(GuildRequests.CreateGuildInfo.Name), [nameResult.Error]));
 
         if (!Name_2_6.TryCreate(request.Info.SmallName).TryGetValue(out var smallName))
             validationErrors.Add(new KeyValuePair<string, string[]>(
-                nameof(GuildRequests.GuildInfo.SmallName),
+                nameof(GuildRequests.CreateGuildInfo.SmallName),
                 ["Small name must be between 2 and 6 characters."]));
 
         if (!descriptionResult.TryGetValue(out var description))
             validationErrors.Add(new KeyValuePair<string, string[]>(
-                nameof(GuildRequests.GuildInfo.Description), [descriptionResult.Error]));
+                nameof(GuildRequests.CreateGuildInfo.Description), [descriptionResult.Error]));
 
         if (validationErrors.Count > 0)
             return Failure<Guild, List<KeyValuePair<string, string[]>>>(validationErrors);
@@ -130,7 +130,7 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
     /// The player's subscription information if found, None if the player doesn't exist
     /// </returns>
     private async Task<Maybe<PlayerSubscriptionInfo>> GetPlayerSubscriptionInfo(
-        Player.PlayerId playerId)
+        PlayerId playerId)
         => await dbContext.Players.Where(p => p.Id == playerId)
                 .Select(p => p.SubscriptionInfo)
                 .Cast<PlayerSubscriptionInfo?>()
@@ -140,9 +140,9 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
                 var x => From(x.Value)
             };
 
-    private async Task<int> GetLeadedGuildCountAsync(Player.PlayerId playerId) => await dbContext
+    private async Task<int> GetLeadedGuildCountAsync(PlayerId playerId) => await dbContext
         .Members
-        .CountAsync(x => x.PlayerId == playerId && x.Permissions == Member.EPermission.GuildLeader);
+        .CountAsync(x => x.PlayerId == playerId && x.Permissions == EPermission.GuildLeader);
 
     /// <summary>
     /// Validates if a player meets guild creation requirements based on their subscription tier
