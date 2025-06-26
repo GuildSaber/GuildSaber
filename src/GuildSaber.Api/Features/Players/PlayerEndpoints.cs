@@ -73,8 +73,7 @@ public class PlayerEndpoints : IEndpoints
         return TypedResults.Ok(await query
             .ApplySortOrder(sortBy, order)
             .Select(PlayerMappers.MapPlayerExpression)
-            .ToPagedListAsync(page, pageSize)
-        );
+            .ToPagedListAsync(page, pageSize));
     }
 }
 

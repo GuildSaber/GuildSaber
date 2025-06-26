@@ -83,8 +83,7 @@ public class MemberEndpoints : IEndpoints
             .Where(x => x.GuildId == guildId)
             .ApplySortOrder(sortBy, order)
             .Select(MemberMappers.MapMemberExpression)
-            .ToPagedListAsync(page, pageSize)
-        );
+            .ToPagedListAsync(page, pageSize));
 
     /// <inheritdoc cref="JoinGuildAsync" />
     /// <remarks>

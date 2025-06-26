@@ -37,9 +37,9 @@ public static class PlayerResponses
     public enum ESubscriptionTier
     {
         None = 0,
-        Tier1 = 1 << 0,
-        Tier2 = 1 << 1,
-        Tier3 = 1 << 2
+        Tier1 = 1,
+        Tier2 = 2,
+        Tier3 = 3
     }
 
     public readonly record struct PlayerAtMe(

@@ -83,8 +83,7 @@ public class GuildEndpoints : IEndpoints
         return TypedResults.Ok(await query
             .ApplySortOrder(sortBy, order)
             .Select(GuildMappers.MapGuildExpression)
-            .ToPagedListAsync(page, pageSize)
-        );
+            .ToPagedListAsync(page, pageSize));
     }
 
     /// <inheritdoc cref="GuildService.CreateGuildAsync" />
@@ -135,7 +134,7 @@ public class GuildEndpoints : IEndpoints
                 .FirstOrDefaultAsync()
             switch
             {
-                { Id: 0 } => TypedResults.NotFound(),
+                null => TypedResults.NotFound(),
                 var guild => TypedResults.Ok(guild)
             };
 
@@ -146,7 +145,7 @@ public class GuildEndpoints : IEndpoints
                 .Select(GuildMappers.MapGuildExtendedExpression)
                 .FirstOrDefaultAsync() switch
             {
-                { Guild.Id: 0 } => TypedResults.NotFound(),
+                null => TypedResults.NotFound(),
                 var guildExtended => TypedResults.Ok(guildExtended)
             };
 }

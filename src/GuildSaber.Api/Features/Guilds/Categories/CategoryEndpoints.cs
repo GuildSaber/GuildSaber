@@ -101,8 +101,7 @@ public class CategoryEndpoints : IEndpoints
                 .AddAndSaveAsync(category, x => x.Map()), dbContext)
             .ToCreatedAtRouteHttpResult(
                 GetCategoryName,
-                res => new { guildId, categoryId = res.Id }
-            );
+                res => new { guildId, categoryId = res.Id });
 
     private static async Task<Results<Ok<Category>, ProblemHttpResult>> UpdateCategoryAsync(
         GuildId guildId, CategoryId categoryId, CategoryRequests.UpdateCategory request,

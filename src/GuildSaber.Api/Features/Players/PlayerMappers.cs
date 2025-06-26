@@ -72,7 +72,8 @@ public static class PlayerMappers
                 JoinState = x.JoinState.Map(),
                 Permissions = x.Permissions.Map(),
                 EditedAt = x.EditedAt,
-                InitializedAt = x.CreatedAt
+                InitializedAt = x.CreatedAt,
+                Priority = x.Priority
             }).ToArray(),
             Roles = self.IsManager ? new[] { "Manager" } : Array.Empty<string>()
         };
