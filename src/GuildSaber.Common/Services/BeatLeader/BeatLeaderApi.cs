@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Common.Services.BeatLeader.Models;
+using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 
 namespace GuildSaber.Common.Services.BeatLeader;

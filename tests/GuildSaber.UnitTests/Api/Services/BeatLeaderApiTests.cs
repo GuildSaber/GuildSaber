@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using AwesomeAssertions;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models;
+using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.UnitTests.Utils;
 

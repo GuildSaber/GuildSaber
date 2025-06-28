@@ -1,6 +1,6 @@
 using CSharpFunctionalExtensions;
 using GuildSaber.Common.Services.BeatLeader;
-using GuildSaber.Common.Services.BeatLeader.Models;
+using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;

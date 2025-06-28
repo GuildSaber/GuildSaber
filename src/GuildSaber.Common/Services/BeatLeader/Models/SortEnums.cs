@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace GuildSaber.Common.Services.BeatLeader.Models;
 
 public enum MapSortBy
@@ -40,6 +42,7 @@ public enum ScoresSortBy
     ReplaysWatched = 14
 }
 
+[SuppressMessage("ReSharper", "IdentifierTypo")]
 public enum PlayerSortBy
 {
     Pp,
@@ -90,6 +93,7 @@ public enum PlayedStatus
     Unplayed
 }
 
+[SuppressMessage("ReSharper", "IdentifierTypo")]
 public enum ClanMapsSortBy
 {
     Pp,
