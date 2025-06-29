@@ -6,7 +6,7 @@ using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.UnitTests.Utils;
 
-namespace GuildSaber.UnitTests.Api.Services;
+namespace GuildSaber.UnitTests.Services.BeatLeader;
 
 public class BeatLeaderApiTests
 {

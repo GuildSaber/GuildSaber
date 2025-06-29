@@ -3,7 +3,7 @@ using GuildSaber.Common.Result;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using Xunit.Abstractions;
 
-namespace GuildSaber.UnitTests.Database.Models.StrongTypes;
+namespace GuildSaber.UnitTests.Services.BeatLeader.StrongTypes;
 
 public class BeatLeaderIdTests(ITestOutputHelper testOutputHelper)
 {

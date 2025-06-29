@@ -77,10 +77,12 @@ builder.Services.AddHttpClient<BeatLeaderApi>(client =>
     client.BaseAddress = new Uri("https+http://beatleader-api");
     client.DefaultRequestHeaders.Add("User-Agent", "GuildSaber");
 });
-builder.Services.AddSingleton<BeatLeaderSocket>(provider =>
-    //TODO: Uri from configuration
-    new BeatLeaderSocket(new Uri("wss://sockets.api.beatleader.com/general"))
-);
+builder.Services.AddTransient<BeatLeaderGeneralSocketStream>(_ =>
+{
+    //TODO: Get from configuration
+    var baseUri = new Uri("wss://sockets.api.beatleader.com/general");
+    return new BeatLeaderGeneralSocketStream(baseUri);
+});
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {

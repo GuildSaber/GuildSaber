@@ -7,6 +7,7 @@
         <IsPackable>false</IsPackable>
         <LangVersion>preview</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <RootNamespace>GuildSaber.UnitTests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -31,11 +32,6 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\GuildSaber.Api\GuildSaber.Api.csproj"/>
         <ProjectReference Include="..\..\src\GuildSaber.Database\GuildSaber.Database.csproj"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="Common\"/>
-        <Folder Include="DiscordBot\"/>
     </ItemGroup>
 
 </Project>

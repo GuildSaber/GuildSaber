@@ -3,14 +3,14 @@ using AwesomeAssertions;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 
-namespace GuildSaber.UnitTests.Api.Services;
+namespace GuildSaber.UnitTests.Services.BeatLeader;
 
 public class BeatLeaderSocketTests : IAsyncDisposable
 {
-    private readonly BeatLeaderSocket _beatLeaderSocket
+    private readonly BeatLeaderGeneralSocketStream _stream
         = new(new Uri("wss://sockets.api.beatleader.com/general"));
 
-    public async ValueTask DisposeAsync() => await _beatLeaderSocket.DisposeAsync();
+    public async ValueTask DisposeAsync() => await _stream.DisposeAsync();
 
     [Fact]
     public async Task StreamScoreEvents_ShouldEstablishConnection_WhenCalled()
@@ -20,7 +20,7 @@ public class BeatLeaderSocketTests : IAsyncDisposable
         var messageReceived = false;
 
         // Act
-        await foreach (var _ in _beatLeaderSocket.StreamScoreEvents(cts.Token))
+        await foreach (var _ in _stream.WithCancellation(cts.Token))
         {
             // We just need to verify we can connect and receive any message
             messageReceived = true;
@@ -39,14 +39,14 @@ public class BeatLeaderSocketTests : IAsyncDisposable
         ScoreResponseWithMyScoreAndContexts? scoreData = null;
 
         // Act
-        await foreach (var result in _beatLeaderSocket.StreamScoreEvents(cts.Token))
+        await foreach (var result in _stream.WithCancellation(cts.Token))
         {
             if (!result.IsSuccess) continue;
             scoreData = result.Value switch
             {
-                BeatLeaderSocket.GeneralResponse.Upload upload => upload.SocketMessage.Data,
-                BeatLeaderSocket.GeneralResponse.Accepted accepted => accepted.SocketMessage.Data,
-                BeatLeaderSocket.GeneralResponse.Rejected rejected => rejected.SocketMessage.Data,
+                SocketGeneralResponse.Upload upload => upload.SocketMessage.Data,
+                SocketGeneralResponse.Accepted accepted => accepted.SocketMessage.Data,
+                SocketGeneralResponse.Rejected rejected => rejected.SocketMessage.Data,
                 _ => scoreData
             };
 
@@ -69,7 +69,7 @@ public class BeatLeaderSocketTests : IAsyncDisposable
         var task = Task.Run(async () =>
         {
             // ReSharper disable once AccessToDisposedClosure
-            await foreach (var _ in _beatLeaderSocket.StreamScoreEvents(cts.Token))
+            await foreach (var _ in _stream.WithCancellation(cts.Token))
             {
                 // Just consume messages
             }
@@ -90,11 +90,11 @@ public class BeatLeaderSocketTests : IAsyncDisposable
     {
         // Arrange
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        var messages = new List<BeatLeaderSocket.GeneralResponse>();
+        var messages = new List<SocketGeneralResponse>();
         var targetCount = 2;
 
         // Act
-        await foreach (var result in _beatLeaderSocket.StreamScoreEvents(cts.Token))
+        await foreach (var result in _stream.WithCancellation(cts.Token))
         {
             if (!result.IsSuccess) continue;
             messages.Add(result.Value);
@@ -111,19 +111,12 @@ public class BeatLeaderSocketTests : IAsyncDisposable
     [Fact]
     public async Task StreamScoreEvents_ShouldReturnConnectionError_WhenUnableToConnect()
     {
-        var invalidSocket = new BeatLeaderSocket(new Uri("wss://invalid.example.com/socket"));
+        await using var invalidStream = new BeatLeaderGeneralSocketStream(new Uri("wss://invalid.example.com/socket"));
 
-        try
-        {
-            // Act
-            await foreach (var result in invalidSocket.StreamScoreEvents())
-                // Assert
-                result.FailureShould().BeOfType<BeatLeaderSocket.Error.ConnectionError>(
-                    "because we should receive a connection error for an invalid WebSocket URI");
-        }
-        finally
-        {
-            await invalidSocket.DisposeAsync();
-        }
+        // Act
+        await foreach (var result in invalidStream)
+            // Assert
+            result.FailureShould().BeOfType<BeatLeaderGeneralSocketStream.Error.ConnectionError>(
+                "because we should receive a connection error for an invalid WebSocket URI");
     }
 }
