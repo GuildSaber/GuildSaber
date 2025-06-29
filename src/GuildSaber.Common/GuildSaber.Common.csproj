@@ -8,6 +8,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="GuildSaber.Common.Tests"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="CSharpFunctionalExtensions" Version="3.6.0"/>
         <PackageReference Include="CSharpFunctionalExtensions.Analyzers" Version="1.4.1">
             <PrivateAssets>all</PrivateAssets>

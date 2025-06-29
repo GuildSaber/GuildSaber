@@ -1,38 +1,42 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Net.WebSockets;
 using AwesomeAssertions;
 using GuildSaber.Common.Services.BeatLeader;
+using GuildSaber.Common.Services.BeatLeader.Errors;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 
 namespace GuildSaber.UnitTests.Services.BeatLeader;
 
+[SuppressMessage("ReSharper", "AccessToDisposedClosure")]
+[SuppressMessage("ReSharper", "MethodSupportsCancellation")]
 public class BeatLeaderSocketTests : IAsyncDisposable
 {
     private readonly BeatLeaderGeneralSocketStream _stream
-        = new(new Uri("wss://sockets.api.beatleader.com/general"));
+        = new(new Uri("wss://sockets.api.beatleader.com/"));
 
     public async ValueTask DisposeAsync() => await _stream.DisposeAsync();
 
     [Fact]
-    public async Task StreamScoreEvents_ShouldEstablishConnection_WhenCalled()
+    public async Task GetAsyncEnumerator_ShouldEstablishWebSocketConnection_WhenEnumerationStarts()
     {
         // Arrange
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        var messageReceived = false;
+        var connectionEstablished = false;
 
         // Act
         await foreach (var _ in _stream.WithCancellation(cts.Token))
         {
-            // We just need to verify we can connect and receive any message
-            messageReceived = true;
+            connectionEstablished = _stream.State == WebSocketState.Open;
             break;
         }
 
         // Assert
-        messageReceived.Should().BeTrue("because we should be able to establish a WebSocket connection");
+        connectionEstablished.Should()
+            .BeTrue("because the stream should establish a WebSocket connection when enumeration begins");
     }
 
     [Fact]
-    public async Task StreamScoreEvents_ShouldReceiveValidScoreData_WhenRunningForAtMost30Sec()
+    public async Task GetAsyncEnumerator_ShouldReceiveValidScoreMessages_WhenConnected()
     {
         // Arrange
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
@@ -42,6 +46,7 @@ public class BeatLeaderSocketTests : IAsyncDisposable
         await foreach (var result in _stream.WithCancellation(cts.Token))
         {
             if (!result.IsSuccess) continue;
+
             scoreData = result.Value switch
             {
                 SocketGeneralResponse.Upload upload => upload.SocketMessage.Data,
@@ -54,69 +59,197 @@ public class BeatLeaderSocketTests : IAsyncDisposable
         }
 
         // Assert
-        scoreData.Should().NotBeNull("because we should receive at least one valid score message in the time window");
-        scoreData.LeaderboardId.Should().NotBeNullOrEmpty("because score data should contain a leaderboard id");
+        scoreData.Should().NotBeNull("because valid score messages should be received from the stream");
+        scoreData.LeaderboardId.Should().NotBeNullOrEmpty("because score data should contain a leaderboard ID");
     }
 
     [Fact]
-    [SuppressMessage("ReSharper", "MethodSupportsCancellation")]
-    public async Task StreamScoreEvents_ShouldRespectCancellationWithoutThrowing_WhenCancellationRequested()
+    public async Task GetAsyncEnumerator_ShouldThrowInvalidOperationException_WhenStreamAlreadyInUse()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var firstEnumerationTask = Task.Run(async () =>
+        {
+            await foreach (var _ in _stream.WithCancellation(cts.Token))
+                // Keep the first enumeration running
+                await Task.Delay(100, cts.Token);
+        });
+
+        // Wait a bit to ensure first enumeration starts
+        await Task.Delay(500);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        {
+            await foreach (var _ in _stream) break;
+        });
+
+        exception.Message.Should().Be("Stream is already in use.");
+
+        // Cleanup
+        await cts.CancelAsync();
+        await firstEnumerationTask;
+    }
+
+    [Fact]
+    public async Task GetAsyncEnumerator_ShouldAllowReuse_AfterPreviousEnumerationCompletes()
+    {
+        // Arrange & Act - First enumeration
+        using var cts1 = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var firstMessageReceived = false;
+
+        await foreach (var _ in _stream.WithCancellation(cts1.Token))
+        {
+            firstMessageReceived = true;
+            break;
+        }
+
+        // Act - Second enumeration after first completes
+        using var cts2 = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var secondMessageReceived = false;
+
+        await foreach (var _ in _stream.WithCancellation(cts2.Token))
+        {
+            secondMessageReceived = true;
+            break;
+        }
+
+        await Task.Delay(5000); // Ensure second enumeration completes
+
+        // Assert
+        firstMessageReceived.Should().BeTrue("because the first enumeration should receive messages");
+        secondMessageReceived.Should().BeTrue("because the stream should be reusable after completion");
+    }
+
+    [Fact]
+    public async Task GetAsyncEnumerator_ShouldHandleCancellationGracefully_WhenCancellationRequested()
     {
         // Arrange
         using var cts = new CancellationTokenSource();
 
         // Act
-        var task = Task.Run(async () =>
+        var enumerationTask = Task.Run(async () =>
         {
-            // ReSharper disable once AccessToDisposedClosure
             await foreach (var _ in _stream.WithCancellation(cts.Token))
             {
-                // Just consume messages
+                // Consume messages until cancelled
             }
         });
 
         // Wait briefly to ensure connection is established
         await Task.Delay(1000);
-
-        // Cancel the enumeration
         await cts.CancelAsync();
 
-        // The task should complete without throwing, with a delay to ensure cancellation is processed
-        await task.WaitAsync(TimeSpan.FromSeconds(5));
+        // Assert - Task should complete without throwing
+        await enumerationTask.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
     [Fact]
-    public async Task StreamScoreEvents_ShouldCollectMultipleMessages_WhenRunningForAtMost30Sec()
+    public async Task GetAsyncEnumerator_ShouldReceiveMultipleMessageTypes_WhenConnected()
     {
         // Arrange
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var messages = new List<SocketGeneralResponse>();
-        var targetCount = 2;
+        const int targetCount = 3;
 
         // Act
         await foreach (var result in _stream.WithCancellation(cts.Token))
         {
             if (!result.IsSuccess) continue;
-            messages.Add(result.Value);
 
-            if (messages.Count >= targetCount)
-                break;
+            messages.Add(result.Value);
+            if (messages.Count >= targetCount) break;
         }
 
         // Assert
-        messages.Should().HaveCountGreaterThanOrEqualTo(1,
-            "because we should receive at least one message in the given time window");
+        messages.Should().HaveCountGreaterThanOrEqualTo(1, "because at least one message should be received");
+        messages.Should().OnlyContain(m =>
+                m.GetType() == typeof(SocketGeneralResponse.Upload)
+                || m.GetType() == typeof(SocketGeneralResponse.Accepted)
+                || m.GetType() == typeof(SocketGeneralResponse.Rejected),
+            "because all messages should be of known types");
     }
 
     [Fact]
-    public async Task StreamScoreEvents_ShouldReturnConnectionError_WhenUnableToConnect()
+    public async Task GetAsyncEnumerator_ShouldReturnConnectionError_WhenUnableToConnect()
     {
-        await using var invalidStream = new BeatLeaderGeneralSocketStream(new Uri("wss://invalid.example.com/socket"));
+        // Arrange
+        await using var invalidStream =
+            new BeatLeaderGeneralSocketStream(new Uri("wss://invalid.nonexistent.domain/socket"));
+
+        // Act & Assert
+        await foreach (var result in invalidStream)
+        {
+            result.FailureShould().BeOfType<ClientWebSocketStreamError.ConnectionError>(
+                "because connection to an invalid URI should result in a connection error");
+            break;
+        }
+    }
+
+    [Fact]
+    [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
+    public async Task Dispose_ShouldCleanupResources_WhenCalled()
+    {
+        // Arrange
+        var stream = new BeatLeaderGeneralSocketStream(new Uri("wss://sockets.api.beatleader.com/"));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        // Start enumeration
+        var enumerationTask = Task.Run(async () =>
+        {
+            await foreach (var _ in stream.WithCancellation(cts.Token)) break; // Get one message then stop
+        });
+
+        await enumerationTask;
 
         // Act
-        await foreach (var result in invalidStream)
-            // Assert
-            result.FailureShould().BeOfType<BeatLeaderGeneralSocketStream.Error.ConnectionError>(
-                "because we should receive a connection error for an invalid WebSocket URI");
+        stream.Dispose();
+
+        // Assert - Should be able to use the stream again after dispose
+        var canReuseAfterDispose = true;
+        try
+        {
+            using var cts2 = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            await foreach (var _ in stream.WithCancellation(cts2.Token)) break;
+        }
+        catch
+        {
+            canReuseAfterDispose = false;
+        }
+
+        canReuseAfterDispose.Should().BeTrue("because the stream should be reusable after dispose");
+    }
+
+    [Fact]
+    public async Task DisposeAsync_ShouldCleanupResourcesGracefully_WhenCalled()
+    {
+        // Arrange
+        var stream = new BeatLeaderGeneralSocketStream(new Uri("wss://sockets.api.beatleader.com/general"));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+
+        // Start enumeration
+        var enumerationTask = Task.Run(async () =>
+        {
+            await foreach (var _ in stream.WithCancellation(cts.Token)) break;
+        });
+
+        await enumerationTask;
+
+        // Act
+        await stream.DisposeAsync();
+
+        // Assert - Should be able to use the stream again
+        var canReuseAfterAsyncDispose = true;
+        try
+        {
+            using var cts2 = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            await foreach (var _ in stream.WithCancellation(cts2.Token)) break;
+        }
+        catch
+        {
+            canReuseAfterAsyncDispose = false;
+        }
+
+        canReuseAfterAsyncDispose.Should().BeTrue("because the stream should be reusable after async dispose");
     }
 }

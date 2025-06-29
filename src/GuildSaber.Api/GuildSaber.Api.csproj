@@ -9,6 +9,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="GuildSaber.Api.Tests"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Aspire.Pomelo.EntityFrameworkCore.MySql" Version="9.3.1"/>
         <PackageReference Include="AspNet.Security.OAuth.Discord" Version="9.4.0"/>
         <PackageReference Include="CSharpFunctionalExtensions.HttpResults" Version="1.0.0"/>

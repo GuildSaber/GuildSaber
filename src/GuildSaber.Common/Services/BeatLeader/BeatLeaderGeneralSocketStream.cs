@@ -3,11 +3,25 @@ using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Common.Services.BeatLeader.Models;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
-using Error = GuildSaber.Common.Services.BeatLeader.BeatLeaderGeneralSocketStream.Error;
+using Error = GuildSaber.Common.Services.BeatLeader.Errors.ClientWebSocketStreamError;
+using static GuildSaber.Common.Services.BeatLeader.Errors.ClientWebSocketStreamError;
 using static GuildSaber.Common.Services.BeatLeader.Models.Responses.SocketGeneralResponse;
 
 namespace GuildSaber.Common.Services.BeatLeader;
 
+/// <summary>
+/// Provides a WebSocket stream for receiving real-time general updates from the BeatLeader API.
+/// This class establishes a connection to the BeatLeader general socket and yields parsed messages
+/// as they are received.
+/// </summary>
+/// <param name="baseUri">The base URI of the BeatLeader WebSocket endpoint.</param>
+/// <remarks>
+/// The stream automatically handles WebSocket connection management, message buffering, and
+/// deserialization of incoming JSON messages. It supports message types including score uploads,
+/// acceptances, and rejections.
+/// The class implements both <see cref="IDisposable" /> and <see cref="IAsyncDisposable" /> for
+/// proper resource cleanup and can only be enumerated once at a time.
+/// </remarks>
 public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerable<Result<SocketGeneralResponse, Error>>,
     IDisposable,
     IAsyncDisposable
@@ -24,22 +38,39 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
     private readonly Uri _generalUri = new(baseUri, "general");
 
     private readonly byte[] _receiveBuffer = new byte[MaxMessageLength];
-    private bool _disposed;
     private int _receiveBufferWPos;
     private ClientWebSocket? _webSocket;
 
-    public async ValueTask DisposeAsync()
-    {
-        if (_disposed) return;
-        _disposed = true;
+    internal WebSocketState State => _webSocket?.State ?? WebSocketState.None;
 
-        await CleanupWebSocketAsync();
-    }
+    /// <summary>
+    /// Asynchronously disposes of the WebSocket connection and associated resources.
+    /// </summary>
+    /// <returns>A <see cref="ValueTask" /> representing the asynchronous disposal operation.</returns>
+    public async ValueTask DisposeAsync() => await CleanupWebSocketAsync();
 
+    /// <summary>
+    /// Returns an asynchronous enumerator that iterates through the WebSocket messages.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token to cancel the enumeration.</param>
+    /// <returns>
+    /// An async enumerator that yields <see cref="Result{T, TError}" /> containing either:
+    /// - Success with a <see cref="SocketGeneralResponse" /> for valid messages
+    /// - Failure with an <see cref="Error" /> for connection issues, deserialization failures, or protocol errors
+    /// </returns>
+    /// <exception cref="InvalidOperationException">Thrown when the stream is already being enumerated.</exception>
+    /// <remarks>
+    /// The enumerator will:
+    /// - Establish a WebSocket connection to the BeatLeader general endpoint
+    /// - Continuously receive and parse JSON messages until cancellation or connection loss
+    /// - Automatically handle connection cleanup on completion or error
+    /// - Stop enumeration on cancellation, connection errors, or unknown message types
+    /// Supported message types are: "upload", "accepted", and "rejected".
+    /// Messages exceeding 5MB will result in a <see cref="Error.MessageTooLong" /> error.
+    /// </remarks>
     public async IAsyncEnumerator<Result<SocketGeneralResponse, Error>> GetAsyncEnumerator(
         CancellationToken cancellationToken = new())
     {
-        ObjectDisposedException.ThrowIf(_disposed, nameof(BeatLeaderGeneralSocketStream));
         if (StreamAlreadyInUse())
             throw new InvalidOperationException("Stream is already in use.");
 
@@ -51,7 +82,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
             if (connectResult.TryGetError(out var connectionException))
             {
                 if (connectionException is not OperationCanceledException)
-                    yield return Failure<SocketGeneralResponse, Error>(new Error.ConnectionError(connectionException));
+                    yield return Failure<SocketGeneralResponse, Error>(new ConnectionError(connectionException));
 
                 yield break;
             }
@@ -61,7 +92,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
                 if (_webSocket.State != WebSocketState.Open)
                 {
                     yield return Failure<SocketGeneralResponse, Error>(
-                        new Error.ConnectionLost(_webSocket.State));
+                        new ConnectionLost(_webSocket.State));
 
                     yield break;
                 }
@@ -73,7 +104,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
                     .TryGetValue(out var received, out var receiveException))
                 {
                     if (receiveException is not OperationCanceledException)
-                        yield return Failure<SocketGeneralResponse, Error>(new Error.ConnectionError(receiveException));
+                        yield return Failure<SocketGeneralResponse, Error>(new ConnectionError(receiveException));
 
                     yield break;
                 }
@@ -81,7 +112,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
                 if (received.MessageType is not WebSocketMessageType.Text)
                 {
                     yield return Failure<SocketGeneralResponse, Error>(
-                        new Error.UnknownMessageType($"Received unsupported message type: {received.MessageType}"));
+                        new UnknownMessageType($"Received unsupported message type: {received.MessageType}"));
 
                     yield break;
                 }
@@ -90,7 +121,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
                     || _receiveBufferWPos > MaxMessageLength)
                 {
                     yield return Failure<SocketGeneralResponse, Error>(
-                        new Error.MessageTooLong("Received message exceeds maximum length of 5 MB"));
+                        new MessageTooLong("Received message exceeds maximum length of 5 MB"));
 
                     yield break;
                 }
@@ -113,7 +144,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
                     { Message: "accepted" } => new Accepted(message),
                     { Message: "rejected" } => new Rejected(message),
                     _ => Failure<SocketGeneralResponse, Error>(
-                        new Error.UnknownMessageType($"Received unknown message type '{message.Message}'"))
+                        new UnknownMessageType($"Received unknown message type '{message.Message}'"))
                 };
 
                 _receiveBufferWPos = 0;
@@ -125,49 +156,32 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
         }
     }
 
+    /// <summary>
+    /// Releases all resources used by the <see cref="BeatLeaderGeneralSocketStream" />.
+    /// </summary>
+    /// <remarks>
+    /// This method disposes the WebSocket connection synchronously and resets internal state.
+    /// For asynchronous disposal with proper connection closure, use <see cref="DisposeAsync" />.
+    /// </remarks>
     public void Dispose()
     {
-        if (_disposed) return;
-        _disposed = true;
-
         _webSocket?.Dispose();
         _webSocket = null;
         _receiveBufferWPos = 0;
     }
 
+    #region Private Helper Methods
+
     /// <summary>
-    /// Represents different types of errors that can occur during WebSocket operations.
+    /// Safely attempts to receive data from the WebSocket with exception handling.
     /// </summary>
-    public abstract record Error
-    {
-        /// <summary>
-        /// Represents errors that occur when connecting to the WebSocket.
-        /// </summary>
-        /// <param name="Exception">The exception that occurred during connection</param>
-        public record ConnectionError(Exception Exception) : Error;
-
-        /// <summary>
-        /// Represents errors that occur when deserializing messages from the WebSocket.
-        /// </summary>
-        /// <param name="Message">Detailed error message</param>
-        /// <param name="RawJson">The raw JSON that failed to deserialize, if available</param>
-        public record DeserializationError(Exception Exception, string? RawJson = null) : Error;
-
-        public record MessageTooLong(string Message) : Error;
-
-        /// <summary>
-        /// Represents errors for unknown or unexpected message types from the WebSocket.
-        /// </summary>
-        /// <param name="MessageType">The unknown message type identifier</param>
-        public record UnknownMessageType(string MessageType) : Error;
-
-        /// <summary>
-        /// Represents errors that occur when the WebSocket connection is lost unexpectedly.
-        /// </summary>
-        /// <param name="WebSocketState">The state of the WebSocket when the error occurred</param>
-        public record ConnectionLost(WebSocketState WebSocketState) : Error;
-    }
-
+    /// <param name="webSocket">The WebSocket to receive from.</param>
+    /// <param name="buffer">The buffer to store received data.</param>
+    /// <param name="cancellationToken">A cancellation token for the receive operation.</param>
+    /// <returns>
+    /// A result containing either the <see cref="WebSocketReceiveResult" /> on success,
+    /// or the <see cref="Exception" /> that occurred during the receive operation.
+    /// </returns>
     private async ValueTask<Result<WebSocketReceiveResult, Exception>> TryReceiveAsync(
         ClientWebSocket webSocket, ArraySegment<byte> buffer, CancellationToken cancellationToken)
     {
@@ -199,7 +213,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
         }
     }
 
-    private static Result<T?, Error.DeserializationError> TryDeserializeMessage<T>(
+    private static Result<T?, DeserializationError> TryDeserializeMessage<T>(
         ReadOnlySpan<byte> utf8Json,
         JsonSerializerOptions? options = null)
     {
@@ -209,8 +223,8 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
         }
         catch (JsonException ex)
         {
-            return Failure<T?, Error.DeserializationError>(
-                new Error.DeserializationError(ex, utf8Json.ToString()));
+            return Failure<T?, DeserializationError>(
+                new DeserializationError(ex, utf8Json.ToString()));
         }
     }
 
@@ -252,4 +266,6 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
     }
 
     private bool StreamAlreadyInUse() => _webSocket is not null;
+
+    #endregion
 }
