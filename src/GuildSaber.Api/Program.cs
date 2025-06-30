@@ -29,10 +29,14 @@ using Scalar.AspNetCore;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults();
+
+#region Configuration & Options
 
 builder.Services
     .AddOptionsWithValidateOnStart<RetryPolicyOptions>()
-    .Bind(builder.Configuration.GetSection(RetryPolicyOptions.RetryPolicyOptionsSectionsKey)).ValidateDataAnnotations();
+    .Bind(builder.Configuration.GetSection(RetryPolicyOptions.RetryPolicyOptionsSectionsKey))
+    .ValidateDataAnnotations();
 
 var authSettings = builder.Configuration.GetSection(AuthSettings.AuthSettingsSectionKey);
 builder.Services
@@ -62,36 +66,29 @@ builder.Services
     .AddOptionsWithValidateOnStart<GuildCreationSettings>()
     .Bind(guildSettings.GetSection(nameof(GuildSettings.Creation))).ValidateDataAnnotations();
 
-var connectionMultiplexer = ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("cache")!);
+#endregion
 
-builder.AddServiceDefaults();
+#region Core Services
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpUserAgentParser()
     .AddHttpUserAgentParserAccessor();
+
+#endregion
+
+#region Database
+
+builder.AddMySqlDbContext<ServerDbContext>(connectionName: Constants.ServerDbConnectionStringKey);
+
+#endregion
+
+#region Authentication & Authorization
+
 builder.Services.AddSingleton<JwtService>();
 builder.Services.AddScoped<IClaimsTransformation, PermissionClaimTransformer>();
 builder.Services.AddScoped<SessionValidator>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddSingleton<IAuthorizationHandler, GuildPermissionHandler>();
-builder.Services.AddHttpClient<BeatLeaderApi>(client =>
-{
-    client.BaseAddress = new Uri("https+http://beatleader-api");
-    client.DefaultRequestHeaders.Add("User-Agent", "GuildSaber");
-});
-builder.Services.AddTransient<BeatLeaderGeneralSocketStream>(_ =>
-{
-    var uri = builder.Configuration.GetValue<Uri>("services:beatleader-socket:default:0");
-    ArgumentNullException.ThrowIfNull(uri, "BeatLeader socket URI is not configured in service discovery.");
-    return new BeatLeaderGeneralSocketStream(uri);
-});
-
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
-    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-    options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
-});
 
 builder.Services.AddAuthentication(options => options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme)
     .AddBeatLeader(options =>
@@ -158,11 +155,35 @@ builder.Services.AddAuthorizationBuilder()
     .AddManagerAuthorizationPolicy()
     .AddGuildAuthorizationPolicies();
 
+#endregion
+
+#region External Services & HTTP Clients
+
+builder.Services.AddHttpClient<BeatLeaderApi>(client =>
+{
+    client.BaseAddress = new Uri("https+http://beatleader-api");
+    client.DefaultRequestHeaders.Add("User-Agent", "GuildSaber");
+});
+
+builder.Services.AddTransient<BeatLeaderGeneralSocketStream>(_ =>
+{
+    var uri = builder.Configuration.GetValue<Uri>("services:beatleader-socket:default:0");
+    ArgumentNullException.ThrowIfNull(uri, "BeatLeader socket URI is not configured in service discovery.");
+    return new BeatLeaderGeneralSocketStream(uri);
+});
+
+#endregion
+
+#region Background Services & Hangfire
+
+builder.Services.AddTransient<ScoreSyncHandler>();
+builder.Services.AddHostedService<ScoreSyncService>();
+
 builder.Services.AddHangfire((serviceCollection, option) =>
 {
     option.UseSimpleAssemblyNameTypeSerializer();
     option.UseRecommendedSerializerSettings();
-    option.UseRedisStorage(connectionMultiplexer);
+    option.UseRedisStorage(ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("cache")!));
     option.UseActivator(new HangfireActivator(serviceCollection));
     option.UseFilter(new AutomaticRetryAttribute
     {
@@ -171,7 +192,18 @@ builder.Services.AddHangfire((serviceCollection, option) =>
     });
 }).AddHangfireServer();
 
-builder.AddMySqlDbContext<ServerDbContext>(connectionName: Constants.ServerDbConnectionStringKey);
+#endregion
+
+#region API Configuration
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
+});
+
 builder.Services.AddOpenApi(options => options
     .AddGlobalProblemDetails()
     .AddBearerSecurityScheme()
@@ -180,9 +212,8 @@ builder.Services.AddOpenApi(options => options
     .AddScalarTransformers()
 );
 
-builder.Services.AddHostedService<ScoreSyncService>();
-
 builder.Services.AddEndpoints<Program>(builder.Configuration);
+
 builder.Services.AddProblemDetails(options =>
 {
     options.CustomizeProblemDetails = context =>
@@ -194,13 +225,21 @@ builder.Services.AddProblemDetails(options =>
     };
 });
 
+#endregion
+
 var app = builder.Build();
+
+#region Middleware Pipeline
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+#endregion
+
+#region Endpoints & UI
 
 app.MapOpenApi();
 app.MapDefaultEndpoints()
@@ -218,5 +257,7 @@ app.MapScalarApiReference("/", options => options
     .AddPreferredSecuritySchemes(JwtBearerDefaults.AuthenticationScheme)
     .WithPersistentAuthentication()
 );
+
+#endregion
 
 app.Run();

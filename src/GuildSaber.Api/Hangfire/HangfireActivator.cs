@@ -4,7 +4,8 @@ namespace GuildSaber.Api.Hangfire;
 
 public class HangfireActivator(IServiceProvider serviceProvider) : JobActivator
 {
-    public override object ActivateJob(Type jobType) => serviceProvider.GetRequiredService(jobType);
+    public override object ActivateJob(Type jobType)
+        => serviceProvider.GetRequiredService(jobType);
 
     public override JobActivatorScope BeginScope(JobActivatorContext context)
         => new HangfireScope(serviceProvider.CreateScope());
