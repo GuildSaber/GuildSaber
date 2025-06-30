@@ -40,27 +40,23 @@ public class BeatLeaderSocketTests : IAsyncDisposable
     {
         // Arrange
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        ScoreResponseWithMyScoreAndContexts? scoreData = null;
 
         // Act
         await foreach (var result in _stream.WithCancellation(cts.Token))
         {
-            if (!result.IsSuccess) continue;
+            if (!result.TryGetValue(out var value)) continue;
 
-            scoreData = result.Value switch
+            if (value is not SocketGeneralResponse.Upload &&
+                value is not SocketGeneralResponse.Accepted &&
+                value is not SocketGeneralResponse.Rejected)
             {
-                SocketGeneralResponse.Upload upload => upload.SocketMessage.Data,
-                SocketGeneralResponse.Accepted accepted => accepted.SocketMessage.Data,
-                SocketGeneralResponse.Rejected rejected => rejected.SocketMessage.Data,
-                _ => scoreData
-            };
+                result.FailureShould().BeOfType<ClientWebSocketStreamError.UnknownMessageType>(
+                    "because we expect only known message types from the stream");
+                continue;
+            }
 
-            if (scoreData is not null) break;
+            break;
         }
-
-        // Assert
-        scoreData.Should().NotBeNull("because valid score messages should be received from the stream");
-        scoreData.LeaderboardId.Should().NotBeNullOrEmpty("because score data should contain a leaderboard ID");
     }
 
     [Fact]

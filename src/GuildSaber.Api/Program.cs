@@ -8,6 +8,7 @@ using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Guilds;
+using GuildSaber.Api.Features.Scores;
 using GuildSaber.Api.Hangfire;
 using GuildSaber.Api.Hangfire.Configuration;
 using GuildSaber.Api.Transformers;
@@ -79,9 +80,9 @@ builder.Services.AddHttpClient<BeatLeaderApi>(client =>
 });
 builder.Services.AddTransient<BeatLeaderGeneralSocketStream>(_ =>
 {
-    //TODO: Get from configuration
-    var baseUri = new Uri("wss://sockets.api.beatleader.com/general");
-    return new BeatLeaderGeneralSocketStream(baseUri);
+    var uri = builder.Configuration.GetValue<Uri>("services:beatleader-socket:default:0");
+    ArgumentNullException.ThrowIfNull(uri, "BeatLeader socket URI is not configured in service discovery.");
+    return new BeatLeaderGeneralSocketStream(uri);
 });
 
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -178,6 +179,9 @@ builder.Services.AddOpenApi(options => options
     .AddTagDescriptionSupport()
     .AddScalarTransformers()
 );
+
+builder.Services.AddHostedService<ScoreSyncService>();
+
 builder.Services.AddEndpoints<Program>(builder.Configuration);
 builder.Services.AddProblemDetails(options =>
 {
@@ -212,6 +216,7 @@ app.MapScalarApiReference("/", options => options
     .WithTheme(ScalarTheme.Purple)
     .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch)
     .AddPreferredSecuritySchemes(JwtBearerDefaults.AuthenticationScheme)
-    .WithPersistentAuthentication());
+    .WithPersistentAuthentication()
+);
 
 app.Run();

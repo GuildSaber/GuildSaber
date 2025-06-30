@@ -1,8 +1,6 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace GuildSaber.Common.Services.BeatLeader.Models.Responses;
 
-public class CompactScore
+public record CompactScore
 {
     public required int? Id { get; init; }
     public required int BaseScore { get; init; }
@@ -20,31 +18,23 @@ public class CompactScore
     public required int EpochTime { get; init; }
 }
 
-public class CompactScoreResponse
+public record CompactScoreResponse
 {
     public required CompactScore Score { get; init; }
     public required CompactLeaderboard Leaderboard { get; init; }
 }
 
-[SuppressMessage("ReSharper", "IdentifierTypo")]
-public class ScoreResponse
+public record ScoreResponse : IProcessedScore, IWithPP, IWithPlayer, IWithScoreImprovement, IWithReplaysWatched
 {
-    public required int? Id { get; init; }
+    public required int Id { get; init; }
+    public required string PlayerId { get; init; }
+    public required string LeaderboardId { get; init; }
     public required int BaseScore { get; init; }
     public required int ModifiedScore { get; init; }
     public required float Accuracy { get; init; }
-    public required string PlayerId { get; init; }
-    public required float Pp { get; init; }
-    public required float BonusPp { get; init; }
-    public required float PassPP { get; init; }
-    public required float AccPP { get; init; }
-    public required float TechPP { get; init; }
+    public required int? MaxStreak { get; init; }
     public required int Rank { get; init; }
-    public required int ResponseRank { get; init; }
-    public required string? Country { get; init; }
-    public required float FcAccuracy { get; init; }
-    public required float FcPp { get; init; }
-    public required float Weight { get; init; }
+    public required string Country { get; init; }
     public required string Replay { get; init; }
     public required string Modifiers { get; init; }
     public required int BadCuts { get; init; }
@@ -55,22 +45,28 @@ public class ScoreResponse
     public required bool FullCombo { get; init; }
     public required string Platform { get; init; }
     public required int MaxCombo { get; init; }
-    public required int? MaxStreak { get; init; }
     public required HMD Hmd { get; init; }
     public required ControllerEnum Controller { get; init; }
-    public required string LeaderboardId { get; init; }
-    public required string Timeset { get; init; }
-    public required int Timepost { get; init; }
+    public required string TimeSet { get; init; }
+    public required int TimePost { get; init; }
+    public required ReplayOffsets Offsets { get; init; }
+    public required float FcAccuracy { get; init; }
+
+    public required PlayerResponse? Player { get; init; }
+    public required float Pp { get; init; }
+    public required float BonusPp { get; init; }
+    public required float PassPP { get; init; }
+    public required float AccPP { get; init; }
+    public required float TechPP { get; init; }
+    public required float FcPp { get; init; }
+    public required float Weight { get; init; }
     public required int ReplaysWatched { get; init; }
     public required int PlayCount { get; init; }
     public required int LastTryTime { get; init; }
-
-    public required PlayerResponse? Player { get; init; }
     public required ScoreImprovement? ScoreImprovement { get; init; }
-    public required ReplayOffsets? Offsets { get; init; }
 }
 
-public class ReplayOffsets
+public record ReplayOffsets
 {
     public required int Id { get; init; }
     public required int Frames { get; init; }
@@ -82,22 +78,22 @@ public class ReplayOffsets
     public required int CustomData { get; init; }
 }
 
-public class ScoreResponseWithAcc : ScoreResponse
+public record ScoreResponseWithAcc : ScoreResponse, IWithAcc
 {
     public required float AccLeft { get; init; }
     public required float AccRight { get; init; }
 }
 
-public class ScoreResponseWithHeadsets : ScoreResponse
+public record ScoreResponseWithHeadsets : ScoreResponse, IWithHeadsets
 {
     public required string? HeadsetName { get; init; }
     public required string? ControllerName { get; init; }
 }
 
-public class ScoreResponseWithMyScore : ScoreResponseWithAcc
+public record ScoreResponseWithMyScore : ScoreResponseWithAcc, IWithMyScore
 {
-    public required ScoreResponseWithAcc? MyScore { get; init; }
     public required LeaderboardContexts ValidContexts { get; init; }
+    public required ScoreResponseWithAcc? MyScore { get; init; }
     public required float Experience { get; init; }
 }
 
@@ -111,20 +107,20 @@ public enum EndType
     Practice = 5
 }
 
-public class AttemptResponseWithMyScore : ScoreResponseWithAcc
+public record AttemptResponseWithMyScore : ScoreResponseWithAcc, IWithMyScore
 {
-    public required ScoreResponseWithAcc? MyScore { get; init; }
     public required EndType EndType { get; init; }
     public required int AttemptsCount { get; init; }
     public required float Time { get; init; }
     public required float StartTime { get; init; }
-    public required float Experience { get; init; }
     public required float Speed { get; init; }
 
     public required CompactLeaderboardResponse Leaderboard { get; init; }
+    public required ScoreResponseWithAcc? MyScore { get; init; }
+    public required float Experience { get; init; }
 }
 
-public class ScoreContextExtensionResponse
+public record ScoreContextExtensionResponse
 {
     public required int Id { get; init; }
     public required string PlayerId { get; init; }
@@ -145,7 +141,7 @@ public class ScoreContextExtensionResponse
     public required ScoreImprovement? ScoreImprovement { get; init; }
 }
 
-public class CommonScores
+public record CommonScores
 {
     public required CompactLeaderboardResponse Leaderboard { get; init; }
     public required List<ScoreResponse> Scores { get; init; }
@@ -165,15 +161,15 @@ public enum LeaderboardContexts
     Funny = 1 << 8
 }
 
-public class ScoreResponseWithMyScoreAndContexts : ScoreResponseWithMyScore
+public record ScoreResponseWithMyScoreAndContexts : ScoreResponseWithMyScore, IWithScoreContext
 {
     public required ICollection<ScoreContextExtensionResponse> ContextExtensions { get; init; }
 }
 
-public class ScoreImprovement
+public record ScoreImprovement
 {
     public required int Id { get; init; }
-    public required string Timeset { get; init; } = "";
+    public required string TimeSet { get; init; } = "";
     public required int Score { get; init; }
     public required float Accuracy { get; init; }
     public required float Pp { get; init; }
@@ -195,7 +191,7 @@ public class ScoreImprovement
     public required string Modifiers { get; init; }
 }
 
-public class ScoreSongResponse
+public record ScoreSongResponse
 {
     public required string Id { get; init; }
     public required string Hash { get; init; }
@@ -207,7 +203,7 @@ public class ScoreSongResponse
     public required string DownloadUrl { get; init; }
 }
 
-public class ScoreResponseWithDifficulty : ScoreResponse
+public record ScoreResponseWithDifficulty : ScoreResponse
 {
     public required DifficultyDescription Difficulty { get; init; }
     public required ScoreSongResponse Song { get; init; }
@@ -215,8 +211,7 @@ public class ScoreResponseWithDifficulty : ScoreResponse
     public required ICollection<ScoreContextExtensionResponse> ContextExtensions { get; init; }
 }
 
-[SuppressMessage("ReSharper", "IdentifierTypo")]
-public class SaverScoreResponse
+public record SaverScoreResponse
 {
     public required int Id { get; init; }
     public required int BaseScore { get; init; }
@@ -226,12 +221,12 @@ public class SaverScoreResponse
     public required int Rank { get; init; }
     public required string Modifiers { get; init; }
     public required string LeaderboardId { get; init; }
-    public required string Timeset { get; init; }
-    public required int Timepost { get; init; }
+    public required string TimeSet { get; init; }
+    public required int TimePost { get; init; }
     public required string Player { get; init; }
 }
 
-public class SaverContainerResponse
+public record SaverContainerResponse
 {
     public required string LeaderboardId { get; init; }
     public required bool Ranked { get; init; }

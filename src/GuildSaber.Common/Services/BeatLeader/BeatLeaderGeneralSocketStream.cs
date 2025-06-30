@@ -1,4 +1,5 @@
 using System.Net.WebSockets;
+using System.Text;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Common.Services.BeatLeader.Models;
@@ -75,6 +76,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
             throw new InvalidOperationException("Stream is already in use.");
 
         _webSocket = new ClientWebSocket();
+        _receiveBufferWPos = 0;
 
         var connectResult = await TryConnectWebSocket(_webSocket, _generalUri, cancellationToken);
         try
@@ -129,22 +131,35 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
                 // If the message is not complete, continue receiving
                 if (!received.EndOfMessage) continue;
 
-                // Performance assumption that the message is in UTF-8 format (in this case, it should be)
+                // Message should already be in UTF-8 format in this case, no need for encoding conversion
                 var mem = _receiveBuffer.AsMemory(0, _receiveBufferWPos);
-                if (!TryDeserializeMessage<SocketMessage<ScoreResponseWithMyScoreAndContexts>>(mem.Span, _jsonOptions)
-                        .TryGetValue(out var message, out var deserializationError))
+
+                var messageTypeResult = TryGetMessageTypeFromJson(mem.Span);
+                if (!messageTypeResult.TryGetValue(out var messageType, out var deserializationError))
                 {
                     yield return Failure<SocketGeneralResponse, Error>(deserializationError);
                     continue;
                 }
 
-                yield return message switch
+                yield return messageType switch
                 {
-                    { Message: "upload" } => new Upload(message),
-                    { Message: "accepted" } => new Accepted(message),
-                    { Message: "rejected" } => new Rejected(message),
+                    "upload" => TryDeserializeMessage<SocketMessage<UploadScoreResponse>>(mem.Span, _jsonOptions)
+                        .TryGetValue(out var uploadMessage, out deserializationError)
+                        ? new Upload(uploadMessage.Data)
+                        : Failure<SocketGeneralResponse, Error>(deserializationError),
+
+                    "accepted" => TryDeserializeMessage<SocketMessage<AcceptedScoreResponse>>(mem.Span, _jsonOptions)
+                        .TryGetValue(out var acceptedMessage, out deserializationError)
+                        ? new Accepted(acceptedMessage.Data)
+                        : Failure<SocketGeneralResponse, Error>(deserializationError),
+
+                    "rejected" => TryDeserializeMessage<SocketMessage<RejectedScoreResponse>>(mem.Span, _jsonOptions)
+                        .TryGetValue(out var rejectedMessage, out deserializationError)
+                        ? new Rejected(rejectedMessage.Data)
+                        : Failure<SocketGeneralResponse, Error>(deserializationError),
+
                     _ => Failure<SocketGeneralResponse, Error>(
-                        new UnknownMessageType($"Received unknown message type '{message.Message}'"))
+                        new UnknownMessageType($"Received unknown message type '{messageType}'"))
                 };
 
                 _receiveBufferWPos = 0;
@@ -167,7 +182,6 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
     {
         _webSocket?.Dispose();
         _webSocket = null;
-        _receiveBufferWPos = 0;
     }
 
     #region Private Helper Methods
@@ -194,6 +208,34 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
         {
             return Failure<WebSocketReceiveResult, Exception>(ex);
         }
+    }
+
+    private Result<string, DeserializationError> TryGetMessageTypeFromJson(Span<byte> utf8Json)
+    {
+        var reader = new Utf8JsonReader(utf8Json);
+        if (!reader.Read() || reader.TokenType != JsonTokenType.StartObject)
+            return Failure<string, DeserializationError>(
+                new DeserializationError(new JsonException("Received JSON is not an object"),
+                    Encoding.UTF8.GetString(utf8Json)));
+
+        if (!reader.Read() || reader.TokenType != JsonTokenType.PropertyName ||
+            reader.GetString() != "message")
+            return Failure<string, DeserializationError>(
+                new DeserializationError(new JsonException("Received JSON does not contain 'message' property"),
+                    Encoding.UTF8.GetString(utf8Json)));
+
+        if (!reader.Read() || reader.TokenType != JsonTokenType.String)
+            return Failure<string, DeserializationError>(
+                new DeserializationError(new JsonException("Received 'message' property is not a string"),
+                    Encoding.UTF8.GetString(utf8Json)));
+
+        var messageType = reader.GetString();
+        if (messageType is null)
+            return Failure<string, DeserializationError>(
+                new DeserializationError(new JsonException("Received 'message' property is null"),
+                    Encoding.UTF8.GetString(utf8Json)));
+
+        return Success<string, DeserializationError>(messageType);
     }
 
     private bool TryIncrementByChecked(ref int value, int increment)
@@ -224,7 +266,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
         catch (JsonException ex)
         {
             return Failure<T?, DeserializationError>(
-                new DeserializationError(ex, utf8Json.ToString()));
+                new DeserializationError(ex, Encoding.UTF8.GetString(utf8Json)));
         }
     }
 
@@ -262,7 +304,6 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
 
         _webSocket?.Dispose();
         _webSocket = null;
-        _receiveBufferWPos = 0;
     }
 
     private bool StreamAlreadyInUse() => _webSocket is not null;

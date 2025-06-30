@@ -1,11 +1,10 @@
 using AwesomeAssertions;
 using GuildSaber.Common.Result;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
-using Xunit.Abstractions;
 
 namespace GuildSaber.UnitTests.Services.BeatLeader.StrongTypes;
 
-public class BeatLeaderIdTests(ITestOutputHelper testOutputHelper)
+public class BeatLeaderIdTests
 {
     private readonly BeatLeaderId _invalidBeatLeaderId = BeatLeaderId.CreateUnsafe(99999999999).Value;
     private readonly BeatLeaderId _validBeatLeaderId = BeatLeaderId.CreateUnsafe(76561198126131670).Value;

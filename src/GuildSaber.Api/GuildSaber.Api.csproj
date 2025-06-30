@@ -34,7 +34,6 @@
         <Folder Include="Features\Players\Scores\"/>
         <Folder Include="Features\RankedMaps\MapVersions\"/>
         <Folder Include="Features\RankedScores\"/>
-        <Folder Include="Features\Scores\"/>
         <Folder Include="Features\Songs\SongDifficulties\"/>
     </ItemGroup>
 

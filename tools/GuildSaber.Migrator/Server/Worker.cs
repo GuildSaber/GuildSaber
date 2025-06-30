@@ -7,9 +7,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace GuildSaber.Migrator.Server;
 
-public class Worker(
-    IServiceProvider serviceProvider,
-    ILogger<Worker> logger) : BackgroundService
+public class Worker(IServiceProvider serviceProvider) : BackgroundService
 {
     public const string ActivitySourceName = "Migrations";
     private static readonly ActivitySource _activitySource = new(ActivitySourceName);
