@@ -7,7 +7,7 @@ namespace GuildSaber.Common.Services.BeatLeader.Models.Responses;
 /// The BeatLeader WebSocket sends events in the format: { message: string, data: {various json objects} }
 /// Depending on the 'message' field, the 'data' field will contain different types of score-related information.
 /// </remarks>
-public abstract record SocketGeneralResponse
+public abstract record SocketGeneralResponse(string PlayerId)
 {
     /// <summary>
     /// Represents a new score that has been uploaded but not yet processed.
@@ -18,7 +18,7 @@ public abstract record SocketGeneralResponse
     /// For non-PB scores, this will be the only message received for that score.
     /// </remarks>
     public record Upload(UploadScoreResponse Score)
-        : SocketGeneralResponse;
+        : SocketGeneralResponse(Score.PlayerId);
 
     /// <summary>
     /// Represents a score that has been processed and accepted by BeatLeader.
@@ -29,7 +29,7 @@ public abstract record SocketGeneralResponse
     /// It follows the initial 'upload' message for that score.
     /// </remarks>
     public record Accepted(AcceptedScoreResponse Score)
-        : SocketGeneralResponse;
+        : SocketGeneralResponse(Score.PlayerId);
 
     /// <summary>
     /// Represents a score that has been processed and rejected by BeatLeader.
@@ -40,7 +40,7 @@ public abstract record SocketGeneralResponse
     /// Reasons for removal include: banned maps, deleted scores, or scores marked as suspicious.
     /// </remarks>
     public record Rejected(RejectedScoreResponse Score)
-        : SocketGeneralResponse;
+        : SocketGeneralResponse(Score.PlayerId);
 }
 
 public record UploadScoreResponse : IUnprocessedScore
