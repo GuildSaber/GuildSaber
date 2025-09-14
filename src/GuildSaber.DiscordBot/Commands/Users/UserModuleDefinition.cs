@@ -16,4 +16,6 @@ namespace GuildSaber.DiscordBot.Commands.Users;
 /// </remarks>
 [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel, InteractionContextType.BotDm)]
 [PermissionHandler.RequirePermissionAttributeSlash(User.EPermissions.None)]
-public partial class UserModuleSlash(DiscordBotDbContext DbContext) : InteractionModuleBase<SocketInteractionContext>;
+#pragma warning disable CS9113 // Parameter is unread.
+public partial class UserModuleSlash(DiscordBotDbContext dbContext) : InteractionModuleBase<SocketInteractionContext>;
+#pragma warning restore CS9113 // Parameter is unread.

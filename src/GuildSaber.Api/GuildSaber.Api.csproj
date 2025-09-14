@@ -3,6 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
+        <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
         <ImplicitUsings>enable</ImplicitUsings>
         <NoDefaultLaunchSettingsFile>True</NoDefaultLaunchSettingsFile>
         <LangVersion>preview</LangVersion>
@@ -30,10 +31,13 @@
     </ItemGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="GuildSaber.Api.Tests"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <Folder Include="Features\Debug\"/>
         <Folder Include="Features\Players\Scores\"/>
         <Folder Include="Features\RankedMaps\MapVersions\"/>
-        <Folder Include="Features\RankedScores\"/>
         <Folder Include="Features\Songs\SongDifficulties\"/>
     </ItemGroup>
 
