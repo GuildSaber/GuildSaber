@@ -63,6 +63,7 @@ public class ServerDbContext : DbContext
         .ApplyConfiguration(new GuildConfiguration())
         .ApplyConfiguration(new GuildContextConfiguration())
         .ApplyConfiguration(new MemberConfiguration())
+        .ApplyConfiguration(new GuildContextMemberConfiguration())
         .ApplyConfiguration(new BoostConfiguration())
         .ApplyConfiguration(new PointConfiguration())
         .ApplyConfiguration(new CategoryConfiguration())

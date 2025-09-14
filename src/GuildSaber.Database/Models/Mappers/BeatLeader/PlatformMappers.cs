@@ -2,7 +2,7 @@ using GuildSaber.Database.Models.Server.Players;
 
 namespace GuildSaber.Database.Models.Mappers.BeatLeader;
 
-public class PlatformMapper
+public class PlatformMappers
 {
     public static PlayerHardwareInfo.EPlatform Map(string platform)
         => platform switch

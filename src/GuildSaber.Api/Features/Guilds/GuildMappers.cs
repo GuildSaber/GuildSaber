@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
 using GuildSaber.Api.Features.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds;
-using GuildSaber.Database.Models.Server.Guilds.Points;
 
 namespace GuildSaber.Api.Features.Guilds;
 
@@ -52,10 +51,20 @@ public static class GuildMappers
                     AccountAgeUnix = self.Requirements.AccountAgeUnix
                 },
                 self.Status.Map()),
+            self.Contexts.Select(c => new GuildResponses.GuildContext(
+                c.Id,
+                c.Type.Map(),
+                new GuildResponses.GuildContextInfo
+                {
+                    Name = c.Info.Name,
+                    Description = c.Info.Description
+                },
+                c.RankedMaps.DistinctBy(x => x.CategoryId).Select(x => (uint)x.CategoryId).ToArray(),
+                c.Points.Select(x => (uint)x.Id).ToArray()
+            )).ToArray(),
             self.Points.Select(p => new GuildResponses.PointLite
             {
                 Id = p.Id,
-                GuildId = p.GuildId,
                 Name = p.Info.Name
             }).ToArray(),
             self.Categories.Select(c => new CategoryResponses.Category
@@ -69,14 +78,6 @@ public static class GuildMappers
                 }
             }).ToArray()
         );
-
-    public static Expression<Func<Point, GuildResponses.PointLite>> MapPointLiteExpression
-        => self => new GuildResponses.PointLite
-        {
-            Id = self.Id,
-            GuildId = self.GuildId,
-            Name = self.Info.Name
-        };
 
     public static GuildResponses.Guild Map(this Guild self) => new(
         self.Id,
@@ -126,6 +127,14 @@ public static class GuildMappers
         Guild.EGuildStatus.Verified => GuildResponses.EGuildStatus.Verified,
         Guild.EGuildStatus.Featured => GuildResponses.EGuildStatus.Featured,
         Guild.EGuildStatus.Private => GuildResponses.EGuildStatus.Private,
+        _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
+    };
+
+    public static GuildResponses.EContextType Map(this GuildContext.EContextType self) => self switch
+    {
+        GuildContext.EContextType.Default => GuildResponses.EContextType.Default,
+        GuildContext.EContextType.Tournament => GuildResponses.EContextType.Tournament,
+        GuildContext.EContextType.Temporary => GuildResponses.EContextType.Temporary,
         _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
     };
 }

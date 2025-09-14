@@ -1,5 +1,7 @@
 ﻿using GuildSaber.Database.Extensions;
+using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
+using GuildSaber.Database.Models.Server.RankedMaps;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using GuildId = GuildSaber.Database.Models.Server.Guilds.Guild.GuildId;
@@ -11,10 +13,15 @@ public class GuildContext
     public GuildContextId Id { get; init; }
     public GuildId GuildId { get; init; }
 
-    public ContextType Type { get; init; }
+    public EContextType Type { get; init; }
+
     public GuildContextInfo Info { get; set; }
+    //TODO: Add settings for context, like if it only takes up new scores, etc.
 
     public IList<Point> Points { get; init; } = null!;
+    public IList<RankedMap> RankedMaps { get; init; } = null!;
+    public IList<Member> Members { get; init; } = null!;
+    public IList<GuildContextMember> ContextMembers { get; init; } = null!;
 
     public readonly record struct GuildContextId(uint Value) : IEFStrongTypedId<GuildContextId, uint>
     {
@@ -40,7 +47,7 @@ public class GuildContext
     /// <summary>
     /// Maybe this will end up being a type union (from inheritance), but it will fit for now.
     /// </summary>
-    public enum ContextType
+    public enum EContextType
     {
         Default = 0,
         Tournament = 1 << 0,
@@ -64,5 +71,10 @@ public class GuildContextConfiguration : IEntityTypeConfiguration<GuildContext>
 
         builder.HasMany(x => x.Points)
             .WithMany();
+        builder.HasMany(x => x.RankedMaps)
+            .WithOne().HasForeignKey(x => x.ContextId);
+        builder.HasMany(x => x.Members)
+            .WithMany(x => x.Contexts)
+            .UsingEntity<GuildContextMember>();
     }
 }

@@ -34,7 +34,7 @@ public static class GuildSeeder
                 new GuildContext
                 {
                     Id = new GuildContext.GuildContextId(1),
-                    Type = GuildContext.ContextType.Default,
+                    Type = GuildContext.EContextType.Default,
                     Info = new GuildContextInfo
                     {
                         Description = "The main context of the guild, where all the maps are ranked.",
@@ -119,7 +119,7 @@ public static class GuildSeeder
                 new GuildContext
                 {
                     Id = new GuildContext.GuildContextId(2),
-                    Type = GuildContext.ContextType.Default,
+                    Type = GuildContext.EContextType.Default,
                     Info = new GuildContextInfo
                     {
                         Description = "The main context of the guild, where all the maps are ranked.",

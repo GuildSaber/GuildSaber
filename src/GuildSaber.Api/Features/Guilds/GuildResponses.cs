@@ -38,13 +38,34 @@ public static class GuildResponses
 
     public record GuildExtended(
         Guild Guild,
+        GuildContext[] Contexts,
         PointLite[] PointsLite,
         CategoryResponses.Category[] Categories
     );
 
     public readonly record struct PointLite(
         uint Id,
-        ulong GuildId,
+        uint GuildContextId,
         string Name
     );
+
+    public readonly record struct GuildContext(
+        uint Id,
+        EContextType Type,
+        GuildContextInfo Info,
+        uint[] CategoryIds,
+        uint[] PointIds
+    );
+
+    public readonly record struct GuildContextInfo(
+        string Name,
+        string Description
+    );
+
+    public enum EContextType : byte
+    {
+        Default = 0,
+        Tournament = 1 << 0,
+        Temporary = 1 << 1
+    }
 }

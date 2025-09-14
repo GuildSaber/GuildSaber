@@ -85,7 +85,7 @@ public class MemberService(ServerDbContext dbContext, BeatLeaderApi beatLeaderAp
                       .ToResult(() => (JoinResponse)new GuildNotFound())
                   from beatLeaderId in GetBeatLeaderId(dbContext, playerId)
                       .ToResult(() => (JoinResponse)new PlayerNotFound())
-                  from blProfile in beatLeaderApi.GetPlayerProfileWithStats(beatLeaderId)
+                  from blProfile in beatLeaderApi.GetPlayerProfileWithStatsAsync(beatLeaderId)
                       .MapError(err => (JoinResponse)new BeatLeaderProfileNotFound(beatLeaderId, err))
                   select (guildReq, blProfile));
 

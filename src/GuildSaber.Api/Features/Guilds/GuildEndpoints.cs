@@ -121,8 +121,8 @@ public class GuildEndpoints : IEndpoints
                         errors: errors),
                 GuildService.CreateResponse.RequirementsFailure (var errors) => TypedResults
                     .ValidationProblem(
-                        errors: errors,
-                        detail: "Failed to meet one or more guild creation requirements."),
+                        detail: "Failed to meet one or more guild creation requirements.",
+                        errors: errors),
                 _ => throw new InvalidOperationException("Unexpected response type from CreateGuildAsync.")
             }
         };

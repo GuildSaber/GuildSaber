@@ -20,7 +20,7 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
         public record PlayerNotFound : CreateResponse;
         public record ValidationFailure(IEnumerable<KeyValuePair<string, string[]>> Errors) : CreateResponse;
         public record RequirementsFailure(IEnumerable<KeyValuePair<string, string[]>> Errors) : CreateResponse;
-        public record TooManyGuildsAsLeader(int CurrentGuilds, int MaxGuilds) : CreateResponse;
+        public record TooManyGuildsAsLeader(int CurrentCount, int MaxCount) : CreateResponse;
     }
 
     /// <summary>
@@ -46,14 +46,9 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
     public async Task<CreateResponse> CreateGuildAsync(PlayerId playerId, GuildRequests.CreateGuild request)
         => await GetPlayerSubscriptionInfo(playerId)
             .ToResult(CreateResponse () => new CreateResponse.PlayerNotFound())
-            .Check(async _ => await GetLeadedGuildCountAsync(playerId) switch
-            {
-                var count when count >= guildSettings.Value.Creation.MaxGuildCountPerUser
-                    => (CreateResponse)new CreateResponse.TooManyGuildsAsLeader(
-                        count, guildSettings.Value.Creation.MaxGuildCountPerUser),
-                _ => UnitResult.Success<CreateResponse>()
-            })
-            .Check(subInfo => GetCreationRequirementsErrorAsFailure(subInfo, guildSettings.Value.Creation)
+            .Check(async _ => await ValidateUserGuildCreationLimit(playerId)
+                .MapError(CreateResponse (x) => new CreateResponse.TooManyGuildsAsLeader(x.current, x.max)))
+            .Check(subInfo => ValidateCreationRequirements(subInfo, guildSettings.Value.Creation)
                 .MapError(CreateResponse (errors) => new CreateResponse.RequirementsFailure(errors)))
             .Bind(_ => MakeGuildAndValidate(request)
                 .MapError(CreateResponse (errors) => new CreateResponse.ValidationFailure(errors)))
@@ -80,7 +75,6 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
                 (dbContext, playerId, timeProvider))
             .Match(guild => new CreateResponse.Success(guild), err => err);
 
-
     /// <summary>
     /// Validates the guild creation request and constructs a new Guild object
     /// </summary>
@@ -97,8 +91,7 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
 
         if (!Name_2_6.TryCreate(request.Info.SmallName).TryGetValue(out var smallName))
             validationErrors.Add(new KeyValuePair<string, string[]>(
-                nameof(GuildRequests.CreateGuildInfo.SmallName),
-                ["Small name must be between 2 and 6 characters."]));
+                nameof(GuildRequests.CreateGuildInfo.SmallName), ["Small name must be between 2 and 6 characters."]));
 
         if (!descriptionResult.TryGetValue(out var description))
             validationErrors.Add(new KeyValuePair<string, string[]>(
@@ -140,9 +133,20 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
                 var x => From(x.Value)
             };
 
-    private async Task<int> GetLeadedGuildCountAsync(PlayerId playerId) => await dbContext
-        .Members
-        .CountAsync(x => x.PlayerId == playerId && x.Permissions == EPermission.GuildLeader);
+    private async Task<UnitResult<(int current, int max)>> ValidateUserGuildCreationLimit(PlayerId playerId)
+        => await GetUserCreatedGuildCountAsync(playerId) switch
+        {
+            var count when count >= guildSettings.Value.Creation.MaxGuildCountPerUser
+                => Failure((count, guildSettings.Value.Creation.MaxGuildCountPerUser)),
+            _ => UnitResult.Success<(int, int)>()
+        };
+
+    /// <remarks>
+    /// GuildLeaded guilds are abstracted as guilds "created" by a user.
+    /// (Leading a guild either implies creation, or heavy involvement, which would be similar to owning it)
+    /// </remarks>
+    private async Task<int> GetUserCreatedGuildCountAsync(PlayerId playerId)
+        => await dbContext.Members.CountAsync(x => x.PlayerId == playerId && x.Permissions == EPermission.GuildLeader);
 
     /// <summary>
     /// Validates if a player meets guild creation requirements based on their subscription tier
@@ -156,13 +160,13 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
     /// Currently checks if the player's subscription tier meets the minimum required tier for guild creation
     /// </remarks>
     private static UnitResult<IEnumerable<KeyValuePair<string, string[]>>>
-        GetCreationRequirementsErrorAsFailure(
-            PlayerSubscriptionInfo subscriptionInfo, GuildCreationSettings settings)
+        ValidateCreationRequirements(PlayerSubscriptionInfo subscriptionInfo, GuildCreationSettings settings)
         => subscriptionInfo switch
         {
             { Tier: var tier } when (int)tier < (int)settings.RequiredSubscriptionTier
                 => Failure<IEnumerable<KeyValuePair<string, string[]>>>([
-                        new KeyValuePair<string, string[]>("SubscriptionTier",
+                        new KeyValuePair<string, string[]>(
+                            "SubscriptionTier",
                             [
                                 $"You must have a subscription tier of at least {settings.RequiredSubscriptionTier} to create a guild."
                             ]
