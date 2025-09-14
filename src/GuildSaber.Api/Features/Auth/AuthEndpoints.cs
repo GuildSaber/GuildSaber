@@ -132,9 +132,9 @@ public class AuthEndpoints : IEndpoints
 
     private static async Task<Results<RedirectHttpResult, ProblemHttpResult>> HandleDiscordCallbackWithRedirectAsync(
         HttpContext httpContext, AuthService authService, [FromQuery] string returnUrl,
-        IOptions<RedirectSettings> redirectSettings)
+        IOptionsSnapshot<RedirectSettings> redirectSettings)
     {
-        if (!IsValidRedirectUrl(returnUrl, redirectSettings))
+        if (!IsValidRedirectUrl(returnUrl, redirectSettings.Value))
             return TypedResults.Problem("Invalid return URL. Please ensure the URL is allowed.",
                 statusCode: StatusCodes.Status400BadRequest);
 
@@ -148,10 +148,10 @@ public class AuthEndpoints : IEndpoints
     }
 
     private static async Task<Results<RedirectHttpResult, ProblemHttpResult>> HandleBeatLeaderCallbackWithRedirectAsync(
-        HttpContext httpContext, AuthService authService, [FromQuery] string returnUrl, IOptions<
-            RedirectSettings> redirectSettings)
+        HttpContext httpContext, AuthService authService, [FromQuery] string returnUrl,
+        IOptionsSnapshot<RedirectSettings> redirectSettings)
     {
-        if (!IsValidRedirectUrl(returnUrl, redirectSettings))
+        if (!IsValidRedirectUrl(returnUrl, redirectSettings.Value))
             return TypedResults.Problem("Invalid return URL. Please ensure the URL is allowed.",
                 statusCode: StatusCodes.Status400BadRequest);
 
@@ -236,14 +236,14 @@ public class AuthEndpoints : IEndpoints
                 => Success((principal, properties))
         };
 
-    private static bool IsValidRedirectUrl(string returnUrl, IOptions<RedirectSettings> redirectSettings)
+    private static bool IsValidRedirectUrl(string returnUrl, RedirectSettings redirectSettings)
     {
         if (string.IsNullOrWhiteSpace(returnUrl) || !Uri.TryCreate(returnUrl, UriKind.Absolute, out var uri))
             return false;
 
         var returnOrigin = uri.GetLeftPart(UriPartial.Authority);
 
-        return redirectSettings.Value.AllowedOriginUrls
+        return redirectSettings.AllowedOriginUrls
             .Any(origin => string.Equals(origin, returnOrigin, StringComparison.OrdinalIgnoreCase));
     }
 

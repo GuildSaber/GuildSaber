@@ -12,7 +12,9 @@ public class BeatLeaderApiTests
 {
     private readonly BeatLeaderApi _beatLeaderApi;
     private readonly BeatLeaderId _invalidBeatLeaderId = BeatLeaderId.CreateUnsafe(99999999999).Value;
+    private readonly BeatLeaderScoreId _invalidBeatLeaderScoreId = BeatLeaderScoreId.CreateUnsafe(999999999).Value;
     private readonly BeatLeaderId _validBeatLeaderId = BeatLeaderId.CreateUnsafe(76561198126131670).Value;
+    private readonly BeatLeaderScoreId _validBeatLeaderScoreId = BeatLeaderScoreId.CreateUnsafe(9655850).Value;
 
     public BeatLeaderApiTests()
     {
@@ -123,7 +125,7 @@ public class BeatLeaderApiTests
         var playerId = _invalidBeatLeaderId;
 
         // Act
-        var profile = await _beatLeaderApi.GetPlayerProfile(playerId);
+        var profile = await _beatLeaderApi.GetPlayerProfileAsync(playerId);
 
         // Assert
         profile.SuccessShould().BeNull("A 404 response should return a null success response");
@@ -136,7 +138,7 @@ public class BeatLeaderApiTests
         var playerId = _validBeatLeaderId;
 
         // Act
-        var profile = await _beatLeaderApi.GetPlayerProfile(playerId);
+        var profile = await _beatLeaderApi.GetPlayerProfileAsync(playerId);
 
         // Assert
         profile.SuccessShould().NotBeNull("A valid player ID should return a non-null profile");
@@ -149,7 +151,7 @@ public class BeatLeaderApiTests
         var playerId = _invalidBeatLeaderId;
 
         // Act
-        var profileWithStats = await _beatLeaderApi.GetPlayerProfileWithStats(playerId);
+        var profileWithStats = await _beatLeaderApi.GetPlayerProfileWithStatsAsync(playerId);
 
         // Assert
         profileWithStats.SuccessShould().BeNull("A 404 response should return a null success response");
@@ -162,9 +164,35 @@ public class BeatLeaderApiTests
         var playerId = _validBeatLeaderId;
 
         // Act
-        var profileWithStats = await _beatLeaderApi.GetPlayerProfileWithStats(playerId);
+        var profileWithStats = await _beatLeaderApi.GetPlayerProfileWithStatsAsync(playerId);
 
         // Assert
         profileWithStats.SuccessShould().NotBeNull("A valid player ID should return a non-null profile with stats");
+    }
+
+    [Fact]
+    public async Task GetScoreStatistics_ShouldReturnNull_WhenInvalidScoreId()
+    {
+        // Arrange
+        var scoreId = _invalidBeatLeaderScoreId;
+
+        // Act
+        var scoreStats = await _beatLeaderApi.GetScoreStatisticsAsync(scoreId);
+
+        // Assert
+        scoreStats.SuccessShould().BeNull("A 404 response should return a null success response");
+    }
+
+    [Fact]
+    public async Task GetScoreStatistics_ShouldReturnValidStatistics_WhenValidScoreId()
+    {
+        // Arrange
+        var scoreId = _validBeatLeaderScoreId;
+
+        // Act
+        var scoreStats = await _beatLeaderApi.GetScoreStatisticsAsync(scoreId);
+
+        // Assert
+        scoreStats.SuccessShould().NotBeNull("A valid score ID should return non-null score statistics");
     }
 }

@@ -1,3 +1,5 @@
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
+
 namespace GuildSaber.Common.Services.BeatLeader.Models.Responses;
 
 /// <summary>
@@ -7,7 +9,7 @@ namespace GuildSaber.Common.Services.BeatLeader.Models.Responses;
 /// The BeatLeader WebSocket sends events in the format: { message: string, data: {various json objects} }
 /// Depending on the 'message' field, the 'data' field will contain different types of score-related information.
 /// </remarks>
-public abstract record SocketGeneralResponse(string PlayerId)
+public abstract record SocketGeneralResponse(string BeatLeaderId, string LeaderboardId)
 {
     /// <summary>
     /// Represents a new score that has been uploaded but not yet processed.
@@ -18,7 +20,7 @@ public abstract record SocketGeneralResponse(string PlayerId)
     /// For non-PB scores, this will be the only message received for that score.
     /// </remarks>
     public record Upload(UploadScoreResponse Score)
-        : SocketGeneralResponse(Score.PlayerId);
+        : SocketGeneralResponse(Score.PlayerId, Score.LeaderboardId);
 
     /// <summary>
     /// Represents a score that has been processed and accepted by BeatLeader.
@@ -29,7 +31,7 @@ public abstract record SocketGeneralResponse(string PlayerId)
     /// It follows the initial 'upload' message for that score.
     /// </remarks>
     public record Accepted(AcceptedScoreResponse Score)
-        : SocketGeneralResponse(Score.PlayerId);
+        : SocketGeneralResponse(Score.PlayerId, Score.LeaderboardId);
 
     /// <summary>
     /// Represents a score that has been processed and rejected by BeatLeader.
@@ -40,7 +42,7 @@ public abstract record SocketGeneralResponse(string PlayerId)
     /// Reasons for removal include: banned maps, deleted scores, or scores marked as suspicious.
     /// </remarks>
     public record Rejected(RejectedScoreResponse Score)
-        : SocketGeneralResponse(Score.PlayerId);
+        : SocketGeneralResponse(Score.PlayerId, Score.LeaderboardId);
 }
 
 public record UploadScoreResponse : IUnprocessedScore
@@ -69,7 +71,7 @@ public record UploadScoreResponse : IUnprocessedScore
 public record AcceptedScoreResponse : IProcessedScore, IWithScoreContext, IWithAcc
 {
     public required float Pp { get; init; }
-    public required int Id { get; init; }
+    public required BeatLeaderScoreId Id { get; init; }
     public required int Rank { get; init; }
     public required string Country { get; init; }
     public required float FcAccuracy { get; init; }
@@ -108,7 +110,7 @@ public record AcceptedScoreResponse : IProcessedScore, IWithScoreContext, IWithA
 public record RejectedScoreResponse : IProcessedScore, IWithScoreContext, IWithAcc
 {
     public required float Pp { get; init; }
-    public required int Id { get; init; }
+    public required BeatLeaderScoreId Id { get; init; }
     public required int Rank { get; init; }
     public required string Country { get; init; }
     public required float FcAccuracy { get; init; }

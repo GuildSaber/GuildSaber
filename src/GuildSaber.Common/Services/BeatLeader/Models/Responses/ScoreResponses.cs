@@ -1,8 +1,10 @@
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
+
 namespace GuildSaber.Common.Services.BeatLeader.Models.Responses;
 
 public record CompactScore
 {
-    public required int? Id { get; init; }
+    public required BeatLeaderScoreId? Id { get; init; }
     public required int BaseScore { get; init; }
     public required int ModifiedScore { get; init; }
     public required string Modifiers { get; init; }
@@ -26,7 +28,7 @@ public record CompactScoreResponse
 
 public record ScoreResponse : IProcessedScore, IWithPP, IWithPlayer, IWithScoreImprovement, IWithReplaysWatched
 {
-    public required int Id { get; init; }
+    public required BeatLeaderScoreId Id { get; init; }
     public required string PlayerId { get; init; }
     public required string LeaderboardId { get; init; }
     public required int BaseScore { get; init; }

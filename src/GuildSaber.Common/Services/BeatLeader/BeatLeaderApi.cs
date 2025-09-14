@@ -70,8 +70,8 @@ public class BeatLeaderApi(HttpClient httpClient)
                 { IsSuccessStatusCode: false } => Failure<CompactScoreResponse[]?>(
                     $"Failed to retrieve compact scores of player {playerId} at page {requestOptions.Page - 1}" +
                     $": {response.StatusCode} {response.ReasonPhrase}"),
-                _ => await Try(() =>
-                        response.Content.ReadFromJsonAsync<ResponseWithMetadata<CompactScoreResponse>>(_jsonOptions))
+                _ => await Try(() => response.Content
+                        .ReadFromJsonAsync<ResponseWithMetadata<CompactScoreResponse>>(_jsonOptions))
                     .Map(CompactScoreResponse[]? (parsed) => parsed is null ? [] : parsed.Data)
             };
 
@@ -84,17 +84,13 @@ public class BeatLeaderApi(HttpClient httpClient)
     /// Asynchronously retrieves a player's profile from BeatLeader.
     /// </summary>
     /// <param name="playerId">The BeatLeader ID of the player to retrieve.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation that contains a <see cref="Result{T}" /> of a nullable
-    /// <see cref="PlayerResponseFull" /> object.
-    /// </returns>
     /// <remarks>
     /// The result will be:
     /// - Success with player data for a found player
     /// - Success with null when the player doesn't exist (HTTP 404)
     /// - Failure with an error message for other HTTP errors
     /// </remarks>
-    public async Task<Result<PlayerResponseFull?>> GetPlayerProfile(BeatLeaderId playerId)
+    public async Task<Result<PlayerResponseFull?>> GetPlayerProfileAsync(BeatLeaderId playerId)
         => await httpClient.GetAsync($"player/{playerId}?stats=false") switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<PlayerResponseFull?>(null),
@@ -109,17 +105,13 @@ public class BeatLeaderApi(HttpClient httpClient)
     /// Asynchronously retrieves a player's profile with detailed statistics from BeatLeader.
     /// </summary>
     /// <param name="playerId">The BeatLeader ID of the player to retrieve.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation that contains a <see cref="Result{T}" /> of a nullable
-    /// <see cref="PlayerResponseFullWithStats" /> object.
-    /// </returns>
     /// <remarks>
     /// The result will be:
     /// - Success with player data for a found player
     /// - Success with null when the player doesn't exist (HTTP 404)
     /// - Failure with an error message for other HTTP errors
     /// </remarks>
-    public async Task<Result<PlayerResponseFullWithStats?>> GetPlayerProfileWithStats(BeatLeaderId playerId)
+    public async Task<Result<PlayerResponseFullWithStats?>> GetPlayerProfileWithStatsAsync(BeatLeaderId playerId)
         => await httpClient.GetAsync($"player/{playerId}?stats=true") switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<PlayerResponseFullWithStats?>(null),
@@ -127,7 +119,29 @@ public class BeatLeaderApi(HttpClient httpClient)
                 => Failure<PlayerResponseFullWithStats?>(
                     $"Failed to retrieve player profile with stats of player {playerId}: {statusCode} {reasonPhrase}"
                 ),
-            var response => await Try(()
-                => response.Content.ReadFromJsonAsync<PlayerResponseFullWithStats>(_jsonOptions))
+            var response => await Try(() => response.Content
+                .ReadFromJsonAsync<PlayerResponseFullWithStats>(_jsonOptions))
+        };
+
+    /// <summary>
+    /// Asynchronously retrieves score statistics for a specific score from BeatLeader.
+    /// </summary>
+    /// <param name="scoreId">The unique identifier of the score to retrieve statistics for.</param>
+    /// <remarks>
+    /// The result will be:
+    /// - Success with score statistics for a found score
+    /// - Success with null when the score doesn't exist (HTTP 404)
+    /// - Failure with an error message for other HTTP errors
+    /// </remarks>
+    public async Task<Result<ScoreStatistics?>> GetScoreStatisticsAsync(BeatLeaderScoreId scoreId)
+        => await httpClient.GetAsync($"https://cdn.scorestats.beatleader.com/{scoreId}.json") switch
+        {
+            { StatusCode: HttpStatusCode.NotFound } => Success<ScoreStatistics?>(null),
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<ScoreStatistics?>(
+                    $"Failed to retrieve score statistics for score {scoreId}: {statusCode} {reasonPhrase}"
+                ),
+            var response => await Try(() => response.Content
+                .ReadFromJsonAsync<ScoreStatistics>(_jsonOptions))
         };
 }

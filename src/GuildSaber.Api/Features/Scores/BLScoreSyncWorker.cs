@@ -1,16 +1,21 @@
+using CSharpFunctionalExtensions;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Database.Contexts.Server;
+using GuildSaber.Database.Models.Mappers.BeatLeader;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
-using static GuildSaber.Common.Services.BeatLeader.Models.Responses.SocketGeneralResponse;
+using Upload = GuildSaber.Common.Services.BeatLeader.Models.Responses.SocketGeneralResponse.Upload;
+using Accepted = GuildSaber.Common.Services.BeatLeader.Models.Responses.SocketGeneralResponse.Accepted;
+using Rejected = GuildSaber.Common.Services.BeatLeader.Models.Responses.SocketGeneralResponse.Rejected;
 
 namespace GuildSaber.Api.Features.Scores;
 
-public class ScoreSyncService(
+public class BLScoreSyncWorker(
+    BeatLeaderApi beatLeaderApi,
     BeatLeaderGeneralSocketStream beatLeaderGeneralSocketStream,
     IServiceProvider serviceProvider,
-    ILogger<ScoreSyncService> logger) : BackgroundService
+    ILogger<BLScoreSyncWorker> logger) : BackgroundService
 {
     private readonly TimeSpan _reconnectAfter = TimeSpan.FromSeconds(5);
 
@@ -54,17 +59,28 @@ public class ScoreSyncService(
                     break;
                 }
 
-                if (!await PlayerExistsInDb(response.PlayerId, dbContext, stoppingToken))
+                var playerIdResponse = await GetPlayerIdAsync(response.BeatLeaderId, dbContext, stoppingToken);
+                if (!playerIdResponse.TryGetValue(out var playerId))
                     continue;
 
-                BackgroundJob.Enqueue<ScoreSyncHandler>(response switch
+                var diffIdResult = await GetSongDifficultyIdAsync(response.LeaderboardId, dbContext, stoppingToken);
+                if (!diffIdResult.TryGetValue(out var difficultyId))
+                    continue;
+
+                var dbScore = response switch
                 {
-                    Upload upload => handle => handle.HandleUploadedScoreAsync(upload.Score),
-                    Accepted accepted => handle => handle.HandleAcceptedScoreAsync(accepted.Score),
-                    Rejected rejected => handle => handle.HandleRejectedScoreAsync(rejected.Score),
+                    Upload(var score) => score.Map(playerId, difficultyId),
+                    Accepted(var score) => score.Map((await beatLeaderApi
+                        .GetScoreStatisticsAsync(score.Id)).GetValueOrDefault()!.Map(), playerId, difficultyId),
+                   Rejected(var score) => score.Map((await beatLeaderApi
+                        .GetScoreStatisticsAsync(score.Id)).GetValueOrDefault()!.Map(), playerId, difficultyId),
                     _ => throw new InvalidOperationException(
                         $"Unknown message type received from BeatLeader: {response.GetType().Name}")
-                });
+                };
+
+                /*BackgroundJob.Enqueue<ScoreService>(response is not SocketGeneralResponse.Rejected
+                    ? handler => handler.AddScorePipelineAsync(dbScore)
+                    : handler => handler.RemoveScorePipelineAsync(dbScore));*/
             }
 
             await Task.Delay(_reconnectAfter, stoppingToken);
@@ -72,23 +88,29 @@ public class ScoreSyncService(
     }
 
     /// <summary>
-    /// Checks if a player exists in the database by their BeatLeader ID.
+    /// Retrieves the PlayerId for a given BeatLeader ID from the database.
     /// </summary>
-    /// <throws cref="ArgumentException">Thrown when the playerId is not a valid ulong.</throws>
-    private static Task<bool> PlayerExistsInDb(string beatleaderId, ServerDbContext dbContext, CancellationToken token)
-        => dbContext.Players
-            .Where(x => x.LinkedAccounts.BeatLeaderId == ulong.Parse(beatleaderId))
-            .AnyAsync(cancellationToken: token);
-}
+    private static async Task<Maybe<PlayerId>> GetPlayerIdAsync(
+        string beatleaderId, ServerDbContext dbContext, CancellationToken token)
+        => await dbContext.Players
+                .Where(x => x.LinkedAccounts.BeatLeaderId == ulong.Parse(beatleaderId))
+                .Select(x => x.Id)
+                .Cast<PlayerId?>()
+                .FirstOrDefaultAsync(token) switch
+            {
+                null => None,
+                var id => From(id.Value)
+            };
 
-public sealed class ScoreSyncHandler(ServerDbContext dbContext)
-{
-    public Task HandleUploadedScoreAsync(UploadScoreResponse response)
-        => Task.CompletedTask;
-
-    public Task HandleAcceptedScoreAsync(AcceptedScoreResponse response)
-        => Task.CompletedTask;
-
-    public Task HandleRejectedScoreAsync(RejectedScoreResponse response)
-        => Task.CompletedTask;
+    private async Task<Maybe<SongDifficultyId>> GetSongDifficultyIdAsync(
+        string leaderboardId, ServerDbContext dbContext, CancellationToken token)
+        => await dbContext.SongDifficulties
+                .Where(sd => sd.BLLeaderboardId == leaderboardId)
+                .Select(sd => sd.Id)
+                .Cast<SongDifficultyId?>()
+                .FirstOrDefaultAsync(token) switch
+            {
+                null => None,
+                var id => From(id.Value)
+            };
 }

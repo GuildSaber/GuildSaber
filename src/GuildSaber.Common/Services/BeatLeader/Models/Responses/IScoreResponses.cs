@@ -1,3 +1,5 @@
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
+
 namespace GuildSaber.Common.Services.BeatLeader.Models.Responses;
 
 public interface IUnprocessedScore
@@ -23,7 +25,7 @@ public interface IUnprocessedScore
 
 public interface IProcessedScore : IUnprocessedScore
 {
-    int Id { get; init; }
+    BeatLeaderScoreId Id { get; init; }
     int Rank { get; init; }
     string Country { get; init; }
     string Replay { get; init; }

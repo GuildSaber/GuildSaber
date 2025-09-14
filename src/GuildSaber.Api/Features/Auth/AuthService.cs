@@ -78,8 +78,8 @@ public class AuthService(
     }
 
     public async Task<Result<PlayerId>> CreateUserAsync(BeatLeaderId beatleaderId)
-        => await beatLeaderApi.GetPlayerProfileWithStats(beatleaderId)
-            .Bind(blPlayer => blPlayer is null
+        => await beatLeaderApi.GetPlayerProfileWithStatsAsync(beatleaderId)
+            .Bind(blPlayer => blPlayer == null
                 ? Failure<Player>("Player not found on BeatLeader.")
                 : Success(new Player
                 {
@@ -92,7 +92,7 @@ public class AuthService(
                     HardwareInfo = new PlayerHardwareInfo
                     {
                         HMD = blPlayer.ScoreStats.TopHMD.Map(),
-                        Platform = PlatformMapper.Map(blPlayer.Platform)
+                        Platform = PlatformMappers.Map(blPlayer.Platform)
                     },
                     LinkedAccounts = new PlayerLinkedAccounts(beatleaderId, null, null),
                     SubscriptionInfo = new PlayerSubscriptionInfo(PlayerSubscriptionInfo.ESubscriptionTier.None)
