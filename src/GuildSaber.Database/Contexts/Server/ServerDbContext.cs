@@ -1,3 +1,4 @@
+using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Auth;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Boosts;
@@ -14,6 +15,9 @@ using GuildSaber.Database.Models.Server.Songs;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties.GameModes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GuildSaber.Database.Contexts.Server;
 
@@ -45,6 +49,15 @@ public class ServerDbContext : DbContext
     public DbSet<Song> Songs { get; set; }
     public DbSet<SongDifficulty> SongDifficulties { get; set; }
     public DbSet<GameMode> GameModes { get; set; }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+        configurationBuilder.Conventions.Remove<ComplexTypeAttributeConvention>();
+        configurationBuilder.Conventions.Add(services => new EFCoreComplexTypeConventionColumnNameShortener(
+            services.GetRequiredService<ProviderConventionSetBuilderDependencies>())
+        );
+    }
 
     protected override void OnModelCreating(ModelBuilder builder) => builder
         .ApplyConfiguration(new GuildConfiguration())
