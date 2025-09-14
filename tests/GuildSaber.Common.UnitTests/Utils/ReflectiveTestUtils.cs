@@ -1,8 +1,9 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using AwesomeAssertions;
+using Assembly = System.Reflection.Assembly;
 
-namespace GuildSaber.UnitTests.Utils;
+namespace GuildSaber.Common.UnitTests.Utils;
 
 /// <summary>
 /// A collection of esoteric utilities for running tests reflectively.
@@ -47,8 +48,7 @@ public static class ReflectiveTestUtils
             .Where(m =>
                 m.Name != callerName &&
                 (!ignoredMethodNames?.Contains(m.Name) ?? true) &&
-                (m.GetCustomAttributes<FactAttribute>().Any() ||
-                 m.GetCustomAttributes<TheoryAttribute>().Any()));
+                m.GetCustomAttributes<TestAttribute>().Any());
 
         foreach (var method in testMethods)
         {

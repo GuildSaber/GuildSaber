@@ -5,7 +5,7 @@ using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Errors;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 
-namespace GuildSaber.UnitTests.Services.BeatLeader;
+namespace GuildSaber.Common.UnitTests.Services.BeatLeader;
 
 [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
 [SuppressMessage("ReSharper", "MethodSupportsCancellation")]
@@ -16,7 +16,7 @@ public class BeatLeaderSocketTests : IAsyncDisposable
 
     public async ValueTask DisposeAsync() => await _stream.DisposeAsync();
 
-    [Fact]
+    [Test]
     public async Task GetAsyncEnumerator_ShouldEstablishWebSocketConnection_WhenEnumerationStarts()
     {
         // Arrange
@@ -35,7 +35,7 @@ public class BeatLeaderSocketTests : IAsyncDisposable
             .BeTrue("because the stream should establish a WebSocket connection when enumeration begins");
     }
 
-    [Fact]
+    [Test]
     public async Task GetAsyncEnumerator_ShouldReceiveValidScoreMessages_WhenConnected()
     {
         // Arrange
@@ -59,7 +59,7 @@ public class BeatLeaderSocketTests : IAsyncDisposable
         }
     }
 
-    [Fact]
+    [Test]
     public async Task GetAsyncEnumerator_ShouldThrowInvalidOperationException_WhenStreamAlreadyInUse()
     {
         // Arrange
@@ -80,14 +80,14 @@ public class BeatLeaderSocketTests : IAsyncDisposable
             await foreach (var _ in _stream) break;
         });
 
-        exception.Message.Should().Be("Stream is already in use.");
+        exception!.Message.Should().Be("Stream is already in use.");
 
         // Cleanup
         await cts.CancelAsync();
         await firstEnumerationTask;
     }
 
-    [Fact]
+    [Test]
     public async Task GetAsyncEnumerator_ShouldAllowReuse_AfterPreviousEnumerationCompletes()
     {
         // Arrange & Act - First enumeration
@@ -117,7 +117,7 @@ public class BeatLeaderSocketTests : IAsyncDisposable
         secondMessageReceived.Should().BeTrue("because the stream should be reusable after completion");
     }
 
-    [Fact]
+    [Test]
     public async Task GetAsyncEnumerator_ShouldHandleCancellationGracefully_WhenCancellationRequested()
     {
         // Arrange
@@ -140,7 +140,7 @@ public class BeatLeaderSocketTests : IAsyncDisposable
         await enumerationTask.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
-    [Fact]
+    [Test]
     public async Task GetAsyncEnumerator_ShouldReceiveMultipleMessageTypes_WhenConnected()
     {
         // Arrange
@@ -166,7 +166,7 @@ public class BeatLeaderSocketTests : IAsyncDisposable
             "because all messages should be of known types");
     }
 
-    [Fact]
+    [Test]
     public async Task GetAsyncEnumerator_ShouldReturnConnectionError_WhenUnableToConnect()
     {
         // Arrange
@@ -182,7 +182,7 @@ public class BeatLeaderSocketTests : IAsyncDisposable
         }
     }
 
-    [Fact]
+    [Test]
     [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
     public async Task Dispose_ShouldCleanupResources_WhenCalled()
     {
@@ -216,7 +216,7 @@ public class BeatLeaderSocketTests : IAsyncDisposable
         canReuseAfterDispose.Should().BeTrue("because the stream should be reusable after dispose");
     }
 
-    [Fact]
+    [Test]
     public async Task DisposeAsync_ShouldCleanupResourcesGracefully_WhenCalled()
     {
         // Arrange

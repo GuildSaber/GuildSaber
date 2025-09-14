@@ -4,6 +4,7 @@ using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Common.Services.BeatLeader.Models;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using Error = GuildSaber.Common.Services.BeatLeader.Errors.ClientWebSocketStreamError;
 using static GuildSaber.Common.Services.BeatLeader.Errors.ClientWebSocketStreamError;
 using static GuildSaber.Common.Services.BeatLeader.Models.Responses.SocketGeneralResponse;
@@ -33,7 +34,8 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new BeatLeaderIdJsonConverter(), new BeatLeaderScoreIdJsonConverter() }
     };
 
     private readonly Uri _generalUri = new(baseUri, "general");

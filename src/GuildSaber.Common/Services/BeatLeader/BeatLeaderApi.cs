@@ -13,7 +13,8 @@ public class BeatLeaderApi(HttpClient httpClient)
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new BeatLeaderIdJsonConverter(), new BeatLeaderScoreIdJsonConverter() }
     };
 
     /// <summary>

@@ -59,7 +59,6 @@ public static class GuildMappers
                     Name = c.Info.Name,
                     Description = c.Info.Description
                 },
-                c.RankedMaps.DistinctBy(x => x.CategoryId).Select(x => (uint)x.CategoryId).ToArray(),
                 c.Points.Select(x => (uint)x.Id).ToArray()
             )).ToArray(),
             self.Points.Select(p => new GuildResponses.PointLite

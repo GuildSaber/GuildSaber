@@ -4,7 +4,7 @@ using AwesomeAssertions;
 using AwesomeAssertions.Collections;
 using GuildSaber.Common.Services.BeatLeader.Models;
 
-namespace GuildSaber.UnitTests.Utils;
+namespace GuildSaber.Common.UnitTests.Utils;
 
 public static class AssertionsUtils
 {

@@ -53,7 +53,7 @@ public static class GuildResponses
         uint Id,
         EContextType Type,
         GuildContextInfo Info,
-        uint[] CategoryIds,
+        //TODO: uint[] CategoryIds (But it seems like it will be a tough one to implement).
         uint[] PointIds
     );
 

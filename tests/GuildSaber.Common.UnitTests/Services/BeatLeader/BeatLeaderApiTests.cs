@@ -4,9 +4,9 @@ using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
-using GuildSaber.UnitTests.Utils;
+using GuildSaber.Common.UnitTests.Utils;
 
-namespace GuildSaber.UnitTests.Services.BeatLeader;
+namespace GuildSaber.Common.UnitTests.Services.BeatLeader;
 
 public class BeatLeaderApiTests
 {
@@ -25,7 +25,7 @@ public class BeatLeaderApiTests
         _beatLeaderApi = new BeatLeaderApi(httpClient);
     }
 
-    [Fact]
+    [Test]
     public async Task GetPlayerScoresCompact_ShouldReturnNullAndStopIteration_WhenInvalidPlayerId()
     {
         // Arrange
@@ -52,9 +52,11 @@ public class BeatLeaderApiTests
         }
     }
 
-    [Theory]
-    [InlineData(ScoresSortBy.Date, Order.Desc), InlineData(ScoresSortBy.Acc, Order.Asc)]
-    [InlineData(ScoresSortBy.Acc, Order.Desc), InlineData(ScoresSortBy.Date, Order.Asc)]
+    [Test]
+#pragma warning disable TUnit0002 // False positive.
+    [Arguments(ScoresSortBy.Date, Order.Desc), Arguments(ScoresSortBy.Acc, Order.Asc)]
+    [Arguments(ScoresSortBy.Acc, Order.Desc), Arguments(ScoresSortBy.Date, Order.Asc)]
+#pragma warning restore TUnit0002
     public async Task GetPlayerScoresCompact_ShouldReturnScoresInCorrectSortingOrder_WhenOrderByAndSortBySpecified(
         ScoresSortBy sortBy, Order orderBy)
     {
@@ -77,7 +79,7 @@ public class BeatLeaderApiTests
             if (!data.TryGetValue(out var compactScores))
                 Assert.Fail(data.Error);
 
-            scores.AddRange(compactScores);
+            scores.AddRange(compactScores!);
         }
 
         // Arrange Assertion
@@ -94,7 +96,7 @@ public class BeatLeaderApiTests
             .And.HaveCount((requestOptions.MaxPage - requestOptions.Page + 1) * requestOptions.PageSize);
     }
 
-    [Fact]
+    [Test]
     public async Task GetPlayerScoresCompact_ShouldReturnEmptyArray_WhenNoMoreData()
     {
         // Arrange
@@ -118,7 +120,7 @@ public class BeatLeaderApiTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task GetPlayerProfile_ShouldReturnNull_WhenInvalidPlayerId()
     {
         // Arrange
@@ -131,7 +133,7 @@ public class BeatLeaderApiTests
         profile.SuccessShould().BeNull("A 404 response should return a null success response");
     }
 
-    [Fact]
+    [Test]
     public async Task GetPlayerProfile_ShouldReturnValidProfile_WhenValidPlayerId()
     {
         // Arrange
@@ -144,7 +146,7 @@ public class BeatLeaderApiTests
         profile.SuccessShould().NotBeNull("A valid player ID should return a non-null profile");
     }
 
-    [Fact]
+    [Test]
     public async Task GetPlayerProfileWithStats_ShouldReturnNull_WhenInvalidPlayerId()
     {
         // Arrange
@@ -157,7 +159,7 @@ public class BeatLeaderApiTests
         profileWithStats.SuccessShould().BeNull("A 404 response should return a null success response");
     }
 
-    [Fact]
+    [Test]
     public async Task GetPlayerProfileWithStats_ShouldReturnValidProfile_WhenValidPlayerId()
     {
         // Arrange
@@ -170,7 +172,7 @@ public class BeatLeaderApiTests
         profileWithStats.SuccessShould().NotBeNull("A valid player ID should return a non-null profile with stats");
     }
 
-    [Fact]
+    [Test]
     public async Task GetScoreStatistics_ShouldReturnNull_WhenInvalidScoreId()
     {
         // Arrange
@@ -183,7 +185,7 @@ public class BeatLeaderApiTests
         scoreStats.SuccessShould().BeNull("A 404 response should return a null success response");
     }
 
-    [Fact]
+    [Test]
     public async Task GetScoreStatistics_ShouldReturnValidStatistics_WhenValidScoreId()
     {
         // Arrange

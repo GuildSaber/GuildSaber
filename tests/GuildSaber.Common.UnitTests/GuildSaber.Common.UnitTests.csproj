@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>14</LangVersion>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AwesomeAssertions" Version="9.1.0"/>
+        <PackageReference Include="TUnit" Version="0.57.65"/>
+        <PackageReference Include="CSharpFunctionalExtensions.AwesomeAssertions" Version="1.1.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\GuildSaber.Api\GuildSaber.Api.csproj"/>
+        <ProjectReference Include="..\..\src\GuildSaber.Database\GuildSaber.Database.csproj"/>
+    </ItemGroup>
+
+</Project>
