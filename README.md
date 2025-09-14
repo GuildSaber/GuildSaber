@@ -1,7 +1,7 @@
 # GuildSaber
 
 A multi tenant ranking system for Beat Saber, designed to manage and provide player rankings across multiple guilds.
-This project is built using .NET 9 and uses .NET Aspire for its orchestration.
+This project is built using .NET 10 and uses .NET Aspire for its orchestration.
 
 ## 📝 License Information
 
@@ -27,7 +27,7 @@ contributions are valued and recognized. See [LICENSE-NOTICE.md](LICENSE-NOTICE.
 
 ### Prerequisites
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Docker](https://www.docker.com/products/docker-desktop)
 - [JetBrains Rider](https://www.jetbrains.com/rider/) (recommended) or Visual Studio 2022+
 
