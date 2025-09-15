@@ -1,4 +1,4 @@
-﻿namespace GuildSaber.Api.Extensions;
+﻿namespace GuildSaber.Common.Helpers;
 
 public static class EnumFlagExtensions
 {

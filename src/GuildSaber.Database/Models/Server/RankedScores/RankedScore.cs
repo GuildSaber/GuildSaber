@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Points;
@@ -16,21 +17,30 @@ using PointId = GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId;
 
 namespace GuildSaber.Database.Models.Server.RankedScores;
 
-public class RankedScore
+public class RankedScore : IComparable<RankedScore>
 {
     public RankedScoreId Id { get; init; }
 
-    public GuildId GuildId { get; init; }
-    public GuildContext.GuildContextId ContextId { get; init; }
-    public RankedMap.RankedMapId RankedMapId { get; init; }
-    public SongDifficultyId SongDifficultyId { get; init; }
-    public PointId PointId { get; init; }
-    public PlayerId PlayerId { get; init; }
+    public required GuildId GuildId { get; init; }
+    public required GuildContext.GuildContextId ContextId { get; init; }
+    public required RankedMap.RankedMapId RankedMapId { get; init; }
+    public required SongDifficultyId SongDifficultyId { get; init; }
+    public required PointId PointId { get; init; }
+    public required PlayerId PlayerId { get; init; }
 
-    public ScoreId ScoreId { get; set; }
-    public ScoreId PrevScoreId { get; set; }
+    public required ScoreId ScoreId { get; set; }
+    public required ScoreId PrevScoreId { get; set; }
 
-    public EffectiveScore EffectiveScore { get; set; }
+    public required EState State { get; set; }
+    public required EDenyReason DenyReason { get; set; }
+    public required EffectiveScore EffectiveScore { get; set; }
+    public required RawPoints RawPoints { get; set; }
+
+    public required uint Rank { get; set; }
+    /* Date won't be stored here, it can just be based on the underlying score's SetAt property.
+     (Because the ranked map and rules can be tweaked, reassigning dates here would be confusing) */
+
+    public int CompareTo(RankedScore? other) => throw new NotImplementedException();
 
     public readonly record struct RankedScoreId(ulong Value) : IEFStrongTypedId<RankedScoreId, ulong>
     {
@@ -52,6 +62,69 @@ public class RankedScore
         public override string ToString()
             => Value.ToString();
     }
+
+    /// <summary>
+    /// The state of the ranked score in the ranking process.
+    /// </summary>
+    /// <remarks>
+    /// All states but Approved are non-point-giving states.
+    /// </remarks>
+    [Flags]
+    public enum EState
+    {
+        [Description("Score is in no particular state. It might be unprocessed, it won't give points.")]
+        None = 0,
+
+        [Description("Score has been selected to giving points.")]
+        Selected = 1 << 0,
+
+        [Description("Score has been denied from giving points. Check DenyReason for clues.")]
+        Denied = 1 << 1,
+
+        [Description("Score has been removed from ranking. (Player removed from guild, or score was invalidated)")]
+        Removed = 1 << 2,
+
+        [Description("Score is awaiting review by a scoring team member.")]
+        Pending = 1 << 3,
+
+        [Description("Score has been confirmed by scoring team member.")]
+        Confirmed = 1 << 4,
+
+        [Description("Score has been refused by a scoring team member.")]
+        Refused = 1 << 5,
+
+        //Note for future me: Should auto-confirmed be its own state? Or just Confirmed 
+
+        NonPointGiving = None | Denied | Removed | Pending | Refused | Confirmed
+    }
+
+    /// <summary>
+    /// The reason(s) a score was denied.
+    /// </summary>
+    [Flags]
+    public enum EDenyReason
+    {
+        [Description("No reason specified.")]
+        Unspecified = 0,
+
+        [Description("Score did not meet the minimum score requirement.")]
+        MinAccuracyRequirements = 1 << 0,
+
+        [Description("Score used prohibited modifiers.")]
+        ProhibitedModifiers = 1 << 1,
+
+        [Description("Score was missing required modifiers.")]
+        MissingModifiers = 1 << 2,
+
+        [Description("Score had too much pause time.")]
+        TooMuchPaused = 1 << 3,
+
+        [Description("Score was not a full combo when one was required.")]
+        NoFullCombo = 1 << 4,
+
+        [Description("Score was missing trackers.")]
+        MissingTrackers = 1 << 5
+    }
 }
 
 public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
@@ -64,6 +137,8 @@ public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
             .ValueGeneratedOnAdd();
         builder.Property(x => x.EffectiveScore)
             .HasConversion<ulong>(from => from, to => EffectiveScore.CreateUnsafe(to).Value);
+        builder.Property(x => x.RawPoints)
+            .HasConversion<float>(from => from, to => RawPoints.CreateUnsafe(to).Value);
 
         builder.HasOne<Guild>()
             .WithMany(x => x.RankedScores).HasForeignKey(x => x.GuildId)

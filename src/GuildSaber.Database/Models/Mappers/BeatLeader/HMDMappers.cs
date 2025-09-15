@@ -3,7 +3,7 @@ using GuildSaber.Database.Models.Server.Players;
 
 namespace GuildSaber.Database.Models.Mappers.BeatLeader;
 
-public static class HMDMapper
+public static class HMDMappers
 {
     public static HMD Map(this PlayerHardwareInfo.EHMD self)
         => self switch

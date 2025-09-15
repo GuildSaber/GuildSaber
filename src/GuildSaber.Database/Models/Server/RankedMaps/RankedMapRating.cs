@@ -1,3 +1,8 @@
 ﻿namespace GuildSaber.Database.Models.Server.RankedMaps;
 
-public class RankedMapRating { }
+public record RankedMapRating(
+    float Pass,
+    float Acc,
+    float Tech,
+    float PredictedAcc
+);

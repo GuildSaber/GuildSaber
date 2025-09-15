@@ -1,9 +1,7 @@
 using CSharpFunctionalExtensions;
 using GuildSaber.Common.Services.BeatLeader;
-using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Mappers.BeatLeader;
-using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Upload = GuildSaber.Common.Services.BeatLeader.Models.Responses.SocketGeneralResponse.Upload;
 using Accepted = GuildSaber.Common.Services.BeatLeader.Models.Responses.SocketGeneralResponse.Accepted;
@@ -72,7 +70,7 @@ public class BLScoreSyncWorker(
                     Upload(var score) => score.Map(playerId, difficultyId),
                     Accepted(var score) => score.Map((await beatLeaderApi
                         .GetScoreStatisticsAsync(score.Id)).GetValueOrDefault()!.Map(), playerId, difficultyId),
-                   Rejected(var score) => score.Map((await beatLeaderApi
+                    Rejected(var score) => score.Map((await beatLeaderApi
                         .GetScoreStatisticsAsync(score.Id)).GetValueOrDefault()!.Map(), playerId, difficultyId),
                     _ => throw new InvalidOperationException(
                         $"Unknown message type received from BeatLeader: {response.GetType().Name}")

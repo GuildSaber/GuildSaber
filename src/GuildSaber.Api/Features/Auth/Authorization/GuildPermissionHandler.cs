@@ -31,8 +31,8 @@ public class GuildPermissionHandler(IHttpContextAccessor httpContextAccessor)
             {
                 _ when user.IsInRole(AuthConstants.ManagerRole)
                     => Succeed(context, requirement),
-                _ when TryGetGuildId(httpContextAccessor, out var guildId) => user.FindFirst(
-                        AuthConstants.GuildPermissionClaimType(guildId)) switch
+                _ when TryGetGuildId(httpContextAccessor, out var guildId)
+                    => user.FindFirst(AuthConstants.GuildPermissionClaimType(guildId)) switch
                     {
                         { Value: { } value }
                             when Enum.TryParse<EPermission>(value.AsSpan(), out var permission)

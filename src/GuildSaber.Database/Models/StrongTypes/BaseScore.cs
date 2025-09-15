@@ -27,6 +27,9 @@ public readonly record struct BaseScore
     public static BaseScore? CreateUnsafe(ulong? value)
         => value is null ? null : new BaseScore(value.Value);
 
+    public static Accuracy operator /(BaseScore left, MaxScore right)
+        => Accuracy.CreateUnsafe((float)left / right * 100f).Value;
+
     public override string ToString()
         => _value.ToString();
 }

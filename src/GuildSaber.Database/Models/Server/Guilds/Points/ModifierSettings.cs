@@ -10,7 +10,7 @@ public readonly record struct ModifierSettings(
     float FasterSong = +0.08f,
     float SuperFastSong = +0.36f,
     float GhostNotes = +0.04f,
-    float DisappearingArrow = +0.00f,
+    float DisappearingArrows = +0.00f,
     float BatteryEnergy = +0.00f,
     float InstaFail = +0.00f,
     float SmallNotes = +0.00f,

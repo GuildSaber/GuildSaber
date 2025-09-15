@@ -74,7 +74,7 @@ public static class EFCoreSavingExtensions
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="context">The DbContext.</param>
     /// <param name="inputs">The entities to insert.</param>
-    public static async Task BulkInsert<T>(this DbContext context, IEnumerable<T> inputs) where T : class
+    public static async Task BulkInsertAsync<T>(this DbContext context, IEnumerable<T> inputs) where T : class
     {
         context.Set<T>().AddRange(inputs);
         await context.SaveChangesAsync();
@@ -86,7 +86,7 @@ public static class EFCoreSavingExtensions
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="context">The DbContext.</param>
     /// <param name="inputs">The arrays of entities to insert.</param>
-    public static async Task BulkInsert<T>(this DbContext context, IEnumerable<T[]> inputs) where T : class
+    public static async Task BulkInsertAsync<T>(this DbContext context, IEnumerable<T[]> inputs) where T : class
     {
         context.Set<T>().AddRange(inputs.SelectMany(x => x));
         await context.SaveChangesAsync();
@@ -119,12 +119,12 @@ public static class EFCoreSavingExtensions
     }
 
     /// <summary>
-    /// Asynchronously performs a bulk update operation on a DbContext.
+    /// Asynchronously performs a bulk insert or update operation on a DbContext.
     /// </summary>
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="context">The DbContext.</param>
     /// <param name="inputs">The entities to update.</param>
-    public static async Task BulkUpdate<T>(this DbContext context, IEnumerable<T> inputs) where T : class
+    public static async Task BulkInsertOrUpdateAsync<T>(this DbContext context, IEnumerable<T> inputs) where T : class
     {
         context.Set<T>().UpdateRange(inputs);
         await context.SaveChangesAsync();

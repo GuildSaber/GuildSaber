@@ -1,6 +1,7 @@
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
+using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SongDifficultyId = GuildSaber.Database.Models.Server.Songs.SongDifficulties.SongDifficulty.SongDifficultyId;
@@ -11,27 +12,27 @@ namespace GuildSaber.Database.Models.Server.Scores;
 public abstract record AbstractScore
 {
     public ScoreId Id { get; init; }
-    public PlayerId PlayerId { get; init; }
-    public SongDifficultyId SongDifficultyId { get; init; }
-    public EScoreType Type { get; init; }
+    public required PlayerId PlayerId { get; init; }
+    public required SongDifficultyId SongDifficultyId { get; init; }
+    public EScoreType Type { get; private init; }
 
-    public uint BaseScore { get; init; }
-    public EModifiers Modifiers { get; init; }
-    public DateTimeOffset SetAt { get; init; }
+    public required BaseScore BaseScore { get; init; }
+    public required EModifiers Modifiers { get; init; }
+    public required DateTimeOffset SetAt { get; init; }
 
-    public uint MaxCombo { get; init; }
-    public bool IsFullCombo { get; init; }
-    public uint MissedNotes { get; init; }
-    public uint BadCuts { get; init; }
+    public required uint? MaxCombo { get; init; }
+    public required bool IsFullCombo { get; init; }
+    public required uint MissedNotes { get; init; }
+    public required uint BadCuts { get; init; }
 
-    public PlayerHardwareInfo.EHMD HMD { get; set; }
+    public required PlayerHardwareInfo.EHMD HMD { get; set; }
     public enum EScoreType : byte { ScoreSaber = 0, BeatLeader = 1 }
 
-    public readonly record struct ScoreId(ulong Value) : IEFStrongTypedId<ScoreId, ulong>
+    public readonly record struct ScoreId(uint Value) : IEFStrongTypedId<ScoreId, uint>
     {
         public static bool TryParse(string from, out ScoreId value)
         {
-            if (ulong.TryParse(from, out var id))
+            if (uint.TryParse(from, out var id))
             {
                 value = new ScoreId(id);
                 return true;
@@ -41,7 +42,7 @@ public abstract record AbstractScore
             return false;
         }
 
-        public static implicit operator ulong(ScoreId id)
+        public static implicit operator uint(ScoreId id)
             => id.Value;
 
         public override string ToString()
@@ -78,12 +79,15 @@ public class AbstractScoreConfiguration : IEntityTypeConfiguration<AbstractScore
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id)
-            .HasGenericConversion<AbstractScore.ScoreId, ulong>()
+            .HasGenericConversion<AbstractScore.ScoreId, uint>()
             .ValueGeneratedOnAdd();
         builder.HasDiscriminator(x => x.Type)
             .HasValue<ScoreSaberScore>(AbstractScore.EScoreType.ScoreSaber)
             .HasValue<BeatLeaderScore>(AbstractScore.EScoreType.BeatLeader)
             .IsComplete();
+
+        builder.Property(x => x.BaseScore)
+            .HasConversion<ulong>(from => from, to => BaseScore.CreateUnsafe(to).Value);
 
         builder.HasOne<Player>()
             .WithMany().HasForeignKey(x => x.PlayerId)

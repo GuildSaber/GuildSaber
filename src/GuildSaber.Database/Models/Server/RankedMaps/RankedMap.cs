@@ -1,8 +1,7 @@
 ﻿using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds;
+using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
-using GuildSaber.Database.Models.Server.Songs;
-using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -14,11 +13,11 @@ public class RankedMap
 
     public Guild.GuildId GuildId { get; init; }
     public GuildContext.GuildContextId ContextId { get; init; }
-    public Song.SongId SongId { get; init; }
-    public SongDifficulty.SongDifficultyId SongDifficultyId { get; init; }
 
-    public RankedMapRequirements Requirements { get; init; }
+    public required RankedMapRequirements Requirements { get; init; }
+    public required RankedMapRating Rating { get; init; }
     public IList<MapVersion> MapVersions { get; init; } = null!;
+    public IList<Category> Categories { get; init; } = null!;
 
     public readonly record struct RankedMapId(ulong Value) : IEFStrongTypedId<RankedMapId, ulong>
     {
@@ -50,22 +49,17 @@ public class RankedMapConfiguration : IEntityTypeConfiguration<RankedMap>
         builder.Property(x => x.Id).HasGenericConversion<RankedMap.RankedMapId, ulong>()
             .ValueGeneratedOnAdd();
 
-        builder.ComplexProperty(x => x.Requirements);
+        builder.ComplexProperty(x => x.Requirements).Configure(new RankedMapRequirementsConfiguration());
+        builder.ComplexProperty(x => x.Rating);
 
         builder.HasOne<Guild>()
             .WithMany(x => x.RankedMaps).HasForeignKey(x => x.GuildId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne<GuildContext>()
-            .WithMany().HasForeignKey(x => x.ContextId)
+            .WithMany(x => x.RankedMaps).HasForeignKey(x => x.ContextId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<Song>()
-            .WithMany().HasForeignKey(x => x.SongId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasOne<SongDifficulty>()
-            .WithMany().HasForeignKey(x => x.SongDifficultyId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasMany(x => x.Categories).WithMany();
     }
 }

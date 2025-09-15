@@ -9,6 +9,7 @@ using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Scores;
+using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Api.Hangfire;
 using GuildSaber.Api.Hangfire.Configuration;
 using GuildSaber.Api.Transformers;
@@ -85,7 +86,7 @@ builder.AddMySqlDbContext<ServerDbContext>(connectionName: Constants.ServerDbCon
 #region Authentication & Authorization
 
 builder.Services.AddSingleton<JwtService>();
-builder.Services.AddScoped<IClaimsTransformation, PermissionClaimTransformer>();
+builder.Services.AddScoped<IClaimsTransformation, GuildPermissionClaimTransformer>();
 builder.Services.AddScoped<SessionValidator>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddSingleton<IAuthorizationHandler, GuildPermissionHandler>();
@@ -159,12 +160,15 @@ builder.Services.AddAuthorizationBuilder()
 
 #region External Services & HTTP Clients
 
+// Configured pooled connection lifetime to avoid DNS issues in long-running services.
 builder.Services.AddHttpClient<BeatLeaderApi>(client =>
-{
-    client.BaseAddress = new Uri("https+http://beatleader-api");
-    client.DefaultRequestHeaders.Add("User-Agent", "GuildSaber");
-});
+    {
+        client.BaseAddress = new Uri("https+http://beatleader-api");
+        client.DefaultRequestHeaders.Add("User-Agent", "GuildSaber");
+    }).UseSocketsHttpHandler((handler, _) => handler.PooledConnectionLifetime = TimeSpan.FromMinutes(5))
+    .SetHandlerLifetime(Timeout.InfiniteTimeSpan);
 
+// Since they hold state, they should be transient.
 builder.Services.AddTransient<BeatLeaderGeneralSocketStream>(_ =>
 {
     var uri = builder.Configuration.GetValue<Uri>("services:beatleader-socket:default:0");
@@ -176,8 +180,8 @@ builder.Services.AddTransient<BeatLeaderGeneralSocketStream>(_ =>
 
 #region Background Services & Hangfire
 
-builder.Services.AddTransient<ScoreSyncHandler>();
-builder.Services.AddHostedService<ScoreSyncService>();
+builder.Services.AddTransient<ScoreUpdatePipeline>();
+builder.Services.AddHostedService<BLScoreSyncWorker>();
 
 builder.Services.AddHangfire((serviceCollection, option) =>
 {
@@ -212,18 +216,21 @@ builder.Services.AddOpenApi(options => options
     .AddScalarTransformers()
 );
 
-builder.Services.AddEndpoints<Program>(builder.Configuration);
-
 builder.Services.AddProblemDetails(options =>
-{
     options.CustomizeProblemDetails = context =>
     {
-        context.ProblemDetails.Instance = $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
+        if (context.Exception is BadHttpRequestException badHttpRequestException)
+        {
+            context.ProblemDetails.Title = "Bad Request";
+            context.ProblemDetails.Detail = badHttpRequestException.Message;
+            context.ProblemDetails.Status = StatusCodes.Status400BadRequest;
+        }
 
-        var activity = context.HttpContext.Features.Get<IHttpActivityFeature>()?.Activity;
-        context.ProblemDetails.Extensions.TryAdd("traceId", activity?.Id);
-    };
-});
+        context.ProblemDetails.Instance = $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
+        context.ProblemDetails.Extensions
+            .TryAdd("traceId", context.HttpContext.Features.Get<IHttpActivityFeature>()?.Activity.Id);
+    }
+).AddEndpoints<Program>(builder.Configuration);
 
 #endregion
 
