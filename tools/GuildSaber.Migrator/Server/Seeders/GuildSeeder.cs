@@ -108,8 +108,8 @@ public static class GuildSeeder
             Requirements = new GuildRequirements
             {
                 RequireSubmission = false,
-                MinRank = 10,
-                MaxRank = 200,
+                MinRank = 200,
+                MaxRank = 10,
                 MinPP = 0,
                 MaxPP = 10000,
                 AccountAgeUnix = (uint?)TimeSpan.FromDays(365 * 6).Seconds

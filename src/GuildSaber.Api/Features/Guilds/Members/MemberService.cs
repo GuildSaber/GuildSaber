@@ -103,12 +103,12 @@ public class MemberService(ServerDbContext dbContext, BeatLeaderApi beatLeaderAp
                 => reqEnum switch
                 {
                     RequireSubmission => null, // Technically not an error
-                    MinRank when profile.Rank < requirements.MinRank => new KeyValuePair<string, string[]>(
+                    MinRank when profile.Rank > requirements.MinRank => new KeyValuePair<string, string[]>(
                         nameof(MinRank),
                         [
                             $"Your rank ({profile.Rank}) is below the minimum required rank ({requirements.MinRank})."
                         ]),
-                    MaxRank when profile.Rank > requirements.MaxRank => new KeyValuePair<string, string[]>(
+                    MaxRank when profile.Rank < requirements.MaxRank => new KeyValuePair<string, string[]>(
                         nameof(MaxRank),
                         [
                             $"Your rank ({profile.Rank}) is above the maximum allowed rank ({requirements.MaxRank})."
