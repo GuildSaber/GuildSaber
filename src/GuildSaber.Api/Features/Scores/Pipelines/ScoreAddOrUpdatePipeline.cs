@@ -56,9 +56,13 @@ public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
                         operation: static async (state, _) =>
                         {
                             await state.dbContext.BulkInsertOrUpdateAsync(state.rankedScores);
-                            await RankedScoreUpdateRankPipeline.UpdateRanksForRankedMapsAsync(state.rankedScores
-                                .Select(x => x.RankedMapId)
-                                .Distinct(), state.dbContext);
+                            /* An optimization would be: Track the RankedScores (in EF Core with .AsTracking()),
+                             * then only update the ranks for the RankedMaps that had changes. */
+                            await RankedScoreUpdateRankPipeline.UpdateRanksForRankedMapsAsync(
+                                state.rankedScores
+                                    .Select(x => x.RankedMapId)
+                                    .Distinct(), state.dbContext
+                            );
                             await PlayerPointsPipeline.RecalculatePlayerPoints(state.PlayerId, state.dbContext);
                             await PlayerLevelPipeline.RecalculatePlayerLevels(state.PlayerId, state.dbContext);
                         }, verifySucceeded: (_, _) => Task.FromResult(true)),
@@ -130,9 +134,8 @@ public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
     {
         foreach (var rankedMap in rankingContext.RankedMapsWithVersionsWithSongDifficulty)
         foreach (var mapVersion in rankedMap.MapVersions)
-        foreach (var guildContext in rankingContext.ContextsWithPoints)
-        foreach (var point in guildContext.Points)
-        foreach (var score in rankingContext.Scores)
+        foreach (var point in rankingContext.ContextsWithPoints.First(x => x.Id == rankedMap.ContextId).Points)
+        foreach (var score in rankingContext.Scores.Where(x => x.SongDifficultyId == mapVersion.SongDifficultyId))
         {
             var transformContext = new RankedScoreTransformContext(
                 rankedMap,
@@ -141,27 +144,38 @@ public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
                 score
             );
 
-            var rankedScore = rankingContext.ExistingRankedScores
-                .FirstOrDefault(y => y.ScoreId == score.Id && y.ContextId == guildContext.Id && y.PointId == point.Id);
+            var rankedScores = rankingContext.ExistingRankedScores.Where(y =>
+                y.ScoreId == score.Id
+                && y.RankedMapId == rankedMap.Id
+                && y.SongDifficultyId == mapVersion.SongDifficultyId
+                && y.ContextId == rankedMap.ContextId
+                && y.PointId == point.Id
+            );
 
-            rankedScore ??= new RankedScore
+            var anyRankedScores = false;
+            foreach (var rankedScore in rankedScores)
             {
-                GuildId = guildContext.GuildId,
-                ContextId = guildContext.Id,
-                RankedMapId = mapVersion.RankedMapId,
-                SongDifficultyId = mapVersion.SongDifficultyId,
-                PointId = point.Id,
-                PlayerId = score.PlayerId,
-                ScoreId = score.Id,
-                PrevScoreId = default,
-                State = EState.None,
-                DenyReason = EDenyReason.Unspecified,
-                EffectiveScore = default,
-                RawPoints = default,
-                Rank = 0
-            };
+                anyRankedScores = true;
+                yield return transform(transformContext, rankedScore);
+            }
 
-            yield return transform(transformContext, rankedScore);
+            if (!anyRankedScores)
+                yield return transform(transformContext, new RankedScore
+                {
+                    GuildId = rankedMap.GuildId,
+                    ContextId = rankedMap.ContextId,
+                    RankedMapId = mapVersion.RankedMapId,
+                    SongDifficultyId = mapVersion.SongDifficultyId,
+                    PointId = point.Id,
+                    PlayerId = score.PlayerId,
+                    ScoreId = score.Id,
+                    PrevScoreId = default,
+                    State = EState.None,
+                    DenyReason = EDenyReason.Unspecified,
+                    EffectiveScore = default,
+                    RawPoints = default,
+                    Rank = 0
+                });
         }
     }
 
@@ -218,13 +232,16 @@ public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
                 null => throw new InvalidOperationException("Group should contain at least one element."),
                 var best => group
                     .Where(RankedScoresShouldBePersisted)
-                    .Select(RemoveSelectedState)
-                    .UnionBy([SetStateToSelected(best)], x => x.Id)
+                    .Select(x => x == best ? SetStateToSelected(x) : RemoveSelectedState(x))
             });
 
     /// <summary>
     /// RankedScores that should be persisted are the stateful ones (Selected, Approved, Refused, Pending).
     /// </summary>
+    /// <remarks>
+    /// In the future, we might wish to persist Denied scores (it technically don't make much sence semantically,
+    /// better just not having requirements), but if we need to, this function could just need to be removed.
+    /// </remarks>
     private static bool RankedScoresShouldBePersisted(RankedScore rankedScore)
         => !rankedScore.State.HasFlag(EState.Denied);
 
