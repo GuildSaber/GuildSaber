@@ -1,4 +1,13 @@
 ﻿<Solution>
+    <Folder Name="/Solution Items/">
+        <File Path="Directory.Build.props"/>
+        <File Path="Directory.Packages.props"/>
+        <File Path="README.md"/>
+        <File Path="LICENSE"/>
+        <File Path="LICENSE-NOTICE.md"/>
+        <File Path="CONTRIBUTORS.md"/>
+        <File Path="CONTRIBUTING.md"/>
+    </Folder>
     <Folder Name="/aspire/">
         <Project Path="aspire\GuildSaber.AppHost\GuildSaber.AppHost.csproj" Type="Classic C#"/>
         <Project Path="aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj" Type="Classic C#"/>

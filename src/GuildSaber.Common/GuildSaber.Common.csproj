@@ -2,9 +2,6 @@
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
         <LangVersion>14</LangVersion>
     </PropertyGroup>
 
@@ -13,8 +10,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CSharpFunctionalExtensions" Version="3.6.0"/>
-        <PackageReference Include="CSharpFunctionalExtensions.Analyzers" Version="1.4.1">
+        <PackageReference Include="CSharpFunctionalExtensions"/>
+        <PackageReference Include="CSharpFunctionalExtensions.Analyzers">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
