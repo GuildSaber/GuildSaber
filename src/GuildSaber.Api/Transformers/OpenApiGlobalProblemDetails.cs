@@ -1,120 +1,140 @@
+using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi.Any;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace GuildSaber.Api.Transformers;
 
 public static class OpenApiGlobalProblemDetails
 {
-    public class GlobalProblemDetailsTransformer : IOpenApiOperationTransformer
+    public class GlobalProblemDetailsTransformer : IOpenApiOperationTransformer, IOpenApiDocumentTransformer
     {
+        public Task TransformAsync(
+            OpenApiDocument document, OpenApiDocumentTransformerContext context,
+            CancellationToken cancellationToken)
+        {
+            document.Components ??= new OpenApiComponents();
+            document.Components.Schemas ??= new Dictionary<string, IOpenApiSchema>();
+
+            document.Components.Schemas.Remove("ProblemDetails");
+            document.Components.Schemas.Add(new KeyValuePair<string, IOpenApiSchema>("ProblemDetails",
+                new OpenApiSchema
+                {
+                    Type = JsonSchemaType.Object,
+                    Properties = new Dictionary<string, IOpenApiSchema>
+                    {
+                        ["type"] = new OpenApiSchema
+                        {
+                            Type = JsonSchemaType.String,
+                            Format = "uri"
+                        },
+                        ["title"] = new OpenApiSchema
+                        {
+                            Type = JsonSchemaType.String
+                        },
+                        ["status"] = new OpenApiSchema
+                        {
+                            Type = JsonSchemaType.Integer,
+                            Format = "int32"
+                        },
+                        ["detail"] = new OpenApiSchema
+                        {
+                            Type = JsonSchemaType.String | JsonSchemaType.Null
+                        },
+                        ["instance"] = new OpenApiSchema
+                        {
+                            Type = JsonSchemaType.String
+                        },
+                        ["traceId"] = new OpenApiSchema
+                        {
+                            Type = JsonSchemaType.String
+                        }
+                    }
+                }));
+
+            return Task.CompletedTask;
+        }
+
         public Task TransformAsync(
             OpenApiOperation operation, OpenApiOperationTransformerContext context,
             CancellationToken cancellationToken)
         {
+            if (operation.Responses is null)
+                return Task.CompletedTask;
+
             foreach (var response in operation.Responses)
             {
-                if (!int.TryParse(response.Key, out var statusCode)
-                    || statusCode is < 400 or >= 600)
+                if (!int.TryParse(response.Key, out var statusCode) || statusCode is < 400 or >= 600)
                     continue;
 
-                var containsProblemDetails = response.Value.Content
-                    .TryGetValue("application/problem+json", out var problemDetailsContent);
+                var payloads = response.Value.Content;
+                var problemDetailsContent = null as OpenApiMediaType;
+                var containsProblemDetails = payloads
+                    ?.TryGetValue("application/problem+json", out problemDetailsContent) ?? false;
 
-                if (response.Value.Content.Count != 0 && !containsProblemDetails)
+                if (payloads is null || payloads.Count != 0 && !containsProblemDetails)
                     continue;
 
-                var isHttpValidationProblemDetails =
-                    problemDetailsContent?.Schema.Properties.ContainsKey("errors") ?? false;
+                //TODO: Figure why this doesn't work anymore.
+                var isHttpValidationProblemDetails = problemDetailsContent?.Schema?.Properties?
+                    .ContainsKey("errors") ?? false;
 
-                string? type;
-                string? title;
-                string? detail;
-
-                if (isHttpValidationProblemDetails)
+                var problemDetails = isHttpValidationProblemDetails switch
                 {
-                    var validationProblem = TypedResults.ValidationProblem(new Dictionary<string, string[]>());
+                    true => TypedResults.ValidationProblem(new Dictionary<string, string[]>()).ProblemDetails,
+                    false => TypedResults.Problem(statusCode: statusCode).ProblemDetails
+                };
 
-                    type = validationProblem.ProblemDetails.Type;
-                    title = validationProblem.ProblemDetails.Title;
-                    detail = validationProblem.ProblemDetails.Detail;
-                }
-                else
-                {
-                    var problemDetails = TypedResults.Problem(statusCode: statusCode);
+                var example = new JsonObject();
 
-                    type = problemDetails.ProblemDetails.Type;
-                    title = problemDetails.ProblemDetails.Title;
-                    detail = problemDetails.ProblemDetails.Detail;
-                }
+                if (!string.IsNullOrEmpty(problemDetails.Type))
+                    example["type"] = JsonValue.Create(problemDetails.Type);
 
-                var example = new OpenApiObject();
+                if (!string.IsNullOrEmpty(problemDetails.Title))
+                    example["title"] = JsonValue.Create(problemDetails.Title);
 
-                if (!string.IsNullOrEmpty(type))
-                    example["type"] = new OpenApiString(type);
-
-                if (!string.IsNullOrEmpty(title))
-                    example["title"] = new OpenApiString(title);
-
-                example["status"] = new OpenApiInteger(statusCode);
+                example["status"] = JsonValue.Create(statusCode);
 
                 // Force details (even if empty) to be present in the example if the response is a problem details response.
-                if (!string.IsNullOrEmpty(detail) || containsProblemDetails)
-                    example["detail"] = new OpenApiString(detail);
+                if (!string.IsNullOrEmpty(problemDetails.Detail) || containsProblemDetails)
+                    example["detail"] = JsonValue.Create(problemDetails.Detail);
 
-                example["instance"] = new OpenApiString(
+                example["instance"] = JsonValue.Create(
                     $"{context.Description.HttpMethod} {context.Description.RelativePath}"
                 );
 
-                example["traceId"] = new OpenApiString(
+                example["traceId"] = JsonValue.Create(
                     "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
                 );
 
                 if (isHttpValidationProblemDetails)
-                    example["errors"] = new OpenApiObject
+                    example["errors"] = new JsonObject
                     {
-                        ["propertyName"] = new OpenApiArray
-                        {
-                            new OpenApiString("Error message")
-                        }
+                        ["propertyName"] = new JsonArray(JsonValue.Create("Error message"))
                     };
 
                 if (containsProblemDetails)
                 {
                     // Prevent overwriting the schema example if it already exists.
                     // Maybe from a lib or the user has defined it.
-                    if (problemDetailsContent!.Schema.Example is not null) continue;
+                    if (problemDetailsContent is null || problemDetailsContent.Schema?.Example is not null)
+                        continue;
 
-                    problemDetailsContent.Schema.Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.Schema,
-                        Id = isHttpValidationProblemDetails ? "HttpValidationProblemDetails" : "ProblemDetails"
-                    };
-
-                    problemDetailsContent.Schema.Example = example;
+                    problemDetailsContent.Schema = new OpenApiSchemaReference(
+                        isHttpValidationProblemDetails ? "HttpValidationProblemDetails" : "ProblemDetails",
+                        context.Document
+                    );
+                    problemDetailsContent.Example = example;
                     continue;
                 }
 
                 operation.Responses[response.Key] = new OpenApiResponse
                 {
-                    Description = title,
+                    Description = problemDetails.Title,
                     Content = new Dictionary<string, OpenApiMediaType>
                     {
                         ["application/problem+json"] = new()
                         {
-                            Schema = new OpenApiSchema
-                            {
-                                Type = "object",
-                                Annotations = new Dictionary<string, object>
-                                {
-                                    ["x-schema-id"] = "ProblemDetails"
-                                },
-                                Reference = new OpenApiReference
-                                {
-                                    Type = ReferenceType.Schema,
-                                    Id = "ProblemDetails"
-                                }
-                            },
+                            Schema = new OpenApiSchemaReference("ProblemDetails", context.Document),
                             Example = example
                         }
                     }
@@ -125,6 +145,7 @@ public static class OpenApiGlobalProblemDetails
         }
     }
 
-    public static OpenApiOptions AddGlobalProblemDetails(this OpenApiOptions options)
-        => options.AddOperationTransformer<GlobalProblemDetailsTransformer>();
+    public static OpenApiOptions AddGlobalProblemDetails(this OpenApiOptions options) => options
+        .AddOperationTransformer<GlobalProblemDetailsTransformer>()
+        .AddDocumentTransformer<GlobalProblemDetailsTransformer>();
 }

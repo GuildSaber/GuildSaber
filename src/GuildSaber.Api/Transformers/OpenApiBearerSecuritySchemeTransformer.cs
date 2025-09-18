@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace GuildSaber.Api.Transformers;
 
-public static class OpenApiBearerSecurityScheme
+public static class OpenApiBearerSecuritySchemeTransformer
 {
     internal sealed class BearerSecuritySchemeTransformer(
         IAuthenticationSchemeProvider authenticationSchemeProvider)
@@ -19,24 +19,17 @@ public static class OpenApiBearerSecurityScheme
             if (authenticationSchemes.All(authScheme => authScheme.Name != "Bearer"))
                 return;
 
-            var requirements = new Dictionary<string, OpenApiSecurityScheme>
-            {
-                [JwtBearerDefaults.AuthenticationScheme] = new()
-                {
-                    Type = SecuritySchemeType.Http,
-                    Name = JwtBearerDefaults.AuthenticationScheme,
-                    Scheme = "bearer",
-                    In = ParameterLocation.Header,
-                    BearerFormat = "Json Web Token",
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = JwtBearerDefaults.AuthenticationScheme
-                    }
-                }
-            };
             document.Components ??= new OpenApiComponents();
-            document.Components.SecuritySchemes = requirements;
+            document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+            document.Components.SecuritySchemes[JwtBearerDefaults.AuthenticationScheme] = new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Name = JwtBearerDefaults.AuthenticationScheme,
+                Scheme = "bearer",
+                In = ParameterLocation.Header,
+                BearerFormat = "Json Web Token",
+                Description = "Bearer authentication using a JWT."
+            };
         }
     }
 

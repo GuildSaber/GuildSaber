@@ -24,6 +24,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using MyCSharp.HttpUserAgentParser.AspNetCore.DependencyInjection;
 using MyCSharp.HttpUserAgentParser.DependencyInjection;
 using Scalar.AspNetCore;
@@ -208,13 +209,16 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
 });
 
-builder.Services.AddOpenApi(options => options
-    .AddGlobalProblemDetails()
-    .AddBearerSecurityScheme()
-    .AddEndpointsHttpSecuritySchemeResolution()
-    .AddTagDescriptionSupport()
-    .AddScalarTransformers()
-);
+builder.Services.AddOpenApi(options =>
+{
+    // Forcing OpenAPI 3.0 until Scalar supports correctly OpenAPI 3.1 refs: https://github.com/scalar/scalar/issues/6617
+    options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
+    options.AddGlobalProblemDetails()
+        .AddBearerSecurityScheme()
+        .AddEndpointsHttpSecuritySchemeResolution()
+        .AddTagDescriptionSupport()
+        .AddScalarTransformers();
+});
 
 builder.Services.AddProblemDetails(options =>
     options.CustomizeProblemDetails = context =>

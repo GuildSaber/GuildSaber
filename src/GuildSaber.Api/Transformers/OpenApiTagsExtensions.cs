@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace GuildSaber.Api.Transformers;
 
@@ -13,9 +13,10 @@ public static class OpenApiTagsExtensions
             OpenApiDocument document, OpenApiDocumentTransformerContext context,
             CancellationToken cancellationToken)
         {
+            document.Tags ??= new HashSet<OpenApiTag>();
             foreach (var tag in document.Tags)
             {
-                if (!_tagDescriptions.TryGetValue(tag.Name, out var description))
+                if (tag.Name is null || !_tagDescriptions.TryGetValue(tag.Name, out var description))
                     continue;
 
                 tag.Description = description;
