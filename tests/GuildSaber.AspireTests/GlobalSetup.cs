@@ -4,6 +4,8 @@
 
 using System.Diagnostics.CodeAnalysis;
 using Aspire.Hosting;
+using Aspire.Hosting.MySql;
+using Aspire.Hosting.Redis;
 using Projects;
 
 [assembly: Retry(3)]
@@ -21,6 +23,12 @@ public class GlobalHooks
     {
         // Arrange
         var appHost = await DistributedApplicationTestingBuilder.CreateAsync<GuildSaber_AppHost>();
+
+        appHost.WithContainersLifetime(ContainerLifetime.Session);
+        appHost.WithRandomVolumeNames();
+        appHost.RemoveResources<PhpMyAdminContainerResource>();
+        appHost.RemoveResources<RedisCommanderResource>();
+
         appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
         {
             clientBuilder.AddStandardResilienceHandler();
