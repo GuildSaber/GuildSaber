@@ -9,6 +9,7 @@
         <PackageVersion Include="Aspire.Hosting.Valkey" Version="9.4.2"/>
         <PackageVersion Include="Aspire.Pomelo.EntityFrameworkCore.MySql" Version="9.4.2"/>
         <PackageVersion Include="AspNet.Security.OAuth.Discord" Version="9.4.0"/>
+        <PackageVersion Include="KubernetesClient" Version="17.0.14"/>
         <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0-rc.1.25451.107"/>
         <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0-rc.1.25451.107"/>
         <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0-rc.1.25451.107"/>
