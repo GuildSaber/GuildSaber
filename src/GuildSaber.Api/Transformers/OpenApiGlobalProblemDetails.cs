@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
@@ -8,50 +9,36 @@ public static class OpenApiGlobalProblemDetails
 {
     public class GlobalProblemDetailsTransformer : IOpenApiOperationTransformer, IOpenApiDocumentTransformer
     {
-        public Task TransformAsync(
+        public async Task TransformAsync(
             OpenApiDocument document, OpenApiDocumentTransformerContext context,
             CancellationToken cancellationToken)
         {
             document.Components ??= new OpenApiComponents();
             document.Components.Schemas ??= new Dictionary<string, IOpenApiSchema>();
 
-            document.Components.Schemas.Remove("ProblemDetails");
-            document.Components.Schemas.Add(new KeyValuePair<string, IOpenApiSchema>("ProblemDetails",
-                new OpenApiSchema
-                {
-                    Type = JsonSchemaType.Object,
-                    Properties = new Dictionary<string, IOpenApiSchema>
-                    {
-                        ["type"] = new OpenApiSchema
-                        {
-                            Type = JsonSchemaType.String,
-                            Format = "uri"
-                        },
-                        ["title"] = new OpenApiSchema
-                        {
-                            Type = JsonSchemaType.String
-                        },
-                        ["status"] = new OpenApiSchema
-                        {
-                            Type = JsonSchemaType.Integer,
-                            Format = "int32"
-                        },
-                        ["detail"] = new OpenApiSchema
-                        {
-                            Type = JsonSchemaType.String | JsonSchemaType.Null
-                        },
-                        ["instance"] = new OpenApiSchema
-                        {
-                            Type = JsonSchemaType.String
-                        },
-                        ["traceId"] = new OpenApiSchema
-                        {
-                            Type = JsonSchemaType.String
-                        }
-                    }
-                }));
+            var problemDetailsSchema = await context.GetOrCreateSchemaAsync(
+                typeof(ProblemDetails),
+                cancellationToken: cancellationToken
+            );
+            var httpValidationProblemDetailsSchema = await context.GetOrCreateSchemaAsync(
+                typeof(HttpValidationProblemDetails),
+                cancellationToken: cancellationToken
+            );
 
-            return Task.CompletedTask;
+            problemDetailsSchema.Properties ??= new Dictionary<string, IOpenApiSchema>();
+            problemDetailsSchema.Properties["traceId"] = new OpenApiSchema
+            {
+                Type = JsonSchemaType.String
+            };
+
+            httpValidationProblemDetailsSchema.Properties ??= new Dictionary<string, IOpenApiSchema>();
+            httpValidationProblemDetailsSchema.Properties["traceId"] = new OpenApiSchema
+            {
+                Type = JsonSchemaType.String
+            };
+
+            document.Components.Schemas["ProblemDetails"] = problemDetailsSchema;
+            document.Components.Schemas["HttpValidationProblemDetails"] = httpValidationProblemDetailsSchema;
         }
 
         public Task TransformAsync(
@@ -74,9 +61,8 @@ public static class OpenApiGlobalProblemDetails
                 if (payloads is null || payloads.Count != 0 && !containsProblemDetails)
                     continue;
 
-                //TODO: Figure why this doesn't work anymore.
-                var isHttpValidationProblemDetails = problemDetailsContent?.Schema?.Properties?
-                    .ContainsKey("errors") ?? false;
+                var isHttpValidationProblemDetails = problemDetailsContent
+                    ?.Schema is OpenApiSchemaReference { Reference.Id: "HttpValidationProblemDetails" };
 
                 var problemDetails = isHttpValidationProblemDetails switch
                 {
@@ -94,7 +80,7 @@ public static class OpenApiGlobalProblemDetails
 
                 example["status"] = JsonValue.Create(statusCode);
 
-                // Force details (even if empty) to be present in the example if the response is a problem details response.
+                /* And also include the detail property for native ProblemDetails responses. */
                 if (!string.IsNullOrEmpty(problemDetails.Detail) || containsProblemDetails)
                     example["detail"] = JsonValue.Create(problemDetails.Detail);
 
@@ -114,9 +100,9 @@ public static class OpenApiGlobalProblemDetails
 
                 if (containsProblemDetails)
                 {
-                    // Prevent overwriting the schema example if it already exists.
-                    // Maybe from a lib or the user has defined it.
-                    if (problemDetailsContent is null || problemDetailsContent.Schema?.Example is not null)
+                    /* Prevent overwriting the schema example if it already exists,
+                     * maybe from a lib or if the user has already defined it. */
+                    if (problemDetailsContent!.Schema?.Example is not null)
                         continue;
 
                     problemDetailsContent.Schema = new OpenApiSchemaReference(
@@ -146,6 +132,6 @@ public static class OpenApiGlobalProblemDetails
     }
 
     public static OpenApiOptions AddGlobalProblemDetails(this OpenApiOptions options) => options
-        .AddOperationTransformer<GlobalProblemDetailsTransformer>()
-        .AddDocumentTransformer<GlobalProblemDetailsTransformer>();
+        .AddDocumentTransformer<GlobalProblemDetailsTransformer>()
+        .AddOperationTransformer<GlobalProblemDetailsTransformer>();
 }
