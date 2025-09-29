@@ -45,11 +45,11 @@ public class BeatLeaderIdJsonConverter : JsonConverter<BeatLeaderId>
 {
     public override BeatLeaderId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.TokenType == JsonTokenType.Number && reader.TryGetUInt64(out var value))
-            return BeatLeaderId.CreateUnsafe(value).Value;
-
         if (reader.TokenType == JsonTokenType.String && ulong.TryParse(reader.GetString(), out var stringValue))
             return BeatLeaderId.CreateUnsafe(stringValue).Value;
+
+        if (reader.TokenType == JsonTokenType.Number && reader.TryGetUInt64(out var value))
+            return BeatLeaderId.CreateUnsafe(value).Value;
 
         throw new JsonException("Cannot convert to BeatLeaderId");
     }

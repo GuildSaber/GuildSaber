@@ -2,12 +2,10 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
-using GuildSaber.Common.Services.BeatLeader.Models;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using Error = GuildSaber.Common.Services.BeatLeader.Errors.ClientWebSocketStreamError;
 using static GuildSaber.Common.Services.BeatLeader.Errors.ClientWebSocketStreamError;
-using static GuildSaber.Common.Services.BeatLeader.Models.Responses.SocketGeneralResponse;
 
 namespace GuildSaber.Common.Services.BeatLeader;
 
@@ -24,7 +22,7 @@ namespace GuildSaber.Common.Services.BeatLeader;
 /// The class implements both <see cref="IDisposable" /> and <see cref="IAsyncDisposable" /> for
 /// proper resource cleanup and can only be enumerated once at a time.
 /// </remarks>
-public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerable<Result<SocketGeneralResponse, Error>>,
+public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerable<Result<GeneralSocketMessage, Error>>,
     IDisposable,
     IAsyncDisposable
 {
@@ -71,7 +69,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
     /// Supported message types are: "upload", "accepted", and "rejected".
     /// Messages exceeding 5MB will result in a <see cref="Error.MessageTooLong" /> error.
     /// </remarks>
-    public async IAsyncEnumerator<Result<SocketGeneralResponse, Error>> GetAsyncEnumerator(
+    public async IAsyncEnumerator<Result<GeneralSocketMessage, Error>> GetAsyncEnumerator(
         CancellationToken cancellationToken = new())
     {
         if (StreamAlreadyInUse())
@@ -86,7 +84,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
             if (connectResult.TryGetError(out var connectionException))
             {
                 if (connectionException is not OperationCanceledException)
-                    yield return Failure<SocketGeneralResponse, Error>(new ConnectionError(connectionException));
+                    yield return Failure<GeneralSocketMessage, Error>(new ConnectionError(connectionException));
 
                 yield break;
             }
@@ -95,7 +93,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
             {
                 if (_webSocket.State != WebSocketState.Open)
                 {
-                    yield return Failure<SocketGeneralResponse, Error>(
+                    yield return Failure<GeneralSocketMessage, Error>(
                         new ConnectionLost(_webSocket.State));
 
                     yield break;
@@ -108,14 +106,14 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
                     .TryGetValue(out var received, out var receiveException))
                 {
                     if (receiveException is not OperationCanceledException)
-                        yield return Failure<SocketGeneralResponse, Error>(new ConnectionError(receiveException));
+                        yield return Failure<GeneralSocketMessage, Error>(new ConnectionError(receiveException));
 
                     yield break;
                 }
 
                 if (received.MessageType is not WebSocketMessageType.Text)
                 {
-                    yield return Failure<SocketGeneralResponse, Error>(
+                    yield return Failure<GeneralSocketMessage, Error>(
                         new UnknownMessageType($"Received unsupported message type: {received.MessageType}"));
 
                     yield break;
@@ -124,7 +122,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
                 if (!TryIncrementByChecked(ref _receiveBufferWPos, received.Count)
                     || _receiveBufferWPos > MaxMessageLength)
                 {
-                    yield return Failure<SocketGeneralResponse, Error>(
+                    yield return Failure<GeneralSocketMessage, Error>(
                         new MessageTooLong("Received message exceeds maximum length of 5 MB"));
 
                     yield break;
@@ -136,33 +134,10 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
                 // Message should already be in UTF-8 format in this case, no need for encoding conversion
                 var mem = _receiveBuffer.AsMemory(0, _receiveBufferWPos);
 
-                var messageTypeResult = TryGetMessageTypeFromJson(mem.Span);
-                if (!messageTypeResult.TryGetValue(out var messageType, out var deserializationError))
-                {
-                    yield return Failure<SocketGeneralResponse, Error>(deserializationError);
-                    continue;
-                }
-
-                yield return messageType switch
-                {
-                    "upload" => TryDeserializeMessage<SocketMessage<UploadScoreResponse>>(mem.Span, _jsonOptions)
-                        .TryGetValue(out var uploadMessage, out deserializationError)
-                        ? new Upload(uploadMessage.Data)
-                        : Failure<SocketGeneralResponse, Error>(deserializationError),
-
-                    "accepted" => TryDeserializeMessage<SocketMessage<AcceptedScoreResponse>>(mem.Span, _jsonOptions)
-                        .TryGetValue(out var acceptedMessage, out deserializationError)
-                        ? new Accepted(acceptedMessage.Data)
-                        : Failure<SocketGeneralResponse, Error>(deserializationError),
-
-                    "rejected" => TryDeserializeMessage<SocketMessage<RejectedScoreResponse>>(mem.Span, _jsonOptions)
-                        .TryGetValue(out var rejectedMessage, out deserializationError)
-                        ? new Rejected(rejectedMessage.Data)
-                        : Failure<SocketGeneralResponse, Error>(deserializationError),
-
-                    _ => Failure<SocketGeneralResponse, Error>(
-                        new UnknownMessageType($"Received unknown message type '{messageType}'"))
-                };
+                yield return TryDeserializeMessage<GeneralSocketMessage>(mem.Span, _jsonOptions)
+                    .TryGetValue(out var test, out var error)
+                    ? Success<GeneralSocketMessage, Error>(test)
+                    : Failure<GeneralSocketMessage, Error>(error);
 
                 _receiveBufferWPos = 0;
             }

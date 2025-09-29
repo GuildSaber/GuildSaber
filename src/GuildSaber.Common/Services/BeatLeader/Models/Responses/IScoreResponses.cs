@@ -1,10 +1,12 @@
+using System.Text.Json.Serialization;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 
 namespace GuildSaber.Common.Services.BeatLeader.Models.Responses;
 
 public interface IUnprocessedScore
 {
-    string PlayerId { get; init; }
+    BeatLeaderId PlayerId { get; init; }
+
     string LeaderboardId { get; init; }
     int BaseScore { get; init; }
     int ModifiedScore { get; init; }
@@ -25,7 +27,9 @@ public interface IUnprocessedScore
 
 public interface IProcessedScore : IUnprocessedScore
 {
+    [JsonConverter(typeof(BeatLeaderScoreIdJsonConverter))]
     BeatLeaderScoreId Id { get; init; }
+
     int Rank { get; init; }
     string Country { get; init; }
     string Replay { get; init; }

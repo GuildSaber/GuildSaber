@@ -1,11 +1,10 @@
 using CSharpFunctionalExtensions;
 using GuildSaber.Common.Services.BeatLeader;
+using GuildSaber.Common.Services.BeatLeader.Models.Responses;
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Mappers.BeatLeader;
 using Microsoft.EntityFrameworkCore;
-using Upload = GuildSaber.Common.Services.BeatLeader.Models.Responses.SocketGeneralResponse.Upload;
-using Accepted = GuildSaber.Common.Services.BeatLeader.Models.Responses.SocketGeneralResponse.Accepted;
-using Rejected = GuildSaber.Common.Services.BeatLeader.Models.Responses.SocketGeneralResponse.Rejected;
 
 namespace GuildSaber.Api.Features.Scores;
 
@@ -67,11 +66,11 @@ public class BLScoreSyncWorker(
 
                 var dbScore = response switch
                 {
-                    Upload(var score) => score.Map(playerId, difficultyId),
-                    Accepted(var score) => score.Map((await beatLeaderApi
-                        .GetScoreStatisticsAsync(score.Id)).GetValueOrDefault()!.Map(), playerId, difficultyId),
-                    Rejected(var score) => score.Map((await beatLeaderApi
-                        .GetScoreStatisticsAsync(score.Id)).GetValueOrDefault()!.Map(), playerId, difficultyId),
+                    GeneralSocketMessage<UploadedScore>(var upload) => upload.Map(playerId, difficultyId),
+                    GeneralSocketMessage<AcceptedScore>(var accepted) => accepted.Map((await beatLeaderApi
+                        .GetScoreStatisticsAsync(accepted.Id)).GetValueOrDefault().Map(), playerId, difficultyId),
+                    GeneralSocketMessage<RejectedScore>(var rejected) => rejected.Map((await beatLeaderApi
+                        .GetScoreStatisticsAsync(rejected.Id)).GetValueOrDefault().Map(), playerId, difficultyId),
                     _ => throw new InvalidOperationException(
                         $"Unknown message type received from BeatLeader: {response.GetType().Name}")
                 };
@@ -89,9 +88,9 @@ public class BLScoreSyncWorker(
     /// Retrieves the PlayerId for a given BeatLeader ID from the database.
     /// </summary>
     private static async Task<Maybe<PlayerId>> GetPlayerIdAsync(
-        string beatleaderId, ServerDbContext dbContext, CancellationToken token)
+        BeatLeaderId beatleaderId, ServerDbContext dbContext, CancellationToken token)
         => await dbContext.Players
-                .Where(x => x.LinkedAccounts.BeatLeaderId == ulong.Parse(beatleaderId))
+                .Where(x => x.LinkedAccounts.BeatLeaderId == beatleaderId)
                 .Select(x => x.Id)
                 .Cast<PlayerId?>()
                 .FirstOrDefaultAsync(token) switch

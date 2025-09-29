@@ -29,7 +29,7 @@ public record CompactScoreResponse
 public record ScoreResponse : IProcessedScore, IWithPP, IWithPlayer, IWithScoreImprovement, IWithReplaysWatched
 {
     public required BeatLeaderScoreId Id { get; init; }
-    public required string PlayerId { get; init; }
+    public required BeatLeaderId PlayerId { get; init; }
     public required string LeaderboardId { get; init; }
     public required int BaseScore { get; init; }
     public required int ModifiedScore { get; init; }

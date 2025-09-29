@@ -10,13 +10,15 @@ namespace GuildSaber.Database.Models.Mappers.BeatLeader;
 
 public static class ScoreStatisticsMappers
 {
-    public static ScoreStatistics Map(this BLScoreStatistics self) => new()
-    {
-        HitTracker = self.HitTracker.Map(),
-        AccuracyTracker = self.AccuracyTracker.Map(),
-        WinTracker = self.WinTracker.Map(),
-        ScoreGraphTracker = self.ScoreGraphTracker.Map()
-    };
+    public static ScoreStatistics? Map(this BLScoreStatistics? self) => self is null
+        ? null
+        : new ScoreStatistics
+        {
+            HitTracker = self.HitTracker.Map(),
+            AccuracyTracker = self.AccuracyTracker.Map(),
+            WinTracker = self.WinTracker.Map(),
+            ScoreGraphTracker = self.ScoreGraphTracker.Map()
+        };
 
     private static HitTracker Map(this BLHitTracker self) => new(
         Max115Streak: self.MaxStreak,

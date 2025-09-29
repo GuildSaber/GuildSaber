@@ -1,53 +1,44 @@
+using System.Text.Json.Serialization;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 
 namespace GuildSaber.Common.Services.BeatLeader.Models.Responses;
 
 /// <summary>
-/// Represents different types of score events received from the BeatLeader WebSocket.
+/// Represents a general socket message received from the BeatLeader WebSocket.
+/// This base record is used for polymorphic deserialization of different score-related events.
+/// For specific event types, see the derived records of <see cref="GeneralSocketMessage{T}" />.
 /// </summary>
+/// <param name="BeatLeaderId">The BeatLeader ID of the player associated with the score event.</param>
+/// <param name="LeaderboardId">The ID of the leaderboard associated with the score event.</param>
 /// <remarks>
 /// The BeatLeader WebSocket sends events in the format: { message: string, data: {various json objects} }
 /// Depending on the 'message' field, the 'data' field will contain different types of score-related information.
 /// </remarks>
-public abstract record SocketGeneralResponse(string BeatLeaderId, string LeaderboardId)
+[JsonDerivedType(typeof(GeneralSocketMessage<UploadedScore>), "upload")]
+[JsonDerivedType(typeof(GeneralSocketMessage<AcceptedScore>), "accepted")]
+[JsonDerivedType(typeof(GeneralSocketMessage<RejectedScore>), "rejected")]
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "message")]
+public abstract record GeneralSocketMessage(BeatLeaderId BeatLeaderId, string LeaderboardId);
+
+/// <summary>
+/// Represents different types of score events received from the BeatLeader WebSocket.
+/// </summary>
+public record GeneralSocketMessage<T>(T Data) : GeneralSocketMessage(Data.PlayerId, Data.LeaderboardId)
+    where T : IUnprocessedScore
 {
-    /// <summary>
-    /// Represents a new score that has been uploaded but not yet processed.
-    /// </summary>
-    /// <param name="Score">The score that has been uploaded.</param>
-    /// <remarks>
-    /// This message is sent for ANY score upload, regardless of whether it's a PB or not.
-    /// For non-PB scores, this will be the only message received for that score.
-    /// </remarks>
-    public record Upload(UploadScoreResponse Score)
-        : SocketGeneralResponse(Score.PlayerId, Score.LeaderboardId);
-
-    /// <summary>
-    /// Represents a score that has been processed and accepted by BeatLeader.
-    /// </summary>
-    /// <param name="Score">The score that has been accepted.</param>
-    /// <remarks>
-    /// This message is only sent when a score is saved to the leaderboard as a Personal Best (PB).
-    /// It follows the initial 'upload' message for that score.
-    /// </remarks>
-    public record Accepted(AcceptedScoreResponse Score)
-        : SocketGeneralResponse(Score.PlayerId, Score.LeaderboardId);
-
-    /// <summary>
-    /// Represents a score that has been processed and rejected by BeatLeader.
-    /// </summary>
-    /// <param name="Score">The score that has been rejected.</param>
-    /// <remarks>
-    /// This message is only sent for scores that were previously accepted but then removed from the leaderboard.
-    /// Reasons for removal include: banned maps, deleted scores, or scores marked as suspicious.
-    /// </remarks>
-    public record Rejected(RejectedScoreResponse Score)
-        : SocketGeneralResponse(Score.PlayerId, Score.LeaderboardId);
+    public required T Data { get; init; } = Data;
 }
 
-public record UploadScoreResponse : IUnprocessedScore
+/// <summary>
+/// Represents a new score that has been uploaded but not yet processed.
+/// </summary>
+/// <remarks>
+/// This represent ANY score upload, regardless of whether it's a PB or not.
+/// For non-PB scores, this will be the only score event received for that score.
+/// </remarks>
+public record UploadedScore : IUnprocessedScore
 {
-    public required string PlayerId { get; init; }
+    public required BeatLeaderId PlayerId { get; init; }
     public required string LeaderboardId { get; init; }
 
     public required int BaseScore { get; init; }
@@ -68,7 +59,14 @@ public record UploadScoreResponse : IUnprocessedScore
     public required int TimePost { get; init; }
 }
 
-public record AcceptedScoreResponse : IProcessedScore, IWithScoreContext, IWithAcc
+/// <summary>
+/// Represents a score that has been processed and accepted by BeatLeader.
+/// </summary>
+/// <remarks>
+/// This only represent a score when it is saved to the leaderboard as a Personal Best (PB).
+/// It follows the initial 'upload' message for that score.
+/// </remarks>
+public record AcceptedScore : IProcessedScore, IWithScoreContext, IWithAcc
 {
     public required float Pp { get; init; }
     public required BeatLeaderScoreId Id { get; init; }
@@ -80,7 +78,7 @@ public record AcceptedScoreResponse : IProcessedScore, IWithScoreContext, IWithA
     public required string Replay { get; init; }
     public required ReplayOffsets Offsets { get; init; }
 
-    public required string PlayerId { get; init; }
+    public required BeatLeaderId PlayerId { get; init; }
     public required string LeaderboardId { get; init; }
 
     public required int BaseScore { get; init; }
@@ -107,7 +105,14 @@ public record AcceptedScoreResponse : IProcessedScore, IWithScoreContext, IWithA
     public required ICollection<ScoreContextExtensionResponse> ContextExtensions { get; init; }
 }
 
-public record RejectedScoreResponse : IProcessedScore, IWithScoreContext, IWithAcc
+/// <summary>
+/// Represents a score that has been processed and rejected by BeatLeader.
+/// </summary>
+/// <remarks>
+/// This only represent scores that were previously accepted but then removed from the leaderboard.
+/// Reasons for removal include: banned maps, deleted scores, or scores marked as suspicious.
+/// </remarks>
+public record RejectedScore : IProcessedScore, IWithScoreContext, IWithAcc
 {
     public required float Pp { get; init; }
     public required BeatLeaderScoreId Id { get; init; }
@@ -119,7 +124,7 @@ public record RejectedScoreResponse : IProcessedScore, IWithScoreContext, IWithA
     public required string Replay { get; init; }
     public required ReplayOffsets Offsets { get; init; }
 
-    public required string PlayerId { get; init; }
+    public required BeatLeaderId PlayerId { get; init; }
     public required string LeaderboardId { get; init; }
 
     public required int BaseScore { get; init; }

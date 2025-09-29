@@ -46,9 +46,9 @@ public class BeatLeaderSocketTests : IAsyncDisposable
         {
             if (!result.TryGetValue(out var value)) continue;
 
-            if (value is not SocketGeneralResponse.Upload &&
-                value is not SocketGeneralResponse.Accepted &&
-                value is not SocketGeneralResponse.Rejected)
+            if (value is not GeneralSocketMessage<UploadedScore> &&
+                value is not GeneralSocketMessage<AcceptedScore> &&
+                value is not GeneralSocketMessage<RejectedScore>)
             {
                 result.FailureShould().BeOfType<ClientWebSocketStreamError.UnknownMessageType>(
                     "because we expect only known message types from the stream");
@@ -145,7 +145,7 @@ public class BeatLeaderSocketTests : IAsyncDisposable
     {
         // Arrange
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        var messages = new List<SocketGeneralResponse>();
+        var messages = new List<GeneralSocketMessage>();
         const int targetCount = 3;
 
         // Act
@@ -160,9 +160,9 @@ public class BeatLeaderSocketTests : IAsyncDisposable
         // Assert
         messages.Should().HaveCountGreaterThanOrEqualTo(1, "because at least one message should be received");
         messages.Should().OnlyContain(m =>
-                m.GetType() == typeof(SocketGeneralResponse.Upload)
-                || m.GetType() == typeof(SocketGeneralResponse.Accepted)
-                || m.GetType() == typeof(SocketGeneralResponse.Rejected),
+                m.GetType() == typeof(GeneralSocketMessage<UploadedScore>)
+                || m.GetType() == typeof(GeneralSocketMessage<AcceptedScore>)
+                || m.GetType() == typeof(GeneralSocketMessage<RejectedScore>),
             "because all messages should be of known types");
     }
 
