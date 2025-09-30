@@ -187,34 +187,6 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
         }
     }
 
-    private Result<string, DeserializationError> TryGetMessageTypeFromJson(Span<byte> utf8Json)
-    {
-        var reader = new Utf8JsonReader(utf8Json);
-        if (!reader.Read() || reader.TokenType != JsonTokenType.StartObject)
-            return Failure<string, DeserializationError>(
-                new DeserializationError(new JsonException("Received JSON is not an object"),
-                    Encoding.UTF8.GetString(utf8Json)));
-
-        if (!reader.Read() || reader.TokenType != JsonTokenType.PropertyName ||
-            reader.GetString() != "message")
-            return Failure<string, DeserializationError>(
-                new DeserializationError(new JsonException("Received JSON does not contain 'message' property"),
-                    Encoding.UTF8.GetString(utf8Json)));
-
-        if (!reader.Read() || reader.TokenType != JsonTokenType.String)
-            return Failure<string, DeserializationError>(
-                new DeserializationError(new JsonException("Received 'message' property is not a string"),
-                    Encoding.UTF8.GetString(utf8Json)));
-
-        var messageType = reader.GetString();
-        if (messageType is null)
-            return Failure<string, DeserializationError>(
-                new DeserializationError(new JsonException("Received 'message' property is null"),
-                    Encoding.UTF8.GetString(utf8Json)));
-
-        return Success<string, DeserializationError>(messageType);
-    }
-
     private bool TryIncrementByChecked(ref int value, int increment)
     {
         try
