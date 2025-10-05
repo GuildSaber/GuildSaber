@@ -36,17 +36,17 @@ public class RankedScore : IComparable<RankedScore>
     public required EffectiveScore EffectiveScore { get; set; }
     public required RawPoints RawPoints { get; set; }
 
-    public required uint Rank { get; set; }
+    public required int Rank { get; set; }
     /* Date won't be stored here, it can just be based on the underlying score's SetAt property.
      (Because the ranked map and rules can be tweaked, reassigning dates here would be confusing) */
 
     public int CompareTo(RankedScore? other) => throw new NotImplementedException();
 
-    public readonly record struct RankedScoreId(ulong Value) : IEFStrongTypedId<RankedScoreId, ulong>
+    public readonly record struct RankedScoreId(long Value) : IEFStrongTypedId<RankedScoreId, long>
     {
         public static bool TryParse(string from, out RankedScoreId value)
         {
-            if (ulong.TryParse(from, out var id))
+            if (long.TryParse(from, out var id))
             {
                 value = new RankedScoreId(id);
                 return true;
@@ -56,7 +56,7 @@ public class RankedScore : IComparable<RankedScore>
             return false;
         }
 
-        public static implicit operator ulong(RankedScoreId id)
+        public static implicit operator long(RankedScoreId id)
             => id.Value;
 
         public override string ToString()
@@ -133,10 +133,10 @@ public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id)
-            .HasGenericConversion<RankedScore.RankedScoreId, ulong>()
+            .HasGenericConversion<RankedScore.RankedScoreId, long>()
             .ValueGeneratedOnAdd();
         builder.Property(x => x.EffectiveScore)
-            .HasConversion<ulong>(from => from, to => EffectiveScore.CreateUnsafe(to).Value);
+            .HasConversion<int>(from => from, to => EffectiveScore.CreateUnsafe(to).Value);
         builder.Property(x => x.RawPoints)
             .HasConversion<float>(from => from, to => RawPoints.CreateUnsafe(to).Value);
 

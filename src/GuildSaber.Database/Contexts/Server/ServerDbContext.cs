@@ -59,6 +59,10 @@ public class ServerDbContext : DbContext
         );
     }
 
+    /// <remarks>
+    /// Sadly, can't use ApplyConfigurationsFromAssembly because there isn't only one DbContext registering
+    /// configurations in this assembly.
+    /// </remarks>
     protected override void OnModelCreating(ModelBuilder builder) => builder
         .ApplyConfiguration(new GuildConfiguration())
         .ApplyConfiguration(new GuildContextConfiguration())

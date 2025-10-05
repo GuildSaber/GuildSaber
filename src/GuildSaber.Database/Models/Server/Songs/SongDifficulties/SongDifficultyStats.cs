@@ -7,9 +7,9 @@ namespace GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 public record SongDifficultyStats(
     MaxScore MaxScore,
     NJS NoteJumpSpeed,
-    uint NoteCount,
-    uint BombCount,
-    uint ObstacleCount,
+    int NoteCount,
+    int BombCount,
+    int ObstacleCount,
     float NotesPerSecond,
     double Duration
 );
@@ -20,7 +20,7 @@ public class SongDifficultyStatsConfiguration : IComplexPropertyConfiguration<So
         ComplexPropertyBuilder<SongDifficultyStats> builder)
     {
         builder.Property(x => x.MaxScore)
-            .HasConversion<ulong>(from => from, to => MaxScore.CreateUnsafe(to).Value);
+            .HasConversion<int>(from => from, to => MaxScore.CreateUnsafe(to).Value);
         builder.Property(x => x.NoteJumpSpeed)
             .HasConversion<float>(from => from, to => NJS.CreateUnsafe(to).Value);
 

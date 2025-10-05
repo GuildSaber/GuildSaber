@@ -22,7 +22,7 @@ public static class GuildSeeder
                 description: "A Level based ranking with category support."
                              + "Come and fight for who’s the best in Vibro, Tech, Shitpost or Jumps!",
                 color: Color.FromArgb(255, 166, 19, 111),
-                createdAt: DateTimeOffset.Now
+                createdAt: DateTimeOffset.UtcNow
             ).Unwrap(),
             Requirements = new GuildRequirements
             {
@@ -51,7 +51,11 @@ public static class GuildSeeder
                                 description: "Challenge Pass points. The amount you get per valid map pass is fixed,"
                                              + "and the total amount you get per map on your profile exponentially decrease."
                             ).Unwrap(),
-                            CurveSettings = CurveSettings.Default,
+                            CurveSettings = new CurveSettings
+                            {
+                                Difficulty = new CustomCurve([(0, 0), (0.5, 0.5), (1, 1)]),
+                                Accuracy = new CustomCurve([(0, 0), (0.5, 0.5), (1, 1)])
+                            },
                             WeightingSettings = WeightingSettings.Default
                         }
                     ]
@@ -102,7 +106,7 @@ public static class GuildSeeder
                 description: "The legacy of the challenge ranking, a higher mapping standard, a loving community."
                              + "Why waiting? Join-us!",
                 color: Color.FromArgb(255, 255, 124, 0),
-                createdAt: DateTimeOffset.Now
+                createdAt: DateTimeOffset.UtcNow
             ).Unwrap(),
             Status = Guild.EGuildStatus.Featured,
             Requirements = new GuildRequirements
@@ -112,7 +116,7 @@ public static class GuildSeeder
                 MaxRank = 10,
                 MinPP = 0,
                 MaxPP = 10000,
-                AccountAgeUnix = (uint?)TimeSpan.FromDays(365 * 6).Seconds
+                AccountAgeUnix = TimeSpan.FromDays(365 * 6).Seconds
             },
             Contexts =
             [
@@ -137,7 +141,11 @@ public static class GuildSeeder
                                 "The Beat Saber Challenge Community points. The amount you get per valid map pass is fixed,"
                                 + "and the total amount you get per map on your profile exponentially decrease."
                             ).Unwrap(),
-                            CurveSettings = CurveSettings.Default,
+                            CurveSettings = new CurveSettings
+                            {
+                                Difficulty = new CustomCurve([(0, 0), (0.5, 0.5), (1, 1)]),
+                                Accuracy = new CustomCurve([(0, 0), (0.5, 0.5), (1, 1)])
+                            },
                             WeightingSettings = WeightingSettings.Default
                         }
                     ]

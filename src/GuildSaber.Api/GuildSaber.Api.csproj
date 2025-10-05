@@ -11,7 +11,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Pomelo.EntityFrameworkCore.MySql"/>
         <PackageReference Include="AspNet.Security.OAuth.Discord"/>
         <PackageReference Include="CSharpFunctionalExtensions.HttpResults"/>
         <PackageReference Include="Hangfire.AspNetCore"/>
@@ -23,7 +22,6 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="MyCSharp.HttpUserAgentParser.AspNetCore"/>
-        <PackageReference Include="Pomelo.EntityFrameworkCore.MySql"/>
         <PackageReference Include="Scalar.AspNetCore.Microsoft"/>
     </ItemGroup>
 

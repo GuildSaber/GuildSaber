@@ -20,19 +20,19 @@ public abstract record AbstractScore
     public required EModifiers Modifiers { get; init; }
     public required DateTimeOffset SetAt { get; init; }
 
-    public required uint? MaxCombo { get; init; }
+    public required int? MaxCombo { get; init; }
     public required bool IsFullCombo { get; init; }
-    public required uint MissedNotes { get; init; }
-    public required uint BadCuts { get; init; }
+    public required int MissedNotes { get; init; }
+    public required int BadCuts { get; init; }
 
     public required PlayerHardwareInfo.EHMD HMD { get; set; }
     public enum EScoreType : byte { ScoreSaber = 0, BeatLeader = 1 }
 
-    public readonly record struct ScoreId(uint Value) : IEFStrongTypedId<ScoreId, uint>
+    public readonly record struct ScoreId(int Value) : IEFStrongTypedId<ScoreId, int>
     {
         public static bool TryParse(string from, out ScoreId value)
         {
-            if (uint.TryParse(from, out var id))
+            if (int.TryParse(from, out var id))
             {
                 value = new ScoreId(id);
                 return true;
@@ -42,7 +42,7 @@ public abstract record AbstractScore
             return false;
         }
 
-        public static implicit operator uint(ScoreId id)
+        public static implicit operator int(ScoreId id)
             => id.Value;
 
         public override string ToString()
@@ -79,7 +79,7 @@ public class AbstractScoreConfiguration : IEntityTypeConfiguration<AbstractScore
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id)
-            .HasGenericConversion<AbstractScore.ScoreId, uint>()
+            .HasGenericConversion<AbstractScore.ScoreId, int>()
             .ValueGeneratedOnAdd();
         builder.HasDiscriminator(x => x.Type)
             .HasValue<ScoreSaberScore>(AbstractScore.EScoreType.ScoreSaber)
@@ -87,7 +87,7 @@ public class AbstractScoreConfiguration : IEntityTypeConfiguration<AbstractScore
             .IsComplete();
 
         builder.Property(x => x.BaseScore)
-            .HasConversion<ulong>(from => from, to => BaseScore.CreateUnsafe(to).Value);
+            .HasConversion<int>(from => from, to => BaseScore.CreateUnsafe(to).Value);
 
         builder.HasOne<Player>()
             .WithMany().HasForeignKey(x => x.PlayerId)

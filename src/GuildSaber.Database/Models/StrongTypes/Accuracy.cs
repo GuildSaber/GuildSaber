@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Database.Models.StrongTypes;
@@ -10,13 +11,12 @@ public readonly record struct Accuracy
     private Accuracy(float value)
         => _value = value;
 
-    public static Result<Accuracy> TryCreate(float? value)
-        => value switch
-        {
-            null => Failure<Accuracy>("Accuracy must not be null"),
-            < 0 or > 100 => Failure<Accuracy>("Accuracy must be between 0 and 100"),
-            _ => Success(new Accuracy(value.Value))
-        };
+    public static Result<Accuracy> TryCreate(float? value) => value switch
+    {
+        null => Failure<Accuracy>("Accuracy must not be null"),
+        < 0 or > 100 => Failure<Accuracy>("Accuracy must be between 0 and 100"),
+        _ => Success(new Accuracy(value.Value))
+    };
 
     public static Result<Accuracy> TryParse(string? value)
         => float.TryParse(value, out var parsed)
@@ -46,5 +46,5 @@ public readonly record struct Accuracy
         => left._value < right._value;
 
     public override string ToString()
-        => _value.ToString();
+        => _value.ToString(CultureInfo.InvariantCulture);
 }

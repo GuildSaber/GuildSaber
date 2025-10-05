@@ -19,11 +19,11 @@ public class SongDifficulty
     public GameMode GameMode { get; init; } = null!;
     public Song Song { get; init; } = null!;
 
-    public readonly record struct SongDifficultyId(ulong Value) : IEFStrongTypedId<SongDifficultyId, ulong>
+    public readonly record struct SongDifficultyId(long Value) : IEFStrongTypedId<SongDifficultyId, long>
     {
         public static bool TryParse(string from, out SongDifficultyId value)
         {
-            if (ulong.TryParse(from, out var id))
+            if (long.TryParse(from, out var id))
             {
                 value = new SongDifficultyId(id);
                 return true;
@@ -33,7 +33,7 @@ public class SongDifficulty
             return false;
         }
 
-        public static implicit operator ulong(SongDifficultyId id)
+        public static implicit operator long(SongDifficultyId id)
             => id.Value;
 
         public override string ToString()
@@ -47,7 +47,7 @@ public class SongDifficultyConfiguration : IEntityTypeConfiguration<SongDifficul
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id)
-            .HasGenericConversion<SongDifficulty.SongDifficultyId, ulong>()
+            .HasGenericConversion<SongDifficulty.SongDifficultyId, long>()
             .ValueGeneratedOnAdd();
         builder.Property(x => x.BLLeaderboardId)
             .HasConversion<string?>(from => from, to => BLLeaderboardId.CreateUnsafe(to));

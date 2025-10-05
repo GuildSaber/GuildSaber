@@ -20,7 +20,7 @@ public class Member
     public IList<GuildContext> Contexts { get; init; } = null!;
     public IList<GuildContextMember> ContextMembers { get; init; } = null!;
 
-    public enum EJoinState : uint
+    public enum EJoinState
     {
         None = 0,
         Joined = 1 << 0,
@@ -31,7 +31,7 @@ public class Member
     }
 
     [Flags]
-    public enum EPermission : uint
+    public enum EPermission
     {
         None = 0,
         GuildLeader = 1 << 0,

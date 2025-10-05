@@ -1,10 +1,6 @@
-﻿// Here you could define global logic that would affect all tests
-
-// You can use attributes at the assembly level to apply to all tests in the assembly
-
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Aspire.Hosting;
-using Aspire.Hosting.MySql;
+using Aspire.Hosting.Postgres;
 using Aspire.Hosting.Redis;
 using Projects;
 
@@ -21,12 +17,13 @@ public class GlobalHooks
     [Before(TestSession)]
     public static async Task SetUp()
     {
-        // Arrange
-        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<GuildSaber_AppHost>();
+        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<GuildSaber_AppHost>(
+            args: [],
+            configureBuilder: (appOptions, _) => appOptions.AllowUnsecuredTransport = true);
 
         appHost.WithContainersLifetime(ContainerLifetime.Session);
         appHost.WithRandomVolumeNames();
-        appHost.RemoveResources<PhpMyAdminContainerResource>();
+        appHost.RemoveResources<PgWebContainerResource>();
         appHost.RemoveResources<RedisCommanderResource>();
 
         appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
@@ -36,6 +33,7 @@ public class GlobalHooks
 
         App = await appHost.BuildAsync();
         NotificationService = App.Services.GetRequiredService<ResourceNotificationService>();
+
         await App.StartAsync();
     }
 

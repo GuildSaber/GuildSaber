@@ -3,8 +3,8 @@ namespace GuildSaber.Api.Features.Guilds.Members;
 public static class MemberResponses
 {
     public readonly record struct Member(
-        uint PlayerId,
-        uint GuildId,
+        int PlayerId,
+        int GuildId,
         DateTimeOffset InitializedAt,
         DateTimeOffset EditedAt,
         EPermission Permissions,
@@ -12,7 +12,7 @@ public static class MemberResponses
         int Priority
     );
 
-    public enum EJoinState : uint
+    public enum EJoinState
     {
         None = 0,
         Joined = 1 << 0,
@@ -23,7 +23,7 @@ public static class MemberResponses
     }
 
     [Flags]
-    public enum EPermission : uint
+    public enum EPermission
     {
         None = 0,
         GuildLeader = 1 << 0,

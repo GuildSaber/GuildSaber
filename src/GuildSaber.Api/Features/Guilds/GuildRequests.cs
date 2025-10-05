@@ -14,11 +14,11 @@ public static class GuildRequests
 
     public record CreateGuildRequirements(
         bool RequireSubmission,
-        uint? MinRank,
-        uint? MaxRank,
-        uint? MinPP,
-        uint? MaxPP,
-        uint? AccountAgeUnix
+        int? MinRank,
+        int? MaxRank,
+        int? MinPP,
+        int? MaxPP,
+        int? AccountAgeUnix
     );
 
     public record CreateGuildInfo(

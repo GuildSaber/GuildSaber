@@ -11,16 +11,14 @@
 
     <ItemGroup>
         <PackageReference Include="Aspire.Hosting.AppHost"/>
-        <PackageReference Include="Aspire.Hosting.MySql"/>
+        <PackageReference Include="Aspire.Hosting.PostgreSQL"/>
         <PackageReference Include="Aspire.Hosting.Redis"/>
         <PackageReference Include="Aspire.Hosting.Valkey"/>
-        <PackageReference Include="Aspire.Pomelo.EntityFrameworkCore.MySql"/>
         <PackageReference Include="KubernetesClient"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Pomelo.EntityFrameworkCore.MySql"/>
     </ItemGroup>
 
     <ItemGroup>

@@ -2,7 +2,7 @@
 
 namespace GuildSaber.Database.Extensions;
 
-public interface IComplexPropertyConfiguration<T>
+public interface IComplexPropertyConfiguration<T> where T : notnull
 {
     public ComplexPropertyBuilder<T> Configure(ComplexPropertyBuilder<T> builder);
 }
@@ -10,6 +10,6 @@ public interface IComplexPropertyConfiguration<T>
 public static class EFCoreComplexPropertyConfigurationExtensions
 {
     public static ComplexPropertyBuilder<T> Configure<T>(
-        this ComplexPropertyBuilder<T> self, IComplexPropertyConfiguration<T> builder)
+        this ComplexPropertyBuilder<T> self, IComplexPropertyConfiguration<T> builder) where T : notnull
         => builder.Configure(self);
 }

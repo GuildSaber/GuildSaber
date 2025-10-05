@@ -10,14 +10,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Pomelo.EntityFrameworkCore.MySql"/>
         <PackageReference Include="Discord.Net"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Hosting"/>
-        <PackageReference Include="Pomelo.EntityFrameworkCore.MySql"/>
     </ItemGroup>
 
     <ItemGroup>

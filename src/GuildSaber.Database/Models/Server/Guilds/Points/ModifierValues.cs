@@ -1,6 +1,6 @@
 namespace GuildSaber.Database.Models.Server.Guilds.Points;
 
-public readonly record struct ModifierSettings(
+public readonly record struct ModifierValues(
     float OffPlatform = -0.50f,
     float NoFail = -0.50f,
     float NoBombs = -0.10f,

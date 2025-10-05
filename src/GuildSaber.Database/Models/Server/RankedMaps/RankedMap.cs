@@ -19,11 +19,11 @@ public class RankedMap
     public IList<MapVersion> MapVersions { get; init; } = null!;
     public IList<Category> Categories { get; init; } = null!;
 
-    public readonly record struct RankedMapId(ulong Value) : IEFStrongTypedId<RankedMapId, ulong>
+    public readonly record struct RankedMapId(long Value) : IEFStrongTypedId<RankedMapId, long>
     {
         public static bool TryParse(string from, out RankedMapId value)
         {
-            if (ulong.TryParse(from, out var id))
+            if (long.TryParse(from, out var id))
             {
                 value = new RankedMapId(id);
                 return true;
@@ -33,7 +33,7 @@ public class RankedMap
             return false;
         }
 
-        public static implicit operator ulong(RankedMapId id)
+        public static implicit operator long(RankedMapId id)
             => id.Value;
 
         public override string ToString()
@@ -46,11 +46,11 @@ public class RankedMapConfiguration : IEntityTypeConfiguration<RankedMap>
     public void Configure(EntityTypeBuilder<RankedMap> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Id).HasGenericConversion<RankedMap.RankedMapId, ulong>()
+        builder.Property(x => x.Id).HasGenericConversion<RankedMap.RankedMapId, long>()
             .ValueGeneratedOnAdd();
 
         builder.ComplexProperty(x => x.Requirements).Configure(new RankedMapRequirementsConfiguration());
-        builder.ComplexProperty(x => x.Rating);
+        builder.ComplexProperty(x => x.Rating).Configure(new RankedMapRatingConfiguration());
 
         builder.HasOne<Guild>()
             .WithMany(x => x.RankedMaps).HasForeignKey(x => x.GuildId)

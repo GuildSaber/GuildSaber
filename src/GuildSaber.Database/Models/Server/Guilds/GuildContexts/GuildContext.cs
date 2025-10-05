@@ -23,11 +23,11 @@ public class GuildContext
     public IList<Member> Members { get; init; } = null!;
     public IList<GuildContextMember> ContextMembers { get; init; } = null!;
 
-    public readonly record struct GuildContextId(uint Value) : IEFStrongTypedId<GuildContextId, uint>
+    public readonly record struct GuildContextId(int Value) : IEFStrongTypedId<GuildContextId, int>
     {
         public static bool TryParse(string from, out GuildContextId value)
         {
-            if (uint.TryParse(from, out var id))
+            if (int.TryParse(from, out var id))
             {
                 value = new GuildContextId(id);
                 return true;
@@ -37,7 +37,7 @@ public class GuildContext
             return false;
         }
 
-        public static implicit operator uint(GuildContextId id)
+        public static implicit operator int(GuildContextId id)
             => id.Value;
 
         public override string ToString()
@@ -61,7 +61,7 @@ public class GuildContextConfiguration : IEntityTypeConfiguration<GuildContext>
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id)
-            .HasGenericConversion<GuildContext.GuildContextId, uint>()
+            .HasGenericConversion<GuildContext.GuildContextId, int>()
             .ValueGeneratedOnAdd();
         builder.ComplexProperty(x => x.Info).Configure(new GuildContextInfoConfiguration());
 

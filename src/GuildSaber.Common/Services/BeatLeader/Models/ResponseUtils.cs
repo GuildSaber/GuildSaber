@@ -12,9 +12,3 @@ public class ResponseWithMetadata<T>
     public required Metadata Metadata { get; init; }
     public required T[] Data { get; init; }
 }
-
-public record SocketMessage<T>
-{
-    public required string Message { get; init; }
-    public required T Data { get; init; }
-}

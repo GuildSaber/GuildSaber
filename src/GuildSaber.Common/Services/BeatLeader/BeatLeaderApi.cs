@@ -145,4 +145,17 @@ public class BeatLeaderApi(HttpClient httpClient)
             var response => await Try(() => response.Content
                 .ReadFromJsonAsync<ScoreStatistics>(_jsonOptions))
         };
+
+    public async Task<Result<ExMachinaResponse?>> GetExMachinaStarRatingAsync(
+        string hash, int difficulty, string gameMode)
+        => await httpClient.GetAsync($"https://stage.api.beatleader.net/ppai2/{hash}/{gameMode}/{difficulty}") switch
+        {
+            { StatusCode: HttpStatusCode.NotFound } => Success<ExMachinaResponse?>(null),
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<ExMachinaResponse?>(
+                    $"Failed to retrieve ExMachina rating for song {hash} difficulty {difficulty} gameMode {gameMode}: {statusCode} {reasonPhrase}"
+                ),
+            var response => await Try(() => response.Content
+                .ReadFromJsonAsync<ExMachinaResponse>(_jsonOptions))
+        };
 }

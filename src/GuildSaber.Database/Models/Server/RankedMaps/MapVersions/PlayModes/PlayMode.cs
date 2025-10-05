@@ -9,11 +9,11 @@ public class PlayMode
     public PlayModeId Id { get; init; }
     public required string Name { get; set; }
 
-    public readonly record struct PlayModeId(ulong Value) : IEFStrongTypedId<PlayModeId, ulong>
+    public readonly record struct PlayModeId(int Value) : IEFStrongTypedId<PlayModeId, int>
     {
         public static bool TryParse(string from, out PlayModeId value)
         {
-            if (ulong.TryParse(from, out var id))
+            if (int.TryParse(from, out var id))
             {
                 value = new PlayModeId(id);
                 return true;
@@ -23,7 +23,7 @@ public class PlayMode
             return false;
         }
 
-        public static implicit operator ulong(PlayModeId id)
+        public static implicit operator int(PlayModeId id)
             => id.Value;
 
         public override string ToString()
@@ -37,7 +37,7 @@ public class PlayModeConfiguration : IEntityTypeConfiguration<PlayMode>
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id)
-            .HasGenericConversion<PlayMode.PlayModeId, ulong>()
+            .HasGenericConversion<PlayMode.PlayModeId, int>()
             .ValueGeneratedOnAdd();
         builder.Property(x => x.Name).HasMaxLength(128);
     }

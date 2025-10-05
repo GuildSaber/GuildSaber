@@ -11,15 +11,15 @@ public class Point
     public GuildId GuildId { get; init; }
 
     public PointInfo Info { get; set; }
-    public ModifierSettings ModifierSettings { get; set; }
-    public CurveSettings CurveSettings { get; set; }
+    public ModifierValues ModifierValues { get; set; }
+    public required CurveSettings CurveSettings { get; set; }
     public WeightingSettings WeightingSettings { get; set; }
 
-    public readonly record struct PointId(uint Value) : IEFStrongTypedId<PointId, uint>
+    public readonly record struct PointId(int Value) : IEFStrongTypedId<PointId, int>
     {
         public static bool TryParse(string from, out PointId value)
         {
-            if (uint.TryParse(from, out var id))
+            if (int.TryParse(from, out var id))
             {
                 value = new PointId(id);
                 return true;
@@ -29,7 +29,7 @@ public class Point
             return false;
         }
 
-        public static implicit operator uint(PointId id)
+        public static implicit operator int(PointId id)
             => id.Value;
 
         public override string ToString()
@@ -43,12 +43,12 @@ public class PointConfiguration : IEntityTypeConfiguration<Point>
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id)
-            .HasGenericConversion<Point.PointId, uint>()
+            .HasGenericConversion<Point.PointId, int>()
             .ValueGeneratedOnAdd();
         builder.HasOne<Guild>().WithMany(x => x.Points).HasForeignKey(x => x.GuildId);
         builder.ComplexProperty(x => x.Info).Configure(new PointInfoConfiguration());
-        builder.ComplexProperty(x => x.ModifierSettings);
-        builder.ComplexProperty(x => x.CurveSettings);
+        builder.ComplexProperty(x => x.ModifierValues);
+        builder.ComplexProperty(x => x.CurveSettings).Configure(new CurveSettingsConfiguration());
         builder.ComplexProperty(x => x.WeightingSettings);
     }
 }

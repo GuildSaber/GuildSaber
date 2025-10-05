@@ -5,7 +5,7 @@ namespace GuildSaber.Database.Models.Server.Scores;
 
 public sealed record ScoreSaberScore : AbstractScore
 {
-    public required uint ScoreSaberScoreId { get; init; }
+    public required int ScoreSaberScoreId { get; init; }
     public required string? DeviceHmd { get; init; }
     public required string? DeviceControllerLeft { get; init; }
     public required string? DeviceControllerRight { get; init; }

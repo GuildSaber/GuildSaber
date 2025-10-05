@@ -56,16 +56,18 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
     /// <param name="cancellationToken">A cancellation token to cancel the enumeration.</param>
     /// <returns>
     /// An async enumerator that yields <see cref="Result{T, TError}" /> containing either:
-    /// - Success with a <see cref="SocketGeneralResponse" /> for valid messages
+    /// - Success with a <see cref="GeneralSocketMessage" /> for valid messages
     /// - Failure with an <see cref="Error" /> for connection issues, deserialization failures, or protocol errors
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown when the stream is already being enumerated.</exception>
     /// <remarks>
     /// The enumerator will:
-    /// - Establish a WebSocket connection to the BeatLeader general endpoint
-    /// - Continuously receive and parse JSON messages until cancellation or connection loss
-    /// - Automatically handle connection cleanup on completion or error
-    /// - Stop enumeration on cancellation, connection errors, or unknown message types
+    /// <list type="bullet">
+    ///     <item>Establish a WebSocket connection to the BeatLeader general endpoint</item>
+    ///     <item>Continuously receive and parse JSON messages until cancellation or connection loss</item>
+    ///     <item>Automatically handle connection cleanup on completion or error</item>
+    ///     <item>Stop enumeration on cancellation, connection errors, or unknown message types</item>
+    /// </list>
     /// Supported message types are: "upload", "accepted", and "rejected".
     /// Messages exceeding 5MB will result in a <see cref="Error.MessageTooLong" /> error.
     /// </remarks>

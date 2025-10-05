@@ -8,7 +8,6 @@ using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Guilds;
-using GuildSaber.Api.Features.Scores;
 using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Api.Hangfire;
 using GuildSaber.Api.Hangfire.Configuration;
@@ -80,7 +79,7 @@ builder.Services.AddHttpUserAgentParser()
 
 #region Database
 
-builder.AddMySqlDbContext<ServerDbContext>(connectionName: Constants.ServerDbConnectionStringKey);
+builder.AddNpgsqlDbContext<ServerDbContext>(connectionName: Constants.ServerDbConnectionStringKey);
 
 #endregion
 
@@ -182,7 +181,7 @@ builder.Services.AddTransient<BeatLeaderGeneralSocketStream>(_ =>
 #region Background Services & Hangfire
 
 builder.Services.AddTransient<ScoreUpdatePipeline>();
-builder.Services.AddHostedService<BLScoreSyncWorker>();
+//builder.Services.AddHostedService<BLScoreSyncWorker>();
 
 builder.Services.AddHangfire((serviceCollection, option) =>
 {

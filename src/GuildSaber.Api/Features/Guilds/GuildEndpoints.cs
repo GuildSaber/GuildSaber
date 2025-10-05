@@ -158,8 +158,8 @@ public static class GuildExtensions
         GuildRequests.EGuildSorters.Id => query.OrderBy(order, guild => guild.Id),
         GuildRequests.EGuildSorters.Name => query.OrderBy(order, guild => guild.Info.Name)
             .ThenBy(order, guild => guild.Id),
-        GuildRequests.EGuildSorters.Popularity => query.OrderBy(order, guild => guild.Status)
-            .ThenBy(order, guild => guild.RankedScores.Count / guild.Members.Count)
+        GuildRequests.EGuildSorters.Popularity => query.OrderBy(order, x => x.Status)
+            .ThenBy(order, guild => guild.RankedScores.Count / Math.Max(1, guild.Members.Count))
             .ThenBy(order, guild => guild.Id),
         GuildRequests.EGuildSorters.CreationDate => query.OrderBy(order, guild => guild.Info.CreatedAt)
             .ThenBy(order, guild => guild.Id),

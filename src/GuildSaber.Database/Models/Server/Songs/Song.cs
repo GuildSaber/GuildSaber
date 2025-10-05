@@ -17,11 +17,11 @@ public class Song
 
     public SongDifficulty[] SongDifficulties { get; init; } = null!;
 
-    public readonly record struct SongId(ulong Value) : IEFStrongTypedId<SongId, ulong>
+    public readonly record struct SongId(int Value) : IEFStrongTypedId<SongId, int>
     {
         public static bool TryParse(string from, out SongId value)
         {
-            if (ulong.TryParse(from, out var id))
+            if (int.TryParse(from, out var id))
             {
                 value = new SongId(id);
                 return true;
@@ -31,7 +31,7 @@ public class Song
             return false;
         }
 
-        public static implicit operator ulong(SongId id)
+        public static implicit operator int(SongId id)
             => id.Value;
 
         public override string ToString()
@@ -46,7 +46,7 @@ public class SongConfiguration : IEntityTypeConfiguration<Song>
         builder.HasKey(x => x.Id);
         builder.HasIndex(x => x.Hash).IsUnique();
         builder.Property(x => x.Id)
-            .HasGenericConversion<Song.SongId, ulong>()
+            .HasGenericConversion<Song.SongId, int>()
             .ValueGeneratedOnAdd();
         builder.Property(x => x.Hash)
             .HasConversion<string>(from => from.ToString(), to => SongHash.CreateUnsafe(to).Value)

@@ -59,7 +59,7 @@ public static class GuildMappers
                     Name = c.Info.Name,
                     Description = c.Info.Description
                 },
-                c.Points.Select(x => (uint)x.Id).ToArray()
+                c.Points.Select(x => (int)x.Id).ToArray()
             )).ToArray(),
             self.Points.Select(p => new GuildResponses.PointLite
             {

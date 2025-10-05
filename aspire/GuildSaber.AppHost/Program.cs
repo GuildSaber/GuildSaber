@@ -2,18 +2,17 @@ using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var mariaDb = builder.AddMySql("mariaDB")
-    .WithImage("library/mariadb", "10.6.18")
+var postgres = builder.AddPostgres("postgres")
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithDataVolume();
+    .WithDataVolume(isReadOnly: false);
 
-mariaDb.WithPhpMyAdmin(option => option
-        .WithParentRelationship(mariaDb)
+postgres.WithPgWeb(option => option
+        .WithParentRelationship(postgres)
         .WithLifetime(ContainerLifetime.Persistent),
-    "phpmyadmin");
+    "pgweb");
 
-var guildsaberDb = mariaDb.AddDatabase("server-db");
-var discordbotDb = mariaDb.AddDatabase("discordbot-db");
+var guildsaberDb = postgres.AddDatabase("server-db", "server-db");
+var discordbotDb = postgres.AddDatabase("discordbot-db", "discordbot-db");
 
 var cache = builder.AddRedis("cache");
 cache.WithRedisCommander(action => action

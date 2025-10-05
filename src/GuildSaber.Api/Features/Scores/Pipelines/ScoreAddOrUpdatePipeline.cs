@@ -56,12 +56,13 @@ public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
                         operation: static async (state, _) =>
                         {
                             await state.dbContext.BulkInsertOrUpdateAsync(state.rankedScores);
-                            /* An optimization would be: Track the RankedScores (in EF Core with .AsTracking()),
-                             * then only update the ranks for the RankedMaps that had changes. */
-                            await RankedScoreUpdateRankPipeline.UpdateRanksForRankedMapsAsync(
-                                state.rankedScores
+                            /* An optimization at the cost of memory consumption would be:
+                             * track the RankedScores (in EF Core with .AsTracking()),
+                             * then only update the ranks for the RankedMaps that is tracked as changed. */
+                            await RankedScoreUpdateRankPipeline.UpdateRanksForRankedMapsAsync(state.rankedScores
                                     .Select(x => x.RankedMapId)
-                                    .Distinct(), state.dbContext
+                                    .Distinct(),
+                                state.dbContext
                             );
                             await PlayerPointsPipeline.RecalculatePlayerPoints(state.PlayerId, state.dbContext);
                             await PlayerLevelPipeline.RecalculatePlayerLevels(state.PlayerId, state.dbContext);
@@ -184,7 +185,7 @@ public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
         rankedScore.EffectiveScore = ScoringUtils.CalculateScoreFromModifiers(
             context.Score.BaseScore,
             context.Score.Modifiers,
-            context.Point.ModifierSettings
+            context.Point.ModifierValues
         );
 
         (rankedScore.State, rankedScore.DenyReason) = ScoringUtils.RecalculateStateAndReason(
@@ -195,7 +196,9 @@ public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
         );
 
         rankedScore.RawPoints = ScoringUtils.CalculateRawPoints(
+            context.Score.BaseScore,
             rankedScore.EffectiveScore,
+            context.SongDifficulty.Stats.MaxScore,
             context.Point,
             context.Map.Rating
         );
@@ -239,7 +242,7 @@ public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
     /// RankedScores that should be persisted are the stateful ones (Selected, Approved, Refused, Pending).
     /// </summary>
     /// <remarks>
-    /// In the future, we might wish to persist Denied scores (it technically don't make much sence semantically,
+    /// In the future, we might wish to persist Denied scores (it technically don't make much sense semantically,
     /// better just not having requirements), but if we need to, this function could just need to be removed.
     /// </remarks>
     private static bool RankedScoresShouldBePersisted(RankedScore rankedScore)

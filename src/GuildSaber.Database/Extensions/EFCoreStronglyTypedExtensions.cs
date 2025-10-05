@@ -30,4 +30,13 @@ public static class EFCoreStronglyTypedExtensions
             v => v.Value,
             v => new TProperty { Value = v }
         );
+
+    public static ComplexTypePropertyBuilder<TProperty> HasGenericConversion<TProperty, TType>(
+        this ComplexTypePropertyBuilder<TProperty> propertyBuilder)
+        where TProperty : struct, IEFStrongTypedId<TProperty, TType>
+        where TType : struct
+        => propertyBuilder.HasConversion(
+            v => v.Value,
+            v => new TProperty { Value = v }
+        );
 }

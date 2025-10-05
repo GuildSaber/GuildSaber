@@ -13,8 +13,17 @@ public class BeatLeaderApiTests
     private readonly BeatLeaderApi _beatLeaderApi;
     private readonly BeatLeaderId _invalidBeatLeaderId = BeatLeaderId.CreateUnsafe(99999999999).Value;
     private readonly BeatLeaderScoreId _invalidBeatLeaderScoreId = BeatLeaderScoreId.CreateUnsafe(999999999).Value;
+
+    private readonly string _invalidSongCharacteristic = "InvalidMode";
+    private readonly int _invalidSongDifficulty = -1;
+    private readonly string _invalidSongHash = "abcdef1234567890abcdef1234567890abcdef12";
+
     private readonly BeatLeaderId _validBeatLeaderId = BeatLeaderId.CreateUnsafe(76561198126131670).Value;
     private readonly BeatLeaderScoreId _validBeatLeaderScoreId = BeatLeaderScoreId.CreateUnsafe(9655850).Value;
+
+    private readonly string _validSongCharacteristic = "Standard";
+    private readonly int _validSongDifficulty = 9; // Expert+
+    private readonly string _validSongHash = "c4ccc41a43bb15f252b025f03bce6f9c1dbbdbeb";
 
     public BeatLeaderApiTests()
     {
@@ -196,5 +205,33 @@ public class BeatLeaderApiTests
 
         // Assert
         scoreStats.SuccessShould().NotBeNull("A valid score ID should return non-null score statistics");
+    }
+
+    [Test]
+    public async Task GetExMachinaStars_ShouldReturnNull_WhenInvalidSongData()
+    {
+        // Act
+        var exMachinaStars = await _beatLeaderApi.GetExMachinaStarRatingAsync(
+            _invalidSongHash,
+            _invalidSongDifficulty,
+            _invalidSongCharacteristic
+        );
+
+        // Assert
+        exMachinaStars.SuccessShould().BeNull("An invalid hash should return a null success response");
+    }
+
+    [Test]
+    public async Task GetExMachinaStars_ShouldReturnValidStars_WhenValidSongData()
+    {
+        // Act
+        var exMachinaStars = await _beatLeaderApi.GetExMachinaStarRatingAsync(
+            _validSongHash,
+            _validSongDifficulty,
+            _validSongCharacteristic
+        );
+
+        // Assert
+        exMachinaStars.SuccessShould().NotBeNull("A valid song data should return non-null ExMachina star ratings");
     }
 }

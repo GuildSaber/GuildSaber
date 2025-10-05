@@ -1,8 +1,6 @@
 using System.Diagnostics;
 using GuildSaber.Database.Contexts.DiscordBot;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace GuildSaber.Migrator.DiscordBot;
 
@@ -23,7 +21,6 @@ public class Worker(IServiceProvider serviceProvider) : BackgroundService
             using var scope = serviceProvider.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<DiscordBotDbContext>();
 
-            await EnsureDatabaseAsync(dbContext, stoppingToken);
             await RunMigrationAsync(dbContext, stoppingToken);
             await SeedDataAsync(dbContext, stoppingToken);
         }
@@ -37,14 +34,6 @@ public class Worker(IServiceProvider serviceProvider) : BackgroundService
             IsFinished = true;
         }
     }
-
-    private static async Task EnsureDatabaseAsync(DiscordBotDbContext dbContext, CancellationToken cancellationToken)
-        => await dbContext.Database.CreateExecutionStrategy()
-            .ExecuteAsync(dbContext.GetService<IRelationalDatabaseCreator>(),
-                static async (dbCreator, cancellationToken) =>
-                {
-                    if (!await dbCreator.ExistsAsync(cancellationToken)) await dbCreator.CreateAsync(cancellationToken);
-                }, cancellationToken);
 
     private static async Task RunMigrationAsync(DiscordBotDbContext dbContext, CancellationToken cancellationToken)
         => await dbContext.Database.CreateExecutionStrategy()

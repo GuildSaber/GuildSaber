@@ -10,11 +10,11 @@ public class Category
     public Guild.GuildId GuildId { get; init; }
     public CategoryInfo Info { get; init; }
 
-    public readonly record struct CategoryId(uint Value) : IEFStrongTypedId<CategoryId, uint>
+    public readonly record struct CategoryId(int Value) : IEFStrongTypedId<CategoryId, int>
     {
         public static bool TryParse(string from, out CategoryId value)
         {
-            if (uint.TryParse(from, out var id))
+            if (int.TryParse(from, out var id))
             {
                 value = new CategoryId(id);
                 return true;
@@ -24,7 +24,7 @@ public class Category
             return false;
         }
 
-        public static implicit operator uint(CategoryId id)
+        public static implicit operator int(CategoryId id)
             => id.Value;
 
         public override string ToString()
@@ -38,7 +38,7 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id)
-            .HasGenericConversion<Category.CategoryId, uint>()
+            .HasGenericConversion<Category.CategoryId, int>()
             .ValueGeneratedOnAdd();
         builder.ComplexProperty(x => x.Info).Configure(new CategoryInfoConfiguration());
 

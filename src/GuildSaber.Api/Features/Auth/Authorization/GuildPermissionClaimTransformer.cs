@@ -30,7 +30,7 @@ public class GuildPermissionClaimTransformer(ServerDbContext dbContext) : IClaim
         foreach (var perm in memberPermissions)
             claimsIdentity.AddClaim(new Claim(
                 AuthConstants.GuildPermissionClaimType(perm.GuildId.Value.ToString()),
-                ((uint)perm.Permissions).ToString())
+                ((int)perm.Permissions).ToString())
             );
 
         return principal;

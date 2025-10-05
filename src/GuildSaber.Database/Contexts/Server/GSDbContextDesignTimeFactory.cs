@@ -1,7 +1,6 @@
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 
 namespace GuildSaber.Database.Contexts.Server;
 
@@ -11,7 +10,7 @@ public class GSDbContextDesignTimeFactory : IDesignTimeDbContextFactory<ServerDb
     public ServerDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<ServerDbContext>();
-        optionsBuilder.UseMySql("Server=none;Database=none;", ServerVersion.Create(10, 6, 18, ServerType.MariaDb));
+        optionsBuilder.UseNpgsql("Server=none;Database=none;");
         return new ServerDbContext(optionsBuilder.Options);
     }
 }

@@ -2,8 +2,6 @@ using System.Diagnostics;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Migrator.Server.Seeders;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace GuildSaber.Migrator.Server;
 
@@ -24,7 +22,6 @@ public class Worker(IServiceProvider serviceProvider) : BackgroundService
             using var scope = serviceProvider.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
 
-            await EnsureDatabaseAsync(dbContext, stoppingToken);
             await RunMigrationAsync(dbContext, stoppingToken);
             await SeedDataAsync(dbContext, stoppingToken);
         }
@@ -38,14 +35,6 @@ public class Worker(IServiceProvider serviceProvider) : BackgroundService
             IsFinished = true;
         }
     }
-
-    private static async Task EnsureDatabaseAsync(ServerDbContext dbContext, CancellationToken cancellationToken)
-        => await dbContext.Database.CreateExecutionStrategy()
-            .ExecuteAsync(dbContext.GetService<IRelationalDatabaseCreator>(),
-                static async (dbCreator, cancellationToken) =>
-                {
-                    if (!await dbCreator.ExistsAsync(cancellationToken)) await dbCreator.CreateAsync(cancellationToken);
-                }, cancellationToken);
 
     private static async Task RunMigrationAsync(ServerDbContext dbContext, CancellationToken cancellationToken)
         => await dbContext.Database.CreateExecutionStrategy()

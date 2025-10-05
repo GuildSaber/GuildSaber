@@ -14,15 +14,15 @@ public static class GuildResponses
 
     public readonly record struct GuildRequirements(
         bool RequireSubmission,
-        uint? MinRank,
-        uint? MaxRank,
-        uint? MinPP,
-        uint? MaxPP,
-        uint? AccountAgeUnix
+        int? MinRank,
+        int? MaxRank,
+        int? MinPP,
+        int? MaxPP,
+        int? AccountAgeUnix
     );
 
     public record Guild(
-        uint Id,
+        int Id,
         GuildInfo Info,
         GuildRequirements Requirements,
         EGuildStatus Status
@@ -44,17 +44,17 @@ public static class GuildResponses
     );
 
     public readonly record struct PointLite(
-        uint Id,
-        uint GuildContextId,
+        int Id,
+        int GuildContextId,
         string Name
     );
 
     public readonly record struct GuildContext(
-        uint Id,
+        int Id,
         EContextType Type,
         GuildContextInfo Info,
-        //TODO: uint[] CategoryIds (But it seems like it will be a tough one to implement).
-        uint[] PointIds
+        //TODO: int[] CategoryIds (But it seems like it will be a tough one to implement).
+        int[] PointIds
     );
 
     public readonly record struct GuildContextInfo(

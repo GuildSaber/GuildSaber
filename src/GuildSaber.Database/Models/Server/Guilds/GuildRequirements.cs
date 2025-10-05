@@ -5,11 +5,11 @@ namespace GuildSaber.Database.Models.Server.Guilds;
 
 public readonly record struct GuildRequirements(
     bool RequireSubmission,
-    uint? MinRank,
-    uint? MaxRank,
-    uint? MinPP,
-    uint? MaxPP,
-    uint? AccountAgeUnix
+    int? MinRank,
+    int? MaxRank,
+    int? MinPP,
+    int? MaxPP,
+    int? AccountAgeUnix
 );
 
 public static class GuildRequirementsExtensions
@@ -17,11 +17,11 @@ public static class GuildRequirementsExtensions
     public abstract record GuildRequirement
     {
         public record RequireSubmission : GuildRequirement;
-        public record MinRank(uint Value) : GuildRequirement;
-        public record MaxRank(uint Value) : GuildRequirement;
-        public record MinPP(uint Value) : GuildRequirement;
-        public record MaxPP(uint Value) : GuildRequirement;
-        public record AccountAgeUnix(uint Value) : GuildRequirement;
+        public record MinRank(int Value) : GuildRequirement;
+        public record MaxRank(int Value) : GuildRequirement;
+        public record MinPP(int Value) : GuildRequirement;
+        public record MaxPP(int Value) : GuildRequirement;
+        public record AccountAgeUnix(int Value) : GuildRequirement;
     }
 
     public static IEnumerable<GuildRequirement> Collect(this GuildRequirements requirements)

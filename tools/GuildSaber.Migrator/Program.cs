@@ -12,8 +12,8 @@ builder.AddServiceDefaults();
 builder.Services.AddOpenTelemetry().WithTracing(tracing => tracing
     .AddSource(Server_Worker.ActivitySourceName, DiscordBot_Worker.ActivitySourceName));
 
-builder.AddMySqlDbContext<ServerDbContext>(Constants.ServerDbConnectionStringKey);
-builder.AddMySqlDbContext<DiscordBotDbContext>(Constants.DiscordBotDbConnectionStringKey);
+builder.AddNpgsqlDbContext<ServerDbContext>(Constants.ServerDbConnectionStringKey);
+builder.AddNpgsqlDbContext<DiscordBotDbContext>(Constants.DiscordBotDbConnectionStringKey);
 
 builder.Services.AddHostedService<Server_Worker>();
 builder.Services.AddHostedService<DiscordBot_Worker>();

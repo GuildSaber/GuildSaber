@@ -16,11 +16,11 @@ public class Player
 
     public IList<Member> Members { get; init; } = null!;
 
-    public readonly record struct PlayerId(uint Value) : IEFStrongTypedId<PlayerId, uint>
+    public readonly record struct PlayerId(int Value) : IEFStrongTypedId<PlayerId, int>
     {
         public static bool TryParse(string from, out PlayerId value)
         {
-            if (uint.TryParse(from, out var id))
+            if (int.TryParse(from, out var id))
             {
                 value = new PlayerId(id);
                 return true;
@@ -30,7 +30,7 @@ public class Player
             return false;
         }
 
-        public static implicit operator uint(PlayerId id)
+        public static implicit operator int(PlayerId id)
             => id.Value;
 
         public override string ToString()
@@ -43,7 +43,7 @@ public class PlayerConfiguration : IEntityTypeConfiguration<Player>
     public void Configure(EntityTypeBuilder<Player> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Id).HasGenericConversion<Player.PlayerId, uint>()
+        builder.Property(x => x.Id).HasGenericConversion<Player.PlayerId, int>()
             .ValueGeneratedOnAdd();
         builder.ComplexProperty(x => x.Info);
         builder.ComplexProperty(x => x.HardwareInfo);

@@ -15,7 +15,7 @@ public static class ClaimsPrincipalExtensions
             return null;
 
         var playerIdClaim = identity.FindFirst(AuthConstants.PlayerIdClaimType);
-        if (playerIdClaim == null || !uint.TryParse(playerIdClaim.Value, out var playerId))
+        if (playerIdClaim == null || !int.TryParse(playerIdClaim.Value, out var playerId))
             return null;
 
         return new PlayerId(playerId);

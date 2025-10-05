@@ -11,7 +11,6 @@ public record RankedMapRequirements(
     float? MaxPauseDuration,
     AbstractScore.EModifiers ProhibitedModifiers,
     AbstractScore.EModifiers MandatoryModifiers,
-    // On the Request, make sure its null or > 0 and <= 100
     Accuracy? MinAccuracy
 );
 
