@@ -86,7 +86,7 @@ GuildSaber uses .NET Aspire for orchestrating its microservices architecture.
 
 This will start the following services:
 
-- MariaDB (with phpMyAdmin)
+- Postgre (with PgWeb)
 - Redis (with Redis Commander)
 - Database Migrator
 - API Service
