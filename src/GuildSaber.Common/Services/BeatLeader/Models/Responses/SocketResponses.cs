@@ -39,7 +39,7 @@ public record GeneralSocketMessage<T>(T Data) : GeneralSocketMessage(Data.Player
 public record UploadedScore : IUnprocessedScore
 {
     public required BeatLeaderId PlayerId { get; init; }
-    public required string LeaderboardId { get; init; }
+    public required BLLeaderboardId LeaderboardId { get; init; }
 
     public required int BaseScore { get; init; }
     public required int ModifiedScore { get; init; }
@@ -79,7 +79,7 @@ public record AcceptedScore : IProcessedScore, IWithScoreContext, IWithAcc
     public required ReplayOffsets Offsets { get; init; }
 
     public required BeatLeaderId PlayerId { get; init; }
-    public required string LeaderboardId { get; init; }
+    public required BLLeaderboardId LeaderboardId { get; init; }
 
     public required int BaseScore { get; init; }
     public required int ModifiedScore { get; init; }
@@ -125,7 +125,7 @@ public record RejectedScore : IProcessedScore, IWithScoreContext, IWithAcc
     public required ReplayOffsets Offsets { get; init; }
 
     public required BeatLeaderId PlayerId { get; init; }
-    public required string LeaderboardId { get; init; }
+    public required BLLeaderboardId LeaderboardId { get; init; }
 
     public required int BaseScore { get; init; }
     public required int ModifiedScore { get; init; }

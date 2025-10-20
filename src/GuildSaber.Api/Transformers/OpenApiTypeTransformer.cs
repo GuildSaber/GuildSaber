@@ -19,12 +19,39 @@ namespace GuildSaber.Api.Transformers;
 /// Register in your Program.cs or Startup.cs:
 /// <code>
 /// OpenApiTypeTransformer.MapType{decimal}(new OpenApiSchema { Type = "number", Format = "decimal" });
-/// builder.Services.AddOpenApi(options => options.AddSchemaTransformer(OpenApiTypeTransformer.TransformAsync));
+/// builder.Services.AddOpenApi(options => options.AddTypeTransformationSupport());
 /// </code>
 /// </example>
-public class OpenApiTypeTransformer
+public static class OpenApiTypeTransformer
 {
     private static readonly Dictionary<Type, OpenApiSchema> _transforms = new();
+
+    public sealed class TypeTransformer : IOpenApiSchemaTransformer
+    {
+        /// <summary>
+        /// Transforms an OpenAPI schema based on registered type mappings.
+        /// </summary>
+        /// <param name="schema">The schema being generated</param>
+        /// <param name="context">The schema transformation context</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>A task that completes when the transformation is done</returns>
+        /// <remarks>
+        /// This method is designed to be registered with the OpenAPI pipeline using
+        /// <c>options.AddSchemaTransformer(OpenApiTypeTransformer.TransformAsync)</c>
+        /// </remarks>
+        public Task TransformAsync(
+            OpenApiSchema schema, OpenApiSchemaTransformerContext context,
+            CancellationToken cancellationToken)
+        {
+            if (!_transforms.TryGetValue(context.JsonTypeInfo.Type, out var transformedSchema))
+                return Task.CompletedTask;
+
+            schema.Type = transformedSchema.Type;
+            schema.Format = transformedSchema.Format;
+
+            return Task.CompletedTask;
+        }
+    }
 
     /// <summary>
     /// Maps a .NET type to a specific OpenAPI schema representation.
@@ -36,27 +63,6 @@ public class OpenApiTypeTransformer
     /// </remarks>
     public static void MapType<T>(OpenApiSchema schema) => _transforms[typeof(T)] = schema;
 
-    /// <summary>
-    /// Transforms an OpenAPI schema based on registered type mappings.
-    /// </summary>
-    /// <param name="schema">The schema being generated</param>
-    /// <param name="context">The schema transformation context</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>A task that completes when the transformation is done</returns>
-    /// <remarks>
-    /// This method is designed to be registered with the OpenAPI pipeline using
-    /// <c>options.AddSchemaTransformer(OpenApiTypeTransformer.TransformAsync)</c>
-    /// </remarks>
-    public static Task TransformAsync(
-        OpenApiSchema schema, OpenApiSchemaTransformerContext context,
-        CancellationToken cancellationToken)
-    {
-        if (!_transforms.TryGetValue(context.JsonTypeInfo.Type, out var transformedSchema))
-            return Task.CompletedTask;
-
-        schema.Type = transformedSchema.Type;
-        schema.Format = transformedSchema.Format;
-
-        return Task.CompletedTask;
-    }
+    public static OpenApiOptions AddTypeTransformationSupport(this OpenApiOptions options)
+        => options.AddSchemaTransformer<TypeTransformer>();
 }

@@ -1,4 +1,3 @@
-using CSharpFunctionalExtensions;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions.PlayModes;
 using GuildSaber.Database.Models.Server.Songs;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
@@ -13,11 +12,6 @@ namespace GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
 
 public class MapVersion
 {
-    private MapVersion(SongDifficultyId songDifficultyId, PlayModeId playModeId, DateTimeOffset addedAt, byte order)
-        => (SongDifficultyId, PlayModeId, AddedAt, Order) = (songDifficultyId, playModeId, addedAt, order);
-
-    private MapVersion() { }
-
     public RankedMapId RankedMapId { get; init; }
     public SongDifficultyId SongDifficultyId { get; init; }
     public PlayModeId PlayModeId { get; init; }
@@ -33,12 +27,6 @@ public class MapVersion
     public byte Order { get; set; }
 
     public SongDifficulty SongDifficulty { get; init; } = null!;
-
-    public static Result<MapVersion> TryCreate(
-        SongDifficultyId songDifficultyId, PlayModeId playModeId, DateTimeOffset addedAt, byte order)
-        => addedAt == default
-            ? Failure<MapVersion>("The provided date must not be a default date.")
-            : Success(new MapVersion(songDifficultyId, playModeId, addedAt, order));
 }
 
 public class MapVersionConfiguration : IEntityTypeConfiguration<MapVersion>

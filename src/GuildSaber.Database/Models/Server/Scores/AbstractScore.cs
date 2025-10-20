@@ -69,7 +69,15 @@ public abstract record AbstractScore
         SuperFastSong = 1 << 13,
         OldDots = 1 << 14,
         OffPlatform = 1 << 15,
-        Unk = 1 << 30
+        Unk = 1 << 30,
+
+        /*TODO: Assert that Req EModifiers.ProhibitedDefaults matches RankedMapRequest.EModifiers.ProhibitedDefaults
+         * to prevent future mismatches.*/
+        /// <summary>
+        /// All modifiers that are commonly prohibited to giving points in ranked maps.
+        /// Such as NoObstacles, NoBombs, NoFail, SlowerSong, NoArrows and OffPlatform.
+        /// </summary>
+        ProhibitedDefaults = NoObstacles | NoBombs | NoFail | SlowerSong | NoArrows | OffPlatform
     }
 }
 

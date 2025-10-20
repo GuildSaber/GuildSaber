@@ -5,6 +5,7 @@ using CSharpFunctionalExtensions;
 using GuildSaber.Common.Services.BeatLeader.Models;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
+using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 
 namespace GuildSaber.Common.Services.BeatLeader;
 
@@ -14,7 +15,12 @@ public class BeatLeaderApi(HttpClient httpClient)
     {
         PropertyNameCaseInsensitive = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Converters = { new BeatLeaderIdJsonConverter(), new BeatLeaderScoreIdJsonConverter() }
+        Converters =
+        {
+            new BeatLeaderIdJsonConverter(),
+            new BeatLeaderScoreIdJsonConverter(),
+            new BLLeaderboardIdJsonConverter()
+        }
     };
 
     /// <summary>
@@ -147,15 +153,28 @@ public class BeatLeaderApi(HttpClient httpClient)
         };
 
     public async Task<Result<ExMachinaResponse?>> GetExMachinaStarRatingAsync(
-        string hash, int difficulty, string gameMode)
-        => await httpClient.GetAsync($"https://stage.api.beatleader.net/ppai2/{hash}/{gameMode}/{difficulty}") switch
+        SongHash hash, EDifficulty difficulty, string gameMode)
+        => await httpClient.GetAsync($"https://stage.api.beatleader.net/ppai2/{hash}/{gameMode}/{(int)difficulty}")
+            switch
+            {
+                { StatusCode: HttpStatusCode.NotFound } => Success<ExMachinaResponse?>(null),
+                { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                    => Failure<ExMachinaResponse?>(
+                        $"Failed to retrieve ExMachina rating for song {hash} difficulty {difficulty} gameMode {gameMode}: {statusCode} {reasonPhrase}"
+                    ),
+                var response => await Try(() => response.Content
+                    .ReadFromJsonAsync<ExMachinaResponse>(_jsonOptions))
+            };
+
+    public async Task<Result<LeaderboardsResponse?>> GetLeaderboardsAsync(SongHash hash)
+        => await httpClient.GetAsync($"leaderboards/hash/{hash}") switch
         {
-            { StatusCode: HttpStatusCode.NotFound } => Success<ExMachinaResponse?>(null),
+            { StatusCode: HttpStatusCode.NotFound } => Success<LeaderboardsResponse?>(null),
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
-                => Failure<ExMachinaResponse?>(
-                    $"Failed to retrieve ExMachina rating for song {hash} difficulty {difficulty} gameMode {gameMode}: {statusCode} {reasonPhrase}"
+                => Failure<LeaderboardsResponse?>(
+                    $"Failed to retrieve leaderboards for song {hash}: {statusCode} {reasonPhrase}"
                 ),
             var response => await Try(() => response.Content
-                .ReadFromJsonAsync<ExMachinaResponse>(_jsonOptions))
+                .ReadFromJsonAsync<LeaderboardsResponse>(_jsonOptions))
         };
 }

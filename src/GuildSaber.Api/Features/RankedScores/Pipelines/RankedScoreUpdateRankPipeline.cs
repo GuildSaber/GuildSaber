@@ -11,6 +11,26 @@ public static class RankedScoreUpdateRankPipeline
     private static readonly string _updateAllowedRankedScoresRankFormattableString =
         $$"""
           UPDATE {{nameof(ServerDbContext.RankedScores)}} rs
+          SET "{{nameof(RankedScore.Rank)}}" = subquery."NewRank"
+          FROM (
+              SELECT 
+                  "{{nameof(RankedScore.Id)}}", 
+                  DENSE_RANK() OVER (
+                      PARTITION BY "{{nameof(RankedScore.RankedMapId)}}", "{{nameof(RankedScore.PointId)}}"
+                      ORDER BY "{{nameof(RankedScore.RawPoints)}}" DESC, "{{nameof(RankedScore.EffectiveScore)}}" DESC
+                  ) AS "NewRank"
+              FROM {{nameof(ServerDbContext.RankedScores)}}
+              WHERE "{{nameof(RankedScore.RankedMapId)}}" = {0}
+                  AND ("{{nameof(RankedScore.State)}}" & {{(int)(RankedScore.EState.Selected | RankedScore.EState.NonPointGiving)}}) = {{(int)RankedScore.EState.Selected}}
+          ) subquery
+          WHERE rs."{{nameof(RankedScore.Id)}}" = subquery."{{nameof(RankedScore.Id)}}"
+          """;
+
+    /*
+     // MariaDB / MySQL version
+     private static readonly string _updateAllowedRankedScoresRankFormattableString =
+        $$"""
+          UPDATE {{nameof(ServerDbContext.RankedScores)}} rs
           JOIN (
               SELECT {{nameof(RankedScore.Id)}}, DENSE_RANK() OVER (
                   PARTITION BY {{nameof(RankedScore.RankedMapId)}}, {{nameof(RankedScore.PointId)}}
@@ -21,7 +41,7 @@ public static class RankedScoreUpdateRankPipeline
               AND ({{nameof(RankedScore.State)}} & {{RankedScore.EState.Selected | RankedScore.EState.NonPointGiving}}) == {{RankedScore.EState.Selected}}
           ) subquery ON rs.{{nameof(RankedScore.Id)}} = subquery.{{nameof(RankedScore.Id)}}
           SET rs.{{nameof(RankedScore.Rank)}} = subquery.NewRank
-          """;
+          """;*/
 
     /// <summary>
     /// Updates the ranks for all allowed ranked scores on given ranked maps.

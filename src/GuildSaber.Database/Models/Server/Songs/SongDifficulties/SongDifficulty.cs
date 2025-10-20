@@ -1,6 +1,7 @@
-﻿using GuildSaber.Database.Extensions;
+﻿using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
+using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
+using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties.GameModes;
-using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -10,14 +11,15 @@ namespace GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 public class SongDifficulty
 {
     public SongDifficultyId Id { get; init; }
+
     public BLLeaderboardId? BLLeaderboardId { get; init; }
     public GameMode.GameModeId GameModeId { get; init; }
     public Song.SongId SongId { get; init; }
+    public EDifficulty Difficulty { get; init; }
 
     public required SongDifficultyStats Stats { get; init; }
 
     public GameMode GameMode { get; init; } = null!;
-    public Song Song { get; init; } = null!;
 
     public readonly record struct SongDifficultyId(long Value) : IEFStrongTypedId<SongDifficultyId, long>
     {
@@ -49,17 +51,19 @@ public class SongDifficultyConfiguration : IEntityTypeConfiguration<SongDifficul
         builder.Property(x => x.Id)
             .HasGenericConversion<SongDifficulty.SongDifficultyId, long>()
             .ValueGeneratedOnAdd();
+
         builder.Property(x => x.BLLeaderboardId)
             .HasConversion<string?>(from => from, to => BLLeaderboardId.CreateUnsafe(to));
 
         // Ensure that a SongDifficulty cannot change its SongId by mistake once in the database.
         builder.Property(x => x.SongId)
             .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+        builder.HasIndex(x => new { x.SongId, x.GameModeId, x.Difficulty }).IsUnique();
 
         builder.ComplexProperty(x => x.Stats).Configure(new SongDifficultyStatsConfiguration());
 
         builder.HasOne(x => x.GameMode).WithMany().HasForeignKey(x => x.GameModeId);
-        builder.HasOne(x => x.Song)
+        builder.HasOne<Song>()
             .WithMany(x => x.SongDifficulties).HasForeignKey(x => x.SongId)
             .OnDelete(DeleteBehavior.Cascade);
     }

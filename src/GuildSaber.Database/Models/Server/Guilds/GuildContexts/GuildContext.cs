@@ -1,4 +1,6 @@
-﻿using GuildSaber.Database.Extensions;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.RankedMaps;
@@ -23,9 +25,10 @@ public class GuildContext
     public IList<Member> Members { get; init; } = null!;
     public IList<GuildContextMember> ContextMembers { get; init; } = null!;
 
+    [JsonConverter(typeof(GuildContextIdJsonConverter))]
     public readonly record struct GuildContextId(int Value) : IEFStrongTypedId<GuildContextId, int>
     {
-        public static bool TryParse(string from, out GuildContextId value)
+        public static bool TryParse(string? from, out GuildContextId value)
         {
             if (int.TryParse(from, out var id))
             {
@@ -53,6 +56,20 @@ public class GuildContext
         Tournament = 1 << 0,
         Temporary = 1 << 1
     }
+}
+
+public class GuildContextIdJsonConverter : JsonConverter<GuildContext.GuildContextId>
+{
+    public override GuildContext.GuildContextId Read(
+        ref Utf8JsonReader reader, Type typeToConvert,
+        JsonSerializerOptions options)
+        => reader.TokenType == JsonTokenType.Number
+            ? new GuildContext.GuildContextId(reader.GetInt32())
+            : throw new JsonException("Cannot convert to BLLeaderboardId");
+
+    public override void Write(
+        Utf8JsonWriter writer, GuildContext.GuildContextId value,
+        JsonSerializerOptions options) => writer.WriteNumberValue(value.Value);
 }
 
 public class GuildContextConfiguration : IEntityTypeConfiguration<GuildContext>

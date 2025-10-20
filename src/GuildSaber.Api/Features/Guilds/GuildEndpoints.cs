@@ -36,7 +36,6 @@ public class GuildEndpoints : IEndpoints
             .Produces<Guild>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesValidationProblem()
-            .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .RequireAuthorization();
 
         group.MapGet("/{guildId}", GetGuildAsync)
@@ -46,7 +45,7 @@ public class GuildEndpoints : IEndpoints
 
         group.MapGet("/{guildId}/extended", GetGuildExtended)
             .WithName("GetGuildExtended")
-            .WithSummary("Get Guild with Extended Information")
+            .WithSummary("Get a guild with Extended Information")
             .WithDescription("Get a specific guild with extended information by its Id."
                              + " Which includes additional fields like categories and points.");
 
@@ -91,12 +90,11 @@ public class GuildEndpoints : IEndpoints
     /// This endpoint:
     /// <list type="bullet">
     ///     <item>Returns 201 CreatedAtRoute with guild when guild is created successfully</item>
-    ///     <item>Returns 401 Unauthorized when no valid player ID is found in claims</item>
+    ///     <item>
+    ///     Returns 401 Unauthorized when the player exceeds the maximum number of guilds they are leader for allowed
+    ///     </item>
     ///     <item>Returns 400 Bad Request with validation details when input validation fails</item>
     ///     <item>Returns 400 Bad Request with validation details when guild creation requirements aren't met</item>
-    ///     <item>
-    ///     Returns 429 Too Many Requests when the player exceeds the maximum number of guilds they are leader for allowed
-    ///     </item>
     /// </list>
     /// </remarks>
     private static async Task<IResult> CreateGuildAsync(
@@ -113,7 +111,7 @@ public class GuildEndpoints : IEndpoints
                 GuildService.CreateResponse.TooManyGuildsAsLeader(var currentCount, var maxCount) => TypedResults
                     .Problem(
                         $"You already are GuildLeader in {currentCount} guilds, which exceeds the maximum allowed of {maxCount}.",
-                        statusCode: StatusCodes.Status429TooManyRequests,
+                        statusCode: StatusCodes.Status401Unauthorized,
                         title: "Too many guilds"),
                 GuildService.CreateResponse.ValidationFailure(var errors) => TypedResults
                     .ValidationProblem(

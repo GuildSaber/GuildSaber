@@ -54,11 +54,11 @@ public static class ScoringUtils
         if (requirements.NeedFullCombo && !score.IsFullCombo)
             denyReason |= EDenyReason.NoFullCombo;
 
-        if (requirements.MaxPauseDuration is not null)
+        if (requirements.MaxPauseDurationSec is not null)
         {
             if (score is not BeatLeaderScore blScore)
                 denyReason |= EDenyReason.MissingTrackers;
-            else if (blScore.ScoreStatistics?.WinTracker.TotalPauseDuration > requirements.MaxPauseDuration)
+            else if (blScore.ScoreStatistics?.WinTracker.TotalPauseDuration > requirements.MaxPauseDurationSec)
                 denyReason |= EDenyReason.TooMuchPaused;
         }
 

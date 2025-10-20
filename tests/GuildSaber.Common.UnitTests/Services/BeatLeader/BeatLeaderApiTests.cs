@@ -4,6 +4,7 @@ using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
+using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.UnitTests.Utils;
 
 namespace GuildSaber.Common.UnitTests.Services.BeatLeader;
@@ -15,15 +16,15 @@ public class BeatLeaderApiTests
     private readonly BeatLeaderScoreId _invalidBeatLeaderScoreId = BeatLeaderScoreId.CreateUnsafe(999999999).Value;
 
     private readonly string _invalidSongCharacteristic = "InvalidMode";
-    private readonly int _invalidSongDifficulty = -1;
-    private readonly string _invalidSongHash = "abcdef1234567890abcdef1234567890abcdef12";
+    private readonly EDifficulty _invalidSongDifficulty = (EDifficulty)(-1);
+    private readonly SongHash _invalidSongHash = SongHash.TryCreate("abcdef1234567890abcdef1234567890abcdef12").Value;
 
     private readonly BeatLeaderId _validBeatLeaderId = BeatLeaderId.CreateUnsafe(76561198126131670).Value;
     private readonly BeatLeaderScoreId _validBeatLeaderScoreId = BeatLeaderScoreId.CreateUnsafe(9655850).Value;
 
     private readonly string _validSongCharacteristic = "Standard";
-    private readonly int _validSongDifficulty = 9; // Expert+
-    private readonly string _validSongHash = "c4ccc41a43bb15f252b025f03bce6f9c1dbbdbeb";
+    private readonly EDifficulty _validSongDifficulty = EDifficulty.ExpertPlus;
+    private readonly SongHash _validSongHash = SongHash.TryCreate("c4ccc41a43bb15f252b025f03bce6f9c1dbbdbeb").Value;
 
     public BeatLeaderApiTests()
     {
@@ -233,5 +234,40 @@ public class BeatLeaderApiTests
 
         // Assert
         exMachinaStars.SuccessShould().NotBeNull("A valid song data should return non-null ExMachina star ratings");
+    }
+
+    [Test]
+    public async Task GetLeaderboards_ShouldReturnNull_WhenInvalidSongHash()
+    {
+        // Arrange
+        var songHash = _invalidSongHash;
+
+        // Act
+        var leaderboards = await _beatLeaderApi.GetLeaderboardsAsync(songHash);
+
+        // Assert
+        leaderboards.SuccessShould().BeNull("A 404 response should return a null success response");
+    }
+
+    [Test]
+    public async Task GetLeaderboards_ShouldReturnValidLeaderboards_WhenValidSongHash()
+    {
+        // Arrange
+        var songHash = _validSongHash;
+        const EDifficulty expectedDifficulty = EDifficulty.ExpertPlus;
+        const string expectedCharacteristic = "Standard";
+
+        // Act
+        var leaderboards = await _beatLeaderApi.GetLeaderboardsAsync(songHash);
+
+        // Assert
+        leaderboards.SuccessShould().NotBeNull("A valid song hash should return non-null leaderboards");
+        leaderboards.SuccessShould()
+            .Match<LeaderboardsResponse>(lb =>
+                    lb.Leaderboards.Any(l =>
+                        l.Difficulty.ModeName == expectedCharacteristic &&
+                        l.Difficulty.DifficultyName == expectedDifficulty.ToString()),
+                "Leaderboards should contain an entry for the expected difficulty and characteristic"
+            );
     }
 }

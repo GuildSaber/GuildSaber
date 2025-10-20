@@ -8,16 +8,16 @@ using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Guilds;
+using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Api.Features.Scores.Pipelines;
-using GuildSaber.Api.Hangfire;
-using GuildSaber.Api.Hangfire.Configuration;
 using GuildSaber.Api.Transformers;
 using GuildSaber.Common.Services.BeatLeader;
+using GuildSaber.Common.Services.BeatSaver;
+using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Database;
 using GuildSaber.Database.Contexts.Server;
+using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.StrongTypes;
-using Hangfire;
-using Hangfire.Redis.StackExchange;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -27,17 +27,11 @@ using Microsoft.OpenApi;
 using MyCSharp.HttpUserAgentParser.AspNetCore.DependencyInjection;
 using MyCSharp.HttpUserAgentParser.DependencyInjection;
 using Scalar.AspNetCore;
-using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
 #region Configuration & Options
-
-builder.Services
-    .AddOptionsWithValidateOnStart<RetryPolicyOptions>()
-    .Bind(builder.Configuration.GetSection(RetryPolicyOptions.RetryPolicyOptionsSectionsKey))
-    .ValidateDataAnnotations();
 
 var authSettings = builder.Configuration.GetSection(AuthSettings.AuthSettingsSectionKey);
 builder.Services
@@ -66,6 +60,9 @@ builder.Services
 builder.Services
     .AddOptionsWithValidateOnStart<GuildCreationSettings>()
     .Bind(guildSettings.GetSection(nameof(GuildSettings.Creation))).ValidateDataAnnotations();
+builder.Services
+    .AddOptionsWithValidateOnStart<RankedMapSettings>()
+    .Bind(builder.Configuration.GetSection(RankedMapSettings.RankedMapSettingsSectionKey)).ValidateDataAnnotations();
 
 #endregion
 
@@ -168,6 +165,13 @@ builder.Services.AddHttpClient<BeatLeaderApi>(client =>
     }).UseSocketsHttpHandler((handler, _) => handler.PooledConnectionLifetime = TimeSpan.FromMinutes(5))
     .SetHandlerLifetime(Timeout.InfiniteTimeSpan);
 
+builder.Services.AddHttpClient<BeatSaverApi>(client =>
+    {
+        client.BaseAddress = new Uri("https+http://beatsaver-api");
+        client.DefaultRequestHeaders.Add("User-Agent", "GuildSaber");
+    }).UseSocketsHttpHandler((handler, _) => handler.PooledConnectionLifetime = TimeSpan.FromMinutes(5))
+    .SetHandlerLifetime(Timeout.InfiniteTimeSpan);
+
 // Since they hold state, they should be transient.
 builder.Services.AddTransient<BeatLeaderGeneralSocketStream>(_ =>
 {
@@ -183,19 +187,6 @@ builder.Services.AddTransient<BeatLeaderGeneralSocketStream>(_ =>
 builder.Services.AddTransient<ScoreUpdatePipeline>();
 //builder.Services.AddHostedService<BLScoreSyncWorker>();
 
-builder.Services.AddHangfire((serviceCollection, option) =>
-{
-    option.UseSimpleAssemblyNameTypeSerializer();
-    option.UseRecommendedSerializerSettings();
-    option.UseRedisStorage(ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("cache")!));
-    option.UseActivator(new HangfireActivator(serviceCollection));
-    option.UseFilter(new AutomaticRetryAttribute
-    {
-        Attempts = builder.Configuration.GetSection(RetryPolicyOptions.RetryPolicyOptionsSectionsKey)
-            .Get<RetryPolicyOptions>()!.MaxRetryAttempts
-    });
-}).AddHangfireServer();
-
 #endregion
 
 #region API Configuration
@@ -206,17 +197,23 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
 
+OpenApiTypeTransformer.MapType<BeatSaverKey>(new OpenApiSchema { Type = JsonSchemaType.String, Example = "a3c3" });
+OpenApiTypeTransformer.MapType<GuildContext.GuildContextId>(new OpenApiSchema
+{
+    Type = JsonSchemaType.Integer,
+    Format = "int32"
+});
 builder.Services.AddOpenApi(options =>
 {
-    // Forcing OpenAPI 3.0 until Scalar supports correctly OpenAPI 3.1 refs: https://github.com/scalar/scalar/issues/6617
-    options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
     options.AddGlobalProblemDetails()
         .AddBearerSecurityScheme()
         .AddEndpointsHttpSecuritySchemeResolution()
         .AddTagDescriptionSupport()
-        .AddScalarTransformers();
+        .AddScalarTransformers()
+        .AddTypeTransformationSupport();
 });
 
 builder.Services.AddProblemDetails(options =>
@@ -254,11 +251,6 @@ app.UseAuthorization();
 app.MapOpenApi();
 app.MapDefaultEndpoints()
     .MapEndpoints<Program>();
-
-app.MapHangfireDashboard(new DashboardOptions
-{
-    Authorization = [new HangFireDashboardAuthorizationFilter()]
-});
 
 app.MapScalarApiReference("/", options => options
     .WithTitle("GuildSaber's Api")

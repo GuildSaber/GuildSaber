@@ -7,7 +7,7 @@ public interface IUnprocessedScore
 {
     BeatLeaderId PlayerId { get; init; }
 
-    string LeaderboardId { get; init; }
+    BLLeaderboardId LeaderboardId { get; init; }
     int BaseScore { get; init; }
     int ModifiedScore { get; init; }
     float Accuracy { get; init; }

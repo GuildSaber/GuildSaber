@@ -89,13 +89,13 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
             validationErrors.Add(new KeyValuePair<string, string[]>(
                 nameof(GuildRequests.CreateGuildInfo.Name), [nameResult.Error]));
 
-        if (!Name_2_6.TryCreate(request.Info.SmallName).TryGetValue(out var smallName))
+        if (!Name_2_6.TryCreate(request.Info.SmallName, "Small name").TryGetValue(out var smallName, out var nameError))
             validationErrors.Add(new KeyValuePair<string, string[]>(
-                nameof(GuildRequests.CreateGuildInfo.SmallName), ["Small name must be between 2 and 6 characters."]));
+                nameof(GuildRequests.CreateGuildInfo.SmallName), [nameError]));
 
-        if (!descriptionResult.TryGetValue(out var description))
+        if (!descriptionResult.TryGetValue(out var description, out var descriptionError))
             validationErrors.Add(new KeyValuePair<string, string[]>(
-                nameof(GuildRequests.CreateGuildInfo.Description), [descriptionResult.Error]));
+                nameof(GuildRequests.CreateGuildInfo.Description), [descriptionError]));
 
         if (validationErrors.Count > 0)
             return Failure<Guild, List<KeyValuePair<string, string[]>>>(validationErrors);

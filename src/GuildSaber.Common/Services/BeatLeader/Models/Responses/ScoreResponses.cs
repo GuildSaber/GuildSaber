@@ -30,7 +30,7 @@ public record ScoreResponse : IProcessedScore, IWithPP, IWithPlayer, IWithScoreI
 {
     public required BeatLeaderScoreId Id { get; init; }
     public required BeatLeaderId PlayerId { get; init; }
-    public required string LeaderboardId { get; init; }
+    public required BLLeaderboardId LeaderboardId { get; init; }
     public required int BaseScore { get; init; }
     public required int ModifiedScore { get; init; }
     public required float Accuracy { get; init; }

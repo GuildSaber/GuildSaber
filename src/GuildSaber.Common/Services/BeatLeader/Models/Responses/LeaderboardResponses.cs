@@ -1,3 +1,5 @@
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
+
 namespace GuildSaber.Common.Services.BeatLeader.Models.Responses;
 
 public class CompactLeaderboard
@@ -19,7 +21,7 @@ public class LeaderboardsResponseWithScores : LeaderboardsResponse<LeaderboardsI
 
 public class LeaderboardsInfoResponse
 {
-    public required string Id { get; init; }
+    public required BLLeaderboardId Id { get; init; }
     public required DifficultyResponse Difficulty { get; init; }
 }
 
@@ -30,14 +32,14 @@ public class LeaderboardsInfoResponseWithScore : LeaderboardsInfoResponse
 
 public class CompactLeaderboardResponse
 {
-    public required string? Id { get; init; }
+    public required BLLeaderboardId? Id { get; init; }
     public required CompactSongResponse? Song { get; init; }
     public required DifficultyResponse? Difficulty { get; init; }
 }
 
 public class LeaderboardResponse
 {
-    public required string? Id { get; init; }
+    public required BLLeaderboardId? Id { get; init; }
     public required SongResponse? Song { get; init; }
     public required DifficultyResponse? Difficulty { get; init; }
     public required List<ScoreResponse>? Scores { get; init; }
@@ -48,7 +50,7 @@ public class LeaderboardResponse
 
 public class LeaderboardGroupEntry
 {
-    public required string Id { get; init; }
+    public required BLLeaderboardId Id { get; init; }
     public required DifficultyStatus Status { get; init; }
     public required long Timestamp { get; init; }
 }

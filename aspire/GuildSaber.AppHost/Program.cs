@@ -14,10 +14,10 @@ postgres.WithPgWeb(option => option
 var guildsaberDb = postgres.AddDatabase("server-db", "server-db");
 var discordbotDb = postgres.AddDatabase("discordbot-db", "discordbot-db");
 
-var cache = builder.AddRedis("cache");
+/*var cache = builder.AddRedis("cache");
 cache.WithRedisCommander(action => action
         .WithParentRelationship(cache),
-    "commander");
+    "commander");*/
 
 var migrator = builder.AddProject<GuildSaber_Migrator>("migrator", options => options.ExcludeLaunchProfile = true)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
@@ -30,8 +30,9 @@ var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.Ex
     .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints()
     .WithReference(guildsaberDb).WaitForCompletion(migrator)
-    .WithReference(cache).WaitFor(cache)
+    //.WithReference(cache).WaitFor(cache)
     .WithReference("beatleader-api", new Uri("https://api.beatleader.com/"))
+    .WithReference("beatsaver-api", new Uri("https://api.beatsaver.com/"))
     .WithReference("scoresaber-api", new Uri("https://api.scoresaber.com/"))
     .WithReference("beatleader-socket", new Uri("wss://sockets.api.beatleader.com/"));
 
@@ -42,7 +43,7 @@ builder.AddProject<GuildSaber_DiscordBot>("discord-bot", option => option.Exclud
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
     .WithReference(discordbotDb).WaitFor(migrator)
     .WithReference(apiService).WaitFor(apiService)
-    .WithReference(cache).WaitFor(cache)
+    //.WithReference(cache).WaitFor(cache)
     .WithParentRelationship(apiService)
     .WithExplicitStart();
 

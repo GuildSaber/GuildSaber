@@ -1,6 +1,6 @@
-﻿using GuildSaber.Database.Extensions;
+﻿using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
+using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
-using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -15,7 +15,7 @@ public class Song
     public SongInfo Info { get; set; }
     public SongStats Stats { get; set; }
 
-    public SongDifficulty[] SongDifficulties { get; init; } = null!;
+    public IList<SongDifficulty> SongDifficulties { get; init; } = null!;
 
     public readonly record struct SongId(int Value) : IEFStrongTypedId<SongId, int>
     {
@@ -44,7 +44,8 @@ public class SongConfiguration : IEntityTypeConfiguration<Song>
     public void Configure(EntityTypeBuilder<Song> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.HasIndex(x => x.Hash).IsUnique();
+        builder.HasAlternateKey(x => x.Hash);
+
         builder.Property(x => x.Id)
             .HasGenericConversion<Song.SongId, int>()
             .ValueGeneratedOnAdd();

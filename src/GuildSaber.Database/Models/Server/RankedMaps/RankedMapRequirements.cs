@@ -8,7 +8,7 @@ namespace GuildSaber.Database.Models.Server.RankedMaps;
 public record RankedMapRequirements(
     bool NeedConfirmation,
     bool NeedFullCombo,
-    float? MaxPauseDuration,
+    float? MaxPauseDurationSec,
     AbstractScore.EModifiers ProhibitedModifiers,
     AbstractScore.EModifiers MandatoryModifiers,
     Accuracy? MinAccuracy

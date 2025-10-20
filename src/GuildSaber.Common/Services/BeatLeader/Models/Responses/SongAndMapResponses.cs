@@ -29,7 +29,7 @@ public class DifficultyDescription
     public required ModifiersMap? ModifierValues { get; init; }
     public required ModifiersRating? ModifiersRating { get; init; }
 
-    public required MaxScoreGraph? MaxScoreGraph { get; init; }
+    public MaxScoreGraph? MaxScoreGraph { get; init; }
     public required int NominatedTime { get; init; }
     public required int QualifiedTime { get; init; }
     public required int RankedTime { get; init; }
