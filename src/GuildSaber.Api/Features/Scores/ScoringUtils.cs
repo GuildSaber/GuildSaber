@@ -39,6 +39,7 @@ public static class ScoringUtils
                     EModifiers.GhostNotes => modifierValues.GhostNotes,
                     EModifiers.SuperFastSong => modifierValues.SuperFastSong,
                     EModifiers.Unk => 0,
+                    EModifiers.ProhibitedDefaults => 0,
                     _ => throw new ArgumentOutOfRangeException(nameof(mod), mod, null)
                 }) switch
             {

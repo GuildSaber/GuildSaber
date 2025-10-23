@@ -26,10 +26,10 @@ public class GlobalHooks
         appHost.RemoveResources<PgWebContainerResource>();
         appHost.RemoveResources<RedisCommanderResource>();
 
-        appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
+        /*appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
         {
             clientBuilder.AddStandardResilienceHandler();
-        });
+        });*/
 
         App = await appHost.BuildAsync();
         NotificationService = App.Services.GetRequiredService<ResourceNotificationService>();

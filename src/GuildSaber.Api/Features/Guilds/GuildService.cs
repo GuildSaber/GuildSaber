@@ -54,20 +54,20 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
                 .MapError(CreateResponse (errors) => new CreateResponse.ValidationFailure(errors)))
             .Map(static (guild, state) => state.dbContext.Database.CreateExecutionStrategy()
                     .ExecuteInTransactionAsync((guild, state.playerId, state.dbContext, state.timeProvider),
-                        operation: static async (x, _) =>
+                        operation: static async (state, _) =>
                         {
-                            var inserted = await x.dbContext.AddAndSaveAsync(x.guild);
-                            var currTime = x.timeProvider.GetUtcNow();
+                            var inserted = await state.dbContext.AddAndSaveAsync(state.guild);
+                            var currTime = state.timeProvider.GetUtcNow();
 
-                            await x.dbContext.AddAndSaveAsync(new Member
+                            await state.dbContext.AddAndSaveAsync(new Member
                             {
-                                GuildId = x.guild.Id,
-                                PlayerId = x.playerId,
+                                GuildId = state.guild.Id,
+                                PlayerId = state.playerId,
                                 CreatedAt = currTime,
                                 EditedAt = currTime,
                                 Permissions = EPermission.GuildLeader,
                                 JoinState = Member.EJoinState.None,
-                                Priority = await MemberService.GetNextPriority(x.dbContext, x.playerId)
+                                Priority = await MemberService.GetNextPriority(state.dbContext, state.playerId)
                             });
 
                             return inserted;

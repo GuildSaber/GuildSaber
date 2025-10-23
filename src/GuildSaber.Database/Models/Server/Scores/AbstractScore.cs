@@ -11,7 +11,7 @@ namespace GuildSaber.Database.Models.Server.Scores;
 
 public abstract record AbstractScore
 {
-    public ScoreId Id { get; init; }
+    public ScoreId Id { get; set; }
     public required PlayerId PlayerId { get; init; }
     public required SongDifficultyId SongDifficultyId { get; init; }
     public EScoreType Type { get; private init; }

@@ -58,9 +58,9 @@ public static class ScoreMappers
             _ => ""
         });
 
-    public static BeatLeaderScore Map(
-        this UploadedScore uploadScore, Player.PlayerId playerId,
-        SongDifficulty.SongDifficultyId songDifficultyId) => new()
+    public static BeatLeaderScore Map<T>(
+        this T uploadScore, Player.PlayerId playerId,
+        SongDifficulty.SongDifficultyId songDifficultyId) where T : IUnprocessedScore => new()
     {
         PlayerId = playerId,
         SongDifficultyId = songDifficultyId,
@@ -69,7 +69,7 @@ public static class ScoreMappers
 
         BaseScore = BaseScore.CreateUnsafe(uploadScore.BaseScore).Value,
         Modifiers = ToModifiers(uploadScore.Modifiers),
-        SetAt = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(uploadScore.TimeSet)),
+        SetAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(uploadScore.TimeSet)),
 
         MaxCombo = null,
         IsFullCombo = uploadScore.FullCombo,
@@ -79,43 +79,24 @@ public static class ScoreMappers
         HMD = uploadScore.Hmd.Map()
     };
 
-    public static BeatLeaderScore Map(
-        this AcceptedScore acceptedScore, ScoreStatistics? scoreStatistics, Player.PlayerId playerId,
-        SongDifficulty.SongDifficultyId songDifficultyId) => new()
+    public static BeatLeaderScore Map<T>(
+        this T score, Player.PlayerId playerId,
+        SongDifficulty.SongDifficultyId songDifficultyId,
+        ScoreStatistics? scoreStatistics) where T : IProcessedScore => new()
     {
         PlayerId = playerId,
         SongDifficultyId = songDifficultyId,
-        BeatLeaderScoreId = acceptedScore.Id,
+        BeatLeaderScoreId = score.Id,
 
-        BaseScore = BaseScore.CreateUnsafe(acceptedScore.BaseScore).Value,
-        Modifiers = ToModifiers(acceptedScore.Modifiers),
-        SetAt = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(acceptedScore.TimeSet)),
+        BaseScore = BaseScore.CreateUnsafe(score.BaseScore).Value,
+        Modifiers = ToModifiers(score.Modifiers),
+        SetAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(score.TimeSet)),
 
-        MaxCombo = acceptedScore.MaxCombo,
-        IsFullCombo = acceptedScore.FullCombo,
-        BadCuts = acceptedScore.BadCuts,
-        MissedNotes = acceptedScore.MissedNotes,
+        MaxCombo = score.MaxCombo,
+        IsFullCombo = score.FullCombo,
+        BadCuts = score.BadCuts,
+        MissedNotes = score.MissedNotes,
         ScoreStatistics = scoreStatistics,
-        HMD = acceptedScore.Hmd.Map()
-    };
-
-    public static BeatLeaderScore Map(
-        this RejectedScore rejectedScore, ScoreStatistics? scoreStatistics, Player.PlayerId playerId,
-        SongDifficulty.SongDifficultyId songDifficultyId) => new()
-    {
-        PlayerId = playerId,
-        SongDifficultyId = songDifficultyId,
-        BeatLeaderScoreId = rejectedScore.Id,
-
-        BaseScore = BaseScore.CreateUnsafe(rejectedScore.BaseScore).Value,
-        Modifiers = ToModifiers(rejectedScore.Modifiers),
-        SetAt = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(rejectedScore.TimeSet)),
-
-        MaxCombo = rejectedScore.MaxCombo,
-        IsFullCombo = rejectedScore.FullCombo,
-        BadCuts = rejectedScore.BadCuts,
-        MissedNotes = rejectedScore.MissedNotes,
-        ScoreStatistics = scoreStatistics,
-        HMD = rejectedScore.Hmd.Map()
+        HMD = score.Hmd.Map()
     };
 }

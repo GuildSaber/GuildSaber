@@ -40,26 +40,59 @@ public static class RankedMapMappers
         );
     }
 
-    public static Result<AbstractScore.EModifiers> Map(this RankedMapRequest.EModifiers self) => self switch
-    {
-        RankedMapRequest.EModifiers.None => AbstractScore.EModifiers.None,
-        RankedMapRequest.EModifiers.NoObstacles => AbstractScore.EModifiers.NoObstacles,
-        RankedMapRequest.EModifiers.NoBombs => AbstractScore.EModifiers.NoBombs,
-        RankedMapRequest.EModifiers.NoFail => AbstractScore.EModifiers.NoFail,
-        RankedMapRequest.EModifiers.SlowerSong => AbstractScore.EModifiers.SlowerSong,
-        RankedMapRequest.EModifiers.BatteryEnergy => AbstractScore.EModifiers.BatteryEnergy,
-        RankedMapRequest.EModifiers.InstaFail => AbstractScore.EModifiers.InstaFail,
-        RankedMapRequest.EModifiers.SmallNotes => AbstractScore.EModifiers.SmallNotes,
-        RankedMapRequest.EModifiers.ProMode => AbstractScore.EModifiers.ProMode,
-        RankedMapRequest.EModifiers.FasterSong => AbstractScore.EModifiers.FasterSong,
-        RankedMapRequest.EModifiers.StrictAngles => AbstractScore.EModifiers.StrictAngles,
-        RankedMapRequest.EModifiers.DisappearingArrows => AbstractScore.EModifiers.DisappearingArrows,
-        RankedMapRequest.EModifiers.GhostNotes => AbstractScore.EModifiers.GhostNotes,
-        RankedMapRequest.EModifiers.NoArrows => AbstractScore.EModifiers.NoArrows,
-        RankedMapRequest.EModifiers.SuperFastSong => AbstractScore.EModifiers.SuperFastSong,
-        RankedMapRequest.EModifiers.OldDots => AbstractScore.EModifiers.OldDots,
-        RankedMapRequest.EModifiers.OffPlatform => AbstractScore.EModifiers.OffPlatform,
-        RankedMapRequest.EModifiers.ProhibitedDefaults => AbstractScore.EModifiers.ProhibitedDefaults,
-        _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
-    };
+    public static Result<RankedMapRequest.EModifiers> Map(this AbstractScore.EModifiers self) =>
+        Enum.GetValues<AbstractScore.EModifiers>()
+            .Where(flag => flag != AbstractScore.EModifiers.None && self.HasFlag(flag))
+            .Select(flag => flag switch
+            {
+                AbstractScore.EModifiers.NoObstacles => RankedMapRequest.EModifiers.NoObstacles,
+                AbstractScore.EModifiers.NoBombs => RankedMapRequest.EModifiers.NoBombs,
+                AbstractScore.EModifiers.NoFail => RankedMapRequest.EModifiers.NoFail,
+                AbstractScore.EModifiers.SlowerSong => RankedMapRequest.EModifiers.SlowerSong,
+                AbstractScore.EModifiers.BatteryEnergy => RankedMapRequest.EModifiers.BatteryEnergy,
+                AbstractScore.EModifiers.InstaFail => RankedMapRequest.EModifiers.InstaFail,
+                AbstractScore.EModifiers.SmallNotes => RankedMapRequest.EModifiers.SmallNotes,
+                AbstractScore.EModifiers.ProMode => RankedMapRequest.EModifiers.ProMode,
+                AbstractScore.EModifiers.FasterSong => RankedMapRequest.EModifiers.FasterSong,
+                AbstractScore.EModifiers.StrictAngles => RankedMapRequest.EModifiers.StrictAngles,
+                AbstractScore.EModifiers.DisappearingArrows => RankedMapRequest.EModifiers.DisappearingArrows,
+                AbstractScore.EModifiers.GhostNotes => RankedMapRequest.EModifiers.GhostNotes,
+                AbstractScore.EModifiers.NoArrows => RankedMapRequest.EModifiers.NoArrows,
+                AbstractScore.EModifiers.SuperFastSong => RankedMapRequest.EModifiers.SuperFastSong,
+                AbstractScore.EModifiers.OldDots => RankedMapRequest.EModifiers.OldDots,
+                AbstractScore.EModifiers.OffPlatform => RankedMapRequest.EModifiers.OffPlatform,
+                AbstractScore.EModifiers.ProhibitedDefaults => RankedMapRequest.EModifiers.ProhibitedDefaults,
+                AbstractScore.EModifiers.None => RankedMapRequest.EModifiers.None,
+                AbstractScore.EModifiers.Unk => RankedMapRequest.EModifiers.Unk,
+                _ => throw new ArgumentOutOfRangeException(nameof(flag))
+            })
+            .Aggregate(RankedMapRequest.EModifiers.None, (acc, mapped) => acc | mapped);
+
+    public static Result<AbstractScore.EModifiers> Map(this RankedMapRequest.EModifiers self) =>
+        Enum.GetValues<RankedMapRequest.EModifiers>()
+            .Where(flag => flag != RankedMapRequest.EModifiers.None && self.HasFlag(flag))
+            .Select(flag => flag switch
+            {
+                RankedMapRequest.EModifiers.NoObstacles => AbstractScore.EModifiers.NoObstacles,
+                RankedMapRequest.EModifiers.NoBombs => AbstractScore.EModifiers.NoBombs,
+                RankedMapRequest.EModifiers.NoFail => AbstractScore.EModifiers.NoFail,
+                RankedMapRequest.EModifiers.SlowerSong => AbstractScore.EModifiers.SlowerSong,
+                RankedMapRequest.EModifiers.BatteryEnergy => AbstractScore.EModifiers.BatteryEnergy,
+                RankedMapRequest.EModifiers.InstaFail => AbstractScore.EModifiers.InstaFail,
+                RankedMapRequest.EModifiers.SmallNotes => AbstractScore.EModifiers.SmallNotes,
+                RankedMapRequest.EModifiers.ProMode => AbstractScore.EModifiers.ProMode,
+                RankedMapRequest.EModifiers.FasterSong => AbstractScore.EModifiers.FasterSong,
+                RankedMapRequest.EModifiers.StrictAngles => AbstractScore.EModifiers.StrictAngles,
+                RankedMapRequest.EModifiers.DisappearingArrows => AbstractScore.EModifiers.DisappearingArrows,
+                RankedMapRequest.EModifiers.GhostNotes => AbstractScore.EModifiers.GhostNotes,
+                RankedMapRequest.EModifiers.NoArrows => AbstractScore.EModifiers.NoArrows,
+                RankedMapRequest.EModifiers.SuperFastSong => AbstractScore.EModifiers.SuperFastSong,
+                RankedMapRequest.EModifiers.OldDots => AbstractScore.EModifiers.OldDots,
+                RankedMapRequest.EModifiers.OffPlatform => AbstractScore.EModifiers.OffPlatform,
+                RankedMapRequest.EModifiers.ProhibitedDefaults => AbstractScore.EModifiers.ProhibitedDefaults,
+                RankedMapRequest.EModifiers.None => AbstractScore.EModifiers.None,
+                RankedMapRequest.EModifiers.Unk => AbstractScore.EModifiers.Unk,
+                _ => throw new ArgumentOutOfRangeException(nameof(flag))
+            })
+            .Aggregate(AbstractScore.EModifiers.None, (acc, mapped) => acc | mapped);
 }

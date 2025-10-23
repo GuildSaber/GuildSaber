@@ -1,4 +1,5 @@
 using CSharpFunctionalExtensions;
+using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
@@ -11,8 +12,9 @@ namespace GuildSaber.Api.Features.Scores;
 public class BLScoreSyncWorker(
     BeatLeaderApi beatLeaderApi,
     BeatLeaderGeneralSocketStream beatLeaderGeneralSocketStream,
-    IServiceProvider serviceProvider,
-    ILogger<BLScoreSyncWorker> logger) : BackgroundService
+    IServiceScopeFactory serviceScopeFactory,
+    ILogger<BLScoreSyncWorker> logger)
+    : BackgroundService
 {
     private readonly TimeSpan _reconnectAfter = TimeSpan.FromSeconds(5);
 
@@ -43,8 +45,9 @@ public class BLScoreSyncWorker(
     /// <returns>A task representing the asynchronous operation.</returns>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await using var scope = serviceProvider.CreateAsyncScope();
+        await using var scope = serviceScopeFactory.CreateAsyncScope();
         await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
+        var scoreUpdatePipeline = new ScoreAddOrUpdatePipeline(dbContext);
 
         do
         {
@@ -67,17 +70,15 @@ public class BLScoreSyncWorker(
                 var dbScore = response switch
                 {
                     GeneralSocketMessage<UploadedScore>(var upload) => upload.Map(playerId, difficultyId),
-                    GeneralSocketMessage<AcceptedScore>(var accepted) => accepted.Map((await beatLeaderApi
-                        .GetScoreStatisticsAsync(accepted.Id)).GetValueOrDefault().Map(), playerId, difficultyId),
-                    GeneralSocketMessage<RejectedScore>(var rejected) => rejected.Map((await beatLeaderApi
-                        .GetScoreStatisticsAsync(rejected.Id)).GetValueOrDefault().Map(), playerId, difficultyId),
+                    GeneralSocketMessage<AcceptedScore>(var accepted) => accepted.Map(playerId, difficultyId,
+                        (await beatLeaderApi.GetScoreStatisticsAsync(accepted.Id)).GetValueOrDefault().Map()),
+                    GeneralSocketMessage<RejectedScore>(var rejected) => rejected.Map(playerId, difficultyId,
+                        (await beatLeaderApi.GetScoreStatisticsAsync(rejected.Id)).GetValueOrDefault().Map()),
                     _ => throw new InvalidOperationException(
                         $"Unknown message type received from BeatLeader: {response.GetType().Name}")
                 };
 
-                /*BackgroundJob.Enqueue<ScoreService>(response is not SocketGeneralResponse.Rejected
-                    ? handler => handler.AddScorePipelineAsync(dbScore)
-                    : handler => handler.RemoveScorePipelineAsync(dbScore));*/
+                await scoreUpdatePipeline.AddOrUpdateAsync(dbScore);
             }
 
             await Task.Delay(_reconnectAfter, stoppingToken);
@@ -87,7 +88,7 @@ public class BLScoreSyncWorker(
     /// <summary>
     /// Retrieves the PlayerId for a given BeatLeader ID from the database.
     /// </summary>
-    private static async Task<Maybe<PlayerId>> GetPlayerIdAsync(
+    public static async Task<Maybe<PlayerId>> GetPlayerIdAsync(
         BeatLeaderId beatleaderId, ServerDbContext dbContext, CancellationToken token)
         => await dbContext.Players
                 .Where(x => x.LinkedAccounts.BeatLeaderId == beatleaderId)
@@ -99,7 +100,7 @@ public class BLScoreSyncWorker(
                 var id => From(id.Value)
             };
 
-    private async Task<Maybe<SongDifficultyId>> GetSongDifficultyIdAsync(
+    public static async Task<Maybe<SongDifficultyId>> GetSongDifficultyIdAsync(
         string leaderboardId, ServerDbContext dbContext, CancellationToken token)
         => await dbContext.SongDifficulties
                 .Where(sd => sd.BLLeaderboardId == leaderboardId)

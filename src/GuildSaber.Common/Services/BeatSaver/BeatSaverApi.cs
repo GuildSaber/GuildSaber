@@ -27,7 +27,7 @@ public class BeatSaverApi(HttpClient httpClient)
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<BeatMap?, Error>(null),
             { StatusCode: HttpStatusCode.TooManyRequests, Headers: var headers } => Failure<BeatMap?, Error>(
-                new Error.RateLimitExceeded(headers.RetryAfter?.Delta ?? TimeSpan.FromMinutes(1))
+                new Error.RateLimitExceeded(headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(2))
             ),
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<BeatMap?, Error>(

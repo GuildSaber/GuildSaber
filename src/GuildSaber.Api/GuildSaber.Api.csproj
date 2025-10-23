@@ -30,7 +30,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Features\Debug\"/>
         <Folder Include="Features\Players\Scores\"/>
     </ItemGroup>
 

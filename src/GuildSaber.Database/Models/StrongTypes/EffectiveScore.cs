@@ -3,12 +3,14 @@ using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Database.Models.StrongTypes;
 
-public readonly record struct EffectiveScore
+public readonly record struct EffectiveScore : IComparable<EffectiveScore>
 {
     private readonly int _value;
 
     private EffectiveScore(int value)
         => _value = value;
+
+    public int CompareTo(EffectiveScore other) => _value.CompareTo(other._value);
 
     public static Result<EffectiveScore> TryCreate(int? value) => value switch
     {

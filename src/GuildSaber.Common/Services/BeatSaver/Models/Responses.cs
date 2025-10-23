@@ -40,14 +40,12 @@ public class Uploader
 {
     public required int Id { get; set; }
     public required string Name { get; set; }
-    public required string Hash { get; set; }
     public required string Avatar { get; set; }
 }
 
 public class Version
 {
     public required SongHash Hash { get; set; }
-    public required BeatSaverKey Key { get; set; }
     public required string State { get; set; }
     public required DateTimeOffset CreatedAt { get; set; }
     public required int SageScore { get; set; }

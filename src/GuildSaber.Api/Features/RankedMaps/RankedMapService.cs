@@ -46,6 +46,9 @@ public class RankedMapService(
             public ValidationFailure(string name, string error) : this([
                 new KeyValuePair<string, string[]>(name, [error])
             ]) { }
+
+            public override string ToString()
+                => string.Join("; ", Errors.SelectMany(x => x.Value.Select(err => $"{x.Key}: {err}")));
         }
 
         public sealed record NotOnBeatSaver(BeatSaverKey BeatSaverKey) : CreateResponse;
@@ -140,7 +143,7 @@ public class RankedMapService(
             song = new Song
             {
                 Hash = version.Hash,
-                BeatSaverKey = version.Key,
+                BeatSaverKey = beatMap.Id,
                 UploadedAt = version.CreatedAt,
                 Info = new SongInfo
                 {
@@ -241,17 +244,30 @@ public class RankedMapService(
                 accCurve.Value
             );
             if (!ratingResult.TryGetValue(out rating, out var ratingError))
-                return Failure<RankedMap, List<KeyValuePair<string, string[]>>>([
-                    new KeyValuePair<string, string[]>("RatingCalculation", [ratingError])
-                ]);
+            {
+                rating = new RankedMapRating
+                {
+                    AccStar = request.ManualRating.AccuracyStar is { } accStar
+                        ? new RankedMapRating.AccuracyStar(accStar)
+                        : new RankedMapRating.AccuracyStar(0),
+                    DiffStar = request.ManualRating.DifficultyStar is { } diffStar
+                        ? new RankedMapRating.DifficultyStar(diffStar)
+                        : new RankedMapRating.DifficultyStar(0)
+                };
 
-            rating.AccStar = request.ManualRating.AccuracyStar is { } accStar
-                ? new RankedMapRating.AccuracyStar(accStar)
-                : rating.AccStar;
-
-            rating.DiffStar = request.ManualRating.DifficultyStar is { } diffStar
-                ? new RankedMapRating.DifficultyStar(diffStar)
-                : rating.DiffStar;
+                //return Failure<RankedMap, List<KeyValuePair<string, string[]>>>([
+                //    new KeyValuePair<string, string[]>("RatingCalculation", [ratingError])
+                //]);
+            }
+            else
+            {
+                rating.AccStar = request.ManualRating.AccuracyStar is { } accStar
+                    ? new RankedMapRating.AccuracyStar(accStar)
+                    : rating.AccStar;
+                rating.DiffStar = request.ManualRating.DifficultyStar is { } diffStar
+                    ? new RankedMapRating.DifficultyStar(diffStar)
+                    : rating.DiffStar;
+            }
         }
 
         return new RankedMap

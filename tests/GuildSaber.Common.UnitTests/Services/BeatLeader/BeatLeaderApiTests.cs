@@ -131,6 +131,101 @@ public class BeatLeaderApiTests
     }
 
     [Test]
+    public async Task GetPlayerScores_ShouldReturnNullAndStopIteration_WhenInvalidPlayerId()
+    {
+        // Arrange
+        var playerId = _invalidBeatLeaderId;
+        var requestOptions = new BeatLeaderApi.PaginatedRequestOptions<ScoresSortBy>
+        {
+            Page = 1,
+            PageSize = 2,
+            MaxPage = 2,
+            Order = Order.Desc,
+            SortBy = ScoresSortBy.Date
+        };
+        var iterationCount = 0;
+
+        // Act
+        await foreach (var data in _beatLeaderApi.GetPlayerScores(playerId, requestOptions))
+        {
+            iterationCount++.Should().Be(0, "because we expect to stop after the first iteration");
+
+            if (!data.TryGetValue(out var scores))
+                Assert.Fail(data.Error);
+
+            scores.Should().BeNull("because the player ID is invalid");
+        }
+    }
+
+    [Test]
+#pragma warning disable TUnit0002
+    [Arguments(ScoresSortBy.Date, Order.Desc), Arguments(ScoresSortBy.Acc, Order.Asc)]
+    [Arguments(ScoresSortBy.Acc, Order.Desc), Arguments(ScoresSortBy.Date, Order.Asc)]
+#pragma warning restore TUnit0002
+    public async Task GetPlayerScores_ShouldReturnScoresInCorrectSortingOrder_WhenOrderByAndSortBySpecified(
+        ScoresSortBy sortBy, Order orderBy)
+    {
+        // Arrange
+        var playerId = _validBeatLeaderId;
+        var requestOptions = new BeatLeaderApi.PaginatedRequestOptions<ScoresSortBy>
+        {
+            Page = 1,
+            PageSize = 2,
+            MaxPage = 2,
+            SortBy = sortBy,
+            Order = orderBy
+        };
+
+        var scores = new List<ScoreResponse>();
+
+        // Act
+        await foreach (var data in _beatLeaderApi.GetPlayerScores(playerId, requestOptions))
+        {
+            if (!data.TryGetValue(out var scoreResponses))
+                Assert.Fail(data.Error);
+
+            scores.AddRange(scoreResponses!);
+        }
+
+        // Arrange Assertion
+        var compFunc = (Expression<Func<ScoreResponse, IComparable>>)(sortBy switch
+        {
+            ScoresSortBy.Date => x => x.TimePost,
+            ScoresSortBy.Acc => x => x.Accuracy,
+            _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
+        });
+
+        // Assert
+        scores.Should()
+            .BeInOrders(compFunc, orderBy)
+            .And.HaveCount((requestOptions.MaxPage - requestOptions.Page + 1) * requestOptions.PageSize);
+    }
+
+    [Test]
+    public async Task GetPlayerScores_ShouldReturnEmptyArray_WhenNoMoreData()
+    {
+        // Arrange
+        var playerId = _validBeatLeaderId;
+        var requestOptions = new BeatLeaderApi.PaginatedRequestOptions<ScoresSortBy>
+        {
+            Page = 1,
+            PageSize = 2,
+            MaxPage = 2,
+            Order = Order.Desc,
+            SortBy = ScoresSortBy.Date
+        };
+
+        // Act
+        await foreach (var data in _beatLeaderApi.GetPlayerScores(playerId, requestOptions))
+        {
+            if (!data.TryGetValue(out var scores))
+                Assert.Fail(data.Error);
+
+            scores.Should().NotBeNullOrEmpty("because we expect to receive scores");
+        }
+    }
+
+    [Test]
     public async Task GetPlayerProfile_ShouldReturnNull_WhenInvalidPlayerId()
     {
         // Arrange

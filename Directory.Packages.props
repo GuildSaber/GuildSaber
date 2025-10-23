@@ -11,8 +11,8 @@
         <PackageVersion Include="AspNet.Security.OAuth.Discord" Version="9.4.1"/>
         <PackageVersion Include="Bogus" Version="35.6.4"/>
         <PackageVersion Include="KubernetesClient" Version="17.0.14"/>
-        <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0-rc.1.25451.107"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0-rc.1.25451.107"/>
+        <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0-rc.2.25502.107"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0-rc.2.25502.107"/>
         <PackageVersion Include="Microsoft.Build.Tasks.Core" Version="17.14.28"/>
         <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0-rc.1.25451.107"/>
         <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.10.0"/>
@@ -27,7 +27,7 @@
         <PackageVersion Include="CSharpFunctionalExtensions.Analyzers" Version="1.4.1"/>
         <PackageVersion Include="CSharpFunctionalExtensions.HttpResults" Version="1.0.1"/>
         <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0-rc.2.25502.107"/>
-        <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0-rc.1.25451.107"/>
+        <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0-rc.2.25502.107"/>
         <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.0-rc.2.25502.107"/>
         <PackageVersion Include="MyCSharp.HttpUserAgentParser.AspNetCore" Version="3.0.28"/>
         <PackageVersion Include="Scalar.AspNetCore.Microsoft" Version="2.8.11"/>

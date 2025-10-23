@@ -29,7 +29,7 @@ public class RankedScore : IComparable<RankedScore>
     public required PlayerId PlayerId { get; init; }
 
     public required ScoreId ScoreId { get; set; }
-    public required ScoreId PrevScoreId { get; set; }
+    public required ScoreId? PrevScoreId { get; set; }
 
     public required EState State { get; set; }
     public required EDenyReason DenyReason { get; set; }
@@ -40,7 +40,42 @@ public class RankedScore : IComparable<RankedScore>
     /* Date won't be stored here, it can just be based on the underlying score's SetAt property.
      (Because the ranked map and rules can be tweaked, reassigning dates here would be confusing) */
 
-    public int CompareTo(RankedScore? other) => throw new NotImplementedException();
+    /// <remarks>
+    /// Old piece of code non-tested and used for the sake of getting things to work.
+    /// </remarks>
+    public int CompareTo(RankedScore? other) => other switch
+    {
+        // Surely this score is better than a non-existing one.
+        null => 1,
+        { State: var otherState } => ((State & EState.NonPointGiving) == 0) switch
+        {
+            // State & otherState don't have any non-allowed flags.
+            true when (otherState & EState.NonPointGiving) == 0 =>
+                RawPoints.CompareTo(other.RawPoints) switch
+                {
+                    0 => EffectiveScore.CompareTo(other.EffectiveScore) switch
+                    {
+                        0 => ScoreId.Value.CompareTo(other.ScoreId.Value),
+                        var x => x
+                    },
+                    var x => x
+                },
+            // Other state has non-allowed flag(s) when State doesn't.
+            true => 1,
+            // Other state doesn't have non-allowed flag(s) while State has.
+            false when (otherState & EState.NonPointGiving) == 0 => -1,
+            // State and Other state have non-allowed flag(s).
+            false => RawPoints.CompareTo(other.RawPoints) switch
+            {
+                0 => EffectiveScore.CompareTo(other.EffectiveScore) switch
+                {
+                    0 => ScoreId.Value.CompareTo(other.ScoreId.Value),
+                    var x => x
+                },
+                var x => x
+            }
+        }
+    };
 
     public readonly record struct RankedScoreId(long Value) : IEFStrongTypedId<RankedScoreId, long>
     {

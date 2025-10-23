@@ -15,7 +15,7 @@ using EDenyReason = GuildSaber.Database.Models.Server.RankedScores.RankedScore.E
 
 namespace GuildSaber.Api.Features.Scores.Pipelines;
 
-public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
+public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
 {
     private record ScoreRankingContext(
         RankedMap[] RankedMapsWithVersionsWithSongDifficulty,
@@ -45,29 +45,33 @@ public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
         AbstractScore Score);
 
     public async Task AddOrUpdateAsync(AbstractScore scoreToAdd)
-        => await UpdateScoreIfChangedAsync(scoreToAdd, dbContext).Or(() => dbContext.AddAndSaveAsync(scoreToAdd))
-            .ToResult("Failed to add or update score.")
-            .Map(static (score, dbContext) =>
-                PrepareScoreRankingContextAsync(score.PlayerId, score.SongDifficultyId, dbContext), dbContext)
-            .Map(x => IterateRankedScoresWithTransform(x, RecalculateRankedScore))
-            .Map(FilterAndSelectScoresByGroup)
-            .Map(static (rankedScores, state) => state.dbContext.Database.CreateExecutionStrategy()
-                    .ExecuteInTransactionAsync((rankedScores, state.dbContext, state.PlayerId),
-                        operation: static async (state, _) =>
-                        {
-                            await state.dbContext.BulkInsertOrUpdateAsync(state.rankedScores);
-                            /* An optimization at the cost of memory consumption would be:
-                             * track the RankedScores (in EF Core with .AsTracking()),
-                             * then only update the ranks for the RankedMaps that is tracked as changed. */
-                            await RankedScoreUpdateRankPipeline.UpdateRanksForRankedMapsAsync(state.rankedScores
-                                    .Select(x => x.RankedMapId)
-                                    .Distinct(),
-                                state.dbContext
-                            );
-                            await PlayerPointsPipeline.RecalculatePlayerPoints(state.PlayerId, state.dbContext);
-                            await PlayerLevelPipeline.RecalculatePlayerLevels(state.PlayerId, state.dbContext);
-                        }, verifySucceeded: (_, _) => Task.FromResult(true)),
-                (dbContext, scoreToAdd.PlayerId))
+        => await (await UpdateScoreIfChangedAsync(scoreToAdd, dbContext)
+                .Or(() => dbContext.AddAndSaveAsync(scoreToAdd))
+                .ToResult("Failed to add or update score.")
+                .Map(async static (score, dbContext) =>
+                    await PrepareScoreRankingContextAsync(score.PlayerId, score.SongDifficultyId, dbContext), dbContext)
+                .Map(x => IterateRankedScoresWithTransform(x, RecalculateRankedScore))
+                .Map(FilterAndSelectScoresByGroup))
+            .Map(static async (rankedScores, state) =>
+            {
+                var enumerable = rankedScores.ToArray();
+                state.dbContext.RankedScores.UpdateRange(enumerable);
+                await state.dbContext.SaveChangesAsync();
+
+                /* An optimization at the cost of memory consumption would be:
+                 * track the RankedScores (in EF Core with .AsTracking()),
+                 * then only update the ranks for the RankedMaps that is tracked as changed. */
+                var changedRankedMapIds = enumerable
+                    .Select(x => x.RankedMapId)
+                    .Distinct().ToArray();
+                await RankedScoreUpdateRankPipeline.UpdateRanksForRankedMapsAsync(
+                    changedRankedMapIds,
+                    state.dbContext
+                );
+
+                await PlayerPointsPipeline.RecalculatePlayerPoints(state.PlayerId, state.dbContext);
+                await PlayerLevelPipeline.RecalculatePlayerLevels(state.PlayerId, state.dbContext);
+            }, (dbContext, scoreToAdd.PlayerId))
             .Unwrap();
 
     /// <summary>
@@ -81,10 +85,14 @@ public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
     private static async Task<Maybe<AbstractScore>> UpdateScoreIfChangedAsync(
         AbstractScore score, ServerDbContext dbContext)
     {
-        if (score is not BeatLeaderScore { BeatLeaderScoreId: not null } blScore
-            || !await SameBeatLeaderScoreWithoutIdExistsAsync(blScore, dbContext))
+        if (score is not BeatLeaderScore { BeatLeaderScoreId: not null } blScore)
             return None;
 
+        var oldScore = await SameBeatLeaderScoreWithoutIdExistsAsync(blScore, dbContext);
+        if (oldScore is null)
+            return None;
+
+        blScore.Id = oldScore.Id;
         dbContext.BeatLeaderScores.Update(blScore);
         await dbContext.SaveChangesAsync();
 
@@ -94,12 +102,13 @@ public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
     /// <summary>
     /// Check if there is the same BeatLeader score (without an ID) already existing in the database.
     /// </summary>
-    private static Task<bool> SameBeatLeaderScoreWithoutIdExistsAsync(BeatLeaderScore score, ServerDbContext dbContext)
-        => dbContext.BeatLeaderScores.AnyAsync(x =>
+    private static Task<BeatLeaderScore?> SameBeatLeaderScoreWithoutIdExistsAsync(
+        BeatLeaderScore score, ServerDbContext dbContext)
+        => dbContext.BeatLeaderScores.FirstOrDefaultAsync(x =>
             x.PlayerId == score.PlayerId
             && x.SongDifficultyId == score.SongDifficultyId
-            && x.SetAt == score.SetAt && x.BaseScore == score.BaseScore
-            && x.BeatLeaderScoreId == null);
+            && x.SetAt - score.SetAt < TimeSpan.FromSeconds(30)
+            && x.BaseScore == score.BaseScore);
 
     private static async Task<ScoreRankingContext> PrepareScoreRankingContextAsync(
         PlayerId playerId, SongDifficultyId songDifficultyId, ServerDbContext dbContext)
@@ -108,8 +117,9 @@ public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
             .Include(x => x.MapVersions).ThenInclude(x => x.SongDifficulty)
             .Where(x => x.MapVersions.Any(v => v.SongDifficultyId == songDifficultyId))
             .ToArrayAsync();
+        var rankedMapsIds = rankedMaps.Select(x => x.Id).ToArray();
         var rankedScores = await dbContext.RankedScores
-            .Where(x => x.PlayerId == playerId && rankedMaps.Any(y => y.Id == x.RankedMapId))
+            .Where(x => x.PlayerId == playerId && rankedMapsIds.Contains(x.RankedMapId))
             .ToArrayAsync();
         var contextWithPoints = await dbContext.GuildContexts
             .Include(x => x.Points)
@@ -117,11 +127,12 @@ public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
             .ToArrayAsync();
 
         var mapVersions = rankedMaps.SelectMany(x => x.MapVersions).ToArray();
+        var songDifficultyIds = mapVersions.Select(x => x.SongDifficultyId).ToArray();
 
         // We grab all the scores that are related to the Ranked maps, not just the ranked map version.
         var scores = await dbContext.Scores
-            .Where(x => x.PlayerId == playerId && mapVersions
-                .Any(y => y.SongDifficultyId == songDifficultyId))
+            .Where(x => x.PlayerId == playerId && songDifficultyIds
+                .Contains(songDifficultyId))
             .ToArrayAsync();
 
         return new ScoreRankingContext(
@@ -170,7 +181,7 @@ public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
                     PointId = point.Id,
                     PlayerId = score.PlayerId,
                     ScoreId = score.Id,
-                    PrevScoreId = default,
+                    PrevScoreId = null,
                     State = EState.None,
                     DenyReason = EDenyReason.Unspecified,
                     EffectiveScore = default,
@@ -246,7 +257,7 @@ public sealed class ScoreUpdatePipeline(ServerDbContext dbContext)
     /// better just not having requirements), but if we need to, this function could just need to be removed.
     /// </remarks>
     private static bool RankedScoresShouldBePersisted(RankedScore rankedScore)
-        => !rankedScore.State.HasFlag(EState.Denied);
+        => true; //!rankedScore.State.HasFlag(EState.Denied);
 
     private static RankedScore RemoveSelectedState(RankedScore rankedScore)
     {

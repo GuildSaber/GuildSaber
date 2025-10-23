@@ -45,6 +45,13 @@ public class BeatLeaderApi(HttpClient httpClient)
             UriKind.Relative
         );
 
+    private Uri GetPlayerScoreUrl(BeatLeaderId playerId, PaginatedRequestOptions<ScoresSortBy> requestOptions)
+        => new(
+            $"player/{playerId}/scores?page={requestOptions.Page}&count={requestOptions.PageSize}" +
+            $"&order={requestOptions.Order}&sortBy={requestOptions.SortBy}",
+            UriKind.Relative
+        );
+
     /// <summary>
     /// Asynchronously retrieves a player's compact scores with customizable pagination, sorting, and ordering.
     /// </summary>
@@ -86,6 +93,49 @@ public class BeatLeaderApi(HttpClient httpClient)
                 yield break;
         }
     }
+
+    /// <summary>
+    /// Asynchronously retrieves a player's full scores with customizable pagination, sorting, and ordering.
+    /// </summary>
+    /// <param name="playerId">The BeatLeader ID of the player whose scores to retrieve.</param>
+    /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <returns>
+    /// An async enumerable sequence of <see cref="Result{T}" /> containing nullable arrays of
+    /// <see cref="ScoreResponse" />.
+    /// </returns>
+    /// <remarks>
+    /// Each successful result contains:
+    /// - A page of scores when data is available
+    /// - An empty array when no more data is available (HTTP 2XX)
+    /// - Null when the player doesn't exist (HTTP 404)
+    /// Enumeration stops automatically after receiving null, an empty array, or an error.
+    /// </remarks>
+    public async IAsyncEnumerable<Result<ScoreResponse[]?>> GetPlayerScores(
+        BeatLeaderId playerId, PaginatedRequestOptions<ScoresSortBy> requestOptions)
+    {
+        while (requestOptions.Page <= requestOptions.MaxPage)
+        {
+            var url = GetPlayerScoreUrl(playerId, requestOptions);
+            var response = await httpClient.GetAsync(url);
+            requestOptions.Page++;
+
+            Result<ScoreResponse[]?> result;
+            yield return result = response switch
+            {
+                { StatusCode: HttpStatusCode.NotFound } => Success<ScoreResponse[]?>(null),
+                { IsSuccessStatusCode: false } => Failure<ScoreResponse[]?>(
+                    $"Failed to retrieve scores of player {playerId} at page {requestOptions.Page - 1}" +
+                    $": {response.StatusCode} {response.ReasonPhrase}"),
+                _ => await Try(() => response.Content
+                        .ReadFromJsonAsync<ResponseWithMetadata<ScoreResponse>>(_jsonOptions))
+                    .Map(ScoreResponse[]? (parsed) => parsed is null ? [] : parsed.Data)
+            };
+
+            if (result is { IsFailure: true } or { Value: null or [] })
+                yield break;
+        }
+    }
+
 
     /// <summary>
     /// Asynchronously retrieves a player's profile from BeatLeader.

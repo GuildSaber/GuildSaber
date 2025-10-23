@@ -23,7 +23,7 @@ public class BeatLeaderScoreConfiguration : IEntityTypeConfiguration<BeatLeaderS
     }
 }
 
-public readonly record struct ScoreStatistics
+public class ScoreStatistics
 {
     public required WinTracker WinTracker { get; init; }
     public required HitTracker HitTracker { get; init; }
@@ -35,7 +35,8 @@ public class ScoreStatisticConfiguration : IComplexPropertyConfiguration<ScoreSt
 {
     public ComplexPropertyBuilder<ScoreStatistics> Configure(ComplexPropertyBuilder<ScoreStatistics> builder)
     {
-        builder.ComplexProperty(x => x.WinTracker, x => x.ComplexProperty(y => y.AverageHeadPosition)).IsRequired();
+        builder.ComplexProperty(x => x.WinTracker, x => x.ComplexProperty(y => y.AverageHeadPosition)
+            .IsRequired()).IsRequired();
         builder.ComplexProperty(x => x.HitTracker).IsRequired();
         builder.ComplexProperty(x => x.AccuracyTracker).IsRequired();
         builder.ComplexProperty(x => x.ScoreGraphTracker).IsRequired();
@@ -86,4 +87,4 @@ public record AccuracyTracker(
     IReadOnlyList<float> AccuracyGrid
 );
 
-public readonly record struct ScoreGraphTracker(List<float> Graph);
+public record ScoreGraphTracker(List<float> Graph);

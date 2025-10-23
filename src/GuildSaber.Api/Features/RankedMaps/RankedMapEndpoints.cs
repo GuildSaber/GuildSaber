@@ -53,18 +53,18 @@ public class RankedMapEndpoints : IEndpoints
                 $"Guild has reached its maximum number of ranked maps ({current}/{max}), consider getting more boosts.",
                 statusCode: StatusCodes.Status401Unauthorized,
                 title: "Too many ranked maps"),
-            CreateResponse.ValidationFailure(var errors) => TypedResults.ValidationProblem(
-                errors: errors,
-                detail: "Failed to validate ranked map creation."),
-            CreateResponse.NotOnBeatSaver(var beatSaverKey) => TypedResults.Problem(
-                $"Map with BeatSaver key {beatSaverKey} not found.",
-                statusCode: StatusCodes.Status404NotFound),
-            CreateResponse.RateLimited(var retryAfter) => TypedResults.Problem(
-                $"Rate limited by BeatSaver API. Retry after {retryAfter.TotalSeconds:N0} seconds.",
-                statusCode: StatusCodes.Status429TooManyRequests),
-            CreateResponse.BeatSaverError(var message) => TypedResults.Problem(
-                $"BeatSaver API error: {message}",
-                statusCode: StatusCodes.Status500InternalServerError),
+            CreateResponse.ValidationFailure(var errors) => TypedResults
+                .ValidationProblem(errors: errors,
+                    detail: "Failed to validate ranked map creation."),
+            CreateResponse.NotOnBeatSaver(var beatSaverKey) => TypedResults
+                .NotFound($"Map with BeatSaver key {beatSaverKey} not found."),
+            CreateResponse.RateLimited(var retryAfter) => TypedResults
+                .Problem($"Rate limited by BeatSaver API. Retry after {retryAfter.TotalSeconds:N0} seconds.",
+                    statusCode: StatusCodes.Status429TooManyRequests),
+            CreateResponse.BeatSaverError(var message) => TypedResults
+                .InternalServerError($"BeatSaver API error: {message}"),
+            CreateResponse.UnexpectedFailure(var message) => TypedResults
+                .InternalServerError($"Unexpected error: {message}"),
             _ => throw new ArgumentOutOfRangeException(nameof(rankedMapService.CreateRankedMap),
                 "Unexpected response from CreateRankedMap.")
         };

@@ -25,6 +25,7 @@ public class RankedMapRequest
         SuperFastSong = 1 << 13,
         OldDots = 1 << 14,
         OffPlatform = 1 << 15,
+        Unk = 1 << 30,
 
         /// <summary>
         /// All modifiers that are commonly prohibited to giving points in ranked maps.

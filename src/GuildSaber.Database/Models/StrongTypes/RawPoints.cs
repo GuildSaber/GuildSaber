@@ -4,12 +4,14 @@ using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Database.Models.StrongTypes;
 
-public readonly record struct RawPoints
+public readonly record struct RawPoints : IComparable<RawPoints>
 {
     private readonly float _value;
 
     private RawPoints(float value)
         => _value = value;
+
+    public int CompareTo(RawPoints other) => _value.CompareTo(other._value);
 
     public static Result<RawPoints> TryCreate(float? value) => value switch
     {
