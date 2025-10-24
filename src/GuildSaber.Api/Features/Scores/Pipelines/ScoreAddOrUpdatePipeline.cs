@@ -44,7 +44,7 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
         Point Point,
         AbstractScore Score);
 
-    public async Task AddOrUpdateAsync(AbstractScore scoreToAdd)
+    public async Task ExecuteAsync(AbstractScore scoreToAdd)
         => await (await UpdateScoreIfChangedAsync(scoreToAdd, dbContext)
                 .Or(() => dbContext.AddAndSaveAsync(scoreToAdd))
                 .ToResult("Failed to add or update score.")

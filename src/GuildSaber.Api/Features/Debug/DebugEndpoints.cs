@@ -26,23 +26,7 @@ public class DebugEndpoints : IEndpoints
         var group = endpoints.MapGroup("/debug")
             .WithTag("Debug", "Endpoints for debugging and testing purposes");
 
-        group.MapGet("/import-old-gs-maps/{guildId}/stream",
-                async Task<Results<NotFound<string>, ServerSentEventsResult<RankedMap>>>
-                (GuildId guildId, ServerDbContext dbContext, OldGuildSaberApi oldGuildSaberApi,
-                 RankedMapService rankedMapService, ILogger<DebugEndpoints> logger,
-                 CancellationToken cancellationToken) =>
-                {
-                    if (!await dbContext.GuildContexts.AnyAsync(x => x.Id == guildId && x.GuildId == guildId,
-                            cancellationToken))
-                        return TypedResults.NotFound($"Guild context for guild {guildId} not found.");
-
-                    return TypedResults.ServerSentEvents(
-                        values: ImportOldGuildSaberMapsStream(
-                            guildId, new GuildContext.GuildContextId(guildId), dbContext, oldGuildSaberApi,
-                            rankedMapService, logger, cancellationToken),
-                        eventType: "import-ranked-map"
-                    );
-                })
+        group.MapGet("/import-old-gs-maps/{guildId}/stream", ImportOldGuildSaberMapsAsync)
             .WithSummary("Import ranked maps from old GuildSaber system.")
             .WithDescription("Streams import progress via SSE. Import stops on client disconnect.")
             .RequireManager();
@@ -51,6 +35,20 @@ public class DebugEndpoints : IEndpoints
             .WithSummary("Enqueue BeatLeader player scores import.")
             .WithDescription("Queues a background task to import all scores for the specified player from BeatLeader.")
             .RequireManager();
+    }
+
+    private static async Task<Results<NotFound<string>, ServerSentEventsResult<RankedMap>>>
+        ImportOldGuildSaberMapsAsync(
+            GuildId guildId, ServerDbContext dbContext, OldGuildSaberApi oldGuildSaberApi,
+            RankedMapService rankedMapService, ILogger<DebugEndpoints> logger,
+            CancellationToken cancellationToken)
+    {
+        if (!await dbContext.GuildContexts.AnyAsync(x => x.Id == guildId && x.GuildId == guildId, cancellationToken))
+            return TypedResults.NotFound($"Guild context for guild {guildId} not found.");
+
+        return TypedResults.ServerSentEvents(eventType: "import-ranked-map",
+            values: ImportOldGuildSaberMapsStream(guildId, new GuildContext.GuildContextId(guildId), dbContext,
+                oldGuildSaberApi, rankedMapService, logger, cancellationToken));
     }
 
     public static async Task<Results<Accepted, NotFound<string>>> EnqueueBeatLeaderPlayerScoresImportAsync(
@@ -63,6 +61,7 @@ public class DebugEndpoints : IEndpoints
         var player = await dbContext.Players
             .Where(x => x.Id == playerId)
             .FirstOrDefaultAsync(cancellationToken);
+
         if (player is null)
             return TypedResults.NotFound($"Player with ID {playerId} not found.");
 
@@ -98,14 +97,14 @@ public class DebugEndpoints : IEndpoints
         await foreach (var guildRankedMapsResult in oldGuildSaberApi.GetGuildRankedMaps(guildId.Value, request)
                            .WithCancellation(token))
         {
-            if (!guildRankedMapsResult.TryGetValue(out var guildRankedMaps, out var error))
+            if (!guildRankedMapsResult.TryGetValue(out var guildRankedMaps))
                 yield break;
 
             var rankingLevelsResult = await oldGuildSaberApi.GetRankingLevelsAsync(guildId.Value);
-            if (!rankingLevelsResult.TryGetValue(out var guildRankinglevels, out var levelError))
+            if (!rankingLevelsResult.TryGetValue(out var guildRankingLevels))
                 yield break;
 
-            var levelDict = guildRankinglevels.ToDictionary(x => x.Id, x => x);
+            var levelDict = guildRankingLevels.ToDictionary(x => x.Id, x => x);
 
             foreach (var rankedMap in guildRankedMaps.Where(x => x.BeatSaverId is not null))
             foreach (var difficulty in rankedMap.Difficulties.Where(x => x.GameModeName is not null))
@@ -159,8 +158,8 @@ public class DebugEndpoints : IEndpoints
 
                     logger.LogError(
                         "Failed to import ranked map {RankedMapId} difficulty {DifficultyId} for guild {GuildId}: {Error}",
-                        rankedMap.MapId, difficulty.DifficultyId, guildId,
-                        failure.Message);
+                        rankedMap.MapId, difficulty.DifficultyId, guildId, failure.Message
+                    );
                     break;
                 } while (tryCount++ < 3);
             }

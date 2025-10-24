@@ -11,6 +11,7 @@ namespace GuildSaber.Api.Features.Players.Pipelines;
 public sealed class PlayerScoresPipeline(
     ServerDbContext dbContext,
     BeatLeaderApi beatLeaderApi,
+    ScoreAddOrUpdatePipeline addOrUpdatePipeline,
     ILogger<PlayerScoresPipeline> logger)
 {
     public async Task ImportBeatLeaderScoresAsync(PlayerId playerId, BeatLeaderId beatLeaderId, CancellationToken token)
@@ -24,7 +25,6 @@ public sealed class PlayerScoresPipeline(
             SortBy = ScoresSortBy.Date,
             Order = Order.Asc
         };
-        var test = new ScoreAddOrUpdatePipeline(dbContext);
 
         // Unwrap the result to kill the current Task if there's an error.
         await foreach (var score in beatLeaderApi.GetPlayerScores(beatLeaderId, initialRequest)
@@ -41,7 +41,7 @@ public sealed class PlayerScoresPipeline(
                 .Map();
 
             var abstractScore = score.Map(playerId, difficultyId, scoreStats);
-            await test.AddOrUpdateAsync(abstractScore);
+            await addOrUpdatePipeline.ExecuteAsync(abstractScore);
         }
 
         logger.LogInformation("Completed importing BeatLeader scores for player {PlayerId}", playerId);

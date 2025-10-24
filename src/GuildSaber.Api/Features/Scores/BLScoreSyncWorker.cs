@@ -47,7 +47,7 @@ public class BLScoreSyncWorker(
     {
         await using var scope = serviceScopeFactory.CreateAsyncScope();
         await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
-        var scoreUpdatePipeline = new ScoreAddOrUpdatePipeline(dbContext);
+        var scoreAddOrUpdatePipeline = new ScoreAddOrUpdatePipeline(dbContext);
 
         do
         {
@@ -78,7 +78,7 @@ public class BLScoreSyncWorker(
                         $"Unknown message type received from BeatLeader: {response.GetType().Name}")
                 };
 
-                await scoreUpdatePipeline.AddOrUpdateAsync(dbScore);
+                await scoreAddOrUpdatePipeline.ExecuteAsync(dbScore);
             }
 
             await Task.Delay(_reconnectAfter, stoppingToken);
@@ -101,7 +101,7 @@ public class BLScoreSyncWorker(
             };
 
     public static async Task<Maybe<SongDifficultyId>> GetSongDifficultyIdAsync(
-        string leaderboardId, ServerDbContext dbContext, CancellationToken token)
+        BLLeaderboardId leaderboardId, ServerDbContext dbContext, CancellationToken token)
         => await dbContext.SongDifficulties
                 .Where(sd => sd.BLLeaderboardId == leaderboardId)
                 .Select(sd => sd.Id)

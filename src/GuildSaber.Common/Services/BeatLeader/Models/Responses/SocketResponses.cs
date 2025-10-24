@@ -18,7 +18,7 @@ namespace GuildSaber.Common.Services.BeatLeader.Models.Responses;
 [JsonDerivedType(typeof(GeneralSocketMessage<AcceptedScore>), "accepted")]
 [JsonDerivedType(typeof(GeneralSocketMessage<RejectedScore>), "rejected")]
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "message")]
-public abstract record GeneralSocketMessage(BeatLeaderId BeatLeaderId, string LeaderboardId);
+public abstract record GeneralSocketMessage(BeatLeaderId BeatLeaderId, BLLeaderboardId LeaderboardId);
 
 /// <summary>
 /// Represents different types of score events received from the BeatLeader WebSocket.
