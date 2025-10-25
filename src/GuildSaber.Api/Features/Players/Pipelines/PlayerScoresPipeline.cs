@@ -31,10 +31,8 @@ public sealed class PlayerScoresPipeline(
                            .SelectMany(x => x.Unwrap() ?? [])
                            .WithCancellation(token))
         {
-            var diffIdResult = await BLScoreSyncWorker.GetSongDifficultyIdAsync(
-                score.LeaderboardId, dbContext, token);
-            if (!diffIdResult.TryGetValue(out var difficultyId))
-                continue;
+            if (!(await BLScoreSyncWorker.GetSongDifficultyIdAsync(score.LeaderboardId, dbContext, token))
+                .TryGetValue(out var difficultyId)) continue;
 
             var scoreStats = (await beatLeaderApi.GetScoreStatisticsAsync(score.Id))
                 .GetValueOrDefault()

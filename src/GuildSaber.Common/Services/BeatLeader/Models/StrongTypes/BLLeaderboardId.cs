@@ -5,14 +5,12 @@ using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 
-public readonly record struct BLLeaderboardId : IComparable<BLLeaderboardId>
+public readonly record struct BLLeaderboardId
 {
     private readonly string _value;
 
     private BLLeaderboardId(string value)
         => _value = value;
-
-    public int CompareTo(BLLeaderboardId other) => string.Compare(_value, other._value, StringComparison.Ordinal);
 
     public static implicit operator string(BLLeaderboardId id)
         => id._value;

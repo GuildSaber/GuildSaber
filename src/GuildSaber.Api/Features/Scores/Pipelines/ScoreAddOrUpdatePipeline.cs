@@ -225,9 +225,6 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
     ///         <description>Finds the highest-scoring entry (using default comparison)</description>
     ///     </item>
     ///     <item>
-    ///         <description>Filters out scores that should not be persisted</description>
-    ///     </item>
-    ///     <item>
     ///         <description>Removes the Selected state from all persisted scores</description>
     ///     </item>
     ///     <item>
@@ -244,20 +241,8 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
             .SelectMany(group => group.Max() switch
             {
                 null => throw new InvalidOperationException("Group should contain at least one element."),
-                var best => group
-                    .Where(RankedScoresShouldBePersisted)
-                    .Select(x => x == best ? SetStateToSelected(x) : RemoveSelectedState(x))
+                var best => group.Select(x => x == best ? AddSelectedState(x) : RemoveSelectedState(x))
             });
-
-    /// <summary>
-    /// RankedScores that should be persisted are the stateful ones (Selected, Approved, Refused, Pending).
-    /// </summary>
-    /// <remarks>
-    /// In the future, we might wish to persist Denied scores (it technically don't make much sense semantically,
-    /// better just not having requirements), but if we need to, this function could just need to be removed.
-    /// </remarks>
-    private static bool RankedScoresShouldBePersisted(RankedScore rankedScore)
-        => true; //!rankedScore.State.HasFlag(EState.Denied);
 
     private static RankedScore RemoveSelectedState(RankedScore rankedScore)
     {
@@ -265,9 +250,9 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
         return rankedScore;
     }
 
-    private static RankedScore SetStateToSelected(RankedScore rankedScore)
+    private static RankedScore AddSelectedState(RankedScore rankedScore)
     {
-        rankedScore.State = EState.Selected;
+        rankedScore.State |= EState.Selected;
         return rankedScore;
     }
 }

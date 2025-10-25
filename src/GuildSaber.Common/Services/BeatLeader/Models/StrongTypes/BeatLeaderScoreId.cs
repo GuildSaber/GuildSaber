@@ -5,22 +5,19 @@ using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 
-public readonly record struct BeatLeaderScoreId : IComparable<BeatLeaderScoreId>
+public readonly record struct BeatLeaderScoreId
 {
     private readonly int _value;
 
     private BeatLeaderScoreId(int value)
         => _value = value;
 
-    public int CompareTo(BeatLeaderScoreId other) => _value.CompareTo(other._value);
-
-    public static Result<BeatLeaderScoreId> TryCreate(int? value)
-        => value switch
-        {
-            null => Failure<BeatLeaderScoreId>("BeatLeaderScoreId must not be null"),
-            < 1 => Failure<BeatLeaderScoreId>("BeatLeaderScoreId must be greater than 0"),
-            _ => Success(new BeatLeaderScoreId(value.Value))
-        };
+    public static Result<BeatLeaderScoreId> TryCreate(int? value) => value switch
+    {
+        null => Failure<BeatLeaderScoreId>("BeatLeaderScoreId must not be null"),
+        < 1 => Failure<BeatLeaderScoreId>("BeatLeaderScoreId must be greater than 0"),
+        _ => Success(new BeatLeaderScoreId(value.Value))
+    };
 
     public static Result<BeatLeaderScoreId> TryParse(string? value)
         => int.TryParse(value, out var parsed)

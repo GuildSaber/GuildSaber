@@ -5,7 +5,7 @@ using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 
-public readonly record struct BeatLeaderId : IComparable<BeatLeaderId>
+public readonly record struct BeatLeaderId
 {
     private readonly ulong _value;
 
@@ -14,8 +14,6 @@ public readonly record struct BeatLeaderId : IComparable<BeatLeaderId>
 
     private static Func<string, string> VerificationUrl =>
         id => $"https://api.beatleader.xyz/player/{id}/exists";
-
-    public int CompareTo(BeatLeaderId other) => _value.CompareTo(other._value);
 
     public static implicit operator ulong(BeatLeaderId id)
         => id._value;
