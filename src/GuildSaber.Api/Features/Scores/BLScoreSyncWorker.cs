@@ -1,4 +1,5 @@
 using CSharpFunctionalExtensions;
+using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
@@ -21,7 +22,7 @@ public class BLScoreSyncWorker(
     /// <summary>
     /// Continuously listens to the BeatLeader general socket stream for score events and queues them for processing.
     /// </summary>
-    /// <param name="stoppingToken">A cancellation token that can be used to stop the background service.</param>
+    /// <param name="token">A cancellation token that can be used to stop the background service.</param>
     /// <remarks>
     /// This method creates the core pipeline for BeatLeader score synchronization:
     /// <list type="number">
@@ -43,7 +44,7 @@ public class BLScoreSyncWorker(
     /// and by using Hangfire to queue score processing, which provides persistence and retry capabilities.
     /// </remarks>
     /// <returns>A task representing the asynchronous operation.</returns>
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken token)
     {
         await using var scope = serviceScopeFactory.CreateAsyncScope();
         await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
@@ -51,7 +52,7 @@ public class BLScoreSyncWorker(
 
         do
         {
-            await foreach (var result in beatLeaderGeneralSocketStream.WithCancellation(stoppingToken))
+            await foreach (var result in beatLeaderGeneralSocketStream.WithCancellation(token))
             {
                 if (!result.TryGetValue(out var response, out var error))
                 {
@@ -59,13 +60,11 @@ public class BLScoreSyncWorker(
                     break;
                 }
 
-                var playerIdResponse = await GetPlayerIdAsync(response.BeatLeaderId, dbContext, stoppingToken);
-                if (!playerIdResponse.TryGetValue(out var playerId))
-                    continue;
+                if (!(await GetPlayerIdAsync(response.BeatLeaderId, dbContext, token))
+                    .TryGetValue(out var playerId)) continue;
 
-                var diffIdResult = await GetSongDifficultyIdAsync(response.LeaderboardId, dbContext, stoppingToken);
-                if (!diffIdResult.TryGetValue(out var difficultyId))
-                    continue;
+                if (!(await PlayerScoresPipeline.GetSongDifficultyIdAsync(response.LeaderboardId, dbContext, token))
+                    .TryGetValue(out var difficultyId)) continue;
 
                 var dbScore = response switch
                 {
@@ -81,8 +80,8 @@ public class BLScoreSyncWorker(
                 await scoreAddOrUpdatePipeline.ExecuteAsync(dbScore);
             }
 
-            await Task.Delay(_reconnectAfter, stoppingToken);
-        } while (!stoppingToken.IsCancellationRequested);
+            await Task.Delay(_reconnectAfter, token);
+        } while (!token.IsCancellationRequested);
     }
 
     /// <summary>
@@ -94,18 +93,6 @@ public class BLScoreSyncWorker(
                 .Where(x => x.LinkedAccounts.BeatLeaderId == beatleaderId)
                 .Select(x => x.Id)
                 .Cast<PlayerId?>()
-                .FirstOrDefaultAsync(token) switch
-            {
-                null => None,
-                var id => From(id.Value)
-            };
-
-    public static async Task<Maybe<SongDifficultyId>> GetSongDifficultyIdAsync(
-        BLLeaderboardId leaderboardId, ServerDbContext dbContext, CancellationToken token)
-        => await dbContext.SongDifficulties
-                .Where(sd => sd.BLLeaderboardId == leaderboardId)
-                .Select(sd => sd.Id)
-                .Cast<SongDifficultyId?>()
                 .FirstOrDefaultAsync(token) switch
             {
                 null => None,

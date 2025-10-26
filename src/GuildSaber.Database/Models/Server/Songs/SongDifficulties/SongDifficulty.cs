@@ -1,5 +1,6 @@
 ﻿using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
+using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties.GameModes;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,7 @@ public class SongDifficulty
     public SongDifficultyId Id { get; init; }
 
     public BLLeaderboardId? BLLeaderboardId { get; init; }
+    public SSLeaderboardId? SSLeaderboardId { get; init; }
     public GameMode.GameModeId GameModeId { get; init; }
     public Song.SongId SongId { get; init; }
     public EDifficulty Difficulty { get; init; }
@@ -54,6 +56,8 @@ public class SongDifficultyConfiguration : IEntityTypeConfiguration<SongDifficul
 
         builder.Property(x => x.BLLeaderboardId)
             .HasConversion<string?>(from => from, to => BLLeaderboardId.CreateUnsafe(to));
+        builder.Property(x => x.SSLeaderboardId)
+            .HasConversion<int?>(from => from, to => SSLeaderboardId.CreateUnsafe(to));
 
         // Ensure that a SongDifficulty cannot change its SongId by mistake once in the database.
         builder.Property(x => x.SongId)

@@ -17,6 +17,8 @@ using PointId = GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId;
 
 namespace GuildSaber.Database.Models.Server.RankedScores;
 
+/*TODO: Turn RankedScore into a DU to enforce different states having different properties.
+ * E.g. Denied scores will have a DenyReason and no RawPoints, Approved scores won't and will have RawPoints.*/
 public class RankedScore : IComparable<RankedScore>
 {
     public RankedScoreId Id { get; init; }

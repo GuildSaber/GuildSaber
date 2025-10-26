@@ -10,7 +10,6 @@
         <PackageReference Include="AwesomeAssertions"/>
         <PackageReference Include="Bogus"/>
         <PackageReference Include="CSharpFunctionalExtensions.AwesomeAssertions"/>
-        <PackageReference Include="KubernetesClient"/>
         <PackageReference Include="TUnit"/>
     </ItemGroup>
 

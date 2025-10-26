@@ -63,10 +63,8 @@ public class BeatLeaderApiTests
     }
 
     [Test]
-#pragma warning disable TUnit0002 // False positive.
     [Arguments(ScoresSortBy.Date, Order.Desc), Arguments(ScoresSortBy.Acc, Order.Asc)]
     [Arguments(ScoresSortBy.Acc, Order.Desc), Arguments(ScoresSortBy.Date, Order.Asc)]
-#pragma warning restore TUnit0002
     public async Task GetPlayerScoresCompact_ShouldReturnScoresInCorrectSortingOrder_WhenOrderByAndSortBySpecified(
         ScoresSortBy sortBy, Order orderBy)
     {
@@ -102,7 +100,7 @@ public class BeatLeaderApiTests
 
         // Assert
         scores.Should()
-            .BeInOrders(compFunc, orderBy)
+            .BeInOrders(compFunc, orderBy, "because the scores should be sorted according to the specified sortBy")
             .And.HaveCount((requestOptions.MaxPage - requestOptions.Page + 1) * requestOptions.PageSize);
     }
 
@@ -158,10 +156,8 @@ public class BeatLeaderApiTests
     }
 
     [Test]
-#pragma warning disable TUnit0002
     [Arguments(ScoresSortBy.Date, Order.Desc), Arguments(ScoresSortBy.Acc, Order.Asc)]
     [Arguments(ScoresSortBy.Acc, Order.Desc), Arguments(ScoresSortBy.Date, Order.Asc)]
-#pragma warning restore TUnit0002
     public async Task GetPlayerScores_ShouldReturnScoresInCorrectSortingOrder_WhenOrderByAndSortBySpecified(
         ScoresSortBy sortBy, Order orderBy)
     {
@@ -197,7 +193,7 @@ public class BeatLeaderApiTests
 
         // Assert
         scores.Should()
-            .BeInOrders(compFunc, orderBy)
+            .BeInOrders(compFunc, orderBy, "because the scores should be sorted according to the specified sortBy")
             .And.HaveCount((requestOptions.MaxPage - requestOptions.Page + 1) * requestOptions.PageSize);
     }
 

@@ -33,7 +33,7 @@ var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.Ex
     //.WithReference(cache).WaitFor(cache)
     .WithReference("beatleader-api", new Uri("https://api.beatleader.com/"))
     .WithReference("beatsaver-api", new Uri("https://api.beatsaver.com/"))
-    .WithReference("scoresaber-api", new Uri("https://api.scoresaber.com/"))
+    .WithReference("scoresaber-api", new Uri("https://scoresaber.com/"))
     .WithReference("beatleader-socket", new Uri("wss://sockets.api.beatleader.com/"));
 
 if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")

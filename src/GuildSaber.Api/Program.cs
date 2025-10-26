@@ -17,6 +17,7 @@ using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatSaver;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.OldGuildSaber;
+using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Database;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
@@ -174,6 +175,13 @@ builder.Services.AddHttpClient<BeatLeaderApi>(client =>
     .RemoveAllResilienceHandlers();
 #pragma warning restore EXTEXP0001
 
+builder.Services.AddHttpClient<ScoreSaberApi>(client =>
+    {
+        client.BaseAddress = new Uri("https+http://scoresaber-api");
+        client.DefaultRequestHeaders.Add("User-Agent", "GuildSaber");
+    }).UseSocketsHttpHandler((handler, _) => handler.PooledConnectionLifetime = TimeSpan.FromMinutes(5))
+    .SetHandlerLifetime(Timeout.InfiniteTimeSpan);
+
 builder.Services.AddHttpClient<BeatSaverApi>(client =>
     {
         client.BaseAddress = new Uri("https+http://beatsaver-api");
@@ -274,7 +282,7 @@ app.MapScalarApiReference("/", options => options
     .WithTheme(ScalarTheme.Purple)
     .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch)
     .AddPreferredSecuritySchemes(JwtBearerDefaults.AuthenticationScheme)
-    .WithPersistentAuthentication()
+    .EnablePersistentAuthentication()
 );
 
 #endregion

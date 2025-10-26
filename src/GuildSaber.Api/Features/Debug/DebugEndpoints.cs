@@ -11,7 +11,7 @@ using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.OldGuildSaber;
 using GuildSaber.Common.Services.OldGuildSaber.Models;
 using GuildSaber.Database.Contexts.Server;
-using GuildSaber.Database.Models.Mappers.BeatLeader;
+using GuildSaber.Database.Models.Mappers;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -34,6 +34,38 @@ public class DebugEndpoints : IEndpoints
         group.MapPost("/import-beatleader-scores/{playerId}", EnqueueBeatLeaderPlayerScoresImportAsync)
             .WithSummary("Enqueue BeatLeader player scores import.")
             .WithDescription("Queues a background task to import all scores for the specified player from BeatLeader.")
+            .RequireManager();
+
+        group.MapPost("/import-scoresaber-scores/{playerId}", EnqueueScoreSaberPlayerScoresImportAsync)
+            .WithSummary("Enqueue ScoreSaber player scores import.")
+            .WithDescription("Queues a background task to import all scores for the specified player from ScoreSaber.")
+            .RequireManager();
+
+        group.MapPost("/remove-all-scores", async (ServerDbContext dbContext) =>
+            {
+                await dbContext.Scores.ExecuteDeleteAsync();
+                return TypedResults.Ok();
+            })
+            .WithSummary("Remove all scores from the database.")
+            .WithDescription("Deletes all ranked scores from the database. USE WITH CAUTION!")
+            .RequireManager();
+
+        group.MapPost("/remove-all-ranked-scores", async (ServerDbContext dbContext) =>
+            {
+                await dbContext.RankedScores.ExecuteDeleteAsync();
+                return TypedResults.Ok();
+            })
+            .WithSummary("Remove all ranked scores from the database.")
+            .WithDescription("Deletes all ranked scores from the database. USE WITH CAUTION!")
+            .RequireManager();
+
+        group.MapPost("/remove-all-ranked-maps", async (ServerDbContext dbContext) =>
+            {
+                await dbContext.RankedMaps.ExecuteDeleteAsync();
+                return TypedResults.Ok();
+            })
+            .WithSummary("Remove all ranked maps from the database.")
+            .WithDescription("Deletes all ranked maps from the database. USE WITH CAUTION!")
             .RequireManager();
     }
 
@@ -75,6 +107,34 @@ public class DebugEndpoints : IEndpoints
         return TypedResults.Accepted((string?)null);
     }
 
+    public static async Task<Results<Accepted, NotFound<string>, UnprocessableEntity<string>>>
+        EnqueueScoreSaberPlayerScoresImportAsync(
+            PlayerId playerId,
+            ServerDbContext dbContext,
+            IBackgroundTaskQueue taskQueue,
+            IServiceScopeFactory serviceScopeFactory,
+            CancellationToken cancellationToken)
+    {
+        var player = await dbContext.Players
+            .Where(x => x.Id == playerId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (player is null)
+            return TypedResults.NotFound($"Player with ID {playerId} not found.");
+
+        if (player.LinkedAccounts.ScoreSaberId is null)
+            return TypedResults.UnprocessableEntity("Player does not have a linked ScoreSaber account.");
+
+        await taskQueue.QueueBackgroundWorkItemAsync(async token =>
+        {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+            await scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>()
+                .ImportScoreSaberScoresAsync(playerId, player.LinkedAccounts.ScoreSaberId.Value, token);
+        });
+
+        return TypedResults.Accepted((string?)null);
+    }
+
     public static async IAsyncEnumerable<RankedMap> ImportOldGuildSaberMapsStream(
         GuildId guildId,
         GuildContext.GuildContextId contextId,
@@ -87,7 +147,7 @@ public class DebugEndpoints : IEndpoints
         const int pageSize = 10;
         var request = new OldGuildSaberApi.PaginatedRequestOptions<RankedMapsSortBy>
         {
-            Page = 100,
+            Page = 1,
             PageSize = pageSize,
             MaxPage = int.MaxValue,
             SortBy = RankedMapsSortBy.Weight,
@@ -126,8 +186,8 @@ public class DebugEndpoints : IEndpoints
                         MaxPauseDurationSec: difficulty.Requirements.HasFlag(ERequirements.MaxPauses)
                             ? 2f
                             : null,
-                        ProhibitedModifiers: ScoreMappers.ToModifiers(difficulty.ProhibitedModifiers).Map().Unwrap(),
-                        MandatoryModifiers: ScoreMappers.ToModifiers(difficulty.MandatoryModifiers).Map().Unwrap(),
+                        ProhibitedModifiers: ModifiersMapper.ToModifiers(difficulty.ProhibitedModifiers).Map().Unwrap(),
+                        MandatoryModifiers: ModifiersMapper.ToModifiers(difficulty.MandatoryModifiers).Map().Unwrap(),
                         MinAccuracy: (int)((float)difficulty.MinScoreRequirement / difficulty.MaxScore * 100f)),
                     BaseMapVersion: new MapVersionRequests.AddMapVersion(
                         BeatSaverKey: rankedMap.BeatSaverId.Value,

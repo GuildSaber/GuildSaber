@@ -1,9 +1,12 @@
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Scores;
 using GuildSaber.Common.Services.BeatLeader;
+using GuildSaber.Common.Services.BeatLeader.Models;
 using GuildSaber.Common.Services.BeatSaver;
 using GuildSaber.Common.Services.BeatSaver.Models;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
+using GuildSaber.Common.Services.ScoreSaber;
+using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds;
@@ -27,6 +30,7 @@ public class RankedMapService(
     ServerDbContext dbContext,
     BeatSaverApi beatSaverApi,
     BeatLeaderApi beatLeaderApi,
+    ScoreSaberApi scoreSaberApi,
     TimeProvider timeProvider,
     IOptions<RankedMapSettings> rankedMapSettings)
 {
@@ -170,12 +174,15 @@ public class RankedMapService(
         if (songDifficulty is not null)
             return Success((song, songDifficulty));
 
-        var leaderboardsResponse = await beatLeaderApi.GetLeaderboardsAsync(version.Hash).Unwrap();
-        var blId = leaderboardsResponse
-            ?.Leaderboards
-            .Where(y => y.Difficulty.DifficultyName == difficultyStr && y.Difficulty.ModeName == gameMode.Name)
-            .Select(y => y.Id)
-            .FirstOrDefault();
+        var (blLdTask, ssLdTask) = (
+            beatLeaderApi.GetLeaderboardsAsync(version.Hash).Unwrap(),
+            scoreSaberApi.GetLeaderboardInfoAsync(
+                version.Hash,
+                difficulty, SSGameMode.TryCreate(gameMode.Name).Unwrap()
+            ).Unwrap());
+        await Task.WhenAll(blLdTask, ssLdTask);
+
+        var (ssId, blId) = (ssLdTask.Result?.Id, blLdTask.Result?.FindLeaderboardId(difficultyStr, gameMode.Name));
         if (blId is null)
             return Failure<(Song, SongDifficulty)>(
                 $"Could not find BeatLeader leaderboard for song '{beatMap.Name}' " +
@@ -184,6 +191,7 @@ public class RankedMapService(
         songDifficulty = new SongDifficulty
         {
             BLLeaderboardId = blId,
+            SSLeaderboardId = ssId,
             GameModeId = gameMode.Id,
             Difficulty = difficulty,
             Stats = new SongDifficultyStats

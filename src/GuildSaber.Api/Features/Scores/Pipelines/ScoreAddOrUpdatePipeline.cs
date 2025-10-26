@@ -51,7 +51,7 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
                 .Map(async static (score, dbContext) =>
                     await PrepareScoreRankingContextAsync(score.PlayerId, score.SongDifficultyId, dbContext), dbContext)
                 .Map(x => IterateRankedScoresWithTransform(x, RecalculateRankedScore))
-                .Map(FilterAndSelectScoresByGroup))
+                .Map(SetStateForBestRankedScorePerGroup))
             .Map(static async (rankedScores, state) =>
             {
                 var enumerable = rankedScores.ToArray();
@@ -77,6 +77,7 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
     /// <summary>
     /// There is cases when Scores are processed and sent again from BeatLeader but with a score ID.
     /// In that case we want to update the existing score with the new ID if it doesn't already have one.
+    /// There is also cases when the score is submitted multiple times, we don't want to create duplicates.
     /// </summary>
     /// <param name="score"></param>
     /// <param name="dbContext">
@@ -85,18 +86,31 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
     private static async Task<Maybe<AbstractScore>> UpdateScoreIfChangedAsync(
         AbstractScore score, ServerDbContext dbContext)
     {
-        if (score is not BeatLeaderScore { BeatLeaderScoreId: not null } blScore)
+        if (score is BeatLeaderScore { BeatLeaderScoreId: not null } blScore)
+        {
+            var oldScore = await SameBeatLeaderScoreWithoutIdExistsAsync(blScore, dbContext);
+            if (oldScore is null)
+                return None;
+
+            blScore.Id = oldScore.Id;
+            dbContext.BeatLeaderScores.Update(blScore);
+            await dbContext.SaveChangesAsync();
+
+            return blScore;
+        }
+
+        if (score is not ScoreSaberScore ssScore)
+            throw new InvalidOperationException("Score must be either a BeatLeaderScore or a ScoreSaberScore.");
+
+        var oldSsScore = await SameScoreSaberScoreExistsAsync(ssScore, dbContext);
+        if (oldSsScore is null)
             return None;
 
-        var oldScore = await SameBeatLeaderScoreWithoutIdExistsAsync(blScore, dbContext);
-        if (oldScore is null)
-            return None;
-
-        blScore.Id = oldScore.Id;
-        dbContext.BeatLeaderScores.Update(blScore);
+        ssScore.Id = oldSsScore.Id;
+        dbContext.ScoreSaberScores.Update(ssScore);
         await dbContext.SaveChangesAsync();
 
-        return blScore;
+        return ssScore;
     }
 
     /// <summary>
@@ -105,6 +119,14 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
     private static Task<BeatLeaderScore?> SameBeatLeaderScoreWithoutIdExistsAsync(
         BeatLeaderScore score, ServerDbContext dbContext)
         => dbContext.BeatLeaderScores.FirstOrDefaultAsync(x =>
+            x.PlayerId == score.PlayerId
+            && x.SongDifficultyId == score.SongDifficultyId
+            && x.SetAt - score.SetAt < TimeSpan.FromSeconds(30)
+            && x.BaseScore == score.BaseScore);
+
+    private static Task<ScoreSaberScore?> SameScoreSaberScoreExistsAsync(
+        ScoreSaberScore score, ServerDbContext dbContext)
+        => dbContext.ScoreSaberScores.FirstOrDefaultAsync(x =>
             x.PlayerId == score.PlayerId
             && x.SongDifficultyId == score.SongDifficultyId
             && x.SetAt - score.SetAt < TimeSpan.FromSeconds(30)
@@ -218,7 +240,7 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
     }
 
     /// <summary>
-    /// Filters and processes ranked scores by grouping them by RankedMapId and PointId.
+    /// Processes ranked scores by grouping them by RankedMapId and PointId.
     /// For each group, this method:
     /// <list type="bullet">
     ///     <item>
@@ -235,7 +257,7 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
     /// </summary>
     /// <param name="rankedScores">Collection of ranked scores to process</param>
     /// <returns>Processed collection of ranked scores with appropriate Selected state</returns>
-    internal static IEnumerable<RankedScore> FilterAndSelectScoresByGroup(IEnumerable<RankedScore> rankedScores)
+    internal static IEnumerable<RankedScore> SetStateForBestRankedScorePerGroup(IEnumerable<RankedScore> rankedScores)
         => rankedScores
             .GroupBy(x => (x.RankedMapId, x.PointId))
             .SelectMany(group => group.Max() switch
