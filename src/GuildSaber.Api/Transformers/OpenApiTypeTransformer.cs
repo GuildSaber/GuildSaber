@@ -46,8 +46,32 @@ public static class OpenApiTypeTransformer
             if (!_transforms.TryGetValue(context.JsonTypeInfo.Type, out var transformedSchema))
                 return Task.CompletedTask;
 
-            schema.Type = transformedSchema.Type;
-            schema.Format = transformedSchema.Format;
+            if (transformedSchema.Type is not null)
+                schema.Type = transformedSchema.Type;
+
+            if (transformedSchema.Format is not null)
+                schema.Format = transformedSchema.Format;
+
+            if (transformedSchema.Title is not null)
+                schema.Title = transformedSchema.Title;
+
+            if (transformedSchema.Description is not null)
+                schema.Description = transformedSchema.Description;
+
+            if (transformedSchema.Default is not null)
+                schema.Default = transformedSchema.Default;
+
+            if (transformedSchema.Enum is not null && transformedSchema.Enum.Count > 0)
+                schema.Enum = transformedSchema.Enum;
+
+            if (transformedSchema.Properties is not null && transformedSchema.Properties.Count > 0)
+                schema.Properties = transformedSchema.Properties;
+
+            if (transformedSchema.Items is not null)
+                schema.Items = transformedSchema.Items;
+
+            if (transformedSchema.Example is not null)
+                schema.Example = transformedSchema.Example;
 
             return Task.CompletedTask;
         }

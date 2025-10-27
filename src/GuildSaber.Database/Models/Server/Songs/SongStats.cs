@@ -2,6 +2,6 @@
 
 public readonly record struct SongStats(
     float BPM,
-    float Duration,
+    float DurationSec,
     bool IsAutoMapped
 );

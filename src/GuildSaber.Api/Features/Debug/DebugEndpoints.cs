@@ -13,7 +13,9 @@ using GuildSaber.Common.Services.OldGuildSaber.Models;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Mappers;
 using GuildSaber.Database.Models.Server.Guilds;
+using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.RankedMaps;
+using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,8 +30,8 @@ public class DebugEndpoints : IEndpoints
 
         group.MapGet("/import-old-gs-maps/{guildId}/stream", ImportOldGuildSaberMapsAsync)
             .WithSummary("Import ranked maps from old GuildSaber system.")
-            .WithDescription("Streams import progress via SSE. Import stops on client disconnect.")
-            .RequireManager();
+            .WithDescription("Streams import progress via SSE. Import stops on client disconnect.");
+        //.RequireManager();
 
         group.MapPost("/import-beatleader-scores/{playerId}", EnqueueBeatLeaderPlayerScoresImportAsync)
             .WithSummary("Enqueue BeatLeader player scores import.")
@@ -69,7 +71,7 @@ public class DebugEndpoints : IEndpoints
             .RequireManager();
     }
 
-    private static async Task<Results<NotFound<string>, ServerSentEventsResult<RankedMap>>>
+    private static async Task<Results<NotFound<string>, ServerSentEventsResult<RankedMapResponses.RankedMap>>>
         ImportOldGuildSaberMapsAsync(
             GuildId guildId, ServerDbContext dbContext, OldGuildSaberApi oldGuildSaberApi,
             RankedMapService rankedMapService, ILogger<DebugEndpoints> logger,
@@ -79,8 +81,15 @@ public class DebugEndpoints : IEndpoints
             return TypedResults.NotFound($"Guild context for guild {guildId} not found.");
 
         return TypedResults.ServerSentEvents(eventType: "import-ranked-map",
-            values: ImportOldGuildSaberMapsStream(guildId, new GuildContext.GuildContextId(guildId), dbContext,
-                oldGuildSaberApi, rankedMapService, logger, cancellationToken));
+            values: ImportOldGuildSaberMapsStream(
+                    guildId,
+                    new GuildContext.GuildContextId(guildId),
+                    dbContext,
+                    oldGuildSaberApi,
+                    rankedMapService,
+                    logger,
+                    cancellationToken)
+                .Select(success => success.RankedMap.Map(success.Song, success.SongDifficulty, success.GameMode)));
     }
 
     public static async Task<Results<Accepted, NotFound<string>>> EnqueueBeatLeaderPlayerScoresImportAsync(
@@ -135,7 +144,7 @@ public class DebugEndpoints : IEndpoints
         return TypedResults.Accepted((string?)null);
     }
 
-    public static async IAsyncEnumerable<RankedMap> ImportOldGuildSaberMapsStream(
+    public static async IAsyncEnumerable<RankedMapService.CreateResponse.Success> ImportOldGuildSaberMapsStream(
         GuildId guildId,
         GuildContext.GuildContextId contextId,
         ServerDbContext dbContext,
@@ -154,17 +163,43 @@ public class DebugEndpoints : IEndpoints
             Reverse = true
         };
 
+        var categories = await dbContext.Categories.Where(x => x.GuildId == guildId).ToListAsync(token);
+        if (!(await oldGuildSaberApi.GetRankingLevelsAsync(guildId.Value)).TryGetValue(out var guildRankingLevels))
+            yield break;
+
+        if (!(await oldGuildSaberApi.GetRankingCategoriesAsync(guildId.Value)).TryGetValue(out var oldCategories))
+            yield break;
+
+        var levelDict = guildRankingLevels.ToDictionary(x => x.Id, x => x);
+        foreach (var oldCategory in oldCategories)
+        {
+            if (categories.Any(x => x.Info.Name == oldCategory.Name))
+                continue;
+
+            var newCategory = new Category
+            {
+                GuildId = guildId,
+                Info = new CategoryInfo
+                {
+                    Name = Name_2_50.CreateUnsafe(oldCategory.Name).Value,
+                    Description = Description.CreateUnsafe(oldCategory.Description).Value
+                }
+            };
+            dbContext.Categories.Add(newCategory);
+            categories.Add(newCategory);
+        }
+
+        await dbContext.SaveChangesAsync(token);
+        dbContext.ChangeTracker.Clear();
+        var categoryDict = oldCategories
+            .Join(categories, o => o.Name, n => n.Info.Name, (o, n) => (Old: o, New: n))
+            .ToDictionary(x => x.Old.Id, x => x.New.Id);
+
         await foreach (var guildRankedMapsResult in oldGuildSaberApi.GetGuildRankedMaps(guildId.Value, request)
                            .WithCancellation(token))
         {
             if (!guildRankedMapsResult.TryGetValue(out var guildRankedMaps))
                 yield break;
-
-            var rankingLevelsResult = await oldGuildSaberApi.GetRankingLevelsAsync(guildId.Value);
-            if (!rankingLevelsResult.TryGetValue(out var guildRankingLevels))
-                yield break;
-
-            var levelDict = guildRankingLevels.ToDictionary(x => x.Id, x => x);
 
             foreach (var rankedMap in guildRankedMaps.Where(x => x.BeatSaverId is not null))
             foreach (var difficulty in rankedMap.Difficulties.Where(x => x.GameModeName is not null))
@@ -194,7 +229,10 @@ public class DebugEndpoints : IEndpoints
                         Characteristic: difficulty.GameModeName!,
                         Difficulty: difficulty.BeatSaverDifficultyValue,
                         PlayMode: "Standard",
-                        Order: 0)
+                        Order: 0),
+                    CategoryIds: difficulty.GuildCategoryId.HasValue && difficulty.GuildCategoryId != 0
+                        ? [categoryDict[difficulty.GuildCategoryId.Value]]
+                        : []
                 );
 
                 var tryCount = 0;
@@ -203,7 +241,7 @@ public class DebugEndpoints : IEndpoints
                     var createResult = await rankedMapService.CreateRankedMap(guildId, createRankedMap);
                     if (createResult is RankedMapService.CreateResponse.Success success)
                     {
-                        yield return success.RankedMap;
+                        yield return success;
                         break;
                     }
 

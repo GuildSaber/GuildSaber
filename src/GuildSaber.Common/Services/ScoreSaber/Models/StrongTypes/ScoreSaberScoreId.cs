@@ -5,6 +5,7 @@ using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 
+[JsonConverter(typeof(ScoreSaberScoreIdJsonConverter))]
 public readonly record struct ScoreSaberScoreId
 {
     private readonly int _value;

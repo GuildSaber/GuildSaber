@@ -5,6 +5,7 @@ using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 
+[JsonConverter(typeof(BeatLeaderIdJsonConverter))]
 public readonly record struct BeatLeaderId
 {
     private readonly ulong _value;

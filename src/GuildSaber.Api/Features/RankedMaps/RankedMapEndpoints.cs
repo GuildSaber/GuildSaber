@@ -1,7 +1,6 @@
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Transformers;
-using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using static GuildSaber.Api.Features.RankedMaps.RankedMapService;
 
 namespace GuildSaber.Api.Features.RankedMaps;
@@ -20,7 +19,7 @@ public class RankedMapEndpoints : IEndpoints
             .WithName("CreateRankedMap")
             .WithSummary("Create a ranked map for a guild.")
             .WithDescription("Create a ranked map for a guild by its Id.")
-            .Produces<RankedMap>()
+            .Produces<RankedMapResponses.RankedMap>()
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
@@ -29,7 +28,6 @@ public class RankedMapEndpoints : IEndpoints
             .RequireGuildPermission(EPermission.RankingTeam);
     }
 
-    /// <inheritdoc cref="RankedMapService.CreateRankedMap" />
     /// <remarks>
     /// This endpoint:
     /// <list type="bullet">
@@ -47,8 +45,8 @@ public class RankedMapEndpoints : IEndpoints
         RankedMapService rankedMapService)
         => await rankedMapService.CreateRankedMap(guildId, create) switch
         {
-            CreateResponse.Success(var rankedMap) => TypedResults
-                .Ok(rankedMap),
+            CreateResponse.Success(var rankedMap, var song, var songDifficulty, var gameMode) => TypedResults
+                .Ok(rankedMap.Map(song, songDifficulty, gameMode)),
             CreateResponse.TooManyRankedMaps(var current, var max) => TypedResults.Problem(
                 $"Guild has reached its maximum number of ranked maps ({current}/{max}), consider getting more boosts.",
                 statusCode: StatusCodes.Status401Unauthorized,

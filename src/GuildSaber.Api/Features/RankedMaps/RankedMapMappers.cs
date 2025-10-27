@@ -1,12 +1,87 @@
+using System.Linq.Expressions;
 using CSharpFunctionalExtensions;
 using GuildSaber.Database.Models.Server.RankedMaps;
+using GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
 using GuildSaber.Database.Models.Server.Scores;
+using GuildSaber.Database.Models.Server.Songs;
+using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
+using GuildSaber.Database.Models.Server.Songs.SongDifficulties.GameModes;
 using GuildSaber.Database.Models.StrongTypes;
 
 namespace GuildSaber.Api.Features.RankedMaps;
 
 public static class RankedMapMappers
 {
+    public static Expression<Func<RankedMap, RankedMapResponses.RankedMap>> MapRankedMapExpression
+        => self => new RankedMapResponses.RankedMap(default, default, default, null!, null!, null!, null!);
+
+    public static RankedMapResponses.RankedMap Map(
+        this RankedMap self, Song song, SongDifficulty songDifficulty, GameMode gameMode) => new(
+        Id: self.Id,
+        GuildId: self.GuildId,
+        ContextId: self.ContextId,
+        Requirements: self.Requirements.Map(),
+        Rating: self.Rating.Map(),
+        Versions: self.MapVersions.Select(v => v.Map(song, songDifficulty, gameMode)).ToArray(),
+        CategoryIds: self.Categories.Select(x => (int)x.Id).ToArray()
+    );
+
+    public static RankedMapResponses.RankedMapRating Map(this RankedMapRating self) => new(
+        AccStar: self.AccStar,
+        DiffStar: self.DiffStar
+    );
+
+    public static RankedMapResponses.RankedMapRequirements Map(this RankedMapRequirements self) => new(
+        NeedConfirmation: self.NeedConfirmation,
+        NeedFullCombo: self.NeedFullCombo,
+        MaxPauseDurationSec: self.MaxPauseDurationSec,
+        ProhibitedModifiers: self.ProhibitedModifiers.Map().Unwrap(),
+        MandatoryModifiers: self.MandatoryModifiers.Map().Unwrap(),
+        MinAccuracy: self.MinAccuracy
+    );
+
+    public static RankedMapResponses.Song Map(this Song self) => new(
+        Id: self.Id,
+        Hash: self.Hash,
+        Key: self.BeatSaverKey,
+        UploadedAt: self.UploadedAt,
+        Info: new RankedMapResponses.SongInfo(
+            BeatSaverName: self.Info.BeatSaverName,
+            Name: self.Info.SongName,
+            SubName: self.Info.SongSubName,
+            AuthorName: self.Info.SongAuthorName,
+            MapperName: self.Info.MapperName
+        ),
+        Stats: new RankedMapResponses.SongStats(
+            BPM: self.Stats.BPM,
+            DurationSec: self.Stats.DurationSec,
+            IsAutoMapped: self.Stats.IsAutoMapped
+        )
+    );
+
+    public static RankedMapResponses.SongDifficulty Map(this SongDifficulty self, GameMode gameMode) => new(
+        BLLeaderboardId: self.BLLeaderboardId,
+        SSLeaderboardId: self.SSLeaderboardId,
+        Difficulty: self.Difficulty,
+        GameMode: gameMode.Name,
+        Stats: new RankedMapResponses.SongDifficultyStats(
+            MaxScore: self.Stats.MaxScore,
+            NJS: self.Stats.NoteJumpSpeed,
+            NoteCount: self.Stats.NoteCount,
+            BombCount: self.Stats.BombCount,
+            ObstacleCount: self.Stats.ObstacleCount,
+            NotesPerSecond: self.Stats.NotesPerSecond,
+            Duration: self.Stats.Duration
+        ));
+
+    public static RankedMapResponses.MapVersion Map(
+        this MapVersion self, Song song, SongDifficulty songDifficulty, GameMode gameMode) => new(
+        AddedAt: self.AddedAt,
+        Order: self.Order,
+        Song: song.Map(),
+        Difficulty: songDifficulty.Map(gameMode)
+    );
+
     public static Result<RankedMapRequirements, List<KeyValuePair<string, string[]>>> Map(
         this RankedMapRequest.RankedMapRequirements self)
     {

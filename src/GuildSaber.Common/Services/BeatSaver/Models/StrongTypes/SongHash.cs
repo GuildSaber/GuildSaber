@@ -5,6 +5,7 @@ using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 
+[JsonConverter(typeof(SongHashJsonConverter))]
 public readonly record struct SongHash
 {
     public const int ExactLength = 40;

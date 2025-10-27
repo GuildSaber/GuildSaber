@@ -60,6 +60,9 @@ public class RankedMapRequest
     /// Used to force a specific difficulty and/or accuracy star rating for the map.
     /// If null, the star ratings will be calculated automatically by BeatLeader's ExMachina.
     /// </param>
+    /// <param name="CategoryIds">
+    /// The categories to assign the ranked map to.
+    /// </param>
     /// <remarks>
     /// If you want to create a ranked map with multiple map versions, create the ranked map with one map version first,
     /// then add the other map versions using the proper endpoint.
@@ -68,6 +71,7 @@ public class RankedMapRequest
         GuildContext.GuildContextId ContextId,
         MapVersionRequests.AddMapVersion BaseMapVersion,
         RankedMapRequirements Requirements,
-        ManualRating ManualRating
+        ManualRating ManualRating,
+        int[] CategoryIds
     );
 }

@@ -42,7 +42,8 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
         RankedMap Map,
         SongDifficulty SongDifficulty,
         Point Point,
-        AbstractScore Score);
+        AbstractScore Score
+    );
 
     public async Task ExecuteAsync(AbstractScore scoreToAdd)
         => await (await UpdateScoreIfChangedAsync(scoreToAdd, dbContext)
@@ -135,6 +136,7 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
     private static async Task<ScoreRankingContext> PrepareScoreRankingContextAsync(
         PlayerId playerId, SongDifficultyId songDifficultyId, ServerDbContext dbContext)
     {
+        //TODO: Only for the guilds they are in?
         var rankedMaps = await dbContext.RankedMaps
             .Include(x => x.MapVersions).ThenInclude(x => x.SongDifficulty)
             .Where(x => x.MapVersions.Any(v => v.SongDifficultyId == songDifficultyId))

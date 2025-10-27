@@ -115,4 +115,30 @@ public class OldGuildSaberApi(HttpClient httpClient)
                     .ReadFromJsonAsync<RankingLevel[]>(_jsonOptions))
                 .Map(levels => levels ?? [])
         };
+
+    /// <summary>
+    /// Asynchronously retrieves ranking categories for a guild from OldGuildSaber.
+    /// </summary>
+    /// <param name="guildId">The ID of the guild whose ranking categories to retrieve.</param>
+    /// <returns>
+    /// A <see cref="Result{T}" /> containing an array of <see cref="RankingLevel" />.
+    /// </returns>
+    /// <remarks>
+    /// The result will be:
+    /// - Success with an array of ranking Categories when data is available
+    /// - Success with an empty array when no levels exist for the guild
+    /// - Failure with an error message for HTTP errors
+    /// </remarks>
+    public async Task<Result<RankingCategory[]>> GetRankingCategoriesAsync(int guildId)
+        => await httpClient.GetAsync(new Uri($"{ApiLink}categories/data/all?guild-id={guildId}", UriKind.Absolute))
+            switch
+            {
+                { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                    => Failure<RankingCategory[]>(
+                        $"Failed to retrieve ranking categories for guild {guildId}: {statusCode} {reasonPhrase}"
+                    ),
+                var response => await Try(() => response.Content
+                        .ReadFromJsonAsync<RankingCategory[]>(_jsonOptions))
+                    .Map(categories => categories ?? [])
+            };
 }

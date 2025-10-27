@@ -99,9 +99,7 @@ public class CategoryEndpoints : IEndpoints
                   select new ServerCategory { GuildId = guildId, Info = new ServerCategoryInfo(name, description) })
             .Map(static (category, dbContext) => dbContext
                 .AddAndSaveAsync(category, x => x.Map()), dbContext)
-            .ToCreatedAtRouteHttpResult(
-                GetCategoryName,
-                res => new { guildId, categoryId = res.Id });
+            .ToCreatedAtRouteHttpResult(GetCategoryName, res => new { guildId, categoryId = res.Id });
 
     private static async Task<Results<Ok<Category>, ProblemHttpResult>> UpdateCategoryAsync(
         GuildId guildId, CategoryId categoryId, CategoryRequests.UpdateCategory request,

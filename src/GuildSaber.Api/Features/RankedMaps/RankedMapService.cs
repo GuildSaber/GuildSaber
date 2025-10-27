@@ -58,7 +58,14 @@ public class RankedMapService(
         public sealed record NotOnBeatSaver(BeatSaverKey BeatSaverKey) : CreateResponse;
         public sealed record BeatSaverError(string Message) : CreateResponse;
         public sealed record RateLimited(TimeSpan RetryAfter) : CreateResponse;
-        public sealed record Success(RankedMap RankedMap) : CreateResponse;
+
+        public sealed record Success(
+            RankedMap RankedMap,
+            Song Song,
+            SongDifficulty SongDifficulty,
+            GameMode GameMode
+        ) : CreateResponse;
+
         public sealed record UnexpectedFailure(string Message) : CreateResponse;
     }
 
@@ -68,7 +75,7 @@ public class RankedMapService(
         => await Success<int, CreateResponse>(await GetCurrentGuildRankedMapCount(guildId))
             .Check(async count => ValidateRankedMapCreationLimit(count, await GetBoostsCountsAsync(guildId))
                 .MapError(CreateResponse (x) => new TooManyRankedMaps(x.current, x.max)))
-            .Check(async _ => await GuildContextExistsInGuild(guildId, request.ContextId) switch
+            .Check(async _ => await GuildContextExistsInGuildAsync(guildId, request.ContextId) switch
             {
                 true => UnitResult.Success<CreateResponse>(),
                 false => Failure<CreateResponse>(new ValidationFailure("ContextId",
@@ -106,14 +113,15 @@ public class RankedMapService(
                     request.BaseMapVersion.Difficulty)
                 .MapError(CreateResponse (error) => new UnexpectedFailure(error))
                 .Map(static (songAndDiff, tuple) =>
-                    (tuple.beatMap, songAndDiff.song, songAndDiff.difficulty, tuple.playMode), tuple))
+                    (tuple.beatMap, songAndDiff.song, songAndDiff.difficulty, tuple.playMode, tuple.gameMode), tuple))
             .Bind(tuple => CreateAndValidate(
                     guildId, tuple.beatMap, tuple.song.Id, tuple.difficulty.Id, tuple.playMode.Id, request)
-                .MapError(CreateResponse (errors) => new ValidationFailure(errors)))
-            .Map(static (rankedMap, dbContext) => dbContext.AddAndSaveAsync(rankedMap), dbContext)
-            .Match(rankedMap => new Success(rankedMap), err => err);
+                .MapError(CreateResponse (errors) => new ValidationFailure(errors))
+                .Map(static (rankedMap, dbContext) => dbContext.AddAndSaveAsync(rankedMap), dbContext)
+                .Map(static (rankedMap, tuple) => (rankedMap, tuple.song, tuple.difficulty, tuple.gameMode), tuple))
+            .Match(tuple => new Success(tuple.rankedMap, tuple.song, tuple.difficulty, tuple.gameMode), err => err);
 
-    private Task<bool> GuildContextExistsInGuild(GuildId guildId, GuildContext.GuildContextId contextId)
+    private Task<bool> GuildContextExistsInGuildAsync(GuildId guildId, GuildContext.GuildContextId contextId)
         => dbContext.GuildContexts.AnyAsync(x => x.Id == contextId && x.GuildId == guildId);
 
     private async Task<GameMode?> GetGameMode(string name)
@@ -160,7 +168,7 @@ public class RankedMapService(
                 Stats = new SongStats
                 {
                     BPM = beatMap.Metadata.Bpm,
-                    Duration = beatMap.Metadata.Duration,
+                    DurationSec = beatMap.Metadata.Duration,
                     IsAutoMapped = beatMap.Automapper
                 },
                 SongDifficulties = []
@@ -230,6 +238,19 @@ public class RankedMapService(
             errors.Add(new KeyValuePair<string, string[]>("MissingPoint",
                 ["Guild does not have any point settings configured."]));
 
+        var categories = await dbContext.Categories
+            .AsTracking()
+            .Where(x => request.CategoryIds.Contains(x.Id) && x.GuildId == guildId)
+            .ToListAsync();
+
+        var categoryErrors = request.CategoryIds
+            .Where(categoryId => categories.All(x => x.Id != categoryId))
+            .Select(categoryId => $"Category with ID '{categoryId}' does not exist in the guild.")
+            .ToArray();
+
+        if (categoryErrors.Length > 0)
+            errors.Add(new KeyValuePair<string, string[]>("CategoryIds", categoryErrors));
+
         if (errors.Count > 0)
             return Failure<RankedMap, List<KeyValuePair<string, string[]>>>(errors);
 
@@ -251,7 +272,7 @@ public class RankedMapService(
                 request.BaseMapVersion.Difficulty,
                 accCurve.Value
             );
-            if (!ratingResult.TryGetValue(out rating, out var ratingError))
+            if (!ratingResult.TryGetValue(out rating))
             {
                 rating = new RankedMapRating
                 {
@@ -262,10 +283,6 @@ public class RankedMapService(
                         ? new RankedMapRating.DifficultyStar(diffStar)
                         : new RankedMapRating.DifficultyStar(0)
                 };
-
-                //return Failure<RankedMap, List<KeyValuePair<string, string[]>>>([
-                //    new KeyValuePair<string, string[]>("RatingCalculation", [ratingError])
-                //]);
             }
             else
             {
@@ -295,7 +312,7 @@ public class RankedMapService(
                     Order = 0
                 }
             ],
-            Categories = []
+            Categories = categories
         };
     }
 

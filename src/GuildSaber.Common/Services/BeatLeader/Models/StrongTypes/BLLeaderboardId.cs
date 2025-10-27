@@ -5,6 +5,7 @@ using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 
+[JsonConverter(typeof(BLLeaderboardIdJsonConverter))]
 public readonly record struct BLLeaderboardId
 {
     private readonly string _value;

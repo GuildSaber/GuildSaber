@@ -14,10 +14,12 @@ using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Transformers;
 using GuildSaber.Common.Services.BeatLeader;
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.BeatSaver;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.OldGuildSaber;
 using GuildSaber.Common.Services.ScoreSaber;
+using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Database;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
@@ -226,11 +228,12 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 
 OpenApiTypeTransformer.MapType<BeatSaverKey>(new OpenApiSchema { Type = JsonSchemaType.String, Example = "a3c3" });
+OpenApiTypeTransformer.MapType<SongHash>(new OpenApiSchema
+    { Type = JsonSchemaType.String, Example = "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890" });
+OpenApiTypeTransformer.MapType<SSLeaderboardId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
+OpenApiTypeTransformer.MapType<BLLeaderboardId>(new OpenApiSchema { Type = JsonSchemaType.String, Example = "a3c391" });
 OpenApiTypeTransformer.MapType<GuildContext.GuildContextId>(new OpenApiSchema
-{
-    Type = JsonSchemaType.Integer,
-    Format = "int32"
-});
+    { Type = JsonSchemaType.Integer, Format = "int32" });
 builder.Services.AddOpenApi(options =>
 {
     options.AddGlobalProblemDetails()
