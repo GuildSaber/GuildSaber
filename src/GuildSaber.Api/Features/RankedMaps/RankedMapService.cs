@@ -9,7 +9,6 @@ using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
-using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Boosts;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.RankedMaps;
@@ -71,15 +70,16 @@ public class RankedMapService(
 
     public readonly record struct RankedMapBoostsCount(int Tier1, int Tier2, int Tier3);
 
-    public async Task<CreateResponse> CreateRankedMap(GuildId guildId, RankedMapRequest.CreateRankedMap request)
+    public async Task<CreateResponse> CreateRankedMap(
+        GuildId guildId, ContextId contextId, RankedMapRequest.CreateRankedMap request)
         => await Success<int, CreateResponse>(await GetCurrentGuildRankedMapCount(guildId))
             .Check(async count => ValidateRankedMapCreationLimit(count, await GetBoostsCountsAsync(guildId))
                 .MapError(CreateResponse (x) => new TooManyRankedMaps(x.current, x.max)))
-            .Check(async _ => await GuildContextExistsInGuildAsync(guildId, request.ContextId) switch
+            .Check(async _ => await GuildContextExistsInGuildAsync(guildId, contextId) switch
             {
                 true => UnitResult.Success<CreateResponse>(),
                 false => Failure<CreateResponse>(new ValidationFailure("ContextId",
-                    $"Guild context with ID '{request.ContextId}' does not exist in the guild."))
+                    $"Guild context with ID '{contextId}' does not exist in the guild."))
             })
             .Bind(async _ => await beatSaverApi
                 .GetBeatMapAsync(request.BaseMapVersion.BeatSaverKey)
@@ -115,13 +115,13 @@ public class RankedMapService(
                 .Map(static (songAndDiff, tuple) =>
                     (tuple.beatMap, songAndDiff.song, songAndDiff.difficulty, tuple.playMode, tuple.gameMode), tuple))
             .Bind(tuple => CreateAndValidate(
-                    guildId, tuple.beatMap, tuple.song.Id, tuple.difficulty.Id, tuple.playMode.Id, request)
+                    guildId, contextId, tuple.beatMap, tuple.song.Id, tuple.difficulty.Id, tuple.playMode.Id, request)
                 .MapError(CreateResponse (errors) => new ValidationFailure(errors))
                 .Map(static (rankedMap, dbContext) => dbContext.AddAndSaveAsync(rankedMap), dbContext)
                 .Map(static (rankedMap, tuple) => (rankedMap, tuple.song, tuple.difficulty, tuple.gameMode), tuple))
             .Match(tuple => new Success(tuple.rankedMap, tuple.song, tuple.difficulty, tuple.gameMode), err => err);
 
-    private Task<bool> GuildContextExistsInGuildAsync(GuildId guildId, GuildContext.GuildContextId contextId)
+    private Task<bool> GuildContextExistsInGuildAsync(GuildId guildId, ContextId contextId)
         => dbContext.GuildContexts.AnyAsync(x => x.Id == contextId && x.GuildId == guildId);
 
     private async Task<GameMode?> GetGameMode(string name)
@@ -221,6 +221,7 @@ public class RankedMapService(
 
     private async Task<Result<RankedMap, List<KeyValuePair<string, string[]>>>> CreateAndValidate(
         GuildId guildId,
+        ContextId contextId,
         BeatMap beatMap,
         Song.SongId songId,
         SongDifficultyId songDifficultyId,
@@ -295,10 +296,16 @@ public class RankedMapService(
             }
         }
 
+        var currentTime = timeProvider.GetUtcNow();
+
         return new RankedMap
         {
             GuildId = guildId,
-            ContextId = request.ContextId,
+            ContextId = contextId,
+            Info = new RankedMapInfo(
+                CreatedAt: currentTime,
+                EditedAt: currentTime
+            ),
             Requirements = requirements!,
             Rating = rating,
             MapVersions =
@@ -308,7 +315,7 @@ public class RankedMapService(
                     SongDifficultyId = songDifficultyId,
                     PlayModeId = playmodeId,
                     SongId = songId,
-                    AddedAt = timeProvider.GetUtcNow(),
+                    AddedAt = currentTime,
                     Order = 0
                 }
             ],

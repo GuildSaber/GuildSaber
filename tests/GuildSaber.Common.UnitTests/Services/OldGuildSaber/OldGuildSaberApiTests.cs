@@ -57,7 +57,7 @@ public class OldGuildSaberApiTests
         rankingLevels!.Should()
             .HaveCountGreaterThanOrEqualTo(10, "because guild 1 should have at least 10 ranking levels");
     }
-    
+
     [Test]
     public async Task GetRankingCategories_ShouldReturnAtLeast10Levels_WhenValidGuildId()
     {

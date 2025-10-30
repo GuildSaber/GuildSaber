@@ -12,7 +12,6 @@ using GuildSaber.Common.Services.OldGuildSaber;
 using GuildSaber.Common.Services.OldGuildSaber.Models;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Mappers;
-using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.StrongTypes;
@@ -30,8 +29,8 @@ public class DebugEndpoints : IEndpoints
 
         group.MapGet("/import-old-gs-maps/{guildId}/stream", ImportOldGuildSaberMapsAsync)
             .WithSummary("Import ranked maps from old GuildSaber system.")
-            .WithDescription("Streams import progress via SSE. Import stops on client disconnect.");
-        //.RequireManager();
+            .WithDescription("Streams import progress via SSE. Import stops on client disconnect.")
+            .RequireManager();
 
         group.MapPost("/import-beatleader-scores/{playerId}", EnqueueBeatLeaderPlayerScoresImportAsync)
             .WithSummary("Enqueue BeatLeader player scores import.")
@@ -83,7 +82,7 @@ public class DebugEndpoints : IEndpoints
         return TypedResults.ServerSentEvents(eventType: "import-ranked-map",
             values: ImportOldGuildSaberMapsStream(
                     guildId,
-                    new GuildContext.GuildContextId(guildId),
+                    new ContextId(guildId),
                     dbContext,
                     oldGuildSaberApi,
                     rankedMapService,
@@ -146,7 +145,7 @@ public class DebugEndpoints : IEndpoints
 
     public static async IAsyncEnumerable<RankedMapService.CreateResponse.Success> ImportOldGuildSaberMapsStream(
         GuildId guildId,
-        GuildContext.GuildContextId contextId,
+        ContextId contextId,
         ServerDbContext dbContext,
         OldGuildSaberApi oldGuildSaberApi,
         RankedMapService rankedMapService,
@@ -211,7 +210,6 @@ public class DebugEndpoints : IEndpoints
                 var level = levelDict[difficulty.LevelId];
                 var createRankedMap = new RankedMapRequest.CreateRankedMap
                 (
-                    ContextId: contextId,
                     ManualRating: new RankedMapRequest.ManualRating(
                         DifficultyStar: level.LevelNumber,
                         AccuracyStar: null),
@@ -238,7 +236,7 @@ public class DebugEndpoints : IEndpoints
                 var tryCount = 0;
                 do
                 {
-                    var createResult = await rankedMapService.CreateRankedMap(guildId, createRankedMap);
+                    var createResult = await rankedMapService.CreateRankedMap(guildId, contextId, createRankedMap);
                     if (createResult is RankedMapService.CreateResponse.Success success)
                     {
                         yield return success;

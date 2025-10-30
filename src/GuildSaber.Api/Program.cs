@@ -22,7 +22,6 @@ using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Database;
 using GuildSaber.Database.Contexts.Server;
-using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -232,7 +231,7 @@ OpenApiTypeTransformer.MapType<SongHash>(new OpenApiSchema
     { Type = JsonSchemaType.String, Example = "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890" });
 OpenApiTypeTransformer.MapType<SSLeaderboardId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
 OpenApiTypeTransformer.MapType<BLLeaderboardId>(new OpenApiSchema { Type = JsonSchemaType.String, Example = "a3c391" });
-OpenApiTypeTransformer.MapType<GuildContext.GuildContextId>(new OpenApiSchema
+OpenApiTypeTransformer.MapType<ContextId>(new OpenApiSchema
     { Type = JsonSchemaType.Integer, Format = "int32" });
 builder.Services.AddOpenApi(options =>
 {

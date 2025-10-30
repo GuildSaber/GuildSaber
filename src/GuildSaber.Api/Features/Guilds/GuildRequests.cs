@@ -2,7 +2,7 @@ namespace GuildSaber.Api.Features.Guilds;
 
 public static class GuildRequests
 {
-    public enum EGuildSorters
+    public enum EGuildSorter
     {
         Id = 0,
         Popularity = 1,

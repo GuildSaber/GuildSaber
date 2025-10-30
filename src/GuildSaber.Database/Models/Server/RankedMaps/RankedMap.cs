@@ -14,8 +14,10 @@ public class RankedMap
     public Guild.GuildId GuildId { get; init; }
     public GuildContext.GuildContextId ContextId { get; init; }
 
+    public required RankedMapInfo Info { get; set; }
     public required RankedMapRequirements Requirements { get; init; }
     public required RankedMapRating Rating { get; init; }
+
     public IList<MapVersion> MapVersions { get; init; } = null!;
     public IList<Category> Categories { get; init; } = null!;
 
@@ -49,6 +51,7 @@ public class RankedMapConfiguration : IEntityTypeConfiguration<RankedMap>
         builder.Property(x => x.Id).HasGenericConversion<RankedMap.RankedMapId, long>()
             .ValueGeneratedOnAdd();
 
+        builder.ComplexProperty(x => x.Info);
         builder.ComplexProperty(x => x.Requirements).Configure(new RankedMapRequirementsConfiguration());
         builder.ComplexProperty(x => x.Rating).Configure(new RankedMapRatingConfiguration());
 

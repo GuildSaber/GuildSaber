@@ -27,6 +27,7 @@ public class MapVersion
     public byte Order { get; set; }
 
     public SongDifficulty SongDifficulty { get; init; } = null!;
+    public Song Song { get; init; } = null!;
 }
 
 public class MapVersionConfiguration : IEntityTypeConfiguration<MapVersion>
@@ -37,7 +38,7 @@ public class MapVersionConfiguration : IEntityTypeConfiguration<MapVersion>
         builder.HasOne<SongDifficulty>().WithMany().HasForeignKey(x => x.SongDifficultyId);
         builder.HasOne<PlayMode>().WithMany().HasForeignKey(x => x.PlayModeId);
 
-        builder.HasOne<Song>()
+        builder.HasOne(x => x.Song)
             .WithMany().HasForeignKey(x => x.SongId)
             .OnDelete(DeleteBehavior.Cascade);
 

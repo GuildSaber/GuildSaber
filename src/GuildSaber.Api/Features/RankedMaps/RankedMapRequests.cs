@@ -1,5 +1,4 @@
 using GuildSaber.Api.Features.RankedMaps.MapVersions;
-using GuildSaber.Database.Models.Server.Guilds;
 
 namespace GuildSaber.Api.Features.RankedMaps;
 
@@ -34,6 +33,15 @@ public class RankedMapRequest
         ProhibitedDefaults = NoObstacles | NoBombs | NoFail | SlowerSong | NoArrows | OffPlatform
     }
 
+    public enum ERankedMapSorter
+    {
+        Id = 0,
+        EditTime = 1,
+        CreationTime = 2,
+        DifficultyStar = 3,
+        AccuracyStar = 4
+    }
+
     /// <param name="DifficultyStar">
     /// When specified, the difficulty rating of the map won't be calculated by BeatLeader's ExMachina.
     /// </param>
@@ -54,7 +62,6 @@ public class RankedMapRequest
     /// <param name="BaseMapVersion">
     /// The map version that will be used as the base for the ranked map.
     /// </param>
-    /// <param name="ContextId"></param>
     /// <param name="Requirements"></param>
     /// <param name="ManualRating">
     /// Used to force a specific difficulty and/or accuracy star rating for the map.
@@ -68,7 +75,6 @@ public class RankedMapRequest
     /// then add the other map versions using the proper endpoint.
     /// </remarks>
     public record CreateRankedMap(
-        GuildContext.GuildContextId ContextId,
         MapVersionRequests.AddMapVersion BaseMapVersion,
         RankedMapRequirements Requirements,
         ManualRating ManualRating,

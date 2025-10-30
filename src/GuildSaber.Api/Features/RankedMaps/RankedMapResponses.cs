@@ -6,6 +6,8 @@ namespace GuildSaber.Api.Features.RankedMaps;
 
 public static class RankedMapResponses
 {
+    public record RankedMapInfo(DateTimeOffset CreatedAt, DateTimeOffset EditedAt);
+
     public record RankedMapRequirements(
         bool NeedConfirmation,
         bool NeedFullCombo,
@@ -69,6 +71,7 @@ public static class RankedMapResponses
         long Id,
         int GuildId,
         int ContextId,
+        RankedMapInfo Info,
         RankedMapRequirements Requirements,
         RankedMapRating Rating,
         MapVersion[] Versions,

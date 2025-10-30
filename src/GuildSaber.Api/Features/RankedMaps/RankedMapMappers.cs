@@ -13,17 +13,64 @@ namespace GuildSaber.Api.Features.RankedMaps;
 public static class RankedMapMappers
 {
     public static Expression<Func<RankedMap, RankedMapResponses.RankedMap>> MapRankedMapExpression
-        => self => new RankedMapResponses.RankedMap(default, default, default, null!, null!, null!, null!);
+        => self => new RankedMapResponses.RankedMap(
+            self.Id,
+            self.GuildId,
+            self.ContextId,
+            self.Info.Map(),
+            self.Requirements.Map(),
+            self.Rating.Map(),
+            self.MapVersions.Select(x => new RankedMapResponses.MapVersion(
+                x.AddedAt,
+                x.Order,
+                new RankedMapResponses.Song(
+                    x.Song.Id,
+                    x.Song.Hash,
+                    x.Song.BeatSaverKey,
+                    x.Song.UploadedAt,
+                    new RankedMapResponses.SongInfo(
+                        x.Song.Info.BeatSaverName,
+                        x.Song.Info.SongName,
+                        x.Song.Info.SongSubName,
+                        x.Song.Info.SongAuthorName,
+                        x.Song.Info.MapperName
+                    ),
+                    new RankedMapResponses.SongStats(
+                        x.Song.Stats.BPM,
+                        x.Song.Stats.DurationSec,
+                        x.Song.Stats.IsAutoMapped
+                    )),
+                new RankedMapResponses.SongDifficulty(
+                    x.SongDifficulty.BLLeaderboardId,
+                    x.SongDifficulty.SSLeaderboardId,
+                    x.SongDifficulty.Difficulty,
+                    x.SongDifficulty.GameMode.Name,
+                    new RankedMapResponses.SongDifficultyStats(
+                        x.SongDifficulty.Stats.MaxScore,
+                        x.SongDifficulty.Stats.NoteJumpSpeed,
+                        x.SongDifficulty.Stats.NoteCount,
+                        x.SongDifficulty.Stats.BombCount,
+                        x.SongDifficulty.Stats.ObstacleCount,
+                        x.SongDifficulty.Stats.NotesPerSecond,
+                        x.SongDifficulty.Stats.Duration
+                    )))).ToArray(),
+            self.Categories.Select(x => (int)x.Id).ToArray());
 
     public static RankedMapResponses.RankedMap Map(
         this RankedMap self, Song song, SongDifficulty songDifficulty, GameMode gameMode) => new(
         Id: self.Id,
         GuildId: self.GuildId,
         ContextId: self.ContextId,
+        Info: self.Info.Map(),
         Requirements: self.Requirements.Map(),
         Rating: self.Rating.Map(),
         Versions: self.MapVersions.Select(v => v.Map(song, songDifficulty, gameMode)).ToArray(),
         CategoryIds: self.Categories.Select(x => (int)x.Id).ToArray()
+    );
+
+    public static RankedMapResponses.RankedMapInfo Map(this RankedMapInfo self) => new(
+        CreatedAt: self.CreatedAt,
+        EditedAt: self.EditedAt
     );
 
     public static RankedMapResponses.RankedMapRating Map(this RankedMapRating self) => new(

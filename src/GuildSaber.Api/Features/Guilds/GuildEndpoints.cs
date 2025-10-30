@@ -72,7 +72,7 @@ public class GuildEndpoints : IEndpoints
         [Range(1, int.MaxValue)] int page = 1,
         [Range(1, 100)] int pageSize = 10,
         string? search = null,
-        GuildRequests.EGuildSorters sortBy = GuildRequests.EGuildSorters.Popularity,
+        GuildRequests.EGuildSorter sortBy = GuildRequests.EGuildSorter.Popularity,
         EOrder order = EOrder.Desc)
     {
         var query = dbContext.Guilds.AsQueryable();
@@ -151,19 +151,19 @@ public class GuildEndpoints : IEndpoints
 public static class GuildExtensions
 {
     public static IQueryable<ServerGuild> ApplySortOrder(
-        this IQueryable<ServerGuild> query, GuildRequests.EGuildSorters sortBy, EOrder order) => sortBy switch
+        this IQueryable<ServerGuild> query, GuildRequests.EGuildSorter sortBy, EOrder order) => sortBy switch
     {
-        GuildRequests.EGuildSorters.Id => query.OrderBy(order, guild => guild.Id),
-        GuildRequests.EGuildSorters.Name => query.OrderBy(order, guild => guild.Info.Name)
+        GuildRequests.EGuildSorter.Id => query.OrderBy(order, guild => guild.Id),
+        GuildRequests.EGuildSorter.Name => query.OrderBy(order, guild => guild.Info.Name)
             .ThenBy(order, guild => guild.Id),
-        GuildRequests.EGuildSorters.Popularity => query.OrderBy(order, x => x.Status)
+        GuildRequests.EGuildSorter.Popularity => query.OrderBy(order, x => x.Status)
             .ThenBy(order, guild => guild.RankedScores.Count / Math.Max(1, guild.Members.Count))
             .ThenBy(order, guild => guild.Id),
-        GuildRequests.EGuildSorters.CreationDate => query.OrderBy(order, guild => guild.Info.CreatedAt)
+        GuildRequests.EGuildSorter.CreationDate => query.OrderBy(order, guild => guild.Info.CreatedAt)
             .ThenBy(order, guild => guild.Id),
-        GuildRequests.EGuildSorters.MemberCount => query.OrderBy(order, guild => guild.Members.Count)
+        GuildRequests.EGuildSorter.MemberCount => query.OrderBy(order, guild => guild.Members.Count)
             .ThenBy(order, guild => guild.Id),
-        GuildRequests.EGuildSorters.MapCount => query.OrderBy(order, guild => guild.RankedMaps.Count)
+        GuildRequests.EGuildSorter.MapCount => query.OrderBy(order, guild => guild.RankedMaps.Count)
             .ThenBy(order, guild => guild.Id),
         _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
     };
