@@ -30,7 +30,7 @@ public class RankedMapEndpoints : IEndpoints
             .WithDescription("Get a ranked map in the server by its Id.");
 
         var group = endpoints.MapGroup("guilds/{guildId}/contexts/{contextId}/ranked-maps")
-            .WithTag("Context.RankedMaps", description: "Endpoints for managing guild ranked maps by guild id.");
+            .WithTag("Context.RankedMaps", description: "Endpoints for managing ranked maps within a context.");
 
         group.MapGet("/", GetRankedMapsAsync)
             .WithName("GetRankedMaps")

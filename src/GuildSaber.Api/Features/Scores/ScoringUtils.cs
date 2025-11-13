@@ -59,7 +59,7 @@ public static class ScoringUtils
         {
             if (score is not BeatLeaderScore blScore)
                 denyReason |= EDenyReason.MissingTrackers;
-            else if (blScore.ScoreStatistics?.WinTracker.TotalPauseDuration > requirements.MaxPauseDurationSec)
+            else if (blScore.Statistics?.WinTracker.TotalPauseDuration > requirements.MaxPauseDurationSec)
                 denyReason |= EDenyReason.TooMuchPaused;
         }
 

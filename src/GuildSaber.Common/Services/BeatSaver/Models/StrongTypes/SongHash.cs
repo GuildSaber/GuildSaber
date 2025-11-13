@@ -17,14 +17,13 @@ public readonly record struct SongHash
     public static implicit operator string(SongHash id)
         => id._value;
 
-    public static Result<SongHash> TryCreate(string? value)
-        => value switch
-        {
-            null => Failure<SongHash>("Song hash must not be null."),
-            { Length: not ExactLength } => Failure<SongHash>($"Song hash must be {ExactLength} characters long."),
-            _ when !value.All(char.IsLetterOrDigit) => Failure<SongHash>("Song hash must be alphanumeric."),
-            _ => Success(new SongHash(value))
-        };
+    public static Result<SongHash> TryCreate(string? value) => value switch
+    {
+        null => Failure<SongHash>("Song hash must not be null."),
+        { Length: not ExactLength } => Failure<SongHash>($"Song hash must be {ExactLength} characters long."),
+        _ when !value.All(char.IsLetterOrDigit) => Failure<SongHash>("Song hash must be alphanumeric."),
+        _ => Success(new SongHash(value))
+    };
 
     [return: NotNullIfNotNull(nameof(value))]
     public static SongHash? CreateUnsafe(string? value)

@@ -42,6 +42,10 @@ public class RankedScore : IComparable<RankedScore>
     /* Date won't be stored here, it can just be based on the underlying score's SetAt property.
      (Because the ranked map and rules can be tweaked, reassigning dates here would be confusing) */
 
+    public AbstractScore Score { get; init; } = null!;
+    public AbstractScore? PrevScore { get; init; }
+    public Player Player { get; init; } = null!;
+
     /// <remarks>
     /// Old piece of code non-tested and used for the sake of getting things to work.
     /// </remarks>
@@ -130,8 +134,7 @@ public class RankedScore : IComparable<RankedScore>
         [Description("Score has been refused by a scoring team member.")]
         Refused = 1 << 5,
 
-        //Note for future me: Should auto-confirmed be its own state? Or just Confirmed 
-
+        //Note for future me: Should auto-confirmed be its own state? Or just Confirmed.
         NonPointGiving = None | Denied | Removed | Pending | Refused | Confirmed
     }
 
@@ -193,15 +196,15 @@ public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
             .WithMany().HasForeignKey(x => x.SongDifficultyId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<Player>()
+        builder.HasOne(x => x.Player)
             .WithMany().HasForeignKey(x => x.PlayerId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<AbstractScore>()
+        builder.HasOne(x => x.Score)
             .WithMany().HasForeignKey(x => x.ScoreId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<AbstractScore>()
+        builder.HasOne(x => x.PrevScore)
             .WithMany().HasForeignKey(x => x.PrevScoreId)
             .OnDelete(DeleteBehavior.Cascade);
 

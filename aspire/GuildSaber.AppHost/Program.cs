@@ -36,6 +36,8 @@ var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.Ex
     .WithReference("scoresaber-api", new Uri("https://scoresaber.com/"))
     .WithReference("beatleader-socket", new Uri("wss://sockets.api.beatleader.com/"));
 
+//For later: DevTunnels seems cool for exposing test urls. 
+
 if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
     apiService.WithHttpEndpoint(port: 5033);
 

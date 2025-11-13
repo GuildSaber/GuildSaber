@@ -14,9 +14,9 @@ public static class ScoreStatisticsMappers
         ? null
         : new ScoreStatistics
         {
+            WinTracker = self.WinTracker.Map(),
             HitTracker = self.HitTracker.Map(),
             AccuracyTracker = self.AccuracyTracker.Map(),
-            WinTracker = self.WinTracker.Map(),
             ScoreGraphTracker = self.ScoreGraphTracker.Map()
         };
 
@@ -35,14 +35,14 @@ public static class ScoreStatisticsMappers
     private static AccuracyTracker Map(this BLAccuracyTracker self) => new(
         AccRight: self.AccRight,
         AccLeft: self.AccLeft,
-        LeftPreswing: self.LeftPreswing,
-        RightPreswing: self.RightPreswing,
+        LeftPreSwing: self.LeftPreswing,
+        RightPreSwing: self.RightPreswing,
         LeftPostSwing: self.LeftPostSwing,
         RightPostSwing: self.RightPostSwing,
         LeftTimeDependence: self.LeftTimeDependence,
         RightTimeDependence: self.RightTimeDependence,
         LeftAverageCutGraphGrid: self.LeftAverageCut,
-        RightAverageCutGrid: self.RightAverageCut,
+        RightAverageCutGraphGrid: self.RightAverageCut,
         AccuracyGrid: self.GridAcc
     );
 
@@ -56,7 +56,7 @@ public static class ScoreStatisticsMappers
         TotalScore: self.TotalScore,
         MaxScore: self.MaxScore)
     {
-        AverageHeadPosition = self.AverageHeadPosition.Map()
+        AverageHeadPosition = self.AverageHeadPosition.Map()!.Value
     };
 
     private static ScoreGraphTracker Map(this BLScoreGraphTracker self) => new(self.Graph);

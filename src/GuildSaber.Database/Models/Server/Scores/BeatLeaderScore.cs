@@ -5,11 +5,10 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GuildSaber.Database.Models.Server.Scores;
 
-public sealed record BeatLeaderScore : AbstractScore
+public sealed class BeatLeaderScore : AbstractScore
 {
     public required BeatLeaderScoreId? BeatLeaderScoreId { get; init; }
-
-    public required ScoreStatistics? ScoreStatistics { get; init; }
+    public required ScoreStatistics? Statistics { get; init; }
 }
 
 public class BeatLeaderScoreConfiguration : IEntityTypeConfiguration<BeatLeaderScore>
@@ -17,7 +16,7 @@ public class BeatLeaderScoreConfiguration : IEntityTypeConfiguration<BeatLeaderS
     public void Configure(EntityTypeBuilder<BeatLeaderScore> builder)
     {
         builder.HasBaseType<AbstractScore>();
-        builder.ComplexProperty(x => x.ScoreStatistics).Configure(new ScoreStatisticConfiguration());
+        builder.ComplexProperty(x => x.Statistics).Configure(new ScoreStatisticConfiguration());
         builder.Property(x => x.BeatLeaderScoreId)
             .HasConversion<int?>(from => from, to => BeatLeaderScoreId.CreateUnsafe(to));
     }
@@ -25,21 +24,22 @@ public class BeatLeaderScoreConfiguration : IEntityTypeConfiguration<BeatLeaderS
 
 public class ScoreStatistics
 {
-    public required WinTracker WinTracker { get; init; }
-    public required HitTracker HitTracker { get; init; }
-    public required AccuracyTracker AccuracyTracker { get; init; }
-    public required ScoreGraphTracker ScoreGraphTracker { get; init; }
+    public WinTracker WinTracker { get; set; } = null!;
+    public HitTracker HitTracker { get; set; } = null!;
+    public AccuracyTracker AccuracyTracker { get; set; } = null!;
+    public ScoreGraphTracker ScoreGraphTracker { get; set; } = null!;
 }
 
 public class ScoreStatisticConfiguration : IComplexPropertyConfiguration<ScoreStatistics>
 {
     public ComplexPropertyBuilder<ScoreStatistics> Configure(ComplexPropertyBuilder<ScoreStatistics> builder)
     {
-        builder.ComplexProperty(x => x.WinTracker, x => x.ComplexProperty(y => y.AverageHeadPosition)
-            .IsRequired()).IsRequired();
-        builder.ComplexProperty(x => x.HitTracker).IsRequired();
-        builder.ComplexProperty(x => x.AccuracyTracker).IsRequired();
-        builder.ComplexProperty(x => x.ScoreGraphTracker).IsRequired();
+        builder.HasDiscriminator();
+        builder.ComplexProperty(x => x.WinTracker)
+            .ComplexProperty(x => x.AverageHeadPosition);
+        builder.ComplexProperty(x => x.HitTracker);
+        builder.ComplexProperty(x => x.AccuracyTracker);
+        builder.ComplexProperty(x => x.ScoreGraphTracker);
 
         return builder;
     }
@@ -76,14 +76,14 @@ public record HitTracker(
 public record AccuracyTracker(
     float AccRight,
     float AccLeft,
-    float LeftPreswing,
-    float RightPreswing,
+    float LeftPreSwing,
+    float RightPreSwing,
     float LeftPostSwing,
     float RightPostSwing,
     float LeftTimeDependence,
     float RightTimeDependence,
     IReadOnlyList<float> LeftAverageCutGraphGrid,
-    IReadOnlyList<float> RightAverageCutGrid,
+    IReadOnlyList<float> RightAverageCutGraphGrid,
     IReadOnlyList<float> AccuracyGrid
 );
 

@@ -9,7 +9,7 @@ using PlayerId = GuildSaber.Database.Models.Server.Players.Player.PlayerId;
 
 namespace GuildSaber.Database.Models.Server.Scores;
 
-public abstract record AbstractScore
+public abstract class AbstractScore
 {
     public ScoreId Id { get; set; }
     public required PlayerId PlayerId { get; init; }

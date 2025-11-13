@@ -82,8 +82,8 @@ public static class RankedMapMappers
         NeedConfirmation: self.NeedConfirmation,
         NeedFullCombo: self.NeedFullCombo,
         MaxPauseDurationSec: self.MaxPauseDurationSec,
-        ProhibitedModifiers: self.ProhibitedModifiers.Map().Unwrap(),
-        MandatoryModifiers: self.MandatoryModifiers.Map().Unwrap(),
+        ProhibitedModifiers: self.ProhibitedModifiers.Map(),
+        MandatoryModifiers: self.MandatoryModifiers.Map(),
         MinAccuracy: self.MinAccuracy
     );
 
@@ -162,7 +162,7 @@ public static class RankedMapMappers
         );
     }
 
-    public static Result<RankedMapRequest.EModifiers> Map(this AbstractScore.EModifiers self) =>
+    public static RankedMapRequest.EModifiers Map(this AbstractScore.EModifiers self) =>
         Enum.GetValues<AbstractScore.EModifiers>()
             .Where(flag => flag != AbstractScore.EModifiers.None && self.HasFlag(flag))
             .Select(flag => flag switch

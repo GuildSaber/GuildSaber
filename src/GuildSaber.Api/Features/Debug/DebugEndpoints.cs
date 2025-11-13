@@ -219,8 +219,8 @@ public class DebugEndpoints : IEndpoints
                         MaxPauseDurationSec: difficulty.Requirements.HasFlag(ERequirements.MaxPauses)
                             ? 2f
                             : null,
-                        ProhibitedModifiers: ModifiersMapper.ToModifiers(difficulty.ProhibitedModifiers).Map().Unwrap(),
-                        MandatoryModifiers: ModifiersMapper.ToModifiers(difficulty.MandatoryModifiers).Map().Unwrap(),
+                        ProhibitedModifiers: ModifiersMapper.ToModifiers(difficulty.ProhibitedModifiers).Map(),
+                        MandatoryModifiers: ModifiersMapper.ToModifiers(difficulty.MandatoryModifiers).Map(),
                         MinAccuracy: (int)((float)difficulty.MinScoreRequirement / difficulty.MaxScore * 100f)),
                     BaseMapVersion: new MapVersionRequests.AddMapVersion(
                         BeatSaverKey: rankedMap.BeatSaverId.Value,

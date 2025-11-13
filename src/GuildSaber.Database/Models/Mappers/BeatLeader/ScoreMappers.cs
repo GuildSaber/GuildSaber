@@ -26,7 +26,7 @@ public static class ScoreMappers
         IsFullCombo = uploadScore.FullCombo,
         BadCuts = uploadScore.BadCuts,
         MissedNotes = uploadScore.MissedNotes,
-        ScoreStatistics = null,
+        Statistics = null,
         HMD = uploadScore.Hmd.Map()
     };
 
@@ -47,7 +47,7 @@ public static class ScoreMappers
         IsFullCombo = score.FullCombo,
         BadCuts = score.BadCuts,
         MissedNotes = score.MissedNotes,
-        ScoreStatistics = scoreStatistics,
+        Statistics = scoreStatistics,
         HMD = score.Hmd.Map()
     };
 }
