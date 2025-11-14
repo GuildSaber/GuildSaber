@@ -3,6 +3,7 @@ using GuildSaber.Database.Models.Server.Auth;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Boosts;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
+using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.Players;
@@ -27,8 +28,13 @@ public class ServerDbContext : DbContext
     public ServerDbContext() { }
 
     public DbSet<Guild> Guilds { get; set; }
-    public DbSet<GuildContext> GuildContexts { get; set; }
+    public DbSet<Context> GuildContexts { get; set; }
+    public DbSet<Level> Levels { get; set; }
+    public DbSet<ContextMember> ContextMembers { get; set; }
+
     public DbSet<Member> Members { get; set; }
+    public DbSet<MemberStat> MemberStats { get; set; }
+
     public DbSet<Boost> Boosts { get; set; }
     public DbSet<Point> Points { get; set; }
     public DbSet<Category> Categories { get; set; }
@@ -65,9 +71,11 @@ public class ServerDbContext : DbContext
     /// </remarks>
     protected override void OnModelCreating(ModelBuilder builder) => builder
         .ApplyConfiguration(new GuildConfiguration())
-        .ApplyConfiguration(new GuildContextConfiguration())
+        .ApplyConfiguration(new ContextConfiguration())
+        .ApplyConfiguration(new LevelConfiguration())
         .ApplyConfiguration(new MemberConfiguration())
-        .ApplyConfiguration(new GuildContextMemberConfiguration())
+        .ApplyConfiguration(new MemberStatConfiguration())
+        .ApplyConfiguration(new ContextMemberConfiguration())
         .ApplyConfiguration(new BoostConfiguration())
         .ApplyConfiguration(new PointConfiguration())
         .ApplyConfiguration(new CategoryConfiguration())

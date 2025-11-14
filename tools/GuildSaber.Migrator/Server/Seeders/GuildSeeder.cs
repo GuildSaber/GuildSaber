@@ -101,11 +101,11 @@ public static class GuildSeeder
             Status = Guild.EGuildStatus.Featured,
             Contexts =
             [
-                new GuildContext
+                new Context
                 {
-                    Id = new GuildContext.GuildContextId(1),
-                    Type = GuildContext.EContextType.Default,
-                    Info = new GuildContextInfo
+                    Id = new Context.ContextId(1),
+                    Type = Context.EContextType.Default,
+                    Info = new ContextInfo
                     {
                         Description = "The main context of the guild, where all the maps are ranked.",
                         Name = "Default"
@@ -156,11 +156,11 @@ public static class GuildSeeder
             },
             Contexts =
             [
-                new GuildContext
+                new Context
                 {
-                    Id = new GuildContext.GuildContextId(2),
-                    Type = GuildContext.EContextType.Default,
-                    Info = new GuildContextInfo
+                    Id = new Context.ContextId(2),
+                    Type = Context.EContextType.Default,
+                    Info = new ContextInfo
                     {
                         Description = "The main context of the guild, where all the maps are ranked.",
                         Name = "Default"

@@ -7,4 +7,11 @@ public static class LeaderboardRequests
         Points = 0,
         EffectiveScore = 1
     }
+
+    public enum EMemberStatLeaderboardSorter
+    {
+        Points = 0,
+        Level = 1,
+        PassCount = 2
+    }
 }

@@ -8,20 +8,20 @@ namespace GuildSaber.Database.Models.Server.Guilds;
 /// <remarks>
 /// Class created to add future functionality such as join requirements (e.g. rank, invite code, etc.)
 /// </remarks>
-public class GuildContextMember
+public class ContextMember
 {
-    public GuildContext.GuildContextId GuildContextId { get; init; }
     public Guild.GuildId GuildId { get; init; }
+    public Context.ContextId ContextId { get; init; }
     public Player.PlayerId PlayerId { get; init; }
 }
 
-public class GuildContextMemberConfiguration : IEntityTypeConfiguration<GuildContextMember>
+public class ContextMemberConfiguration : IEntityTypeConfiguration<ContextMember>
 {
-    public void Configure(EntityTypeBuilder<GuildContextMember> builder)
+    public void Configure(EntityTypeBuilder<ContextMember> builder)
     {
-        builder.HasKey(x => new { x.GuildContextId, x.GuildId, x.PlayerId });
+        builder.HasKey(x => new { x.GuildId, x.ContextId, x.PlayerId });
 
-        builder.HasOne<GuildContext>()
+        builder.HasOne<Context>()
             .WithMany(x => x.ContextMembers);
         builder.HasOne<Member>()
             .WithMany(x => x.ContextMembers);

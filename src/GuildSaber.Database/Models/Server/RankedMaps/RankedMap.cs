@@ -12,7 +12,7 @@ public class RankedMap
     public RankedMapId Id { get; init; }
 
     public Guild.GuildId GuildId { get; init; }
-    public GuildContext.GuildContextId ContextId { get; init; }
+    public Context.ContextId ContextId { get; init; }
 
     public required RankedMapInfo Info { get; set; }
     public required RankedMapRequirements Requirements { get; init; }
@@ -59,7 +59,7 @@ public class RankedMapConfiguration : IEntityTypeConfiguration<RankedMap>
             .WithMany(x => x.RankedMaps).HasForeignKey(x => x.GuildId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<GuildContext>()
+        builder.HasOne<Context>()
             .WithMany(x => x.RankedMaps).HasForeignKey(x => x.ContextId)
             .OnDelete(DeleteBehavior.Cascade);
 

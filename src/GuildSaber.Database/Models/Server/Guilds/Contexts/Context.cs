@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using GuildSaber.Database.Extensions;
+using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.RankedMaps;
@@ -10,29 +11,30 @@ using GuildId = GuildSaber.Database.Models.Server.Guilds.Guild.GuildId;
 
 namespace GuildSaber.Database.Models.Server.Guilds;
 
-public class GuildContext
+public class Context
 {
-    public GuildContextId Id { get; init; }
+    public ContextId Id { get; init; }
     public GuildId GuildId { get; init; }
 
     public EContextType Type { get; init; }
 
-    public GuildContextInfo Info { get; set; }
+    public ContextInfo Info { get; set; }
     //TODO: Add settings for context, like if it only takes up new scores, etc.
 
     public IList<Point> Points { get; init; } = null!;
+    public IList<Level> Levels { get; init; } = null!;
     public IList<RankedMap> RankedMaps { get; init; } = null!;
     public IList<Member> Members { get; init; } = null!;
-    public IList<GuildContextMember> ContextMembers { get; init; } = null!;
+    public IList<ContextMember> ContextMembers { get; init; } = null!;
 
-    [JsonConverter(typeof(GuildContextIdJsonConverter))]
-    public readonly record struct GuildContextId(int Value) : IEFStrongTypedId<GuildContextId, int>
+    [JsonConverter(typeof(ContextIdJsonConverter))]
+    public readonly record struct ContextId(int Value) : IEFStrongTypedId<ContextId, int>
     {
-        public static bool TryParse(string? from, out GuildContextId value)
+        public static bool TryParse(string? from, out ContextId value)
         {
             if (int.TryParse(from, out var id))
             {
-                value = new GuildContextId(id);
+                value = new ContextId(id);
                 return true;
             }
 
@@ -40,7 +42,7 @@ public class GuildContext
             return false;
         }
 
-        public static implicit operator int(GuildContextId id)
+        public static implicit operator int(ContextId id)
             => id.Value;
 
         public override string ToString()
@@ -58,29 +60,15 @@ public class GuildContext
     }
 }
 
-public class GuildContextIdJsonConverter : JsonConverter<GuildContext.GuildContextId>
+public class ContextConfiguration : IEntityTypeConfiguration<Context>
 {
-    public override GuildContext.GuildContextId Read(
-        ref Utf8JsonReader reader, Type typeToConvert,
-        JsonSerializerOptions options)
-        => reader.TokenType == JsonTokenType.Number
-            ? new GuildContext.GuildContextId(reader.GetInt32())
-            : throw new JsonException("Cannot convert to BLLeaderboardId");
-
-    public override void Write(
-        Utf8JsonWriter writer, GuildContext.GuildContextId value,
-        JsonSerializerOptions options) => writer.WriteNumberValue(value.Value);
-}
-
-public class GuildContextConfiguration : IEntityTypeConfiguration<GuildContext>
-{
-    public void Configure(EntityTypeBuilder<GuildContext> builder)
+    public void Configure(EntityTypeBuilder<Context> builder)
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id)
-            .HasGenericConversion<GuildContext.GuildContextId, int>()
+            .HasGenericConversion<Context.ContextId, int>()
             .ValueGeneratedOnAdd();
-        builder.ComplexProperty(x => x.Info).Configure(new GuildContextInfoConfiguration());
+        builder.ComplexProperty(x => x.Info).Configure(new ContextInfoConfiguration());
 
         builder.HasOne<Guild>()
             .WithMany(x => x.Contexts).HasForeignKey(x => x.GuildId)
@@ -88,10 +76,26 @@ public class GuildContextConfiguration : IEntityTypeConfiguration<GuildContext>
 
         builder.HasMany(x => x.Points)
             .WithMany();
+        builder.HasMany(x => x.Levels)
+            .WithOne().HasForeignKey(x => x.ContextId);
         builder.HasMany(x => x.RankedMaps)
             .WithOne().HasForeignKey(x => x.ContextId);
         builder.HasMany(x => x.Members)
             .WithMany(x => x.Contexts)
-            .UsingEntity<GuildContextMember>();
+            .UsingEntity<ContextMember>();
     }
+}
+
+public class ContextIdJsonConverter : JsonConverter<Context.ContextId>
+{
+    public override Context.ContextId Read(
+        ref Utf8JsonReader reader, Type typeToConvert,
+        JsonSerializerOptions options)
+        => reader.TokenType == JsonTokenType.Number
+            ? new Context.ContextId(reader.GetInt32())
+            : throw new JsonException("Cannot convert to ContextId");
+
+    public override void Write(
+        Utf8JsonWriter writer, Context.ContextId value,
+        JsonSerializerOptions options) => writer.WriteNumberValue(value.Value);
 }

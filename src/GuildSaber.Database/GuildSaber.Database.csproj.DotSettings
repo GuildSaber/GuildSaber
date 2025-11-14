@@ -22,6 +22,8 @@
     <s:Boolean
             x:Key="/Default/CodeInspection/NamespaceProvider/NamespaceFoldersToSkip/=models_005Crankedmaps/@EntryIndexedValue">False</s:Boolean>
     <s:Boolean
+            x:Key="/Default/CodeInspection/NamespaceProvider/NamespaceFoldersToSkip/=models_005Cserver_005Cguilds_005Ccontexts/@EntryIndexedValue">True</s:Boolean>
+    <s:Boolean
             x:Key="/Default/CodeInspection/NamespaceProvider/NamespaceFoldersToSkip/=models_005Cserver_005Cguilds_005Cguildcontexts/@EntryIndexedValue">True</s:Boolean>
     <s:Boolean
             x:Key="/Default/CodeInspection/NamespaceProvider/NamespaceFoldersToSkip/=models_005Csong/@EntryIndexedValue">False</s:Boolean>

@@ -17,8 +17,8 @@ public class Member
 
     public Player Player { get; init; } = null!;
     public Guild Guild { get; init; } = null!;
-    public IList<GuildContext> Contexts { get; init; } = null!;
-    public IList<GuildContextMember> ContextMembers { get; init; } = null!;
+    public IList<Context> Contexts { get; init; } = null!;
+    public IList<ContextMember> ContextMembers { get; init; } = null!;
 
     public enum EJoinState
     {
@@ -56,6 +56,6 @@ public class MemberConfiguration : IEntityTypeConfiguration<Member>
 
         builder.HasMany(x => x.Contexts)
             .WithMany(x => x.Members)
-            .UsingEntity<GuildContextMember>();
+            .UsingEntity<ContextMember>();
     }
 }

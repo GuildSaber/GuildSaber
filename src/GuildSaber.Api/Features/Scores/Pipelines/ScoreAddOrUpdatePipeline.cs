@@ -20,7 +20,7 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
     private record ScoreRankingContext(
         RankedMap[] RankedMapsWithVersionsWithSongDifficulty,
         RankedScore[] ExistingRankedScores,
-        GuildContext[] ContextsWithPoints,
+        Context[] ContextsWithPoints,
         AbstractScore[] Scores
     );
 

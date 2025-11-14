@@ -129,11 +129,11 @@ public static class GuildMappers
         _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
     };
 
-    public static GuildResponses.EContextType Map(this GuildContext.EContextType self) => self switch
+    public static GuildResponses.EContextType Map(this Context.EContextType self) => self switch
     {
-        GuildContext.EContextType.Default => GuildResponses.EContextType.Default,
-        GuildContext.EContextType.Tournament => GuildResponses.EContextType.Tournament,
-        GuildContext.EContextType.Temporary => GuildResponses.EContextType.Temporary,
+        Context.EContextType.Default => GuildResponses.EContextType.Default,
+        Context.EContextType.Tournament => GuildResponses.EContextType.Tournament,
+        Context.EContextType.Temporary => GuildResponses.EContextType.Temporary,
         _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
     };
 }

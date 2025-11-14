@@ -24,7 +24,7 @@ public class RankedScore : IComparable<RankedScore>
     public RankedScoreId Id { get; init; }
 
     public required GuildId GuildId { get; init; }
-    public required GuildContext.GuildContextId ContextId { get; init; }
+    public required Context.ContextId ContextId { get; init; }
     public required RankedMap.RankedMapId RankedMapId { get; init; }
     public required SongDifficultyId SongDifficultyId { get; init; }
     public required PointId PointId { get; init; }
@@ -184,7 +184,7 @@ public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
             .WithMany(x => x.RankedScores).HasForeignKey(x => x.GuildId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<GuildContext>()
+        builder.HasOne<Context>()
             .WithMany().HasForeignKey(x => x.ContextId)
             .OnDelete(DeleteBehavior.Cascade);
 

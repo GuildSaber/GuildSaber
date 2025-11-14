@@ -17,7 +17,7 @@ public class Guild
     public required GuildRequirements Requirements { get; set; }
     public required EGuildStatus Status { get; init; }
 
-    public IList<GuildContext> Contexts { get; init; } = null!;
+    public IList<Context> Contexts { get; init; } = null!;
     public IList<Member> Members { get; init; } = null!;
     public IList<Boost> Boosts { get; init; } = null!;
     public IList<Point> Points { get; init; } = null!;
