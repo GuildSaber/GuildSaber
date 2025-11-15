@@ -1,4 +1,5 @@
 using CSharpFunctionalExtensions;
+using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Common.Services.BeatLeader;
@@ -48,7 +49,7 @@ public class BLScoreSyncWorker(
     {
         await using var scope = serviceScopeFactory.CreateAsyncScope();
         await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
-        var scoreAddOrUpdatePipeline = new ScoreAddOrUpdatePipeline(dbContext);
+        var scoreAddOrUpdatePipeline = new ScoreAddOrUpdatePipeline(dbContext, new MemberStatPipeline(dbContext));
 
         do
         {

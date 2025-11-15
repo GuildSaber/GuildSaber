@@ -8,6 +8,7 @@ using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Guilds;
+using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Api.Features.Scores.Pipelines;
@@ -205,10 +206,11 @@ builder.Services.AddTransient<BeatLeaderGeneralSocketStream>(_ =>
 
 #endregion
 
-#region Background Services & Hangfire
+#region Background Services
 
 builder.Services.AddTransient<ScoreAddOrUpdatePipeline>();
 builder.Services.AddTransient<PlayerScoresPipeline>();
+builder.Services.AddTransient<MemberStatPipeline>();
 //builder.Services.AddHostedService<BLScoreSyncWorker>();
 builder.Services.AddHostedService<QueueProcessingService>();
 builder.Services.AddSingleton<IBackgroundTaskQueue>(_ => new BackgroundTaskQueue(capacity: 100));

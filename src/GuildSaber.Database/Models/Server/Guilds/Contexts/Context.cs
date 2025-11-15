@@ -21,10 +21,10 @@ public class Context
     public ContextInfo Info { get; set; }
     //TODO: Add settings for context, like if it only takes up new scores, etc.
 
-    public IList<Point> Points { get; init; } = null!;
-    public IList<Level> Levels { get; init; } = null!;
+    public IList<Point> Points { get; set; } = null!;
+    public IList<Level> Levels { get; set; } = null!;
     public IList<RankedMap> RankedMaps { get; init; } = null!;
-    public IList<Member> Members { get; init; } = null!;
+    public IList<Member> Members { get; set; } = null!;
     public IList<ContextMember> ContextMembers { get; init; } = null!;
 
     [JsonConverter(typeof(ContextIdJsonConverter))]

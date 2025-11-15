@@ -8,6 +8,7 @@ public static class LeaderboardResponses
         PlayerResponses.Player Player,
         float Points,
         float Xp,
+        int PassCount,
         int? LevelId,
         int? NextLevelId
     );

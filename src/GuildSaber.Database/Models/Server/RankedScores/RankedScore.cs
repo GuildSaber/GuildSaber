@@ -135,7 +135,7 @@ public class RankedScore : IComparable<RankedScore>
         Refused = 1 << 5,
 
         //Note for future me: Should auto-confirmed be its own state? Or just Confirmed.
-        NonPointGiving = None | Denied | Removed | Pending | Refused | Confirmed
+        NonPointGiving = None | Denied | Removed | Pending | Refused
     }
 
     /// <summary>

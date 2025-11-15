@@ -13,6 +13,7 @@ public static class LeaderboardMappers
         {
             Points = self.Points,
             Xp = self.Xp,
+            PassCount = self.PassCount,
             LevelId = self.LevelId,
             NextLevelId = self.NextLevelId,
             Player = dbContext.Players

@@ -1,5 +1,5 @@
 using CSharpFunctionalExtensions;
-using GuildSaber.Api.Features.Players.Pipelines;
+using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.RankedScores.Pipelines;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
@@ -15,7 +15,7 @@ using EDenyReason = GuildSaber.Database.Models.Server.RankedScores.RankedScore.E
 
 namespace GuildSaber.Api.Features.Scores.Pipelines;
 
-public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
+public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext, MemberStatPipeline memberStatPipeline)
 {
     private record ScoreRankingContext(
         RankedMap[] RankedMapsWithVersionsWithSongDifficulty,
@@ -45,17 +45,19 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
         AbstractScore Score
     );
 
+    //TODO: Don't calculate scores for contexts the player is not in.
     public async Task ExecuteAsync(AbstractScore scoreToAdd)
         => await (await UpdateScoreIfChangedAsync(scoreToAdd, dbContext)
                 .Or(() => dbContext.AddAndSaveAsync(scoreToAdd))
                 .ToResult("Failed to add or update score.")
                 .Map(async static (score, dbContext) =>
                     await PrepareScoreRankingContextAsync(score.PlayerId, score.SongDifficultyId, dbContext), dbContext)
-                .Map(x => IterateRankedScoresWithTransform(x, RecalculateRankedScore))
-                .Map(SetStateForBestRankedScorePerGroup))
-            .Map(static async (rankedScores, state) =>
+                .Map(rankingContext => (rankingContext,
+                    IterateRankedScoresWithTransform(rankingContext, RecalculateRankedScore)))
+                .Map(tuple => (tuple.rankingContext, rankedScores: SetStateForBestRankedScorePerGroup(tuple.Item2))))
+            .Map(static async (tuple, state) =>
             {
-                var enumerable = rankedScores.ToArray();
+                var enumerable = tuple.rankedScores.ToArray();
                 state.dbContext.RankedScores.UpdateRange(enumerable);
                 await state.dbContext.SaveChangesAsync();
 
@@ -70,9 +72,9 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
                     state.dbContext
                 );
 
-                await PlayerPointsPipeline.RecalculatePlayerPoints(state.PlayerId, state.dbContext);
-                await PlayerLevelPipeline.RecalculatePlayerLevels(state.PlayerId, state.dbContext);
-            }, (dbContext, scoreToAdd.PlayerId))
+                foreach (var contextWithPoint in tuple.rankingContext.ContextsWithPoints)
+                    await state.memberStatPipeline.ExecuteAsync(state.PlayerId, contextWithPoint);
+            }, (dbContext, scoreToAdd.PlayerId, memberStatPipeline))
             .Unwrap();
 
     /// <summary>
@@ -155,7 +157,7 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext)
 
         // We grab all the scores that are related to the Ranked maps, not just the ranked map version.
         var scores = await dbContext.Scores
-            .Where(x => x.PlayerId == playerId && songDifficultyIds
+            .Where(x => x.PlayerId == playerId && ((IEnumerable<SongDifficultyId>)songDifficultyIds)
                 .Contains(songDifficultyId))
             .ToArrayAsync();
 
