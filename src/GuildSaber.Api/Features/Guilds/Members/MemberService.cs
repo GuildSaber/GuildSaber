@@ -61,10 +61,28 @@ public class MemberService(ServerDbContext dbContext, BeatLeaderApi beatLeaderAp
                 Permissions = EPermission.None,
                 Priority = await GetNextPriority(context.dbContext, context.playerId)
             }, (playerId, guildId, timeProvider, dbContext))
-            .Map(async static (member, dbContext) => await dbContext
-                .AddAndSaveAsync(member), dbContext)
-            .Match(
-                member => member.JoinState == Member.EJoinState.Requested
+            .Map(static (member, dbContext) => dbContext.Database.CreateExecutionStrategy()
+                    .ExecuteInTransactionAsync((member, dbContext),
+                        operation: static async (state, cancellationToken) =>
+                        {
+                            var inserted = await state.dbContext.AddAndSaveAsync(state.member);
+                            var contexts = await state.dbContext.Contexts
+                                .Where(x => x.GuildId == state.member.GuildId)
+                                .ToListAsync(cancellationToken);
+
+                            foreach (var context in contexts)
+                                state.dbContext.ContextMembers.Add(new ContextMember
+                                {
+                                    GuildId = state.member.GuildId,
+                                    ContextId = context.Id,
+                                    PlayerId = state.member.PlayerId
+                                });
+
+                            await state.dbContext.SaveChangesAsync(cancellationToken);
+                            return inserted;
+                        }, verifySucceeded: (_, _) => Task.FromResult(true)),
+                dbContext)
+            .Match(member => member.JoinState == Member.EJoinState.Requested
                     ? new Requested(member)
                     : new Success(member),
                 err => err

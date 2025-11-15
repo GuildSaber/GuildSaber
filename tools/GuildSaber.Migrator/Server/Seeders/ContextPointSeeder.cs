@@ -7,10 +7,10 @@ public static class ContextPointSeeder
 {
     public static async Task SeedAsync(ServerDbContext dbContext, CancellationToken cancellationToken)
     {
-        if (await dbContext.GuildContexts.AnyAsync(x => x.Points.Any(), cancellationToken: cancellationToken))
+        if (await dbContext.Contexts.AnyAsync(x => x.Points.Any(), cancellationToken: cancellationToken))
             return;
 
-        var guildContexts = await dbContext.GuildContexts
+        var guildContexts = await dbContext.Contexts
             .AsTracking()
             .Where(x => !x.Points.Any())
             .ToListAsync(cancellationToken: cancellationToken);

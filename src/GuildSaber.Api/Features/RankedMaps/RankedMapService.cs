@@ -122,7 +122,7 @@ public class RankedMapService(
             .Match(tuple => new Success(tuple.rankedMap, tuple.song, tuple.difficulty, tuple.gameMode), err => err);
 
     private Task<bool> GuildContextExistsInGuildAsync(GuildId guildId, ContextId contextId)
-        => dbContext.GuildContexts.AnyAsync(x => x.Id == contextId && x.GuildId == guildId);
+        => dbContext.Contexts.AnyAsync(x => x.Id == contextId && x.GuildId == guildId);
 
     private async Task<GameMode?> GetGameMode(string name)
         => await dbContext.GameModes.FirstOrDefaultAsync(x => EF.Functions.Like(x.Name, name));

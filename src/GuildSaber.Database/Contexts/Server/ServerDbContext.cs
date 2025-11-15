@@ -28,7 +28,7 @@ public class ServerDbContext : DbContext
     public ServerDbContext() { }
 
     public DbSet<Guild> Guilds { get; set; }
-    public DbSet<Context> GuildContexts { get; set; }
+    public DbSet<Context> Contexts { get; set; }
     public DbSet<Level> Levels { get; set; }
     public DbSet<ContextMember> ContextMembers { get; set; }
 

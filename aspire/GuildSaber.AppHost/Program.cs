@@ -2,7 +2,7 @@ using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var postgres = builder.AddPostgres("postgres")
+var postgres = builder.AddPostgres("postgres", port: 5432)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume(isReadOnly: false);
 

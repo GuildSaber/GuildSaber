@@ -76,7 +76,7 @@ public class DebugEndpoints : IEndpoints
             RankedMapService rankedMapService, ILogger<DebugEndpoints> logger,
             CancellationToken cancellationToken)
     {
-        if (!await dbContext.GuildContexts.AnyAsync(x => x.Id == guildId && x.GuildId == guildId, cancellationToken))
+        if (!await dbContext.Contexts.AnyAsync(x => x.Id == guildId && x.GuildId == guildId, cancellationToken))
             return TypedResults.NotFound($"Guild context for guild {guildId} not found.");
 
         return TypedResults.ServerSentEvents(eventType: "import-ranked-map",

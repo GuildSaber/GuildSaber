@@ -147,7 +147,7 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext, MemberSt
         var rankedScores = await dbContext.RankedScores
             .Where(x => x.PlayerId == playerId && rankedMapsIds.Contains(x.RankedMapId))
             .ToArrayAsync();
-        var contextWithPoints = await dbContext.GuildContexts
+        var contextWithPoints = await dbContext.Contexts
             .Include(x => x.Points)
             .Where(x => x.RankedMaps.Any(y => y.ContextId == x.Id))
             .ToArrayAsync();
