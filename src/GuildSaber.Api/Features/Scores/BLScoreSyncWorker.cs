@@ -49,7 +49,7 @@ public class BLScoreSyncWorker(
     {
         await using var scope = serviceScopeFactory.CreateAsyncScope();
         await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
-        var scoreAddOrUpdatePipeline = new ScoreAddOrUpdatePipeline(dbContext, new MemberStatPipeline(dbContext));
+        var scoreAddOrUpdatePipeline = new ScoreAddOrUpdatePipeline(dbContext, new MemberPointStatsPipeline(dbContext));
 
         do
         {

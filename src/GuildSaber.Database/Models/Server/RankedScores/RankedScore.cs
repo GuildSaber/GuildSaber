@@ -45,6 +45,7 @@ public class RankedScore : IComparable<RankedScore>
     public AbstractScore Score { get; init; } = null!;
     public AbstractScore? PrevScore { get; init; }
     public Player Player { get; init; } = null!;
+    public RankedMap RankedMap { get; init; } = null!;
 
     /// <remarks>
     /// Old piece of code non-tested and used for the sake of getting things to work.
@@ -188,7 +189,7 @@ public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
             .WithMany().HasForeignKey(x => x.ContextId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<RankedMap>()
+        builder.HasOne(x => x.RankedMap)
             .WithMany().HasForeignKey(x => x.RankedMapId)
             .OnDelete(DeleteBehavior.Cascade);
 

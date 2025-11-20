@@ -210,7 +210,7 @@ builder.Services.AddTransient<BeatLeaderGeneralSocketStream>(_ =>
 
 builder.Services.AddTransient<ScoreAddOrUpdatePipeline>();
 builder.Services.AddTransient<PlayerScoresPipeline>();
-builder.Services.AddTransient<MemberStatPipeline>();
+builder.Services.AddTransient<MemberPointStatsPipeline>();
 //builder.Services.AddHostedService<BLScoreSyncWorker>();
 builder.Services.AddHostedService<QueueProcessingService>();
 builder.Services.AddSingleton<IBackgroundTaskQueue>(_ => new BackgroundTaskQueue(capacity: 100));

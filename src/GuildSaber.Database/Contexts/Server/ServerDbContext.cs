@@ -33,7 +33,7 @@ public class ServerDbContext : DbContext
     public DbSet<ContextMember> ContextMembers { get; set; }
 
     public DbSet<Member> Members { get; set; }
-    public DbSet<MemberStat> MemberStats { get; set; }
+    public DbSet<MemberPointStat> MemberStats { get; set; }
 
     public DbSet<Boost> Boosts { get; set; }
     public DbSet<Point> Points { get; set; }
@@ -73,6 +73,8 @@ public class ServerDbContext : DbContext
         .ApplyConfiguration(new GuildConfiguration())
         .ApplyConfiguration(new ContextConfiguration())
         .ApplyConfiguration(new LevelConfiguration())
+        .ApplyConfiguration(new CategoryLevelConfiguration())
+        .ApplyConfiguration(new CategoryLevelOverrideConfiguration())
         .ApplyConfiguration(new MemberConfiguration())
         .ApplyConfiguration(new MemberStatConfiguration())
         .ApplyConfiguration(new ContextMemberConfiguration())

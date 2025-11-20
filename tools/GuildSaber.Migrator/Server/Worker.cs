@@ -55,6 +55,7 @@ public class Worker(IServiceProvider serviceProvider) : BackgroundService
                 await GameModeSeeder.SeedAsync(dbContext, cancellationToken);
                 await PlayModeSeeder.SeedAsync(dbContext, cancellationToken);
                 await ContextPointSeeder.SeedAsync(dbContext, cancellationToken);
+                await LevelSeeder.SeedAsync(dbContext, cancellationToken);
 
                 await transaction.CommitAsync(cancellationToken);
             }, cancellationToken);

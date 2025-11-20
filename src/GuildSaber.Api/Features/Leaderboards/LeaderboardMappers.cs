@@ -7,18 +7,14 @@ namespace GuildSaber.Api.Features.Leaderboards;
 
 public static class LeaderboardMappers
 {
-    public static Expression<Func<MemberStat, LeaderboardResponses.MemberStat>>
+    public static Expression<Func<MemberPointStat, LeaderboardResponses.MemberPointStat>>
         MapMemberStatExpression(ServerDbContext dbContext)
-        => self => new LeaderboardResponses.MemberStat
+        => self => new LeaderboardResponses.MemberPointStat
         {
-            Points = self.Points,
-            Xp = self.Xp,
-            PassCount = self.PassCount,
-            LevelId = self.LevelId,
-            NextLevelId = self.NextLevelId,
             Player = dbContext.Players
                 .Where(p => p.Id == self.PlayerId)
                 .Select(PlayerMappers.MapPlayerExpression)
-                .First()
+                .First(),
+            Points = self.Points
         };
 }

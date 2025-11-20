@@ -10,8 +10,6 @@ public static class LeaderboardRequests
 
     public enum EMemberStatLeaderboardSorter
     {
-        Points = 0,
-        Level = 1,
-        PassCount = 2
+        Points = 0
     }
 }

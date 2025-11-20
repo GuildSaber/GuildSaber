@@ -15,12 +15,12 @@ using EDenyReason = GuildSaber.Database.Models.Server.RankedScores.RankedScore.E
 
 namespace GuildSaber.Api.Features.Scores.Pipelines;
 
-public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext, MemberStatPipeline memberStatPipeline)
+public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext, MemberPointStatsPipeline memberPointStatsPipeline)
 {
     private record ScoreRankingContext(
         RankedMap[] RankedMapsWithVersionsWithSongDifficulty,
         RankedScore[] ExistingRankedScores,
-        Context[] ContextsWithPoints,
+        Context[] ContextsWithPointsAndLevels,
         AbstractScore[] Scores
     );
 
@@ -72,9 +72,9 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext, MemberSt
                     state.dbContext
                 );
 
-                foreach (var contextWithPoint in tuple.rankingContext.ContextsWithPoints)
-                    await state.memberStatPipeline.ExecuteAsync(state.PlayerId, contextWithPoint);
-            }, (dbContext, scoreToAdd.PlayerId, memberStatPipeline))
+                foreach (var contextWithPointsAndLevels in tuple.rankingContext.ContextsWithPointsAndLevels)
+                    await state.memberStatPipeline.ExecuteAsync(state.PlayerId, contextWithPointsAndLevels);
+            }, (dbContext, scoreToAdd.PlayerId, memberStatPipeline: memberPointStatsPipeline))
             .Unwrap();
 
     /// <summary>
@@ -147,8 +147,9 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext, MemberSt
         var rankedScores = await dbContext.RankedScores
             .Where(x => x.PlayerId == playerId && rankedMapsIds.Contains(x.RankedMapId))
             .ToArrayAsync();
-        var contextWithPoints = await dbContext.Contexts
+        var contextWithPointsAndLevels = await dbContext.Contexts
             .Include(x => x.Points)
+            .Include(x => x.Levels)
             .Where(x => x.RankedMaps.Any(y => y.ContextId == x.Id))
             .ToArrayAsync();
 
@@ -162,7 +163,7 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext, MemberSt
             .ToArrayAsync();
 
         return new ScoreRankingContext(
-            rankedMaps, rankedScores, contextWithPoints, scores
+            rankedMaps, rankedScores, contextWithPointsAndLevels, scores
         );
     }
 
@@ -172,7 +173,7 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext, MemberSt
     {
         foreach (var rankedMap in rankingContext.RankedMapsWithVersionsWithSongDifficulty)
         foreach (var mapVersion in rankedMap.MapVersions)
-        foreach (var point in rankingContext.ContextsWithPoints.First(x => x.Id == rankedMap.ContextId).Points)
+        foreach (var point in rankingContext.ContextsWithPointsAndLevels.First(x => x.Id == rankedMap.ContextId).Points)
         foreach (var score in rankingContext.Scores.Where(x => x.SongDifficultyId == mapVersion.SongDifficultyId))
         {
             var transformContext = new RankedScoreTransformContext(

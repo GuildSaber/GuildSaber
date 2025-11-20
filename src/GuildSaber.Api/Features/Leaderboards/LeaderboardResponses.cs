@@ -4,12 +4,8 @@ namespace GuildSaber.Api.Features.Leaderboards;
 
 public static class LeaderboardResponses
 {
-    public readonly record struct MemberStat(
+    public readonly record struct MemberPointStat(
         PlayerResponses.Player Player,
-        float Points,
-        float Xp,
-        int PassCount,
-        int? LevelId,
-        int? NextLevelId
+        float Points
     );
 }
