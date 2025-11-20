@@ -15,6 +15,7 @@ public static class LeaderboardMappers
                 .Where(p => p.Id == self.PlayerId)
                 .Select(PlayerMappers.MapPlayerExpression)
                 .First(),
-            Points = self.Points
+            Points = self.Points,
+            PassCount = self.PassCount
         };
 }
