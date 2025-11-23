@@ -51,6 +51,8 @@ public class Worker(IServiceProvider serviceProvider) : BackgroundService
                 await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
                 await GuildSeeder.SeedAsync(dbContext, cancellationToken);
+                await ContextSeeder.SeedAsync(dbContext, cancellationToken);
+                await PointsSeeder.SeedAsync(dbContext, cancellationToken);
                 await PlayerSeeder.SeedAsync(dbContext, cancellationToken);
                 await GameModeSeeder.SeedAsync(dbContext, cancellationToken);
                 await PlayModeSeeder.SeedAsync(dbContext, cancellationToken);

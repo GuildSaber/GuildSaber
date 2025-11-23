@@ -54,12 +54,19 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
                 .MapError(CreateResponse (errors) => new CreateResponse.ValidationFailure(errors)))
             .Map(static (guild, state) => state.dbContext.Database.CreateExecutionStrategy()
                     .ExecuteInTransactionAsync((guild, state.playerId, state.dbContext, state.timeProvider),
-                        operation: static async (state, _) =>
+                        operation: static async (state, token) =>
                         {
                             var inserted = await state.dbContext.AddAndSaveAsync(state.guild);
-                            var currTime = state.timeProvider.GetUtcNow();
+                            var context = new Context
+                            {
+                                GuildId = state.guild.Id,
+                                Type = Context.EContextType.Default,
+                                Info = new ContextInfo("General", "The general guild context.")
+                            };
+                            state.dbContext.Add(context);
 
-                            await state.dbContext.AddAndSaveAsync(new Member
+                            var currTime = state.timeProvider.GetUtcNow();
+                            state.dbContext.Members.Add(new Member
                             {
                                 GuildId = state.guild.Id,
                                 PlayerId = state.playerId,
@@ -70,6 +77,16 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
                                 Priority = await MemberService.GetNextPriority(state.dbContext, state.playerId)
                             });
 
+                            await state.dbContext.SaveChangesAsync(token);
+
+                            var contextMember = new ContextMember
+                            {
+                                GuildId = state.guild.Id,
+                                ContextId = context.Id,
+                                PlayerId = state.playerId
+                            };
+                            state.dbContext.ContextMembers.Add(contextMember);
+                            await state.dbContext.SaveChangesAsync(token);
                             return inserted;
                         }, verifySucceeded: (inserted, _) => Task.FromResult(inserted.guild.Id != 0)),
                 (dbContext, playerId, timeProvider))

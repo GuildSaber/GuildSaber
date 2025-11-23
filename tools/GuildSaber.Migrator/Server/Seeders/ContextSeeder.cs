@@ -1,0 +1,36 @@
+using GuildSaber.Database.Contexts.Server;
+using GuildSaber.Database.Models.Server.Guilds;
+using Microsoft.EntityFrameworkCore;
+
+namespace GuildSaber.Migrator.Server.Seeders;
+
+public static class ContextSeeder
+{
+    public static async Task SeedAsync(ServerDbContext dbContext, CancellationToken cancellationToken)
+    {
+        if (await dbContext.Contexts.AnyAsync(cancellationToken))
+            return;
+
+        dbContext.Contexts.AddRange(
+            new Context
+            {
+                Id = new Context.ContextId(2),
+                Type = Context.EContextType.Default,
+                Info = new ContextInfo
+                {
+                    Description = "The main context of the guild, where all the maps are ranked.",
+                    Name = "Default"
+                }
+            },
+            new Context
+            {
+                Id = new Context.ContextId(1),
+                Type = Context.EContextType.Default,
+                Info = new ContextInfo
+                {
+                    Description = "The main context of the guild, where all the maps are ranked.",
+                    Name = "Default"
+                }
+            });
+    }
+}
