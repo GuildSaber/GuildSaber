@@ -40,7 +40,6 @@ public class LeaderboardEndpoints : IEndpoints
     }
 
     public static async Task<Ok<PagedList<RankedScoreResponses.RankedScoreWithPlayer>>> GetRankedMapLeaderboardAsync(
-        GuildId guildId,
         ContextId contextId,
         PointId pointId,
         RankedMapId rankedMapId,
@@ -51,7 +50,6 @@ public class LeaderboardEndpoints : IEndpoints
         EOrder order = EOrder.Asc)
         => TypedResults.Ok(await dbContext.RankedScores
             .Where(x =>
-                x.GuildId == guildId &&
                 x.ContextId == contextId &&
                 x.PointId == pointId &&
                 x.RankedMapId == rankedMapId)
@@ -62,7 +60,6 @@ public class LeaderboardEndpoints : IEndpoints
 
     public static async Task<Ok<PagedList<LeaderboardResponses.MemberPointStat>>>
         GetMemberPointStatLeaderboardAsync(
-            GuildId guildId,
             ContextId contextId,
             PointId pointId,
             ServerDbContext dbContext,
@@ -72,7 +69,6 @@ public class LeaderboardEndpoints : IEndpoints
             EOrder order = EOrder.Asc)
         => TypedResults.Ok(await dbContext.MemberStats
             .Where(x =>
-                x.GuildId == guildId &&
                 x.ContextId == contextId &&
                 x.PointId == pointId &&
                 x.CategoryId == null)
@@ -83,7 +79,6 @@ public class LeaderboardEndpoints : IEndpoints
 
     public static async Task<Ok<PagedList<LeaderboardResponses.MemberPointStat>>>
         GetMemberCategoryPointStatLeaderboardAsync(
-            GuildId guildId,
             ContextId contextId,
             PointId pointId,
             CategoryId categoryId,
@@ -94,7 +89,6 @@ public class LeaderboardEndpoints : IEndpoints
             EOrder order = EOrder.Asc)
         => TypedResults.Ok(await dbContext.MemberStats
             .Where(x =>
-                x.GuildId == guildId &&
                 x.ContextId == contextId &&
                 x.PointId == pointId &&
                 x.CategoryId == categoryId)

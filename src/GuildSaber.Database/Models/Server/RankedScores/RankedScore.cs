@@ -176,6 +176,13 @@ public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
         builder.Property(x => x.Id)
             .HasGenericConversion<RankedScore.RankedScoreId, long>()
             .ValueGeneratedOnAdd();
+        builder.HasIndex(x => new
+        {
+            x.ContextId,
+            x.PointId,
+            x.RankedMapId
+        });
+
         builder.Property(x => x.EffectiveScore)
             .HasConversion<int>(from => from, to => EffectiveScore.CreateUnsafe(to).Value);
         builder.Property(x => x.RawPoints)

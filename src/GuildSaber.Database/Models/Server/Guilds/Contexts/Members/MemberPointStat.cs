@@ -27,6 +27,7 @@ public class MemberStatConfiguration : IEntityTypeConfiguration<MemberPointStat>
         builder.HasKey(x => x.Id);
         builder.HasIndex(x => new { x.GuildId, x.ContextId, x.PlayerId, x.PointId, x.CategoryId })
             .IsUnique();
+        builder.HasIndex(x => new { x.ContextId, x.PointId, x.CategoryId });
 
         builder.HasOne<ContextMember>()
             .WithMany()

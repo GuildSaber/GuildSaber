@@ -21,6 +21,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
         <PackageReference Include="MyCSharp.HttpUserAgentParser.AspNetCore"/>
         <PackageReference Include="Scalar.AspNetCore.Microsoft"/>
     </ItemGroup>

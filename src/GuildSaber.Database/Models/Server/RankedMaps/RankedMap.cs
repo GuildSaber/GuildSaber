@@ -50,6 +50,7 @@ public class RankedMapConfiguration : IEntityTypeConfiguration<RankedMap>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).HasGenericConversion<RankedMap.RankedMapId, long>()
             .ValueGeneratedOnAdd();
+        builder.HasIndex(x => x.ContextId);
 
         builder.ComplexProperty(x => x.Info);
         builder.ComplexProperty(x => x.Requirements).Configure(new RankedMapRequirementsConfiguration());

@@ -70,17 +70,18 @@ public class RankedMapService(
 
     public readonly record struct RankedMapBoostsCount(int Tier1, int Tier2, int Tier3);
 
-    public async Task<CreateResponse> CreateRankedMap(
+    public async Task<CreateResponse> CreateRankedMap(ContextId contextId, RankedMapRequest.CreateRankedMap request)
+        => await GetParentGuildAsync(contextId) switch
+        {
+            null => new ValidationFailure("ContextId", $"Guild context with ID '{contextId}' does not exist."),
+            { } guildId => await CreateRankedMap(guildId, contextId, request)
+        };
+
+    private async Task<CreateResponse> CreateRankedMap(
         GuildId guildId, ContextId contextId, RankedMapRequest.CreateRankedMap request)
         => await Success<int, CreateResponse>(await GetCurrentGuildRankedMapCount(guildId))
             .Check(async count => ValidateRankedMapCreationLimit(count, await GetBoostsCountsAsync(guildId))
                 .MapError(CreateResponse (x) => new TooManyRankedMaps(x.current, x.max)))
-            .Check(async _ => await GuildContextExistsInGuildAsync(guildId, contextId) switch
-            {
-                true => UnitResult.Success<CreateResponse>(),
-                false => Failure<CreateResponse>(new ValidationFailure("ContextId",
-                    $"Guild context with ID '{contextId}' does not exist in the guild."))
-            })
             .Bind(async _ => await beatSaverApi
                 .GetBeatMapAsync(request.BaseMapVersion.BeatSaverKey)
                 .MapError(CreateResponse (err) => err switch
@@ -121,8 +122,11 @@ public class RankedMapService(
                 .Map(static (rankedMap, tuple) => (rankedMap, tuple.song, tuple.difficulty, tuple.gameMode), tuple))
             .Match(tuple => new Success(tuple.rankedMap, tuple.song, tuple.difficulty, tuple.gameMode), err => err);
 
-    private Task<bool> GuildContextExistsInGuildAsync(GuildId guildId, ContextId contextId)
-        => dbContext.Contexts.AnyAsync(x => x.Id == contextId && x.GuildId == guildId);
+    private Task<GuildId?> GetParentGuildAsync(ContextId contextId) => dbContext.Contexts
+        .Where(x => x.Id == contextId)
+        .Select(x => x.GuildId)
+        .Cast<GuildId?>()
+        .FirstOrDefaultAsync();
 
     private async Task<GameMode?> GetGameMode(string name)
         => await dbContext.GameModes.FirstOrDefaultAsync(x => EF.Functions.Like(x.Name, name));

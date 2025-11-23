@@ -29,7 +29,7 @@ public class RankedMapEndpoints : IEndpoints
             .WithSummary("Get a ranked map.")
             .WithDescription("Get a ranked map in the server by its Id.");
 
-        var group = endpoints.MapGroup("guilds/{guildId}/contexts/{contextId}/ranked-maps")
+        var group = endpoints.MapGroup("contexts/{contextId}/ranked-maps")
             .WithTag("Context.RankedMaps", description: "Endpoints for managing ranked maps within a context.");
 
         group.MapGet("/", GetRankedMapsAsync)
@@ -62,11 +62,8 @@ public class RankedMapEndpoints : IEndpoints
     /// </list>
     /// </remarks>
     public static async Task<IResult> CreateRankedMapAsync(
-        GuildId guildId,
-        ContextId contextId,
-        RankedMapRequest.CreateRankedMap create,
-        RankedMapService rankedMapService)
-        => await rankedMapService.CreateRankedMap(guildId, contextId, create) switch
+        ContextId contextId, RankedMapRequest.CreateRankedMap create, RankedMapService rankedMapService)
+        => await rankedMapService.CreateRankedMap(contextId, create) switch
         {
             CreateResponse.Success(var rankedMap, var song, var songDifficulty, var gameMode) => TypedResults
                 .Ok(rankedMap.Map(song, songDifficulty, gameMode)),
@@ -101,7 +98,6 @@ public class RankedMapEndpoints : IEndpoints
         };
 
     private static async Task<Ok<PagedList<RankedMap>>> GetRankedMapsAsync(
-        [FromRoute] GuildId guildId,
         [FromRoute] ContextId contextId,
         ServerDbContext dbContext,
         [Range(1, int.MaxValue)] int page = 1,
@@ -110,7 +106,7 @@ public class RankedMapEndpoints : IEndpoints
         RankedMapRequest.ERankedMapSorter sortBy = RankedMapRequest.ERankedMapSorter.DifficultyStar,
         EOrder order = EOrder.Asc)
     {
-        var query = dbContext.RankedMaps.Where(x => x.GuildId == guildId && x.ContextId == contextId);
+        var query = dbContext.RankedMaps.Where(x => x.ContextId == contextId);
         if (!string.IsNullOrWhiteSpace(search))
         {
             if (search.Length is < 10 and >= 5 && search.StartsWith("!bsr"))

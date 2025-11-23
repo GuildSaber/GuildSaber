@@ -236,7 +236,7 @@ public class DebugEndpoints : IEndpoints
                 var tryCount = 0;
                 do
                 {
-                    var createResult = await rankedMapService.CreateRankedMap(guildId, contextId, createRankedMap);
+                    var createResult = await rankedMapService.CreateRankedMap(contextId, createRankedMap);
                     if (createResult is RankedMapService.CreateResponse.Success success)
                     {
                         yield return success;
