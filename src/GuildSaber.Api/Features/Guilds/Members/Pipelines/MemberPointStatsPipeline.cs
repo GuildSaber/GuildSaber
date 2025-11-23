@@ -1,9 +1,11 @@
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
+using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.RankedScores;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,6 +16,45 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
     public static Expression<Func<RankedScore, bool>> ValidPasses =>
         x => x.State.HasFlag(RankedScore.EState.Selected)
              && ((int)x.State & (int)RankedScore.EState.NonPointGiving) == 0;
+
+    private static readonly string _calculatePointsFormattableString =
+        $$"""
+          SELECT COALESCE(SUM("{{nameof(RankedScore.RawPoints)}}" * POWER({0}, position - 1)), 0)::float AS "Value"
+          FROM (
+              SELECT
+                  "{{nameof(RankedScore.RawPoints)}}",
+                  ROW_NUMBER() OVER (ORDER BY "{{nameof(RankedScore.RawPoints)}}" DESC) as position
+              FROM "{{nameof(ServerDbContext.RankedScores)}}"
+              WHERE "{{nameof(RankedScore.GuildId)}}" = {1}
+                  AND "{{nameof(RankedScore.ContextId)}}" = {2}
+                  AND "{{nameof(RankedScore.PlayerId)}}" = {3}
+                  AND "{{nameof(RankedScore.PointId)}}" = {4}
+                  AND ("{{nameof(RankedScore.State)}}" & {{(int)RankedScore.EState.Selected}}) = {{(int)RankedScore.EState.Selected}}
+                  AND ("{{nameof(RankedScore.State)}}" & {{(int)RankedScore.EState.NonPointGiving}}) = 0
+          ) ranked_scores
+          """;
+
+    private static readonly string _calculatePointsWithCategoryFormattableString =
+        $$"""
+          SELECT COALESCE(SUM("{{nameof(RankedScore.RawPoints)}}" * POWER({0}, position - 1)), 0)::float AS "Value"
+          FROM (
+              SELECT
+                  rs."{{nameof(RankedScore.RawPoints)}}",
+                  ROW_NUMBER() OVER (ORDER BY rs."{{nameof(RankedScore.RawPoints)}}" DESC) as position
+              FROM "{{nameof(ServerDbContext.RankedScores)}}" rs
+              JOIN "{{nameof(ServerDbContext.RankedMaps)}}" rm
+                  ON rs."{{nameof(RankedScore.RankedMapId)}}" = rm."{{nameof(RankedMap.Id)}}"
+              JOIN "{{nameof(Category) + nameof(RankedMap)}}" rmc
+                  ON rm."{{nameof(RankedMap.Id)}}" = rmc."{{nameof(RankedMap) + nameof(RankedMap.Id)}}"
+              WHERE rs."{{nameof(RankedScore.GuildId)}}" = {1}
+                  AND rs."{{nameof(RankedScore.ContextId)}}" = {2}
+                  AND rs."{{nameof(RankedScore.PlayerId)}}" = {3}
+                  AND rs."{{nameof(RankedScore.PointId)}}" = {4}
+                  AND rmc."{{nameof(Category)[..^1] + "ies" + nameof(Category.Id)}}" = {5}
+                  AND (rs."{{nameof(RankedScore.State)}}" & {{(int)RankedScore.EState.Selected}}) = {{(int)RankedScore.EState.Selected}}
+                  AND (rs."{{nameof(RankedScore.State)}}" & {{(int)RankedScore.EState.NonPointGiving}}) = 0
+          ) ranked_scores
+          """;
 
     public async Task ExecuteAsync(PlayerId playerId, Context context)
     {
@@ -46,18 +87,8 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
         Category.CategoryId? categoryId,
         Point point)
     {
-        var validPassesQuery = dbContext.RankedScores
-            .Where(x =>
-                x.GuildId == guildId &&
-                x.ContextId == contextId &&
-                x.PlayerId == playerId &&
-                x.PointId == point.Id)
-            .Where(ValidPasses);
-
-        if (categoryId is not null)
-            validPassesQuery = validPassesQuery.Where(x => x.RankedMap.Categories.Any(c => c.Id == categoryId));
-
         var memberStat = await dbContext.MemberStats
+            .AsTracking()
             .Where(x =>
                 x.GuildId == guildId &&
                 x.ContextId == contextId &&
@@ -80,10 +111,49 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
             dbContext.MemberStats.Add(memberStat);
         }
 
-        //BUG: Weighting is not applied correctly based on the order of the score in the expo decrease.
+        var validPassesQuery = dbContext.RankedScores
+            .Where(x =>
+                x.GuildId == guildId &&
+                x.ContextId == contextId &&
+                x.PlayerId == playerId &&
+                x.PointId == point.Id)
+            .Where(ValidPasses);
+
+        if (categoryId is not null)
+            validPassesQuery = validPassesQuery.Where(x => x.RankedMap.Categories.Any(c => c.Id == categoryId));
+
         memberStat.Points = point.WeightingSettings.IsEnabled
-            ? validPassesQuery.Sum(rs => (float)(rs.RawPoints * point.WeightingSettings.Multiplier))
-            : validPassesQuery.Sum(rs => rs.RawPoints);
+            ? await CalculateMemberPointsWithWeightQuery(dbContext, guildId, contextId, playerId, point, categoryId)
+            : await validPassesQuery.SumAsync(x => x.RawPoints);
+
         memberStat.PassCount = validPassesQuery.Count();
     }
+
+    public static Task<float> CalculateMemberPointsWithWeightQuery(
+        ServerDbContext dbContext,
+        GuildId guildId,
+        ContextId contextId,
+        PlayerId playerId,
+        Point point,
+        Category.CategoryId? categoryId)
+        => dbContext.Database.SqlQuery<float>(categoryId switch
+        {
+            null => FormattableStringFactory.Create(
+                _calculatePointsFormattableString,
+                point.WeightingSettings.Multiplier,
+                (int)guildId,
+                (int)contextId,
+                (long)playerId,
+                (int)point.Id
+            ),
+            _ => FormattableStringFactory.Create(
+                _calculatePointsWithCategoryFormattableString,
+                point.WeightingSettings.Multiplier,
+                (int)guildId,
+                (int)contextId,
+                (long)playerId,
+                (int)point.Id,
+                (int)categoryId.Value
+            )
+        }).FirstOrDefaultAsync();
 }
