@@ -50,6 +50,7 @@ public class BLScoreSyncWorker(
         await using var scope = serviceScopeFactory.CreateAsyncScope();
         await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
         var scoreAddOrUpdatePipeline = new ScoreAddOrUpdatePipeline(dbContext, new MemberPointStatsPipeline(dbContext));
+        var memberPointStatsPipeline = new MemberPointStatsPipeline(dbContext);
 
         do
         {
@@ -78,7 +79,10 @@ public class BLScoreSyncWorker(
                         $"Unknown message type received from BeatLeader: {response.GetType().Name}")
                 };
 
-                await scoreAddOrUpdatePipeline.ExecuteAsync(dbScore);
+                var pipelineResult = await scoreAddOrUpdatePipeline.ExecuteAsync(dbScore);
+
+                foreach (var context in pipelineResult.ImpactedContextsWithPoints)
+                    await memberPointStatsPipeline.ExecuteAsync(playerId, context);
             }
 
             await Task.Delay(_reconnectAfter, token);

@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
+using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Api.Features.RankedMaps.MapVersions;
@@ -68,6 +69,44 @@ public class DebugEndpoints : IEndpoints
             .WithSummary("Remove all ranked maps from the database.")
             .WithDescription("Deletes all ranked maps from the database. USE WITH CAUTION!")
             .RequireManager();
+
+        group.MapPost("/recalculate-member-points/{playerId}", RecalculateMemberPoints)
+            .WithSummary("Recalculate member points for a player.")
+            .WithDescription("Recalculates member points for all contexts the player is a member of.")
+            .RequireManager();
+
+        group.MapPost("delete-member-point-stats/{playerId}", async (PlayerId playerId, ServerDbContext dbContext) =>
+            {
+                await dbContext.MemberPointStats
+                    .Where(x => x.PlayerId == playerId)
+                    .ExecuteDeleteAsync();
+                TypedResults.Ok();
+            }).WithSummary("Delete all member point stats for a player.")
+            .WithDescription("Deletes all member point stats for the specified player. USE WITH CAUTION!")
+            .RequireManager();
+    }
+
+    private static async Task<Ok> RecalculateMemberPoints(
+        PlayerId playerId, ServerDbContext dbContext,
+        IBackgroundTaskQueue taskQueue,
+        IServiceScopeFactory serviceScopeFactory)
+    {
+        var contextIds = await dbContext.ContextMembers.Where(x => x.PlayerId == playerId)
+            .Select(x => x.ContextId)
+            .ToListAsync();
+        var contextsWithPoints = await dbContext.Contexts.Where(x => contextIds.Contains(x.Id) && x.Points.Any())
+            .Include(x => x.Points)
+            .ToListAsync();
+
+        await taskQueue.QueueBackgroundWorkItemAsync(async _ =>
+        {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+            var memberPointStatsPipeline = scope.ServiceProvider.GetRequiredService<MemberPointStatsPipeline>();
+
+            foreach (var context in contextsWithPoints) await memberPointStatsPipeline.ExecuteAsync(playerId, context);
+        });
+
+        return TypedResults.Ok();
     }
 
     private static async Task<Results<NotFound<string>, ServerSentEventsResult<RankedMapResponses.RankedMap>>>
@@ -204,7 +243,8 @@ public class DebugEndpoints : IEndpoints
             foreach (var difficulty in rankedMap.Difficulties.Where(x => x.GameModeName is not null))
             {
                 if (await dbContext.RankedMaps.AnyAsync(MapDifficultyIsAlreadyRankedOnGuild(
-                        guildId, difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId!.Value, dbContext), token))
+                            guildId, difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId!.Value, dbContext),
+                        token))
                     continue;
 
                 var level = levelDict[difficulty.LevelId];

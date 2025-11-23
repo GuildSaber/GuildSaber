@@ -20,7 +20,7 @@ public class MemberPointStat
     public int PassCount { get; set; }
 }
 
-public class MemberStatConfiguration : IEntityTypeConfiguration<MemberPointStat>
+public class MemberPointStatConfiguration : IEntityTypeConfiguration<MemberPointStat>
 {
     public void Configure(EntityTypeBuilder<MemberPointStat> builder)
     {

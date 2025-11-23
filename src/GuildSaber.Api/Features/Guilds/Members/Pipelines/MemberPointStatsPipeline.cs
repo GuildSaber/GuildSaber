@@ -13,10 +13,6 @@ namespace GuildSaber.Api.Features.Guilds.Members.Pipelines;
 
 public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
 {
-    public static Expression<Func<RankedScore, bool>> ValidPasses =>
-        x => x.State.HasFlag(RankedScore.EState.Selected)
-             && ((int)x.State & (int)RankedScore.EState.NonPointGiving) == 0;
-
     private static readonly string _calculatePointsFormattableString =
         $$"""
           SELECT COALESCE(SUM("{{nameof(RankedScore.RawPoints)}}" * POWER({0}, position - 1)), 0)::float AS "Value"
@@ -56,12 +52,13 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
           ) ranked_scores
           """;
 
+    public static Expression<Func<RankedScore, bool>> ValidPasses =>
+        x => x.State.HasFlag(RankedScore.EState.Selected)
+             && ((int)x.State & (int)RankedScore.EState.NonPointGiving) == 0;
+
     public async Task ExecuteAsync(PlayerId playerId, Context context)
     {
         ArgumentNullException.ThrowIfNull(context.Points);
-
-        //TODO: Remove this guild check when RankedScore pipeline is ready.
-        if (context.GuildId != 1) return;
 
         var categories = await dbContext.Categories
             .Where(c => c.GuildId == context.GuildId)
@@ -87,7 +84,7 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
         Category.CategoryId? categoryId,
         Point point)
     {
-        var memberStat = await dbContext.MemberStats
+        var memberStat = await dbContext.MemberPointStats
             .AsTracking()
             .Where(x =>
                 x.GuildId == guildId &&
@@ -108,7 +105,7 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
                 CategoryId = categoryId
             };
 
-            dbContext.MemberStats.Add(memberStat);
+            dbContext.MemberPointStats.Add(memberStat);
         }
 
         var validPassesQuery = dbContext.RankedScores

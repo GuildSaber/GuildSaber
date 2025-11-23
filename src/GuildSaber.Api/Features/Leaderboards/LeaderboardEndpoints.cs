@@ -67,7 +67,7 @@ public class LeaderboardEndpoints : IEndpoints
             [Range(1, 100)] int pageSize = 10,
             EMemberStatLeaderboardSorter sortBy = EMemberStatLeaderboardSorter.Points,
             EOrder order = EOrder.Asc)
-        => TypedResults.Ok(await dbContext.MemberStats
+        => TypedResults.Ok(await dbContext.MemberPointStats
             .Where(x =>
                 x.ContextId == contextId &&
                 x.PointId == pointId &&
@@ -87,7 +87,7 @@ public class LeaderboardEndpoints : IEndpoints
             [Range(1, 100)] int pageSize = 10,
             EMemberStatLeaderboardSorter sortBy = EMemberStatLeaderboardSorter.Points,
             EOrder order = EOrder.Asc)
-        => TypedResults.Ok(await dbContext.MemberStats
+        => TypedResults.Ok(await dbContext.MemberPointStats
             .Where(x =>
                 x.ContextId == contextId &&
                 x.PointId == pointId &&

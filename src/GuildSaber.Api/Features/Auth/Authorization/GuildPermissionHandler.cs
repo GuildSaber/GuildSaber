@@ -80,7 +80,7 @@ public class GuildPermissionHandler(
     /// </returns>
     /// <remarks>
     /// This method looks for a guild-specific permission claim in the user's claims.
-    /// The claim type is determined by <see cref="AuthConstants.GuildPermissionClaimType"/>.
+    /// The claim type is determined by <see cref="AuthConstants.GuildPermissionClaimType" />.
     /// The permission value must match or include the required permission flags.
     /// </remarks>
     private static Task CheckGuildPermissionFromClaims(
@@ -112,7 +112,7 @@ public class GuildPermissionHandler(
         return null;
     }
 
-    ///<summary>
+    /// <summary>
     /// Try to find the ContextId from the route values in the current HTTP context.
     /// </summary>
     /// <param name="httpContextAccessor">The HTTP context accessor.</param>

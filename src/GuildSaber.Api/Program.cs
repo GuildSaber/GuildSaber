@@ -255,7 +255,7 @@ builder.Services.AddProblemDetails(options =>
             context.ProblemDetails.Title = "Bad Request";
             context.ProblemDetails.Detail = badHttpRequestException.Message;
             context.ProblemDetails.Status = StatusCodes.Status400BadRequest;
-            
+
             context.HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
         }
 

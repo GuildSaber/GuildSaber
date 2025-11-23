@@ -1,4 +1,5 @@
 using CSharpFunctionalExtensions;
+using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models;
@@ -9,6 +10,7 @@ using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Mappers.BeatLeader;
 using GuildSaber.Database.Models.Mappers.ScoreSaber;
+using GuildSaber.Database.Models.Server.Guilds;
 using Microsoft.EntityFrameworkCore;
 
 namespace GuildSaber.Api.Features.Players.Pipelines;
@@ -18,6 +20,7 @@ public sealed class PlayerScoresPipeline(
     BeatLeaderApi beatLeaderApi,
     ScoreSaberApi scoreSaberApi,
     ScoreAddOrUpdatePipeline addOrUpdatePipeline,
+    MemberPointStatsPipeline memberPointStatsPipeline,
     ILogger<PlayerScoresPipeline> logger)
 {
     public async Task ImportBeatLeaderScoresAsync(PlayerId playerId, BeatLeaderId beatLeaderId, CancellationToken token)
@@ -32,6 +35,8 @@ public sealed class PlayerScoresPipeline(
             Order = Order.Asc
         };
 
+        var contextsWithPoints = new Dictionary<ContextId, Context>();
+
         // Unwrap the result to kill the current Task if there's an error.
         await foreach (var score in beatLeaderApi.GetPlayerScores(beatLeaderId, initialRequest)
                            .SelectMany(x => x.Unwrap() ?? [])
@@ -45,8 +50,14 @@ public sealed class PlayerScoresPipeline(
                 .Map();
 
             var abstractScore = score.Map(playerId, difficultyId, scoreStats);
-            await addOrUpdatePipeline.ExecuteAsync(abstractScore);
+            var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(abstractScore);
+
+            foreach (var context in pipelineResult.ImpactedContextsWithPoints)
+                contextsWithPoints.TryAdd(context.Id, context);
         }
+
+        foreach (var tuple in contextsWithPoints)
+            await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value);
 
         logger.LogInformation("Completed importing BeatLeader scores for player {PlayerId}", playerId);
     }
@@ -62,6 +73,8 @@ public sealed class PlayerScoresPipeline(
             SortBy = PlayerScoresSortBy.Recent
         };
 
+        var contextsWithPoints = new Dictionary<ContextId, Context>();
+
         // Unwrap the result to kill the current Task if there's an error.
         await foreach (var playerScore in scoreSaberApi.GetPlayerScores(scoreSaberId, initialRequest)
                            .SelectMany(x => x.Unwrap() ?? [])
@@ -71,8 +84,14 @@ public sealed class PlayerScoresPipeline(
                 .TryGetValue(out var difficultyId)) continue;
 
             var abstractScore = playerScore.Score.Map(playerId, difficultyId);
-            await addOrUpdatePipeline.ExecuteAsync(abstractScore);
+            var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(abstractScore);
+
+            foreach (var context in pipelineResult.ImpactedContextsWithPoints)
+                contextsWithPoints.TryAdd(context.Id, context);
         }
+
+        foreach (var tuple in contextsWithPoints)
+            await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value);
     }
 
     public static async Task<Maybe<SongDifficultyId>> GetSongDifficultyIdAsync(

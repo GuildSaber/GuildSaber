@@ -15,7 +15,9 @@ using EDenyReason = GuildSaber.Database.Models.Server.RankedScores.RankedScore.E
 
 namespace GuildSaber.Api.Features.Scores.Pipelines;
 
-public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext, MemberPointStatsPipeline memberPointStatsPipeline)
+public sealed class ScoreAddOrUpdatePipeline(
+    ServerDbContext dbContext,
+    MemberPointStatsPipeline memberPointStatsPipeline)
 {
     private record ScoreRankingContext(
         RankedMap[] RankedMapsWithVersionsWithSongDifficulty,
@@ -45,8 +47,9 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext, MemberPo
         AbstractScore Score
     );
 
-    //TODO: Don't calculate scores for contexts the player is not in.
-    public async Task ExecuteAsync(AbstractScore scoreToAdd)
+    public readonly record struct PipelineResult(Context[] ImpactedContextsWithPoints);
+
+    public async Task<PipelineResult> ExecuteAsync(AbstractScore scoreToAdd)
         => await (await UpdateScoreIfChangedAsync(scoreToAdd, dbContext)
                 .Or(() => dbContext.AddAndSaveAsync(scoreToAdd))
                 .ToResult("Failed to add or update score.")
@@ -72,8 +75,7 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext, MemberPo
                     state.dbContext
                 );
 
-                foreach (var contextWithPointsAndLevels in tuple.rankingContext.ContextsWithPointsAndLevels)
-                    await state.memberStatPipeline.ExecuteAsync(state.PlayerId, contextWithPointsAndLevels);
+                return new PipelineResult(tuple.rankingContext.ContextsWithPointsAndLevels);
             }, (dbContext, scoreToAdd.PlayerId, memberStatPipeline: memberPointStatsPipeline))
             .Unwrap();
 
@@ -138,16 +140,24 @@ public sealed class ScoreAddOrUpdatePipeline(ServerDbContext dbContext, MemberPo
     private static async Task<ScoreRankingContext> PrepareScoreRankingContextAsync(
         PlayerId playerId, SongDifficultyId songDifficultyId, ServerDbContext dbContext)
     {
-        //TODO: Only for the guilds they are in?
+        var contextIdsForPlayer = await dbContext.ContextMembers
+            .Where(x => x.PlayerId == playerId)
+            .Select(x => x.ContextId)
+            .ToArrayAsync() as IEnumerable<ContextId>;
+
         var rankedMaps = await dbContext.RankedMaps
             .Include(x => x.MapVersions).ThenInclude(x => x.SongDifficulty)
-            .Where(x => x.MapVersions.Any(v => v.SongDifficultyId == songDifficultyId))
+            .Where(x => contextIdsForPlayer.Contains(x.ContextId)
+                        && x.MapVersions.Any(v => v.SongDifficultyId == songDifficultyId))
             .ToArrayAsync();
-        var rankedMapsIds = rankedMaps.Select(x => x.Id).ToArray();
+        var rankedMapsIds = rankedMaps
+            .Select(x => x.Id)
+            .ToArray() as IEnumerable<RankedMap.RankedMapId>;
         var rankedScores = await dbContext.RankedScores
             .Where(x => x.PlayerId == playerId && rankedMapsIds.Contains(x.RankedMapId))
             .ToArrayAsync();
         var contextWithPointsAndLevels = await dbContext.Contexts
+            .AsSplitQuery()
             .Include(x => x.Points)
             .Include(x => x.Levels)
             .Where(x => x.RankedMaps.Any(y => y.ContextId == x.Id))
