@@ -237,6 +237,8 @@ OpenApiTypeTransformer.MapType<SSLeaderboardId>(new OpenApiSchema { Type = JsonS
 OpenApiTypeTransformer.MapType<BLLeaderboardId>(new OpenApiSchema { Type = JsonSchemaType.String, Example = "a3c391" });
 OpenApiTypeTransformer.MapType<ContextId>(new OpenApiSchema
     { Type = JsonSchemaType.Integer, Format = "int32" });
+OpenApiTypeTransformer.MapType<RankedMapRequest.EModifiers>(new OpenApiSchema
+    { Example = nameof(RankedMapRequest.EModifiers.None) });
 builder.Services.AddOpenApi(options =>
 {
     options.AddGlobalProblemDetails()
@@ -245,7 +247,7 @@ builder.Services.AddOpenApi(options =>
         .AddTagDescriptionSupport()
         .AddScalarTransformers()
         .AddTypeTransformationSupport();
-});
+}).AddValidation();
 
 builder.Services.AddProblemDetails(options =>
     options.CustomizeProblemDetails = context =>
