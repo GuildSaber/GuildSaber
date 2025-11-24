@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Sdk Name="Aspire.AppHost.Sdk" Version="9.2.1"/>
+    <Sdk Name="Aspire.AppHost.Sdk" Version="9.2.1" />
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -10,11 +10,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Hosting.AppHost"/>
-        <PackageReference Include="Aspire.Hosting.PostgreSQL"/>
-        <PackageReference Include="Aspire.Hosting.Redis"/>
-        <PackageReference Include="Aspire.Hosting.Valkey"/>
-        <PackageReference Include="Microsoft.Build.Tasks.Core"/>
+        <PackageReference Include="Aspire.Hosting.AppHost" />
+        <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+        <PackageReference Include="Aspire.Hosting.Redis" />
+        <PackageReference Include="Aspire.Hosting.Valkey" />
+        <PackageReference Include="Microsoft.Build.Tasks.Core" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -22,9 +22,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\GuildSaber.Api\GuildSaber.Api.csproj"/>
-        <ProjectReference Include="..\..\src\GuildSaber.DiscordBot\GuildSaber.DiscordBot.csproj"/>
-        <ProjectReference Include="..\..\tools\GuildSaber.Migrator\GuildSaber.Migrator.csproj"/>
+        <ProjectReference Include="..\..\src\GuildSaber.Api\GuildSaber.Api.csproj" />
+        <ProjectReference Include="..\..\src\GuildSaber.DiscordBot\GuildSaber.DiscordBot.csproj" />
+        <ProjectReference Include="..\..\tools\GuildSaber.Migrator\GuildSaber.Migrator.csproj" />
     </ItemGroup>
 
 </Project>

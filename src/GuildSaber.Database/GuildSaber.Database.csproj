@@ -7,28 +7,28 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="GuildSaber.Database.Tests"/>
+        <InternalsVisibleTo Include="GuildSaber.Database.Tests" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL"/>
-        <PackageReference Include="JetBrains.Annotations"/>
-        <PackageReference Include="Microsoft.Build.Tasks.Core"/>
+        <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" />
+        <PackageReference Include="JetBrains.Annotations" />
+        <PackageReference Include="Microsoft.Build.Tasks.Core" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational"/>
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\GuildSaber.Common\GuildSaber.Common.csproj"/>
+        <ProjectReference Include="..\GuildSaber.Common\GuildSaber.Common.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Contexts\DiscordBot\Migrations\"/>
-        <Folder Include="Contexts\Server\Migrations\"/>
+        <Folder Include="Contexts\DiscordBot\Migrations\" />
+        <Folder Include="Contexts\Server\Migrations\" />
     </ItemGroup>
 
 </Project>

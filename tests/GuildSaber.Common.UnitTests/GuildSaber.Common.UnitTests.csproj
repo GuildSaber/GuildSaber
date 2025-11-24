@@ -7,14 +7,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AwesomeAssertions"/>
-        <PackageReference Include="TUnit"/>
-        <PackageReference Include="CSharpFunctionalExtensions.AwesomeAssertions"/>
+        <PackageReference Include="AwesomeAssertions" />
+        <PackageReference Include="TUnit" />
+        <PackageReference Include="CSharpFunctionalExtensions.AwesomeAssertions" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\GuildSaber.Api\GuildSaber.Api.csproj"/>
-        <ProjectReference Include="..\..\src\GuildSaber.Database\GuildSaber.Database.csproj"/>
+        <ProjectReference Include="..\..\src\GuildSaber.Api\GuildSaber.Api.csproj" />
+        <ProjectReference Include="..\..\src\GuildSaber.Database\GuildSaber.Database.csproj" />
     </ItemGroup>
 
 </Project>

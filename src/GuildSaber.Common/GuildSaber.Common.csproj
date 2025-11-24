@@ -6,11 +6,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="GuildSaber.Common.UnitTests"/>
+        <InternalsVisibleTo Include="GuildSaber.Common.UnitTests" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CSharpFunctionalExtensions"/>
+        <PackageReference Include="CSharpFunctionalExtensions" />
         <PackageReference Include="CSharpFunctionalExtensions.Analyzers">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

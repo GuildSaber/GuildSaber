@@ -1,29 +1,29 @@
 ﻿<Solution>
     <Folder Name="/Solution Items/">
-        <File Path="Directory.Build.props"/>
-        <File Path="Directory.Packages.props"/>
-        <File Path="dotnet.config"/>
-        <File Path="README.md"/>
-        <File Path="LICENSE"/>
-        <File Path="LICENSE-NOTICE.md"/>
-        <File Path="CONTRIBUTORS.md"/>
-        <File Path="CONTRIBUTING.md"/>
+        <File Path="Directory.Build.props" />
+        <File Path="Directory.Packages.props" />
+        <File Path="dotnet.config" />
+        <File Path="README.md" />
+        <File Path="LICENSE" />
+        <File Path="LICENSE-NOTICE.md" />
+        <File Path="CONTRIBUTORS.md" />
+        <File Path="CONTRIBUTING.md" />
     </Folder>
     <Folder Name="/aspire/">
-        <Project Path="aspire\GuildSaber.AppHost\GuildSaber.AppHost.csproj" Type="Classic C#"/>
-        <Project Path="aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj" Type="Classic C#"/>
+        <Project Path="aspire\GuildSaber.AppHost\GuildSaber.AppHost.csproj" Type="Classic C#" />
+        <Project Path="aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj" Type="Classic C#" />
     </Folder>
     <Folder Name="/src/">
-        <Project Path="src\GuildSaber.Api\GuildSaber.Api.csproj" Type="Classic C#"/>
-        <Project Path="src\GuildSaber.Common\GuildSaber.Common.csproj" Type="Classic C#"/>
-        <Project Path="src\GuildSaber.Database\GuildSaber.Database.csproj" Type="Classic C#"/>
-        <Project Path="src\GuildSaber.DiscordBot\GuildSaber.DiscordBot.csproj" Type="Classic C#"/>
+        <Project Path="src\GuildSaber.Api\GuildSaber.Api.csproj" Type="Classic C#" />
+        <Project Path="src\GuildSaber.Common\GuildSaber.Common.csproj" Type="Classic C#" />
+        <Project Path="src\GuildSaber.Database\GuildSaber.Database.csproj" Type="Classic C#" />
+        <Project Path="src\GuildSaber.DiscordBot\GuildSaber.DiscordBot.csproj" Type="Classic C#" />
     </Folder>
     <Folder Name="/tests/">
-        <Project Path="tests\GuildSaber.AspireTests\GuildSaber.AspireTests.csproj" Type="Classic C#"/>
-        <Project Path="tests\GuildSaber.Common.UnitTests\GuildSaber.Common.UnitTests.csproj" Type="Classic C#"/>
+        <Project Path="tests\GuildSaber.AspireTests\GuildSaber.AspireTests.csproj" Type="Classic C#" />
+        <Project Path="tests\GuildSaber.Common.UnitTests\GuildSaber.Common.UnitTests.csproj" Type="Classic C#" />
     </Folder>
     <Folder Name="/tools/">
-        <Project Path="tools\GuildSaber.Migrator\GuildSaber.Migrator.csproj" Type="Classic C#"/>
+        <Project Path="tools\GuildSaber.Migrator\GuildSaber.Migrator.csproj" Type="Classic C#" />
     </Folder>
 </Solution>

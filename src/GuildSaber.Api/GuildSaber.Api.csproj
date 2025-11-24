@@ -9,34 +9,34 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="GuildSaber.AspireTests"/>
+        <InternalsVisibleTo Include="GuildSaber.AspireTests" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AspNet.Security.OAuth.Discord"/>
-        <PackageReference Include="CSharpFunctionalExtensions.HttpResults"/>
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer"/>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
+        <PackageReference Include="AspNet.Security.OAuth.Discord" />
+        <PackageReference Include="CSharpFunctionalExtensions.HttpResults" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Caching.Hybrid"/>
-        <PackageReference Include="MyCSharp.HttpUserAgentParser.AspNetCore"/>
+        <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
+        <PackageReference Include="MyCSharp.HttpUserAgentParser.AspNetCore" />
         <PackageReference Include="Scalar.AspNetCore" />
-        <PackageReference Include="Scalar.AspNetCore.Microsoft"/>
+        <PackageReference Include="Scalar.AspNetCore.Microsoft" />
     </ItemGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="GuildSaber.Api.Tests"/>
+        <InternalsVisibleTo Include="GuildSaber.Api.Tests" />
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Features\Players\Scores\"/>
+        <Folder Include="Features\Players\Scores\" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj"/>
-        <ProjectReference Include="..\GuildSaber.Database\GuildSaber.Database.csproj"/>
+        <ProjectReference Include="..\..\aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj" />
+        <ProjectReference Include="..\GuildSaber.Database\GuildSaber.Database.csproj" />
     </ItemGroup>
 </Project>

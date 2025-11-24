@@ -90,7 +90,7 @@ public static class OpenApiTypeTransformer
         var type = typeof(T);
         _transforms[type] = schema;
         if (!type.IsValueType) return;
-        
+
         var nullableType = typeof(Nullable<>).MakeGenericType(type);
         _transforms[nullableType] = schema;
     }

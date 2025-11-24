@@ -6,21 +6,21 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="GuildSaber.DiscordBot.Tests"/>
+        <InternalsVisibleTo Include="GuildSaber.DiscordBot.Tests" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Discord.Net"/>
+        <PackageReference Include="Discord.Net" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Hosting"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj"/>
-        <ProjectReference Include="..\GuildSaber.Database\GuildSaber.Database.csproj"/>
+        <ProjectReference Include="..\..\aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj" />
+        <ProjectReference Include="..\GuildSaber.Database\GuildSaber.Database.csproj" />
     </ItemGroup>
 
 </Project>

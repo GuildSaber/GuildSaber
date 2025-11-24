@@ -6,23 +6,23 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Hosting.Testing"/>
-        <PackageReference Include="AwesomeAssertions"/>
-        <PackageReference Include="Bogus"/>
-        <PackageReference Include="CSharpFunctionalExtensions.AwesomeAssertions"/>
-        <PackageReference Include="TUnit"/>
+        <PackageReference Include="Aspire.Hosting.Testing" />
+        <PackageReference Include="AwesomeAssertions" />
+        <PackageReference Include="Bogus" />
+        <PackageReference Include="CSharpFunctionalExtensions.AwesomeAssertions" />
+        <PackageReference Include="TUnit" />
     </ItemGroup>
 
     <ItemGroup>
-        <Using Include="System.Net"/>
-        <Using Include="Microsoft.Extensions.DependencyInjection"/>
-        <Using Include="Aspire.Hosting.ApplicationModel"/>
-        <Using Include="Aspire.Hosting.Testing"/>
+        <Using Include="System.Net" />
+        <Using Include="Microsoft.Extensions.DependencyInjection" />
+        <Using Include="Aspire.Hosting.ApplicationModel" />
+        <Using Include="Aspire.Hosting.Testing" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\aspire\GuildSaber.AppHost\GuildSaber.AppHost.csproj"/>
-        <ProjectReference Include="..\..\src\GuildSaber.Api\GuildSaber.Api.csproj"/>
+        <ProjectReference Include="..\..\aspire\GuildSaber.AppHost\GuildSaber.AppHost.csproj" />
+        <ProjectReference Include="..\..\src\GuildSaber.Api\GuildSaber.Api.csproj" />
     </ItemGroup>
 
 </Project>
