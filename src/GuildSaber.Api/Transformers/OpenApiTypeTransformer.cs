@@ -85,7 +85,15 @@ public static class OpenApiTypeTransformer
     /// <remarks>
     /// Subsequent calls with the same type will override previous mappings.
     /// </remarks>
-    public static void MapType<T>(OpenApiSchema schema) => _transforms[typeof(T)] = schema;
+    public static void MapType<T>(OpenApiSchema schema)
+    {
+        var type = typeof(T);
+        _transforms[type] = schema;
+        if (!type.IsValueType) return;
+        
+        var nullableType = typeof(Nullable<>).MakeGenericType(type);
+        _transforms[nullableType] = schema;
+    }
 
     public static OpenApiOptions AddTypeTransformationSupport(this OpenApiOptions options)
         => options.AddSchemaTransformer<TypeTransformer>();
