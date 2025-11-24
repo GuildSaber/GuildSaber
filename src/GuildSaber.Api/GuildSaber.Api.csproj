@@ -23,6 +23,7 @@
         </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Caching.Hybrid"/>
         <PackageReference Include="MyCSharp.HttpUserAgentParser.AspNetCore"/>
+        <PackageReference Include="Scalar.AspNetCore" />
         <PackageReference Include="Scalar.AspNetCore.Microsoft"/>
     </ItemGroup>
 
