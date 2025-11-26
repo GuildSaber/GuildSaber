@@ -10,93 +10,95 @@ namespace GuildSaber.Api.Features.RankedScores;
 
 public static class RankedScoreMappers
 {
-    public static RankedScoreResponses.Score Map(this AbstractScore self) => self switch
-    {
-        BeatLeaderScore blScore => new RankedScoreResponses.Score.BeatLeaderScore(
-            self.Id,
-            self.BaseScore,
-            self.Modifiers.Map(),
-            self.SetAt,
-            self.MaxCombo,
-            self.IsFullCombo,
-            self.MissedNotes,
-            self.BadCuts,
-            self.HMD.Map(),
-            /*blScore.Statistics == null
-                ? null
-                : new RankedScoreResponses.ScoreStatistics(
-                    new RankedScoreResponses.WinTracker(
-                        blScore.Statistics.WinTracker.IsWin,
-                        blScore.Statistics.WinTracker.EndTime,
-                        blScore.Statistics.WinTracker.PauseCount,
-                        blScore.Statistics.WinTracker.TotalPauseDuration,
-                        blScore.Statistics.WinTracker.JumpDistance,
-                        blScore.Statistics.WinTracker.AverageHeight,
-                        blScore.Statistics.WinTracker.TotalScore,
-                        blScore.Statistics.WinTracker.MaxScore,
-                        blScore.Statistics.WinTracker.AverageHeadPosition == null
-                            ? null
-                            : new RankedScoreResponses.AverageHeadPosition(
-                                blScore.Statistics.WinTracker.AverageHeadPosition.Value.X,
-                                blScore.Statistics.WinTracker.AverageHeadPosition.Value.Y,
-                                blScore.Statistics.WinTracker.AverageHeadPosition.Value.Z)),
-                    new RankedScoreResponses.HitTracker(
-                        blScore.Statistics.HitTracker.Max115Streak,
-                        blScore.Statistics.HitTracker.LeftTiming,
-                        blScore.Statistics.HitTracker.RightTiming,
-                        blScore.Statistics.HitTracker.LeftMiss,
-                        blScore.Statistics.HitTracker.RightMiss,
-                        blScore.Statistics.HitTracker.LeftBadCuts,
-                        blScore.Statistics.HitTracker.RightBadCuts,
-                        blScore.Statistics.HitTracker.LeftBombs,
-                        blScore.Statistics.HitTracker.RightBombs),
-                    new RankedScoreResponses.AccuracyTracker(
-                        blScore.Statistics.AccuracyTracker.AccRight,
-                        blScore.Statistics.AccuracyTracker.AccLeft,
-                        blScore.Statistics.AccuracyTracker.LeftPreSwing,
-                        blScore.Statistics.AccuracyTracker.RightPreSwing,
-                        blScore.Statistics.AccuracyTracker.LeftPostSwing,
-                        blScore.Statistics.AccuracyTracker.RightPostSwing,
-                        blScore.Statistics.AccuracyTracker.LeftTimeDependence,
-                        blScore.Statistics.AccuracyTracker.RightTimeDependence,
-                        blScore.Statistics.AccuracyTracker.LeftAverageCutGraphGrid,
-                        blScore.Statistics.AccuracyTracker.RightAverageCutGraphGrid,
-                        blScore.Statistics.AccuracyTracker.AccuracyGrid),
-                    new RankedScoreResponses.ScoreGraphTracker(blScore.Statistics.ScoreGraphTracker.Graph)),*/
-            blScore.BeatLeaderScoreId
-        ),
-        ScoreSaberScore ssScore => new RankedScoreResponses.Score.ScoreSaberScore(
-            self.Id,
-            self.BaseScore,
-            self.Modifiers.Map(),
-            self.SetAt,
-            self.MaxCombo,
-            self.IsFullCombo,
-            self.MissedNotes,
-            self.BadCuts,
-            self.HMD.Map(),
-            ssScore.ScoreSaberScoreId,
-            ssScore.DeviceHmd,
-            ssScore.DeviceControllerLeft,
-            ssScore.DeviceControllerRight),
-        _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
-    };
+    public static Expression<Func<AbstractScore, RankedScoreResponses.Score>> MapScoreExpression
+        => score => score.Type == AbstractScore.EScoreType.BeatLeader
+            ? new RankedScoreResponses.Score.BeatLeaderScore(
+                score.Id,
+                score.BaseScore,
+                score.Modifiers.Map(),
+                score.SetAt,
+                score.MaxCombo,
+                score.IsFullCombo,
+                score.MissedNotes,
+                score.BadCuts,
+                score.HMD.Map(),
+                ((BeatLeaderScore)score).BeatLeaderScoreId)
+            : new RankedScoreResponses.Score.ScoreSaberScore(
+                score.Id,
+                score.BaseScore,
+                score.Modifiers.Map(),
+                score.SetAt,
+                score.MaxCombo,
+                score.IsFullCombo,
+                score.MissedNotes,
+                score.BadCuts,
+                score.HMD.Map(),
+                ((ScoreSaberScore)score).ScoreSaberScoreId,
+                ((ScoreSaberScore)score).DeviceHmd,
+                ((ScoreSaberScore)score).DeviceControllerLeft,
+                ((ScoreSaberScore)score).DeviceControllerRight);
+
+    public static Expression<Func<RankedScore, RankedScoreResponses.RankedScore>> MapRankedScoreExpression(
+        ServerDbContext dbContext)
+        => rankedScore => new RankedScoreResponses.RankedScore(
+            rankedScore.Id,
+            rankedScore.RankedMapId,
+            dbContext.Scores.Where(s => s.Id == rankedScore.ScoreId)
+                .Select(MapScoreExpression)
+                .First(),
+            dbContext.Scores.Where(s => s.Id == rankedScore.PrevScoreId)
+                .Select(MapScoreExpression)
+                .FirstOrDefault(),
+            rankedScore.State.Map(),
+            rankedScore.Rank,
+            rankedScore.RawPoints,
+            rankedScore.EffectiveScore
+        );
 
     public static Expression<Func<RankedScore, RankedScoreResponses.RankedScoreWithPlayer>>
         MapRankedScoreWithPlayerExpression(ServerDbContext dbContext)
-        => self => new RankedScoreResponses.RankedScoreWithPlayer(
-            self.Id,
-            self.RankedMapId,
-            self.Score.Map(),
-            null,
-            self.State.Map(),
-            self.Rank,
-            self.RawPoints,
-            self.EffectiveScore,
-            dbContext.Players.Where(p => p.Id == self.PlayerId)
+        => rankedScore => new RankedScoreResponses.RankedScoreWithPlayer(
+            new RankedScoreResponses.RankedScore(
+                rankedScore.Id,
+                rankedScore.RankedMapId,
+                dbContext.Scores.Where(s => s.Id == rankedScore.ScoreId)
+                    .Select(MapScoreExpression)
+                    .First(),
+                dbContext.Scores.Where(s => s.Id == rankedScore.PrevScoreId)
+                    .Select(MapScoreExpression)
+                    .FirstOrDefault(),
+                rankedScore.State.Map(),
+                rankedScore.Rank,
+                rankedScore.RawPoints,
+                rankedScore.EffectiveScore
+            ),
+            dbContext.Players.Where(p => p.Id == rankedScore.PlayerId)
                 .Select(PlayerMappers.MapPlayerExpression)
                 .First()
         );
+
+    public static Expression<Func<RankedScore, RankedScoreResponses.RankedScoreWithRankedMap>>
+        MapRankedScoreWithRankedMapExpression(ServerDbContext dbContext)
+        => rankedScore => new RankedScoreResponses.RankedScoreWithRankedMap(
+            new RankedScoreResponses.RankedScore(
+                rankedScore.Id,
+                rankedScore.RankedMapId,
+                dbContext.Scores.Where(s => s.Id == rankedScore.ScoreId)
+                    .Select(MapScoreExpression)
+                    .First(),
+                dbContext.Scores.Where(s => s.Id == rankedScore.PrevScoreId)
+                    .Select(MapScoreExpression)
+                    .FirstOrDefault(),
+                rankedScore.State.Map(),
+                rankedScore.Rank,
+                rankedScore.RawPoints,
+                rankedScore.EffectiveScore
+            ),
+            dbContext.RankedMaps.Where(p => p.Id == rankedScore.RankedMapId)
+                .Select(RankedMapMappers.MapRankedMapExpression)
+                .First()
+        );
+
 
     public static RankedScoreResponses.EState Map(this RankedScore.EState self) =>
         Enum.GetValues<RankedScore.EState>()
@@ -171,4 +173,46 @@ public static class RankedScoreMappers
         PlayerHardwareInfo.EHMD.VarjoXR3 => RankedScoreResponses.EHMD.VarjoXR3,
         _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
     };
+
+    /*blScore.Statistics == null
+    ? null
+    : new RankedScoreResponses.ScoreStatistics(
+        new RankedScoreResponses.WinTracker(
+            blScore.Statistics.WinTracker.IsWin,
+            blScore.Statistics.WinTracker.EndTime,
+            blScore.Statistics.WinTracker.PauseCount,
+            blScore.Statistics.WinTracker.TotalPauseDuration,
+            blScore.Statistics.WinTracker.JumpDistance,
+            blScore.Statistics.WinTracker.AverageHeight,
+            blScore.Statistics.WinTracker.TotalScore,
+            blScore.Statistics.WinTracker.MaxScore,
+            blScore.Statistics.WinTracker.AverageHeadPosition == null
+                ? null
+                : new RankedScoreResponses.AverageHeadPosition(
+                    blScore.Statistics.WinTracker.AverageHeadPosition.Value.X,
+                    blScore.Statistics.WinTracker.AverageHeadPosition.Value.Y,
+                    blScore.Statistics.WinTracker.AverageHeadPosition.Value.Z)),
+        new RankedScoreResponses.HitTracker(
+            blScore.Statistics.HitTracker.Max115Streak,
+            blScore.Statistics.HitTracker.LeftTiming,
+            blScore.Statistics.HitTracker.RightTiming,
+            blScore.Statistics.HitTracker.LeftMiss,
+            blScore.Statistics.HitTracker.RightMiss,
+            blScore.Statistics.HitTracker.LeftBadCuts,
+            blScore.Statistics.HitTracker.RightBadCuts,
+            blScore.Statistics.HitTracker.LeftBombs,
+            blScore.Statistics.HitTracker.RightBombs),
+        new RankedScoreResponses.AccuracyTracker(
+            blScore.Statistics.AccuracyTracker.AccRight,
+            blScore.Statistics.AccuracyTracker.AccLeft,
+            blScore.Statistics.AccuracyTracker.LeftPreSwing,
+            blScore.Statistics.AccuracyTracker.RightPreSwing,
+            blScore.Statistics.AccuracyTracker.LeftPostSwing,
+            blScore.Statistics.AccuracyTracker.RightPostSwing,
+            blScore.Statistics.AccuracyTracker.LeftTimeDependence,
+            blScore.Statistics.AccuracyTracker.RightTimeDependence,
+            blScore.Statistics.AccuracyTracker.LeftAverageCutGraphGrid,
+            blScore.Statistics.AccuracyTracker.RightAverageCutGraphGrid,
+            blScore.Statistics.AccuracyTracker.AccuracyGrid),
+        new RankedScoreResponses.ScoreGraphTracker(blScore.Statistics.ScoreGraphTracker.Graph)),*/
 }

@@ -17,7 +17,7 @@ public class PlayerEndpoints : IEndpoints
     public static void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/players")
-            .WithTag("Players", description: "Endpoints for managing players");
+            .WithTag("Players", description: "Endpoints for managing players' ranked scores.");
 
         group.MapGet("/", GetPlayersAsync)
             .WithName("GetPlayers")

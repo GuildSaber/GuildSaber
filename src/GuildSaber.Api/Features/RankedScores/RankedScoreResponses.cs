@@ -53,7 +53,7 @@ public static class RankedScoreResponses
         ) : Score(Id, BaseScore, Modifiers, SetAt, MaxCombo, IsFullCombo, MissedNotes, BadCuts, HMD);
     }
 
-    public record RankedScore(
+    public sealed record RankedScore(
         long Id,
         long RankedMapId,
         Score Score,
@@ -65,16 +65,14 @@ public static class RankedScoreResponses
     );
 
     public record RankedScoreWithPlayer(
-        long Id,
-        long RankedMapId,
-        Score Score,
-        Score? PrevScore,
-        EState State,
-        int Rank,
-        float RawPoints,
-        int EffectiveScore,
+        RankedScore RankedScore,
         PlayerResponses.Player Player
-    ) : RankedScore(Id, RankedMapId, Score, PrevScore, State, Rank, RawPoints, EffectiveScore);
+    );
+
+    public record RankedScoreWithRankedMap(
+        RankedScore RankedScore,
+        RankedMapResponses.RankedMap RankedMap
+    );
 
     public record ScoreStatistics(
         WinTracker WinTracker,
