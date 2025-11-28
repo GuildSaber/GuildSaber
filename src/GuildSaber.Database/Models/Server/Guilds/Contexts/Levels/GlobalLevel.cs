@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 namespace GuildSaber.Database.Models.Server.Guilds.Levels;
 
 /// <summary>
@@ -6,4 +9,9 @@ namespace GuildSaber.Database.Models.Server.Guilds.Levels;
 public sealed class GlobalLevel : Level
 {
     public bool IsIgnoredInCategories { get; set; }
+}
+
+public class GlobalLevelConfiguration : IEntityTypeConfiguration<GlobalLevel>
+{
+    public void Configure(EntityTypeBuilder<GlobalLevel> builder) => builder.HasBaseType<Level>();
 }

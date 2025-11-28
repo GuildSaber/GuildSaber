@@ -51,6 +51,7 @@ public class BLScoreSyncWorker(
         await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
         var scoreAddOrUpdatePipeline = new ScoreAddOrUpdatePipeline(dbContext, new MemberPointStatsPipeline(dbContext));
         var memberPointStatsPipeline = new MemberPointStatsPipeline(dbContext);
+        var memberLevelStatsPipeline = new MemberLevelStatsPipeline(dbContext);
 
         do
         {
@@ -82,7 +83,11 @@ public class BLScoreSyncWorker(
                 var pipelineResult = await scoreAddOrUpdatePipeline.ExecuteAsync(dbScore);
 
                 foreach (var context in pipelineResult.ImpactedContextsWithPoints)
+                {
                     await memberPointStatsPipeline.ExecuteAsync(playerId, context);
+                    await memberLevelStatsPipeline.ExecuteAsync(playerId, context.GuildId, context.Id,
+                        context.Points.FirstOrDefault()?.Id ?? default);
+                }
             }
 
             await Task.Delay(_reconnectAfter, token);

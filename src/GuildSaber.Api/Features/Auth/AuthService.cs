@@ -18,6 +18,7 @@ namespace GuildSaber.Api.Features.Auth;
 public class AuthService(
     JwtService jwtService,
     IOptions<SessionSettings> sessionSettings,
+    IOptions<ManagerSettings> managerSettings,
     IHttpUserAgentParserAccessor userAgentParser,
     BeatLeaderApi beatLeaderApi,
     ServerDbContext dbContext,
@@ -95,7 +96,8 @@ public class AuthService(
                         Platform = PlatformMappers.Map(blPlayer.Platform)
                     },
                     LinkedAccounts = new PlayerLinkedAccounts(beatleaderId, null, null),
-                    SubscriptionInfo = new PlayerSubscriptionInfo(PlayerSubscriptionInfo.ESubscriptionTier.None)
+                    SubscriptionInfo = new PlayerSubscriptionInfo(PlayerSubscriptionInfo.ESubscriptionTier.None),
+                    IsManager = managerSettings.Value.SteamIds.Contains(blPlayer.Id)
                 }))
             .Map(static (player, dbContext) => dbContext
                 .AddAndSaveAsync(player, x => x.Id), dbContext);

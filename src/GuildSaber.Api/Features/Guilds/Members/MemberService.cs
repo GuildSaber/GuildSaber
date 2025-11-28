@@ -66,6 +66,10 @@ public class MemberService(ServerDbContext dbContext, BeatLeaderApi beatLeaderAp
                         operation: static async (state, cancellationToken) =>
                         {
                             var inserted = await state.dbContext.AddAndSaveAsync(state.member);
+                            if (state.member.JoinState == Member.EJoinState.Requested)
+                                return inserted;
+
+                            // Only add to contexts if the member is fully joined
                             var contexts = await state.dbContext.Contexts
                                 .Where(x => x.GuildId == state.member.GuildId)
                                 .ToListAsync(cancellationToken);

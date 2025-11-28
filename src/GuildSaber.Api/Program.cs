@@ -45,6 +45,9 @@ builder.Services
     .AddOptionsWithValidateOnStart<AuthSettings>()
     .Bind(authSettings).ValidateDataAnnotations();
 builder.Services
+    .AddOptionsWithValidateOnStart<ManagerSettings>()
+    .Bind(authSettings.GetSection(nameof(AuthSettings.Manager))).ValidateDataAnnotations();
+builder.Services
     .AddOptionsWithValidateOnStart<SessionSettings>()
     .Bind(authSettings.GetSection(nameof(AuthSettings.Session))).ValidateDataAnnotations();
 builder.Services
@@ -213,6 +216,7 @@ builder.Services.AddTransient<BeatLeaderGeneralSocketStream>(_ =>
 builder.Services.AddTransient<ScoreAddOrUpdatePipeline>();
 builder.Services.AddTransient<PlayerScoresPipeline>();
 builder.Services.AddTransient<MemberPointStatsPipeline>();
+builder.Services.AddTransient<MemberLevelStatsPipeline>();
 //builder.Services.AddHostedService<BLScoreSyncWorker>();
 builder.Services.AddHostedService<QueueProcessingService>();
 builder.Services.AddSingleton<IBackgroundTaskQueue>(_ => new BackgroundTaskQueue(capacity: 100));

@@ -34,6 +34,7 @@ public class ServerDbContext : DbContext
 
     public DbSet<Member> Members { get; set; }
     public DbSet<MemberPointStat> MemberPointStats { get; set; }
+    public DbSet<MemberLevelStat> MemberLevelStats { get; set; }
 
     public DbSet<Boost> Boosts { get; set; }
     public DbSet<Point> Points { get; set; }
@@ -77,6 +78,7 @@ public class ServerDbContext : DbContext
         .ApplyConfiguration(new CategoryLevelOverrideConfiguration())
         .ApplyConfiguration(new MemberConfiguration())
         .ApplyConfiguration(new MemberPointStatConfiguration())
+        .ApplyConfiguration(new MemberLevelStatConfiguration())
         .ApplyConfiguration(new ContextMemberConfiguration())
         .ApplyConfiguration(new BoostConfiguration())
         .ApplyConfiguration(new PointConfiguration())

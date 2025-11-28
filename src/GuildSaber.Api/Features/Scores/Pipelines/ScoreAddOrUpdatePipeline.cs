@@ -22,7 +22,7 @@ public sealed class ScoreAddOrUpdatePipeline(
     private record ScoreRankingContext(
         RankedMap[] RankedMapsWithVersionsWithSongDifficulty,
         RankedScore[] ExistingRankedScores,
-        Context[] ContextsWithPointsAndLevels,
+        Context[] ContextsWithPoints,
         AbstractScore[] Scores
     );
 
@@ -75,7 +75,7 @@ public sealed class ScoreAddOrUpdatePipeline(
                     state.dbContext
                 );
 
-                return new PipelineResult(tuple.rankingContext.ContextsWithPointsAndLevels);
+                return new PipelineResult(tuple.rankingContext.ContextsWithPoints);
             }, (dbContext, scoreToAdd.PlayerId, memberStatPipeline: memberPointStatsPipeline))
             .Unwrap();
 
@@ -156,11 +156,10 @@ public sealed class ScoreAddOrUpdatePipeline(
         var rankedScores = await dbContext.RankedScores
             .Where(x => x.PlayerId == playerId && rankedMapsIds.Contains(x.RankedMapId))
             .ToArrayAsync();
-        var contextWithPointsAndLevels = await dbContext.Contexts
+        var contextWithPoints = await dbContext.Contexts
             .AsSplitQuery()
             .Include(x => x.Points)
-            .Include(x => x.Levels)
-            .Where(x => x.RankedMaps.Any(y => y.ContextId == x.Id))
+            .Where(x => x.RankedMaps.Any(y => y.ContextId == x.Id) && contextIdsForPlayer.Contains(x.Id))
             .ToArrayAsync();
 
         var mapVersions = rankedMaps.SelectMany(x => x.MapVersions).ToArray();
@@ -173,7 +172,7 @@ public sealed class ScoreAddOrUpdatePipeline(
             .ToArrayAsync();
 
         return new ScoreRankingContext(
-            rankedMaps, rankedScores, contextWithPointsAndLevels, scores
+            rankedMaps, rankedScores, contextWithPoints, scores
         );
     }
 
@@ -183,7 +182,7 @@ public sealed class ScoreAddOrUpdatePipeline(
     {
         foreach (var rankedMap in rankingContext.RankedMapsWithVersionsWithSongDifficulty)
         foreach (var mapVersion in rankedMap.MapVersions)
-        foreach (var point in rankingContext.ContextsWithPointsAndLevels.First(x => x.Id == rankedMap.ContextId).Points)
+        foreach (var point in rankingContext.ContextsWithPoints.First(x => x.Id == rankedMap.ContextId).Points)
         foreach (var score in rankingContext.Scores.Where(x => x.SongDifficultyId == mapVersion.SongDifficultyId))
         {
             var transformContext = new RankedScoreTransformContext(

@@ -1,5 +1,6 @@
-using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using CommunityToolkit.Diagnostics;
+using GuildSaber.Api.Features.RankedScores;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
@@ -52,13 +53,9 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
           ) ranked_scores
           """;
 
-    public static Expression<Func<RankedScore, bool>> ValidPasses =>
-        x => x.State.HasFlag(RankedScore.EState.Selected)
-             && ((int)x.State & (int)RankedScore.EState.NonPointGiving) == 0;
-
     public async Task ExecuteAsync(PlayerId playerId, Context context)
     {
-        ArgumentNullException.ThrowIfNull(context.Points);
+        Guard.IsNotNull(context.Points);
 
         var categories = await dbContext.Categories
             .Where(c => c.GuildId == context.GuildId)
@@ -114,7 +111,7 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
                 x.ContextId == contextId &&
                 x.PlayerId == playerId &&
                 x.PointId == point.Id)
-            .Where(ValidPasses);
+            .Where(RankedScore.IsValidPassesExpression);
 
         if (categoryId is not null)
             validPassesQuery = validPassesQuery.Where(x => x.RankedMap.Categories.Any(c => c.Id == categoryId));

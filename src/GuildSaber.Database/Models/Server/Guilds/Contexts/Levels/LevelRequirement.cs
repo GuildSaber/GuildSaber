@@ -8,11 +8,18 @@ public class LevelRequirement
 {
     public required ELevelRequirementType Type { get; set; }
 
-    public int? MinXp { get; set; }
+    //TODO: Feature - Add Xp based levels (post-release)
+    //public int? MinXp { get; set; }
     public RankedMapRating.AccuracyStar? MinAccStar { get; set; }
     public RankedMapRating.DifficultyStar? MinDiffStar { get; set; }
     public uint MinPassCount { get; set; }
-    public enum ELevelRequirementType { Xp = 1, DiffStar = 2, AccStar = 3 }
+
+    public enum ELevelRequirementType
+    {
+        //Xp = 1,
+        DiffStar = 2,
+        AccStar = 3
+    }
 }
 
 public class LevelRequirementConfiguration : IComplexPropertyConfiguration<LevelRequirement>

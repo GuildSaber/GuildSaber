@@ -11,6 +11,12 @@ public class AuthSettings
     [Required] public required BeatLeaderAuthSettings BeatLeader { get; init; }
     [Required] public required DiscordAuthSettings Discord { get; init; }
     [Required] public required RedirectSettings Redirect { get; init; }
+    [Required] public required ManagerSettings Manager { get; init; }
+}
+
+public class ManagerSettings
+{
+    [Required] public required string[] SteamIds { get; init; }
 }
 
 public class RedirectSettings

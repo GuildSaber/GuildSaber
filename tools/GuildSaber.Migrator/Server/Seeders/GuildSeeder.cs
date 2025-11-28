@@ -23,7 +23,7 @@ public static class GuildSeeder
             ).Unwrap(),
             Requirements = new GuildRequirements
             {
-                RequireSubmission = true
+                RequireSubmission = false
             },
             Status = Guild.EGuildStatus.Featured
         },

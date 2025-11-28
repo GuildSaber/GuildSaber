@@ -160,36 +160,3 @@ public class RankedScoreEndpoints : IEndpoints
             .ToPagedListAsync(page, pageSize));
     }
 }
-
-public static class RankedScoreExtensions
-{
-    public static IQueryable<ServerRankedScore> ApplySortOrder(
-        this IQueryable<ServerRankedScore> query, ERankedScoreSorter sortBy, EOrder order) => sortBy switch
-    {
-        ERankedScoreSorter.Points => query
-            .OrderBy(x => (x.State & ServerRankedScore.EState.NonPointGiving) != 0 ? 1 : 0)
-            .ThenBy(order, x => x.RawPoints)
-            .ThenBy(x => x.Id),
-        ERankedScoreSorter.DifficultyStar => query
-            .OrderBy(x => (x.State & ServerRankedScore.EState.NonPointGiving) != 0 ? 1 : 0)
-            .ThenBy(order, x => x.RankedMap.Rating.DiffStar)
-            .ThenBy(x => x.Id),
-        ERankedScoreSorter.AccuracyStar => query
-            .OrderBy(x => (x.State & ServerRankedScore.EState.NonPointGiving) != 0 ? 1 : 0)
-            .ThenBy(order, x => x.RankedMap.Rating.AccStar)
-            .ThenBy(x => x.Id),
-        ERankedScoreSorter.Score => query
-            .OrderBy(x => (x.State & ServerRankedScore.EState.NonPointGiving) != 0 ? 1 : 0)
-            .ThenBy(order, x => x.EffectiveScore)
-            .ThenBy(x => x.Id),
-        ERankedScoreSorter.Accuracy => query
-            .OrderBy(x => (x.State & ServerRankedScore.EState.NonPointGiving) != 0 ? 1 : 0)
-            .ThenBy(order, x => x.EffectiveScore / x.SongDifficulty.Stats.MaxScore)
-            .ThenBy(x => x.Id),
-        ERankedScoreSorter.ScoreTime => query
-            .OrderBy(x => (x.State & ServerRankedScore.EState.NonPointGiving) != 0 ? 1 : 0)
-            .ThenBy(order, x => x.Score.SetAt)
-            .ThenBy(x => x.Id),
-        _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
-    };
-}

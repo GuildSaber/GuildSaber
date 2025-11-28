@@ -70,9 +70,14 @@ public class DebugEndpoints : IEndpoints
             .WithDescription("Deletes all ranked maps from the database. USE WITH CAUTION!")
             .RequireManager();
 
-        group.MapPost("/recalculate-member-points/{playerId}", RecalculateMemberPoints)
+        group.MapPost("/recalculate-member-points/{playerId}", RecalculateMemberPointStats)
             .WithSummary("Recalculate member points for a player.")
             .WithDescription("Recalculates member points for all contexts the player is a member of.")
+            .RequireManager();
+
+        group.MapPost("/recalculate-member-levels/{playerId}", RecalculateMemberLevelStats)
+            .WithSummary("Recalculate member levels for a player.")
+            .WithDescription("Recalculates member levels for all contexts the player is a member of.")
             .RequireManager();
 
         group.MapPost("delete-member-point-stats/{playerId}", async (PlayerId playerId, ServerDbContext dbContext) =>
@@ -86,7 +91,7 @@ public class DebugEndpoints : IEndpoints
             .RequireManager();
     }
 
-    private static async Task<Ok> RecalculateMemberPoints(
+    private static async Task<Ok> RecalculateMemberPointStats(
         PlayerId playerId, ServerDbContext dbContext,
         IBackgroundTaskQueue taskQueue,
         IServiceScopeFactory serviceScopeFactory)
@@ -104,6 +109,31 @@ public class DebugEndpoints : IEndpoints
             var memberPointStatsPipeline = scope.ServiceProvider.GetRequiredService<MemberPointStatsPipeline>();
 
             foreach (var context in contextsWithPoints) await memberPointStatsPipeline.ExecuteAsync(playerId, context);
+        });
+
+        return TypedResults.Ok();
+    }
+
+    private static async Task<Ok> RecalculateMemberLevelStats(
+        PlayerId playerId, ServerDbContext dbContext,
+        IBackgroundTaskQueue taskQueue,
+        IServiceScopeFactory serviceScopeFactory)
+    {
+        var contextIds = await dbContext.ContextMembers.Where(x => x.PlayerId == playerId)
+            .Select(x => x.ContextId)
+            .ToListAsync();
+        var contextsWithPoints = await dbContext.Contexts.Where(x => contextIds.Contains(x.Id) && x.Points.Any())
+            .Include(x => x.Points)
+            .ToListAsync();
+
+        await taskQueue.QueueBackgroundWorkItemAsync(async _ =>
+        {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+            var memberLevelStatsPipeline = scope.ServiceProvider.GetRequiredService<MemberLevelStatsPipeline>();
+
+            foreach (var context in contextsWithPoints)
+                await memberLevelStatsPipeline.ExecuteAsync(playerId, context.GuildId, context.Id,
+                    context.Points.FirstOrDefault()?.Id ?? default);
         });
 
         return TypedResults.Ok();

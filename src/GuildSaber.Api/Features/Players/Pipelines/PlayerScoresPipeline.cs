@@ -21,6 +21,7 @@ public sealed class PlayerScoresPipeline(
     ScoreSaberApi scoreSaberApi,
     ScoreAddOrUpdatePipeline addOrUpdatePipeline,
     MemberPointStatsPipeline memberPointStatsPipeline,
+    MemberLevelStatsPipeline memberLevelStatsPipeline,
     ILogger<PlayerScoresPipeline> logger)
 {
     public async Task ImportBeatLeaderScoresAsync(PlayerId playerId, BeatLeaderId beatLeaderId, CancellationToken token)
@@ -57,7 +58,11 @@ public sealed class PlayerScoresPipeline(
         }
 
         foreach (var tuple in contextsWithPoints)
+        {
             await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value);
+            await memberLevelStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key,
+                tuple.Value.Points.FirstOrDefault()?.Id ?? default);
+        }
 
         logger.LogInformation("Completed importing BeatLeader scores for player {PlayerId}", playerId);
     }
@@ -91,7 +96,11 @@ public sealed class PlayerScoresPipeline(
         }
 
         foreach (var tuple in contextsWithPoints)
+        {
             await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value);
+            await memberLevelStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key,
+                tuple.Value.Points.FirstOrDefault()?.Id ?? default);
+        }
     }
 
     public static async Task<Maybe<SongDifficultyId>> GetSongDifficultyIdAsync(
