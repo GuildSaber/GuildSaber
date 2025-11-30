@@ -6,7 +6,7 @@ namespace GuildSaber.Database.Models.Server.Guilds.Levels;
 
 public class DiffStarLevel : Level
 {
-    public required RankedMapRating.DifficultyStar? MinDiffStar { get; set; }
+    public required RankedMapRating.DifficultyStar MinDiffStar { get; set; }
     public required uint RequiredPassCount { get; set; }
 }
 
@@ -20,7 +20,6 @@ public class DiffStarLevelConfiguration : IEntityTypeConfiguration<DiffStarLevel
             .HasColumnName(nameof(RankedMapListLevel.RequiredPassCount));
 
         builder.Property(x => x.MinDiffStar)
-            .HasConversion<float?>(from => from.HasValue ? from.Value.Value : null,
-                to => to.HasValue ? new RankedMapRating.DifficultyStar(to.Value) : null);
+            .HasConversion<float>(from => from, to => new RankedMapRating.DifficultyStar(to));
     }
 }

@@ -6,7 +6,7 @@ namespace GuildSaber.Database.Models.Server.Guilds.Levels;
 
 public class AccStarLevel : Level
 {
-    public required RankedMapRating.AccuracyStar? MinAccStar { get; set; }
+    public required RankedMapRating.AccuracyStar MinAccStar { get; set; }
     public required uint RequiredPassCount { get; set; }
 }
 
@@ -20,7 +20,6 @@ public class AccStarLevelConfiguration : IEntityTypeConfiguration<AccStarLevel>
             .HasColumnName(nameof(RankedMapListLevel.RequiredPassCount));
 
         builder.Property(x => x.MinAccStar)
-            .HasConversion<float?>(from => from.HasValue ? from.Value.Value : null,
-                to => to.HasValue ? new RankedMapRating.AccuracyStar(to.Value) : null);
+            .HasConversion<float>(from => from, to => new RankedMapRating.AccuracyStar(to));
     }
 }
