@@ -20,6 +20,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj" />
+        <ProjectReference Include="..\..\clients\GuildSaber.CSharpClient\GuildSaber.CSharpClient.csproj" />
         <ProjectReference Include="..\GuildSaber.Database\GuildSaber.Database.csproj" />
     </ItemGroup>
 

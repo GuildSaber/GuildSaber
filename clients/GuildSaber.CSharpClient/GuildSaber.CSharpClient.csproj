@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net10.0;netstandard2.0</TargetFrameworks>
+        <LangVersion>13</LangVersion>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+        <PackageReference Include="PolySharp">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\src\GuildSaber.Api\Features\**\*Responses.cs" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="..\..\src\GuildSaber.Api\Features\**\*Requests.cs" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="..\..\src\GuildSaber.Api\Features\Internal\EOrder.cs" Link="Models\Internal\%(Filename)%(Extension)" />
+        <Compile Include="..\..\src\GuildSaber.Common\Services\**\*StrongTypes\*.cs" Link="Models\StrongTypes\%(Filename)%(Extension)" />
+        <Compile Include="..\..\src\GuildSaber.Common\GlobalUsings.cs" Link="%(Filename)%(Extension)" />
+
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CSharpFunctionalExtensions" />
+        <PackageReference Include="System.Text.Json" />
+    </ItemGroup>
+
+</Project>
