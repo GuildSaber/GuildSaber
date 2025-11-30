@@ -3,12 +3,53 @@ using CSharpFunctionalExtensions;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 
 namespace GuildSaber.Api.Features.Auth.Sessions;
 
-public class SessionValidator(ServerDbContext dbContext)
+public class SessionValidator(IServiceScopeFactory scopeFactory, HybridCache cache)
 {
+    private static readonly HybridCacheEntryOptions _cacheEntryOptions = new()
+    {
+        Expiration = TimeSpan.FromMinutes(2)
+    };
+
+    private static readonly Func<ServerDbContext, UuidV7, Task<SessionLightDto>> _getSessionByIdQuery
+        = EF.CompileAsyncQuery((ServerDbContext dbContext, UuidV7 sessionId) =>
+            dbContext.Sessions
+                .Where(x => x.SessionId == sessionId)
+                .Select(s => new SessionLightDto(s.SessionId, s.PlayerId, s.IsValid))
+                .Cast<SessionLightDto>()
+                .FirstOrDefault());
+
+    private static readonly Func<ServerDbContext, PlayerId, Task<bool>> _isPlayerManagerQuery
+        = EF.CompileAsyncQuery((ServerDbContext dbContext, PlayerId playerId) =>
+            dbContext.Players
+                .Where(x => x.Id == playerId)
+                .Select(x => x.IsManager)
+                .FirstOrDefault());
+
     private readonly record struct SessionLightDto(UuidV7 SessionId, PlayerId PlayerId, bool IsValid);
+
+    private ValueTask<SessionLightDto> GetSessionByIdAsync(UuidV7 sessionId)
+        => cache.GetOrCreateAsync($"Session_{sessionId}", (scopeFactory, sessionId),
+            async static (state, _) =>
+            {
+                await using var scope = state.scopeFactory.CreateAsyncScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
+
+                return await _getSessionByIdQuery(dbContext, state.sessionId);
+            }, _cacheEntryOptions);
+
+    private ValueTask<bool> IsPlayerManagerAsync(PlayerId playerId)
+        => cache.GetOrCreateAsync($"IsPlayerManager_{playerId}", (scopeFactory, playerId),
+            async static (state, _) =>
+            {
+                await using var scope = state.scopeFactory.CreateAsyncScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
+
+                return await _isPlayerManagerQuery(dbContext, state.playerId);
+            }, _cacheEntryOptions);
 
     /// <summary>
     /// Validates session existence and validity in database.
@@ -25,9 +66,7 @@ public class SessionValidator(ServerDbContext dbContext)
         if (principal?.Identity is not ClaimsIdentity identity)
             return Failure("Expected SessionPrincipal.Identity to be ClaimsIdentity");
 
-        var session = await dbContext.Sessions.Where(x => x.SessionId == sessionId)
-            .Select(s => new SessionLightDto(s.SessionId, s.PlayerId, s.IsValid))
-            .FirstOrDefaultAsync();
+        var session = await GetSessionByIdAsync(sessionId);
 
         if (session == default)
             return Failure("Invalid session");
@@ -35,12 +74,8 @@ public class SessionValidator(ServerDbContext dbContext)
         if (!session.IsValid)
             return Failure("Session is not valid");
 
-        var isManager = await dbContext.Players
-            .Where(x => x.Id == session.PlayerId)
-            .Select(x => x.IsManager)
-            .FirstOrDefaultAsync();
-
-        if (isManager) identity.AddClaim(new Claim(ClaimTypes.Role, AuthConstants.ManagerRole));
+        if (await IsPlayerManagerAsync(session.PlayerId))
+            identity.AddClaim(new Claim(ClaimTypes.Role, AuthConstants.ManagerRole));
 
         identity.AddClaim(new Claim(AuthConstants.PlayerIdClaimType, session.PlayerId.ToString()));
         return Success();

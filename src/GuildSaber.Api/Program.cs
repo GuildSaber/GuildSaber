@@ -251,25 +251,25 @@ builder.Services.AddOpenApi(options =>
         .AddTagDescriptionSupport()
         .AddScalarTransformers()
         .AddTypeTransformationSupport();
-}).AddValidation();
+});
 
-builder.Services.AddProblemDetails(options =>
-    options.CustomizeProblemDetails = context =>
+builder.Services.AddValidation();
+builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
+{
+    if (context.Exception is BadHttpRequestException badHttpRequestException)
     {
-        if (context.Exception is BadHttpRequestException badHttpRequestException)
-        {
-            context.ProblemDetails.Title = "Bad Request";
-            context.ProblemDetails.Detail = badHttpRequestException.Message;
-            context.ProblemDetails.Status = StatusCodes.Status400BadRequest;
+        context.ProblemDetails.Title = "Bad Request";
+        context.ProblemDetails.Detail = badHttpRequestException.Message;
+        context.ProblemDetails.Status = StatusCodes.Status400BadRequest;
 
-            context.HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-        }
-
-        context.ProblemDetails.Instance = $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
-        context.ProblemDetails.Extensions
-            .TryAdd("traceId", context.HttpContext.Features.Get<IHttpActivityFeature>()?.Activity.Id);
+        context.HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
     }
-).AddEndpoints<Program>(builder.Configuration);
+
+    context.ProblemDetails.Instance = $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
+    context.ProblemDetails.Extensions
+        .TryAdd("traceId", context.HttpContext.Features.Get<IHttpActivityFeature>()?.Activity.Id);
+});
+builder.Services.AddEndpoints<Program>(builder.Configuration);
 
 #endregion
 
