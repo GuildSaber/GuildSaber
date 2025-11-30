@@ -70,6 +70,9 @@ public class RankedMapRequest
     /// <param name="CategoryIds">
     /// The categories to assign the ranked map to.
     /// </param>
+    /// <param name="LevelIds">
+    /// The levels to assign the ranked map to (in case of RankedMapList levels).
+    /// </param>
     /// <remarks>
     /// If you want to create a ranked map with multiple map versions, create the ranked map with one map version first,
     /// then add the other map versions using the proper endpoint.
@@ -78,6 +81,7 @@ public class RankedMapRequest
         MapVersionRequests.AddMapVersion BaseMapVersion,
         RankedMapRequirements Requirements,
         ManualRating ManualRating,
-        int[] CategoryIds
+        int[] CategoryIds,
+        int[]? LevelIds
     );
 }

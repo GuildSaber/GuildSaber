@@ -14,7 +14,6 @@ public abstract class AbstractScore
     public ScoreId Id { get; set; }
     public required PlayerId PlayerId { get; init; }
     public required SongDifficultyId SongDifficultyId { get; init; }
-    public EScoreType Type { get; private init; }
 
     public required BaseScore BaseScore { get; init; }
     public required EModifiers Modifiers { get; init; }
@@ -24,8 +23,9 @@ public abstract class AbstractScore
     public required bool IsFullCombo { get; init; }
     public required int MissedNotes { get; init; }
     public required int BadCuts { get; init; }
-
     public required PlayerHardwareInfo.EHMD HMD { get; set; }
+
+    public EScoreType Type { get; private init; }
     public enum EScoreType : byte { ScoreSaber = 0, BeatLeader = 1 }
 
     public readonly record struct ScoreId(int Value) : IEFStrongTypedId<ScoreId, int>

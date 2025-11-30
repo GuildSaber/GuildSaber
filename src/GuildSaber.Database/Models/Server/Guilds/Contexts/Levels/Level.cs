@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using GuildSaber.Database.Extensions;
+using GuildSaber.Database.Models.Server.Guilds.Categories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -11,16 +12,15 @@ public abstract class Level
     public LevelId Id { get; init; }
     public Guild.GuildId GuildId { get; init; }
     public Context.ContextId ContextId { get; init; }
+    public Category.CategoryId? CategoryId { get; init; }
 
     public required LevelInfo Info { get; set; }
-    public required LevelRequirement Requirement { get; init; } = null!;
 
     public required uint Order { get; set; }
     public required bool NeedCompletion { get; set; }
 
     public ELevelType Type { get; private init; }
-
-    public enum ELevelType : byte { Global = 0, Category = 1, CategoryOverride = 2 }
+    public enum ELevelType : byte { RankedMapList = 0, DiffStar = 1, AccStar = 2 }
 
     [JsonConverter(typeof(LevelIdJsonConverter))]
     public readonly record struct LevelId(int Value) : IEFStrongTypedId<LevelId, int>
@@ -50,26 +50,32 @@ public class LevelConfiguration : IEntityTypeConfiguration<Level>
     public void Configure(EntityTypeBuilder<Level> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.HasIndex(x => new { x.GuildId, x.ContextId });
+        builder.HasIndex(x => new { x.GuildId, x.ContextId, x.CategoryId });
         builder.HasDiscriminator(x => x.Type)
-            .HasValue<GlobalLevel>(Level.ELevelType.Global)
-            .HasValue<CategoryLevel>(Level.ELevelType.Category)
-            .HasValue<CategoryLevelOverride>(Level.ELevelType.CategoryOverride)
+            .HasValue<RankedMapListLevel>(Level.ELevelType.RankedMapList)
+            .HasValue<DiffStarLevel>(Level.ELevelType.DiffStar)
+            .HasValue<AccStarLevel>(Level.ELevelType.AccStar)
             .IsComplete();
+
         builder.Property(x => x.Id)
             .HasGenericConversion<Level.LevelId, int>()
             .ValueGeneratedOnAdd();
 
         builder.ComplexProperty(x => x.Info).Configure(new LevelInfoConfiguration());
-        builder.ComplexProperty(x => x.Requirement).Configure(new LevelRequirementConfiguration());
+
+        builder.HasOne<Guild>()
+            .WithMany()
+            .HasForeignKey(x => x.GuildId);
 
         builder.HasOne<Context>()
             .WithMany(x => x.Levels)
             .HasForeignKey(x => x.ContextId);
 
-        builder.HasOne<Guild>()
+        builder.HasOne<Category>()
             .WithMany()
-            .HasForeignKey(x => x.GuildId);
+            .HasForeignKey(x => x.CategoryId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired(false);
     }
 }
 

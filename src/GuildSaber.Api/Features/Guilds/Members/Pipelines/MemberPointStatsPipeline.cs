@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using CommunityToolkit.Diagnostics;
 using GuildSaber.Api.Features.RankedScores;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
@@ -55,7 +54,7 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
 
     public async Task ExecuteAsync(PlayerId playerId, Context context)
     {
-        Guard.IsNotNull(context.Points);
+        ArgumentNullException.ThrowIfNull(context.Points);
 
         var categories = await dbContext.Categories
             .Where(c => c.GuildId == context.GuildId)
@@ -111,7 +110,7 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
                 x.ContextId == contextId &&
                 x.PlayerId == playerId &&
                 x.PointId == point.Id)
-            .Where(RankedScore.IsValidPassesExpression);
+            .Where(RankedScoreExtensions.IsValidPassesExpression);
 
         if (categoryId is not null)
             validPassesQuery = validPassesQuery.Where(x => x.RankedMap.Categories.Any(c => c.Id == categoryId));

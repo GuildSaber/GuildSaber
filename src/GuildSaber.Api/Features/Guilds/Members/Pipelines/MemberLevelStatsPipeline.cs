@@ -1,5 +1,5 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
-using CommunityToolkit.Diagnostics;
 using GuildSaber.Api.Features.RankedScores;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
@@ -7,13 +7,83 @@ using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.RankedMaps;
-using GuildSaber.Database.Models.Server.RankedScores;
 using Microsoft.EntityFrameworkCore;
+using AccStarQueryFunc = System.Func<
+    GuildSaber.Database.Contexts.Server.ServerDbContext,
+    GuildSaber.Database.Models.Server.Guilds.Guild.GuildId,
+    GuildSaber.Database.Models.Server.Guilds.Context.ContextId,
+    GuildSaber.Database.Models.Server.Players.Player.PlayerId,
+    GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId,
+    int?,
+    GuildSaber.Database.Models.Server.RankedMaps.RankedMapRating.AccuracyStar?,
+    int, System.Threading.Tasks.Task<bool>
+>;
+using DiffStarQueryFunc = System.Func<
+    GuildSaber.Database.Contexts.Server.ServerDbContext,
+    GuildSaber.Database.Models.Server.Guilds.Guild.GuildId,
+    GuildSaber.Database.Models.Server.Guilds.Context.ContextId,
+    GuildSaber.Database.Models.Server.Players.Player.PlayerId,
+    GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId,
+    int?,
+    GuildSaber.Database.Models.Server.RankedMaps.RankedMapRating.DifficultyStar?,
+    int, System.Threading.Tasks.Task<bool>
+>;
+using RankedMapListPassCountQueryFunc = System.Func<
+    GuildSaber.Database.Contexts.Server.ServerDbContext,
+    GuildSaber.Database.Models.Server.Guilds.Guild.GuildId,
+    GuildSaber.Database.Models.Server.Guilds.Context.ContextId,
+    GuildSaber.Database.Models.Server.Players.Player.PlayerId,
+    GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId,
+    GuildSaber.Database.Models.Server.Guilds.Levels.Level.LevelId,
+    int?, System.Threading.Tasks.Task<int>
+>;
 
 namespace GuildSaber.Api.Features.Guilds.Members.Pipelines;
 
 public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext)
 {
+    private static readonly AccStarQueryFunc _checkAccStarCompletionQuery = EF.CompileAsyncQuery((
+        ServerDbContext db, GuildId guildId, ContextId contextId, PlayerId playerId,
+        Point.PointId pointId, int? categoryId,
+        RankedMapRating.AccuracyStar? minAccStar, int skipCount) => db.RankedScores
+        .Where(x =>
+            x.GuildId == guildId &&
+            x.ContextId == contextId &&
+            x.PlayerId == playerId &&
+            x.PointId == pointId)
+        .Where(RankedScoreExtensions.IsValidPassesExpression)
+        .Where(x => categoryId == null || x.RankedMap.Categories.Any(c => c.Id == categoryId.Value))
+        .Where(x => minAccStar == null || x.RankedMap.Rating.AccStar >= minAccStar.Value)
+        .Skip(skipCount)
+        .Any());
+
+    private static readonly DiffStarQueryFunc _checkDiffStarCompletionQuery = EF.CompileAsyncQuery((
+        ServerDbContext db, GuildId guildId, ContextId contextId, PlayerId playerId,
+        Point.PointId pointId, int? categoryId,
+        RankedMapRating.DifficultyStar? minAccStar, int skipCount) => db.RankedScores
+        .Where(x =>
+            x.GuildId == guildId &&
+            x.ContextId == contextId &&
+            x.PlayerId == playerId &&
+            x.PointId == pointId)
+        .Where(RankedScoreExtensions.IsValidPassesExpression)
+        .Where(x => categoryId == null || x.RankedMap.Categories.Any(c => c.Id == categoryId.Value))
+        .Where(x => minAccStar == null || x.RankedMap.Rating.DiffStar >= minAccStar.Value)
+        .Skip(skipCount)
+        .Any());
+
+    private static readonly RankedMapListPassCountQueryFunc _getRankedMapListPassCountQuery = EF.CompileAsyncQuery((
+        ServerDbContext db, GuildId guildId, ContextId contextId, PlayerId playerId,
+        Point.PointId pointId, Level.LevelId levelId, int? categoryId) => db.RankedScores
+        .Where(x =>
+            x.GuildId == guildId &&
+            x.ContextId == contextId &&
+            x.PlayerId == playerId &&
+            x.PointId == pointId)
+        .Where(RankedScoreExtensions.IsValidPassesExpression)
+        .Where(x => x.RankedMap.Levels.Any(l => l.Id == levelId))
+        .Count(x => categoryId == null || x.RankedMap.Categories.Any(c => c.Id == categoryId.Value)));
+
     /// <summary>
     /// Recalculates level stats for a specific player in a specific context.
     /// </summary>
@@ -25,50 +95,19 @@ public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext)
     /// </param>
     public async Task ExecuteAsync(PlayerId playerId, GuildId guildId, ContextId contextId, Point.PointId pointId)
     {
-        var (levels, levelsStats, categories) = (
+        var (levels, levelsStats) = (
             await dbContext.Levels
                 .Where(x => x.ContextId == contextId)
-                .ToDictionaryAsync(x => x.Id),
+                .ToArrayAsync(),
             await dbContext.MemberLevelStats
                 .AsTracking()
                 .Where(x => x.PlayerId == playerId && x.ContextId == contextId)
-                .ToDictionaryAsync(x => (x.LevelId, x.CategoryId)),
-            await dbContext.Categories
-                .Where(x => x.GuildId == guildId)
-                .ToDictionaryAsync(x => x.Id)
+                .ToDictionaryAsync(x => x.LevelId)
         );
 
-        var levelToProcess = new Dictionary<(Level.LevelId, Category.CategoryId?), Level>();
-        // First, add all explicitly defined levels.
         foreach (var level in levels)
         {
-            var (levelId, categoryId) = level.Value switch
-            {
-                GlobalLevel => (level.Key, null as Category.CategoryId?),
-                CategoryLevel { CategoryId: var x } => (level.Key, x),
-                CategoryLevelOverride { BaseLevelId: var x, CategoryId: var y } => (x, y),
-                _ => ThrowHelper.ThrowInvalidOperationException<(Level.LevelId, Category.CategoryId?)>(
-                    "Unknown level type.")
-            };
-
-            levelToProcess.Add((levelId, categoryId), level.Value);
-        }
-
-        // Then, add all global levels that are not ignored in categories.
-        foreach (var level in levels.Where(x => x.Value is not GlobalLevel { IsIgnoredInCategories: true }))
-        foreach (var key in categories.Select(category => (level.Key, category.Key)))
-        {
-            ref var dictionaryValue = ref CollectionsMarshal.GetValueRefOrAddDefault(levelToProcess, key,
-                out var exists);
-            if (exists) continue;
-
-            dictionaryValue = levels[key.Item1];
-        }
-
-        // Now, ensure all level stats exist.
-        foreach (var (key, _) in levelToProcess)
-        {
-            ref var dictionaryValue = ref CollectionsMarshal.GetValueRefOrAddDefault(levelsStats, key,
+            ref var dictionaryValue = ref CollectionsMarshal.GetValueRefOrAddDefault(levelsStats, level.Id,
                 out var exists);
             if (exists) continue;
 
@@ -77,79 +116,89 @@ public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext)
                 GuildId = guildId,
                 ContextId = contextId,
                 PlayerId = playerId,
-                LevelId = key.Item1,
-                CategoryId = key.Item2
+                LevelId = level.Id
             };
 
             dbContext.MemberLevelStats.Add(dictionaryValue);
         }
 
-        var validQuery = dbContext.RankedScores
-            .Where(x =>
-                x.GuildId == guildId &&
-                x.ContextId == contextId &&
-                x.PlayerId == playerId &&
-                x.PointId == pointId)
-            .Where(RankedScore.IsValidPassesExpression);
-
-        var (passedMapsDiffDetailsGlobal, passedMapsDiffDetailsPerCategory) = (
-            await validQuery
-                .Select(x => x.RankedMap.Rating)
-                .ToArrayAsync(),
-            await validQuery
-                .SelectMany(x => x.RankedMap.Categories.Select(y => y.Id),
-                    (score, categoryId) => new
-                    {
-                        CategoryId = categoryId,
-                        score.RankedMap.Rating
-                    })
-                .GroupBy(x => x.CategoryId)
-                .ToDictionaryAsync(g => g.Key, g => g.Select(x => x.Rating).ToArray())
-        );
-
         var isLocked = new Dictionary<Category.CategoryId, bool>();
-        // Finally, recalculate all level stats in the correct order.
-        foreach (var (key, level) in levelToProcess.OrderBy(x => x.Value.Order))
+        foreach (var level in levels
+                     .GroupBy(x => x.CategoryId)
+                     .SelectMany(x => x.OrderBy(y => y.Order)))
         {
-            var categoryId = key.Item2;
-            var levelStat = levelsStats[key];
-            var passedMapsDiffDetails = categoryId is null
-                ? passedMapsDiffDetailsGlobal
-                : passedMapsDiffDetailsPerCategory[categoryId.Value];
+            var levelStat = levelsStats[level.Id];
+            await RecalculateMemberLevelStat(levelStat, level, pointId);
 
-            RecalculateLevelStatCompletion(levelStat, level.Requirement, passedMapsDiffDetails);
-            if (isLocked.TryGetValue(categoryId ?? default, out var blocked) && blocked)
+            if (isLocked.TryGetValue(level.CategoryId ?? default, out var blocked) && blocked)
                 levelStat.IsLocked = true;
 
             if (level.NeedCompletion && !levelStat.IsCompleted)
-                isLocked[categoryId ?? default] = true;
+                isLocked[level.CategoryId ?? default] = true;
         }
 
         await dbContext.SaveChangesAsync();
     }
 
-    public static void RecalculateLevelStatCompletion(
-        MemberLevelStat levelStat, LevelRequirement requirement, RankedMapRating[] passedMapsDiffDetails)
+    public ValueTask RecalculateMemberLevelStat(
+        MemberLevelStat memberLevelStat, Level level, Point.PointId pointId) => level switch
     {
-        switch (requirement.Type)
-        {
-            case LevelRequirement.ELevelRequirementType.DiffStar:
-                var minDiffStar = requirement.MinDiffStar;
-                var actualPasses = passedMapsDiffDetails.Count(x => x.DiffStar >= minDiffStar);
+        RankedMapListLevel rankedMapListLevel => RecalculateRankedMapListLevelStat(
+            memberLevelStat, rankedMapListLevel, pointId),
+        DiffStarLevel diffStarLevel => RecalculateDiffStarLevelStat(
+            memberLevelStat, diffStarLevel, pointId),
+        AccStarLevel accStarLevel => RecalculateAccStarLevelStat(
+            memberLevelStat, accStarLevel, pointId),
+        _ => throw new UnreachableException($"Unknown level type: {level.GetType().FullName}")
+    };
 
-                levelStat.PassCount = actualPasses;
-                levelStat.IsCompleted = actualPasses >= requirement.MinPassCount;
-                break;
-            case LevelRequirement.ELevelRequirementType.AccStar:
-                var minAccStar = requirement.MinAccStar;
-                actualPasses = passedMapsDiffDetails.Count(x => x.AccStar >= minAccStar);
+    public async ValueTask RecalculateRankedMapListLevelStat(
+        MemberLevelStat memberLevelStat, RankedMapListLevel level, Point.PointId pointId)
+    {
+        memberLevelStat.IsLocked = false;
+        memberLevelStat.PassCount = await _getRankedMapListPassCountQuery(
+            dbContext,
+            memberLevelStat.GuildId,
+            memberLevelStat.ContextId,
+            memberLevelStat.PlayerId,
+            pointId,
+            level.Id,
+            level.CategoryId
+        );
+        memberLevelStat.IsCompleted = memberLevelStat.PassCount >= level.RequiredPassCount;
+    }
 
-                levelStat.PassCount = actualPasses;
-                levelStat.IsCompleted = actualPasses >= requirement.MinPassCount;
-                break;
-            default:
-                ThrowHelper.ThrowInvalidOperationException($"Unknown level requirement type: {requirement.Type}");
-                break;
-        }
+    public async ValueTask RecalculateDiffStarLevelStat(
+        MemberLevelStat memberLevelStat, DiffStarLevel level, Point.PointId pointId)
+    {
+        memberLevelStat.IsLocked = false;
+        memberLevelStat.PassCount = null;
+        memberLevelStat.IsCompleted = await _checkDiffStarCompletionQuery(
+            dbContext,
+            memberLevelStat.GuildId,
+            memberLevelStat.ContextId,
+            memberLevelStat.PlayerId,
+            pointId,
+            level.CategoryId,
+            level.MinDiffStar,
+            (int)level.RequiredPassCount - 1
+        );
+    }
+
+    public async ValueTask RecalculateAccStarLevelStat(
+        MemberLevelStat memberLevelStat, AccStarLevel level, Point.PointId pointId)
+    {
+        memberLevelStat.IsLocked = false;
+        memberLevelStat.PassCount = null;
+        memberLevelStat.IsCompleted = await _checkAccStarCompletionQuery(
+            dbContext,
+            memberLevelStat.GuildId,
+            memberLevelStat.ContextId,
+            memberLevelStat.PlayerId,
+            pointId,
+            level.CategoryId,
+            level.MinAccStar,
+            (int)level.RequiredPassCount - 1
+        );
     }
 }

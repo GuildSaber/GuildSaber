@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using GuildSaber.Api.Extensions;
@@ -6,6 +7,7 @@ using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Api.Features.RankedMaps.MapVersions;
+using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Transformers;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
@@ -14,6 +16,7 @@ using GuildSaber.Common.Services.OldGuildSaber.Models;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Mappers;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
+using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -30,8 +33,7 @@ public class DebugEndpoints : IEndpoints
 
         group.MapGet("/import-old-gs-maps/{guildId}/stream", ImportOldGuildSaberMapsAsync)
             .WithSummary("Import ranked maps from old GuildSaber system.")
-            .WithDescription("Streams import progress via SSE. Import stops on client disconnect.")
-            .RequireManager();
+            .WithDescription("Streams import progress via SSE. Import stops on client disconnect.");
 
         group.MapPost("/import-beatleader-scores/{playerId}", EnqueueBeatLeaderPlayerScoresImportAsync)
             .WithSummary("Enqueue BeatLeader player scores import.")
@@ -80,6 +82,11 @@ public class DebugEndpoints : IEndpoints
             .WithDescription("Recalculates member levels for all contexts the player is a member of.")
             .RequireManager();
 
+        group.MapPost("/refetch-player-ranked-scores/{playerId}", RefetchPlayerRankedScores)
+            .WithSummary("Refetch player ranked scores.")
+            .WithDescription("Refetches all ranked scores for the specified player.")
+            .RequireManager();
+
         group.MapPost("delete-member-point-stats/{playerId}", async (PlayerId playerId, ServerDbContext dbContext) =>
             {
                 await dbContext.MemberPointStats
@@ -89,6 +96,25 @@ public class DebugEndpoints : IEndpoints
             }).WithSummary("Delete all member point stats for a player.")
             .WithDescription("Deletes all member point stats for the specified player. USE WITH CAUTION!")
             .RequireManager();
+    }
+
+    private static async Task<Ok> RefetchPlayerRankedScores(
+        PlayerId playerId, ServerDbContext dbContext,
+        IBackgroundTaskQueue taskQueue,
+        IServiceScopeFactory serviceScopeFactory)
+    {
+        var scores = await dbContext.Scores.Where(x => x.PlayerId == playerId)
+            .ToListAsync();
+
+        await taskQueue.QueueBackgroundWorkItemAsync(async _ =>
+        {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+            var pipeline = scope.ServiceProvider.GetRequiredService<ScoreAddOrUpdatePipeline>();
+
+            foreach (var rankedScore in scores) await pipeline.ExecuteAsync(rankedScore);
+        });
+
+        return TypedResults.Ok();
     }
 
     private static async Task<Ok> RecalculateMemberPointStats(
@@ -232,13 +258,16 @@ public class DebugEndpoints : IEndpoints
         };
 
         var categories = await dbContext.Categories.Where(x => x.GuildId == guildId).ToListAsync(token);
+        var levels = await dbContext.Levels
+            .OfType<RankedMapListLevel>()
+            .Where(x => x.GuildId == guildId && x.ContextId == contextId)
+            .ToListAsync(token);
         if (!(await oldGuildSaberApi.GetRankingLevelsAsync(guildId.Value)).TryGetValue(out var guildRankingLevels))
             yield break;
 
         if (!(await oldGuildSaberApi.GetRankingCategoriesAsync(guildId.Value)).TryGetValue(out var oldCategories))
             yield break;
 
-        var levelDict = guildRankingLevels.ToDictionary(x => x.Id, x => x);
         foreach (var oldCategory in oldCategories)
         {
             if (categories.Any(x => x.Info.Name == oldCategory.Name))
@@ -259,9 +288,81 @@ public class DebugEndpoints : IEndpoints
 
         await dbContext.SaveChangesAsync(token);
         dbContext.ChangeTracker.Clear();
+
         var categoryDict = oldCategories
             .Join(categories, o => o.Name, n => n.Info.Name, (o, n) => (Old: o, New: n))
-            .ToDictionary(x => x.Old.Id, x => x.New.Id);
+            .ToDictionary(x => x.Old.Id, x => x.New);
+
+        var levelDict = new Dictionary<(int, int), (RankedMapListLevel, float)>();
+        foreach (var oldLevel in guildRankingLevels.OrderBy(x => x.LevelNumber))
+        {
+            var level = levels.FirstOrDefault(x =>
+                x.GuildId == guildId &&
+                x.ContextId == contextId &&
+                x.CategoryId == null &&
+                x.Info.Name == $"Level {oldLevel.LevelNumber:G}");
+            if (level is null)
+            {
+                level = new RankedMapListLevel
+                {
+                    GuildId = guildId,
+                    ContextId = contextId,
+                    CategoryId = null,
+                    Info = new LevelInfo
+                    {
+                        Name = Name_2_50.CreateUnsafe($"Level {oldLevel.LevelNumber:G}").Value,
+                        Color = Color.FromArgb(oldLevel.Color)
+                    },
+                    Order = await dbContext.Levels
+                        .Where(x => x.GuildId == guildId && x.ContextId == contextId && x.CategoryId == null)
+                        .MaxAsync(x => (uint?)x.Order, token) ?? 0 + 1,
+                    NeedCompletion = true,
+                    RequiredPassCount = 1
+                };
+
+                dbContext.Levels.Add(level);
+            }
+
+            levelDict[(oldLevel.Id, 0)] = (level, oldLevel.LevelNumber);
+
+            foreach (var oldCategory in oldCategories)
+            {
+                var category = categoryDict[oldCategory.Id];
+                var categoryLevel = levels.FirstOrDefault(x =>
+                    x.GuildId == guildId &&
+                    x.ContextId == contextId &&
+                    x.CategoryId == category.Id &&
+                    x.Info.Name == $"Level {oldLevel.LevelNumber:G} - {category.Info.Name}"
+                );
+                if (categoryLevel is null)
+                {
+                    categoryLevel = new RankedMapListLevel
+                    {
+                        GuildId = guildId,
+                        ContextId = contextId,
+                        CategoryId = category.Id,
+                        Info = new LevelInfo
+                        {
+                            Name = Name_2_50.CreateUnsafe($"Level {oldLevel.LevelNumber:G} - {category.Info.Name}")
+                                .Value,
+                            Color = Color.FromArgb(oldLevel.Color)
+                        },
+                        Order = await dbContext.Levels
+                            .Where(x => x.GuildId == guildId && x.ContextId == contextId && x.CategoryId != null)
+                            .MaxAsync(x => (uint?)x.Order, token) ?? 0 + 1,
+                        NeedCompletion = true,
+                        RequiredPassCount = 1
+                    };
+
+                    dbContext.Levels.Add(categoryLevel);
+                }
+
+                levelDict[(oldLevel.Id, oldCategory.Id)] = (categoryLevel, oldLevel.LevelNumber);
+            }
+        }
+
+        await dbContext.SaveChangesAsync(token);
+        dbContext.ChangeTracker.Clear();
 
         await foreach (var guildRankedMapsResult in oldGuildSaberApi.GetGuildRankedMaps(guildId.Value, request)
                            .WithCancellation(token))
@@ -273,16 +374,22 @@ public class DebugEndpoints : IEndpoints
             foreach (var difficulty in rankedMap.Difficulties.Where(x => x.GameModeName is not null))
             {
                 if (await dbContext.RankedMaps.AnyAsync(MapDifficultyIsAlreadyRankedOnGuild(
-                            guildId, difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId!.Value, dbContext),
+                            guildId, difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId!.Value,
+                            difficulty.GameModeName!, dbContext),
                         token))
                     continue;
 
-                var level = levelDict[difficulty.LevelId];
+                var (level, levelNumber) = levelDict[(difficulty.LevelId, difficulty.GuildCategoryId ?? 0)];
+                var levelIds = new int[2];
+                levelIds[0] = level.Id;
+                if (difficulty.GuildCategoryId.HasValue && difficulty.GuildCategoryId != 0)
+                    levelIds[1] = levelDict[(difficulty.LevelId, 0)].Item1.Id;
+
                 var createRankedMap = new RankedMapRequest.CreateRankedMap
                 (
                     ManualRating: new RankedMapRequest.ManualRating(
-                        DifficultyStar: level.LevelNumber,
-                        AccuracyStar: null),
+                        DifficultyStar: levelNumber,
+                        AccuracyStar: 0f),
                     Requirements: new RankedMapRequest.RankedMapRequirements(
                         NeedConfirmation: difficulty.Requirements.HasFlag(ERequirements.NeedAdminConfirmation),
                         NeedFullCombo: difficulty.Requirements.HasFlag(ERequirements.FullCombo),
@@ -299,8 +406,9 @@ public class DebugEndpoints : IEndpoints
                         PlayMode: "Standard",
                         Order: 0),
                     CategoryIds: difficulty.GuildCategoryId.HasValue && difficulty.GuildCategoryId != 0
-                        ? [categoryDict[difficulty.GuildCategoryId.Value]]
-                        : []
+                        ? [categoryDict[difficulty.GuildCategoryId.Value].Id]
+                        : [],
+                    LevelIds: levelIds
                 );
 
                 var tryCount = 0;
@@ -333,8 +441,9 @@ public class DebugEndpoints : IEndpoints
     }
 
     private static Expression<Func<RankedMap, bool>> MapDifficultyIsAlreadyRankedOnGuild(
-        GuildId guildId, EDifficulty difficulty, BeatSaverKey beatSaverKey, ServerDbContext dbContext)
+        GuildId guildId, EDifficulty difficulty, BeatSaverKey beatSaverKey, string gameMode, ServerDbContext dbContext)
         => rankedMap => rankedMap.GuildId == guildId
+                        && rankedMap.MapVersions.Any(y => y.SongDifficulty.GameMode.Name.Contains(gameMode))
                         && rankedMap.MapVersions.Any(y => y.SongDifficulty.Difficulty == difficulty)
                         && rankedMap.MapVersions.Any(y => dbContext
                             .Songs.Any(z => z.Id == y.SongId && z.BeatSaverKey == beatSaverKey));

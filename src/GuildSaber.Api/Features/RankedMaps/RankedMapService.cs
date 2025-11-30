@@ -10,6 +10,7 @@ using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds.Boosts;
+using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
@@ -245,16 +246,38 @@ public class RankedMapService(
 
         var categories = await dbContext.Categories
             .AsTracking()
-            .Where(x => request.CategoryIds.Contains(x.Id) && x.GuildId == guildId)
-            .ToListAsync();
+            .Where(x => ((IEnumerable<int>)request.CategoryIds).Contains(x.Id) && x.GuildId == guildId)
+            .ToArrayAsync();
 
-        var categoryErrors = request.CategoryIds
-            .Where(categoryId => categories.All(x => x.Id != categoryId))
-            .Select(categoryId => $"Category with ID '{categoryId}' does not exist in the guild.")
-            .ToArray();
+        if (categories.Length != request.CategoryIds.Length)
+        {
+            var categoryErrors = request.CategoryIds
+                .Where(categoryId => categories.All(x => x.Id != categoryId))
+                .Select(categoryId => $"Category with ID '{categoryId}' does not exist in the guild.")
+                .ToArray();
 
-        if (categoryErrors.Length > 0)
             errors.Add(new KeyValuePair<string, string[]>("CategoryIds", categoryErrors));
+        }
+
+        var levels = request.LevelIds is { Length: > 0 }
+            ? await dbContext.Levels
+                .AsTracking()
+                .OfType<RankedMapListLevel>()
+                .Where(x => ((IEnumerable<int>)request.LevelIds).Contains(x.Id) && x.GuildId == guildId)
+                .ToArrayAsync()
+            : [];
+
+        if (request.LevelIds is { Length: > 0 })
+            if (levels.Length != request.LevelIds.Length)
+            {
+                var levelErrors = request.LevelIds
+                    .Where(levelId => levels.All(x => x.Id != levelId))
+                    .Select(levelId =>
+                        $"Level with ID '{levelId}' does not exist in the guild or is not of type RankedMapListLevel.")
+                    .ToArray();
+
+                errors.Add(new KeyValuePair<string, string[]>("LevelIds", levelErrors));
+            }
 
         if (errors.Count > 0)
             return Failure<RankedMap, List<KeyValuePair<string, string[]>>>(errors);
@@ -323,7 +346,8 @@ public class RankedMapService(
                     Order = 0
                 }
             ],
-            Categories = categories
+            Categories = categories,
+            Levels = levels
         };
     }
 

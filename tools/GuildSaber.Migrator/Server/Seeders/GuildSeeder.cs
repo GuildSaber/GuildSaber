@@ -56,7 +56,7 @@ public static class GuildSeeder
         if (await dbContext.Guilds.AnyAsync(cancellationToken))
             return;
 
-        await dbContext.Guilds.AddRangeAsync(DefaultGuilds, cancellationToken);
+        dbContext.Guilds.AddRange(DefaultGuilds);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

@@ -14,7 +14,8 @@ public static class ContextSeeder
         dbContext.Contexts.AddRange(
             new Context
             {
-                Id = new Context.ContextId(2),
+                Id = new Context.ContextId(1),
+                GuildId = new Guild.GuildId(1),
                 Type = Context.EContextType.Default,
                 Info = new ContextInfo
                 {
@@ -24,7 +25,8 @@ public static class ContextSeeder
             },
             new Context
             {
-                Id = new Context.ContextId(1),
+                Id = new Context.ContextId(2),
+                GuildId = new Guild.GuildId(2),
                 Type = Context.EContextType.Default,
                 Info = new ContextInfo
                 {
