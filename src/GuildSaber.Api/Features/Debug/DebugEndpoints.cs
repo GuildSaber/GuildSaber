@@ -316,7 +316,7 @@ public class DebugEndpoints : IEndpoints
                     Order = await dbContext.Levels
                         .Where(x => x.GuildId == guildId && x.ContextId == contextId && x.CategoryId == null)
                         .MaxAsync(x => (uint?)x.Order, token) ?? 0 + 1,
-                    NeedCompletion = true,
+                    IsLocking = true,
                     RequiredPassCount = 1
                 };
 
@@ -350,7 +350,7 @@ public class DebugEndpoints : IEndpoints
                         Order = await dbContext.Levels
                             .Where(x => x.GuildId == guildId && x.ContextId == contextId && x.CategoryId != null)
                             .MaxAsync(x => (uint?)x.Order, token) ?? 0 + 1,
-                        NeedCompletion = true,
+                        IsLocking = true,
                         RequiredPassCount = 1
                     };
 

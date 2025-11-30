@@ -17,7 +17,7 @@ public abstract class Level
     public required LevelInfo Info { get; set; }
 
     public required uint Order { get; set; }
-    public required bool NeedCompletion { get; set; }
+    public required bool IsLocking { get; set; }
 
     public ELevelType Type { get; private init; }
     public enum ELevelType : byte { RankedMapList = 0, DiffStar = 1, AccStar = 2 }

@@ -14,7 +14,7 @@ public static class LevelStatMappers
                 level.CategoryId.HasValue ? level.CategoryId.Value.Value : null,
                 new LevelStatResponses.LevelInfo(level.Info.Name, level.Info.Color.ToArgb()),
                 (int)level.Order,
-                level.NeedCompletion,
+                level.IsLocking,
                 (int)((RankedMapListLevel)level).RequiredPassCount)
             : level.Type == Level.ELevelType.DiffStar
                 ? new LevelStatResponses.Level.DiffStarLevel(
@@ -22,7 +22,7 @@ public static class LevelStatMappers
                     level.CategoryId.HasValue ? level.CategoryId.Value.Value : null,
                     new LevelStatResponses.LevelInfo(level.Info.Name, level.Info.Color.ToArgb()),
                     (int)level.Order,
-                    level.NeedCompletion,
+                    level.IsLocking,
                     ((DiffStarLevel)level).MinDiffStar,
                     (int)((DiffStarLevel)level).RequiredPassCount)
                 : new LevelStatResponses.Level.AccStarLevel(
@@ -30,7 +30,7 @@ public static class LevelStatMappers
                     level.CategoryId.HasValue ? level.CategoryId.Value.Value : null,
                     new LevelStatResponses.LevelInfo(level.Info.Name, level.Info.Color.ToArgb()),
                     (int)level.Order,
-                    level.NeedCompletion,
+                    level.IsLocking,
                     ((AccStarLevel)level).MinAccStar,
                     (int)((AccStarLevel)level).RequiredPassCount);
 

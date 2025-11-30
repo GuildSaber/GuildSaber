@@ -133,7 +133,7 @@ public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext)
             if (isLocked.TryGetValue(level.CategoryId ?? default, out var blocked) && blocked)
                 levelStat.IsLocked = true;
 
-            if (level.NeedCompletion && !levelStat.IsCompleted)
+            if (level.IsLocking && !levelStat.IsCompleted)
                 isLocked[level.CategoryId ?? default] = true;
         }
 

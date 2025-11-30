@@ -25,7 +25,7 @@ public static class LevelStatResponses
         int? CategoryId,
         LevelInfo Info,
         int Order,
-        bool NeedCompletion
+        bool IsLocking
     )
     {
         public sealed record RankedMapListLevel(
@@ -33,28 +33,28 @@ public static class LevelStatResponses
             int? CategoryId,
             LevelInfo Info,
             int Order,
-            bool NeedCompletion,
+            bool IsLocking,
             int RequiredPassCount
-        ) : Level(Id, CategoryId, Info, Order, NeedCompletion);
+        ) : Level(Id, CategoryId, Info, Order, IsLocking);
 
         public sealed record DiffStarLevel(
             int Id,
             int? CategoryId,
             LevelInfo Info,
             int Order,
-            bool NeedCompletion,
+            bool IsLocking,
             float? MinDiffStar,
             int RequiredPassCount
-        ) : Level(Id, CategoryId, Info, Order, NeedCompletion);
+        ) : Level(Id, CategoryId, Info, Order, IsLocking);
 
         public sealed record AccStarLevel(
             int Id,
             int? CategoryId,
             LevelInfo Info,
             int Order,
-            bool NeedCompletion,
+            bool IsLocking,
             float? MinAccStar,
             int RequiredPassCount
-        ) : Level(Id, CategoryId, Info, Order, NeedCompletion);
+        ) : Level(Id, CategoryId, Info, Order, IsLocking);
     }
 }
