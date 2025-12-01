@@ -1,0 +1,84 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
+using CSharpFunctionalExtensions;
+using GuildSaber.Api.Features.Guilds;
+using GuildSaber.Api.Features.Internal;
+using GuildSaber.CSharpClient.Routes.Internal;
+using static GuildSaber.Api.Features.Guilds.GuildResponses;
+
+namespace GuildSaber.CSharpClient.Routes.Guilds;
+
+public sealed class GuildClient(HttpClient httpClient, JsonSerializerOptions jsonOptions)
+{
+    private Uri GetGuildsUrl(string? search, PaginatedRequestOptions<GuildRequests.EGuildSorter> requestOptions)
+        => new(
+            $"guilds?{(search is null ? "" : $"search={search}&")}page={requestOptions.Page}&pageSize={requestOptions.PageSize}" +
+            $"&order={requestOptions.Order}&sortBy={requestOptions.SortBy}",
+            UriKind.Relative
+        );
+
+    public async Task<Result<Guild?>> GetByIdAsync(int guildId, CancellationToken token)
+        => await httpClient.GetAsync($"guilds/{guildId}", token).ConfigureAwait(false) switch
+        {
+            { StatusCode: HttpStatusCode.NotFound } => Success<Guild?>(null),
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<Guild?>(
+                    $"Failed to retrieve guild with ID {guildId}, status code: {(int)statusCode} ({reasonPhrase})"),
+            var response => await Try(() => response.Content
+                .ReadFromJsonAsync<Guild>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+        };
+
+    public async Task<Result<PagedList<Guild>>> GetAsync(
+        string? search, PaginatedRequestOptions<GuildRequests.EGuildSorter> requestOptions, CancellationToken token)
+        => await httpClient.GetAsync(GetGuildsUrl(search, requestOptions), token).ConfigureAwait(false) switch
+        {
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<PagedList<Guild>>(
+                    $"Failed to retrieve guilds at page {requestOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
+            var response => await Try(() => response.Content
+                .ReadFromJsonAsync<PagedList<Guild>>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+        };
+
+    /// <summary>
+    /// Asynchronously retrieves guilds with customizable pagination, sorting, and ordering.
+    /// </summary>
+    /// <param name="search">Optional search term to filter guilds by name.</param>
+    /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <returns>
+    /// An async enumerable sequence of <see cref="Result{T}" /> containing nullable arrays of
+    /// <see cref="Guild" />.
+    /// </returns>
+    /// <remarks>
+    /// Each successful result contains:
+    /// - A page of guilds when data is available
+    /// - An empty array when no more data is available (HTTP 2XX)
+    /// Enumeration stops automatically after receiving null, an empty array, or an error.
+    /// </remarks>
+    public async IAsyncEnumerable<Result<Guild[]>> GetAsyncEnumerable(
+        string? search,
+        PaginatedRequestOptions<GuildRequests.EGuildSorter> requestOptions)
+    {
+        while (requestOptions.Page <= requestOptions.MaxPage)
+        {
+            var url = GetGuildsUrl(search, requestOptions);
+            var response = await httpClient.GetAsync(url).ConfigureAwait(false);
+            requestOptions.Page++;
+
+            Result<Guild[]> result;
+            yield return result = response switch
+            {
+                { IsSuccessStatusCode: false } => Failure<Guild[]>(
+                    $"Failed to retrieve guilds at page {requestOptions.Page - 1}" +
+                    $": {response.StatusCode} {response.ReasonPhrase}"),
+                _ => await Try(() => response.Content
+                        .ReadFromJsonAsync<PagedList<Guild>>(jsonOptions))
+                    .Map(Guild[] (parsed) => parsed.Data)
+                    .ConfigureAwait(false)
+            };
+
+            if (result is { IsFailure: true } or { Value: null or [] })
+                yield break;
+        }
+    }
+}

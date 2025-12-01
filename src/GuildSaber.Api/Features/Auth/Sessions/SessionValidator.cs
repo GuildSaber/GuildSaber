@@ -19,7 +19,6 @@ public class SessionValidator(IServiceScopeFactory scopeFactory, HybridCache cac
             dbContext.Sessions
                 .Where(x => x.SessionId == sessionId)
                 .Select(s => new SessionLightDto(s.SessionId, s.PlayerId, s.IsValid))
-                .Cast<SessionLightDto>()
                 .FirstOrDefault());
 
     private static readonly Func<ServerDbContext, PlayerId, Task<bool>> _isPlayerManagerQuery

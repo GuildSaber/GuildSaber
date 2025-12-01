@@ -22,7 +22,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\aspire\GuildSaber.AppHost\GuildSaber.AppHost.csproj" />
-        <ProjectReference Include="..\..\src\GuildSaber.Api\GuildSaber.Api.csproj" />
+        <ProjectReference Include="..\..\clients\GuildSaber.CSharpClient\GuildSaber.CSharpClient.csproj" />
     </ItemGroup>
 
 </Project>

@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net10.0;netstandard2.0</TargetFrameworks>
-        <LangVersion>13</LangVersion>
+        <LangVersion>14</LangVersion>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
@@ -14,16 +14,18 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="..\..\src\GuildSaber.Api\Features\**\*Responses.cs" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" />
-        <Compile Include="..\..\src\GuildSaber.Api\Features\**\*Requests.cs" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" />
-        <Compile Include="..\..\src\GuildSaber.Api\Features\Internal\EOrder.cs" Link="Models\Internal\%(Filename)%(Extension)" />
-        <Compile Include="..\..\src\GuildSaber.Common\Services\**\*StrongTypes\*.cs" Link="Models\StrongTypes\%(Filename)%(Extension)" />
+        <Compile Include="..\..\src\GuildSaber.Api\Features\**\*Responses.cs" Link="Routes\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="..\..\src\GuildSaber.Api\Features\**\*Requests.cs" Link="Routes\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Compile Include="..\..\src\GuildSaber.Api\Features\Internal\*.cs" Link="Routes\Internal\%(Filename)%(Extension)" />
+        <Compile Remove="..\..\src\GuildSaber.Api\Features\Internal\*Extensions.cs" Link="Routes\Internal\%(Filename)%(Extension)" />
+        <Compile Include="..\..\src\GuildSaber.Common\Services\**\*StrongTypes\*.cs" Link="StrongTypes\%(Filename)%(Extension)" />
         <Compile Include="..\..\src\GuildSaber.Common\GlobalUsings.cs" Link="%(Filename)%(Extension)" />
 
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="CSharpFunctionalExtensions" />
+        <PackageReference Include="System.Net.Http.Json" />
         <PackageReference Include="System.Text.Json" />
     </ItemGroup>
 

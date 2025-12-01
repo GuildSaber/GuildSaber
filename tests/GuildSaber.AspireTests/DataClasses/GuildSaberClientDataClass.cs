@@ -1,19 +1,12 @@
-﻿using System.Text.Json;
-using System.Text.Json.Serialization;
+﻿using GuildSaber.CSharpClient;
 using TUnit.Core.Interfaces;
 
 namespace GuildSaber.AspireTests.Data;
 
-public class HttpClientDataClass : IAsyncInitializer, IAsyncDisposable
+public class GuildSaberClientDataClass : IAsyncInitializer, IAsyncDisposable
 {
-    public HttpClient HttpClient { get; private set; } = new();
-
-    public JsonSerializerOptions JsonSerializerOptions { get; } = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
-    };
+    public HttpClient HttpClient { get; private set; } = null!;
+    public GuildSaberClient GuildSaberClient { get; private set; } = null!;
 
     public async ValueTask DisposeAsync()
         => await Console.Out.WriteLineAsync("And when the class is finished with, we can clean up any resources.");
@@ -21,6 +14,7 @@ public class HttpClientDataClass : IAsyncInitializer, IAsyncDisposable
     public async Task InitializeAsync()
     {
         HttpClient = GlobalHooks.App!.CreateHttpClient("api");
+        GuildSaberClient = new GuildSaberClient(HttpClient.BaseAddress!, HttpClient);
         if (GlobalHooks.NotificationService is null) return;
 
         await GlobalHooks.NotificationService

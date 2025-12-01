@@ -118,8 +118,8 @@ public class RankedScoreEndpoints : IEndpoints
         float? bpmFrom = null,
         float? bpmTo = null
     ) => GetPlayerRankedScoresWithRankedMapAsync(claimsPrincipal.GetPlayerId()!.Value, contextId, dbContext, page,
-        pageSize, sortBy, order, difficultyStarFrom, accuracyStarFrom, difficultyStarTo, accuracyStarTo, bpmFrom,
-        bpmTo);
+        pageSize,
+        sortBy, order, difficultyStarFrom, accuracyStarFrom, difficultyStarTo, accuracyStarTo, bpmFrom, bpmTo);
 
     public static async Task<Ok<PagedList<RankedScoreWithRankedMap>>> GetPlayerRankedScoresWithRankedMapAsync(
         PlayerId playerId,
