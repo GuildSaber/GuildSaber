@@ -32,6 +32,7 @@
 	<s:String x:Key="/Default/Environment/Hierarchy/NuGetOptions/DefaultPackageManagementFormat/@EntryValue">PackageReference</s:String>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=affero/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=agpl/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=appsettings/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=arpara/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=beatleader/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=discordbot/@EntryIndexedValue">True</s:Boolean>

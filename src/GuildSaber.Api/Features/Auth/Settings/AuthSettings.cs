@@ -12,6 +12,7 @@ public class AuthSettings
     [Required] public required DiscordAuthSettings Discord { get; init; }
     [Required] public required RedirectSettings Redirect { get; init; }
     [Required] public required ManagerSettings Manager { get; init; }
+    [Required] public required ApiKeyAuthSettings ApiKey { get; init; }
 }
 
 public class ManagerSettings
@@ -47,4 +48,9 @@ public class DiscordAuthSettings
 {
     [Required] public required string ClientId { get; init; }
     [Required] public required string ClientSecret { get; init; }
+}
+
+public class ApiKeyAuthSettings
+{
+    [Required] public required string Key { get; init; }
 }

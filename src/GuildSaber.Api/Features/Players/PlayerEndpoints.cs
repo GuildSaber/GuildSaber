@@ -36,16 +36,12 @@ public class PlayerEndpoints : IEndpoints
             .RequireAuthorization();
     }
 
-    private static async Task<Results<Ok<PlayerAtMe>, NotFound>> GetPlayerAtMeAsync(
+    private static async Task<Ok<PlayerAtMe>> GetPlayerAtMeAsync(
         ServerDbContext dbContext, ClaimsPrincipal claimsPrincipal)
-        => await dbContext.Players
-                .Where(x => x.Id == claimsPrincipal.GetPlayerId())
-                .Select(PlayerMappers.MapPlayerAtMeExpression)
-                .FirstOrDefaultAsync() switch
-            {
-                { Player.Id: 0 } => TypedResults.NotFound(),
-                var player => TypedResults.Ok(player)
-            };
+        => TypedResults.Ok(await dbContext.Players
+            .Where(x => x.Id == claimsPrincipal.GetPlayerId())
+            .Select(PlayerMappers.MapPlayerAtMeExpression)
+            .FirstAsync());
 
     private static async Task<Results<Ok<Player>, NotFound>> GetPlayerAsync(
         PlayerId playerId, ServerDbContext dbContext)
@@ -63,7 +59,7 @@ public class PlayerEndpoints : IEndpoints
         [Range(1, int.MaxValue)] int page = 1,
         [Range(1, 100)] int pageSize = 10,
         string? search = null,
-        PlayerRequests.EPlayerSorters sortBy = PlayerRequests.EPlayerSorters.CreationDate,
+        PlayerRequests.EPlayerSorter sortBy = PlayerRequests.EPlayerSorter.CreationDate,
         EOrder order = EOrder.Desc)
     {
         var query = dbContext.Players.AsQueryable();
@@ -80,10 +76,10 @@ public class PlayerEndpoints : IEndpoints
 public static class PlayerExtensions
 {
     public static IQueryable<ServerPlayer> ApplySortOrder(
-        this IQueryable<ServerPlayer> query, PlayerRequests.EPlayerSorters sortBy, EOrder order) => sortBy switch
+        this IQueryable<ServerPlayer> query, PlayerRequests.EPlayerSorter sortBy, EOrder order) => sortBy switch
     {
-        PlayerRequests.EPlayerSorters.Id => query.OrderBy(order, x => x.Id),
-        PlayerRequests.EPlayerSorters.CreationDate => query.OrderBy(order, x => x.Info.CreatedAt)
+        PlayerRequests.EPlayerSorter.Id => query.OrderBy(order, x => x.Id),
+        PlayerRequests.EPlayerSorter.CreationDate => query.OrderBy(order, x => x.Info.CreatedAt)
             .ThenBy(order, x => x.Id),
         _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
     };

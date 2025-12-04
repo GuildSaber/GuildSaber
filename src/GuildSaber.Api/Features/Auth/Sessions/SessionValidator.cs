@@ -57,7 +57,7 @@ public class SessionValidator(IServiceScopeFactory scopeFactory, HybridCache cac
     /// <param name="sessionId">Session identifier to validate</param>
     /// <param name="principal">Principal to enrich if session is valid</param>
     /// <remarks>
-    /// It doesn't checks for the session time because the jwt should have been checked by its authentication handler.
+    /// It doesn't check for the session time because the jwt should have been checked by its authentication handler.
     /// </remarks>
     /// <returns>True if session is valid, otherwise False</returns>
     public async Task<UnitResult<string>> ValidateSessionAsync(UuidV7 sessionId, ClaimsPrincipal? principal)

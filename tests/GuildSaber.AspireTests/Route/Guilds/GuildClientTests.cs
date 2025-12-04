@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 using AwesomeAssertions;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Internal;
-using GuildSaber.AspireTests.Data;
+using GuildSaber.AspireTests.DataClasses;
 using GuildSaber.AspireTests.Utils;
 using GuildSaber.CSharpClient.Routes.Internal;
 using static GuildSaber.Api.Features.Guilds.GuildResponses;

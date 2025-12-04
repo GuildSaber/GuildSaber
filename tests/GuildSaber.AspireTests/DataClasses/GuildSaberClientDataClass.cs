@@ -1,7 +1,7 @@
 ﻿using GuildSaber.CSharpClient;
 using TUnit.Core.Interfaces;
 
-namespace GuildSaber.AspireTests.Data;
+namespace GuildSaber.AspireTests.DataClasses;
 
 public class GuildSaberClientDataClass : IAsyncInitializer, IAsyncDisposable
 {

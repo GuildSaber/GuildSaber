@@ -5,6 +5,8 @@ using System.Text.Json.Serialization;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth;
 using GuildSaber.Api.Features.Auth.Authorization;
+using GuildSaber.Api.Features.Auth.CustomApiKey;
+using GuildSaber.Api.Features.Auth.CustomApiKey.Interfaces;
 using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Guilds;
@@ -60,6 +62,9 @@ builder.Services
     .AddOptionsWithValidateOnStart<DiscordAuthSettings>()
     .Bind(authSettings.GetSection(nameof(AuthSettings.Discord))).ValidateDataAnnotations();
 builder.Services
+    .AddOptionsWithValidateOnStart<ApiKeyAuthSettings>()
+    .Bind(authSettings.GetSection(nameof(AuthSettings.ApiKey))).ValidateDataAnnotations();
+builder.Services
     .AddOptionsWithValidateOnStart<RedirectSettings>()
     .Bind(authSettings.GetSection(nameof(AuthSettings.Redirect))).ValidateDataAnnotations();
 
@@ -93,11 +98,13 @@ builder.AddNpgsqlDbContext<ServerDbContext>(connectionName: Constants.ServerDbCo
 
 #region Authentication & Authorization
 
-builder.Services.AddSingleton<JwtService>();
-builder.Services.AddScoped<IClaimsTransformation, GuildPermissionClaimTransformer>();
-builder.Services.AddScoped<SessionValidator>();
-builder.Services.AddScoped<AuthService>();
-builder.Services.AddSingleton<IAuthorizationHandler, GuildPermissionHandler>();
+builder.Services
+    .AddSingleton<JwtService>()
+    .AddScoped<IClaimsTransformation, GuildPermissionClaimTransformer>()
+    .AddScoped<SessionValidator>()
+    .AddScoped<AuthService>()
+    .AddSingleton<IAuthorizationHandler, GuildPermissionHandler>()
+    .AddSingleton<ICustomApiKeyAuthenticationService, CustomApiKeyAuthenticationService>();
 
 builder.Services.AddAuthentication(options => options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme)
     .AddBeatLeader(options =>
@@ -153,14 +160,23 @@ builder.Services.AddAuthentication(options => options.DefaultScheme = JwtBearerD
                     return;
                 }
 
+                // Validate session from the database + enrich principal with PlayerId claim.
                 var sessionResult = await sessionValidator.ValidateSessionAsync(sessionUuId, context.Principal);
                 if (sessionResult.TryGetError(out var error))
                     context.Fail(error);
             }
         };
-    });
+    }).AddScheme<AuthenticationSchemeOptions, CustomApiKeyAuthenticationHandler>(
+        BasicAuthenticationDefaults.AuthenticationScheme, _ => { }
+    );
 
 builder.Services.AddAuthorizationBuilder()
+    .SetDefaultPolicy(new AuthorizationPolicyBuilder()
+        .AddAuthenticationSchemes(
+            JwtBearerDefaults.AuthenticationScheme,
+            BasicAuthenticationDefaults.AuthenticationScheme)
+        .RequireAuthenticatedUser()
+        .Build())
     .AddManagerAuthorizationPolicy()
     .AddGuildAuthorizationPolicies();
 

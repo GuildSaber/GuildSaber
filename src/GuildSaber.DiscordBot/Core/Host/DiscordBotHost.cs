@@ -22,6 +22,7 @@ public class DiscordBotHost(
     {
         await interactionHandler.InitializeAsync();
         await client.SetGameAsync(options.Value.Status);
+        //TODO: await using service scope?
         var dbContext = services.GetRequiredService<DiscordBotDbContext>();
 
         await EnsureManagerExistAsync(dbContext, options.Value);

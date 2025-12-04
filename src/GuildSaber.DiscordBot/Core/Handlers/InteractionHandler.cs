@@ -2,6 +2,7 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using GuildSaber.Common.Result;
 
 namespace GuildSaber.DiscordBot.Core.Handlers;
 
@@ -21,25 +22,47 @@ public class InteractionHandler(
     public async Task InitializeAsync()
     {
         await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
+
         client.InteractionCreated += HandleInteraction;
+        commands.SlashCommandExecuted += GlobalExceptionHandler;
     }
 
-    private async Task HandleInteraction(SocketInteraction interaction)
-    {
-        try
-        {
-            var context = new SocketInteractionContext(client, interaction);
-            await commands.ExecuteCommandAsync(context, services);
-        }
-        catch (Exception exception)
-        {
-            logger.LogError("[HandleInteraction] {exception}", exception);
+    private Task HandleInteraction(SocketInteraction interaction)
+        => commands.ExecuteCommandAsync(new SocketInteractionContext(client, interaction), services);
 
-            // If Slash Command execution fails it is most likely that the original interaction acknowledgement will persist.
-            // It is a good idea to delete the original response, or at least let the user know that something went wrong during the command execution.
-            if (interaction.Type is InteractionType.ApplicationCommand)
-                await interaction.GetOriginalResponseAsync()
-                    .ContinueWith(async msg => await msg.Result.DeleteAsync());
+    private async Task GlobalExceptionHandler(
+        SlashCommandInfo slashCommandInfo, IInteractionContext interactionContext, IResult result)
+    {
+        if (result.IsSuccess || result is not ExecuteResult { Exception.InnerException: var innerException })
+            return;
+
+        var interaction = interactionContext.Interaction;
+
+        switch (innerException)
+        {
+            case RustExtensions.ErrorException unwrapException:
+            {
+                logger.LogError("[HandleInteraction] {unwrapException}", unwrapException);
+                if (interaction.Type is InteractionType.ApplicationCommand)
+                    await interaction.RespondAsync(embed: new EmbedBuilder
+                    {
+                        Title = "Error",
+                        Description = unwrapException.Message,
+                        Color = Color.Red
+                    }.Build());
+                break;
+            }
+            default:
+            {
+                logger.LogError("[HandleInteraction] {exception}", innerException);
+
+                // If Slash Command execution fails it is most likely that the original interaction acknowledgement will persist.
+                // It is a good idea to delete the original response, or at least let the user know that something went wrong during the command execution.
+                if (interaction.Type is InteractionType.ApplicationCommand)
+                    await interaction.GetOriginalResponseAsync()
+                        .ContinueWith(async msg => await msg.Result.DeleteAsync());
+                break;
+            }
         }
     }
 }
