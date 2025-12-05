@@ -2,7 +2,6 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using GuildSaber.Common.Result;
 
 namespace GuildSaber.DiscordBot.Core.Handlers;
 
@@ -37,32 +36,20 @@ public class InteractionHandler(
             return;
 
         var interaction = interactionContext.Interaction;
-
-        switch (innerException)
+        logger.LogError("[HandleInteraction] {innerException}", innerException);
+        if (interaction.Type is InteractionType.ApplicationCommand)
         {
-            case RustExtensions.ErrorException unwrapException:
+            var embed = new EmbedBuilder
             {
-                logger.LogError("[HandleInteraction] {unwrapException}", unwrapException);
-                if (interaction.Type is InteractionType.ApplicationCommand)
-                    await interaction.RespondAsync(embed: new EmbedBuilder
-                    {
-                        Title = "Error",
-                        Description = unwrapException.Message,
-                        Color = Color.Red
-                    }.Build());
-                break;
-            }
-            default:
-            {
-                logger.LogError("[HandleInteraction] {exception}", innerException);
+                Title = "Error",
+                Description = innerException?.Message ?? "An unknown error occurred.",
+                Color = Color.Red
+            }.Build();
 
-                // If Slash Command execution fails it is most likely that the original interaction acknowledgement will persist.
-                // It is a good idea to delete the original response, or at least let the user know that something went wrong during the command execution.
-                if (interaction.Type is InteractionType.ApplicationCommand)
-                    await interaction.GetOriginalResponseAsync()
-                        .ContinueWith(async msg => await msg.Result.DeleteAsync());
-                break;
-            }
+            if (interaction.HasResponded)
+                await interaction.FollowupAsync(embed: embed);
+            else
+                await interaction.RespondAsync(embed: embed);
         }
     }
 }

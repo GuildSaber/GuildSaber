@@ -50,7 +50,7 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
                 .MapError(CreateResponse (x) => new CreateResponse.TooManyGuildsAsLeader(x.current, x.max)))
             .Check(subInfo => ValidateCreationRequirements(subInfo, guildSettings.Value.Creation)
                 .MapError(CreateResponse (errors) => new CreateResponse.RequirementsFailure(errors)))
-            .Bind(_ => MakeGuildAndValidate(request)
+            .Bind(_ => MakeGuildAndValidate(request.Info, request.Requirements)
                 .MapError(CreateResponse (errors) => new CreateResponse.ValidationFailure(errors)))
             .Map(static (guild, state) => state.dbContext.Database.CreateExecutionStrategy()
                     .ExecuteInTransactionAsync((guild, state.playerId, state.dbContext, state.timeProvider),
@@ -92,43 +92,54 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
                 (dbContext, playerId, timeProvider))
             .Match(guild => new CreateResponse.Success(guild), err => err);
 
+    public static Result<(GuildInfo, GuildRequirements), List<KeyValuePair<string, string[]>>>
+        ValidateGuildInfoAndRequirements(GuildResponses.GuildInfo info, GuildResponses.GuildRequirements requirements)
+    {
+        var nameResult = Name_5_50.TryCreate(info.Name);
+        var descriptionResult = Description.TryCreate(info.Description);
+
+        List<KeyValuePair<string, string[]>> validationErrors = [];
+        if (!nameResult.TryGetValue(out _))
+            validationErrors.Add(new KeyValuePair<string, string[]>(
+                nameof(GuildResponses.GuildInfo.Name), [nameResult.Error]));
+
+        if (!Name_2_6.TryCreate(info.SmallName, "Small name").TryGetValue(out _, out var nameError))
+            validationErrors.Add(new KeyValuePair<string, string[]>(
+                nameof(GuildResponses.GuildInfo.SmallName), [nameError]));
+
+        if (!descriptionResult.TryGetValue(out _, out var descriptionError))
+            validationErrors.Add(new KeyValuePair<string, string[]>(
+                nameof(GuildResponses.GuildInfo.Description), [descriptionError]));
+
+        if (validationErrors.Count > 0)
+            return Failure<(GuildInfo, GuildRequirements), List<KeyValuePair<string, string[]>>>(validationErrors);
+
+        return (new GuildInfo
+        {
+            Name = nameResult.Value,
+            SmallName = Name_2_6.CreateUnsafe(info.SmallName).Value,
+            Description = descriptionResult.Value,
+            Color = Color.FromArgb(info.Color),
+            CreatedAt = DateTimeOffset.UtcNow
+        }, requirements.Map());
+    }
+
     /// <summary>
     /// Validates the guild creation request and constructs a new Guild object
     /// </summary>
     private static Result<Guild, List<KeyValuePair<string, string[]>>> MakeGuildAndValidate(
-        GuildRequests.CreateGuild request)
+        GuildResponses.GuildInfo info, GuildResponses.GuildRequirements requirements)
     {
-        var nameResult = Name_5_50.TryCreate(request.Info.Name);
-        var descriptionResult = Description.TryCreate(request.Info.Description);
-
-        List<KeyValuePair<string, string[]>> validationErrors = [];
-        if (!nameResult.TryGetValue(out var name))
-            validationErrors.Add(new KeyValuePair<string, string[]>(
-                nameof(GuildRequests.CreateGuildInfo.Name), [nameResult.Error]));
-
-        if (!Name_2_6.TryCreate(request.Info.SmallName, "Small name").TryGetValue(out var smallName, out var nameError))
-            validationErrors.Add(new KeyValuePair<string, string[]>(
-                nameof(GuildRequests.CreateGuildInfo.SmallName), [nameError]));
-
-        if (!descriptionResult.TryGetValue(out var description, out var descriptionError))
-            validationErrors.Add(new KeyValuePair<string, string[]>(
-                nameof(GuildRequests.CreateGuildInfo.Description), [descriptionError]));
-
-        if (validationErrors.Count > 0)
-            return Failure<Guild, List<KeyValuePair<string, string[]>>>(validationErrors);
+        var validationResult = ValidateGuildInfoAndRequirements(info, requirements);
+        if (!validationResult.TryGetValue(out var tuple, out var errors))
+            return Failure<Guild, List<KeyValuePair<string, string[]>>>(errors);
 
         return Success<Guild, List<KeyValuePair<string, string[]>>>(new Guild
         {
-            Info = new GuildInfo
-            {
-                Name = name,
-                SmallName = smallName,
-                Description = description,
-                Color = Color.FromArgb(request.Info.Color),
-                CreatedAt = DateTimeOffset.UtcNow
-            },
-            Requirements = request.Requirements.Map(),
-            Status = Guild.EGuildStatus.Unverified
+            Info = tuple.Item1,
+            Requirements = tuple.Item2,
+            Status = Guild.EGuildStatus.Unverified,
+            DiscordInfo = new GuildDiscordInfo(null)
         });
     }
 

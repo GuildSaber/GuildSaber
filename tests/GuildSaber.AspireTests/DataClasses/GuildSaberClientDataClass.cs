@@ -14,7 +14,7 @@ public class GuildSaberClientDataClass : IAsyncInitializer, IAsyncDisposable
     public async Task InitializeAsync()
     {
         HttpClient = GlobalHooks.App!.CreateHttpClient("api");
-        GuildSaberClient = new GuildSaberClient(HttpClient.BaseAddress!, HttpClient);
+        GuildSaberClient = new GuildSaberClient(HttpClient, null);
         if (GlobalHooks.NotificationService is null) return;
 
         await GlobalHooks.NotificationService

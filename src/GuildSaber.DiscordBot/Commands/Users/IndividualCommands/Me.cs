@@ -3,7 +3,6 @@ using Discord.Interactions;
 using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Result;
 using GuildSaber.CSharpClient;
-using GuildSaber.CSharpClient.Auth;
 
 namespace GuildSaber.DiscordBot.Commands.Users;
 
@@ -13,7 +12,11 @@ namespace GuildSaber.DiscordBot.Commands.Users;
 public partial class UserModuleSlash
 {
     [SlashCommand("me", "Get information about your account")]
-    public async Task Me() => await RespondAsync(embed: await MeCommand.GetAtMeButCrash(client, CurrentUserAuth));
+    public async Task Me([Summary("VisibleToOther")] EDisplayChoice displayChoice = EDisplayChoice.Invisible)
+    {
+        await DeferAsync(ephemeral: displayChoice.ToEphemeral());
+        await FollowupAsync(embed: await MeCommand.GetAtMe(Client.Value));
+    }
 }
 
 /// <summary>
@@ -21,17 +24,19 @@ public partial class UserModuleSlash
 /// </summary>
 file static class MeCommand
 {
-    public static async Task<Embed> GetAtMeButCrash(GuildSaberClient client, GuildSaberAuthentication authentication)
+    public static async Task<Embed> GetAtMe(GuildSaberClient client)
     {
         var embedBuilder = new EmbedBuilder();
 
-        var atMe = await client.Players.GetAtMeAsync(authentication, CancellationToken.None)
+        var atMe = await client.Players.GetExtendedAtMeAsync(CancellationToken.None)
             .Unwrap();
 
         embedBuilder.Title = $"{atMe.Player.PlayerInfo.Username}'s Profile";
         embedBuilder.Color = Color.Blue;
         embedBuilder.AddField("Player ID", atMe.Player.Id, true);
         embedBuilder.AddField("Username", atMe.Player.PlayerInfo.Username, true);
+        // add a field to see if the user is a manager
+        embedBuilder.AddField("Is Manager", atMe.Player.IsManager);
 
         foreach (var member in atMe.Members)
         {

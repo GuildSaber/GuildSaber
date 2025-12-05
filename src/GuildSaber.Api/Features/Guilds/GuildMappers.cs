@@ -10,47 +10,47 @@ public static class GuildMappers
         => self => new GuildResponses.Guild(
             self.Id,
             new GuildResponses.GuildInfo
-            {
-                Name = self.Info.Name,
-                SmallName = self.Info.SmallName,
-                Description = self.Info.Description,
-                Color = self.Info.Color.ToArgb(),
-                CreatedAt = self.Info.CreatedAt
-            },
+            (
+                Name: self.Info.Name,
+                SmallName: self.Info.SmallName,
+                Description: self.Info.Description,
+                Color: self.Info.Color.ToArgb(),
+                CreatedAt: self.Info.CreatedAt
+            ),
             new GuildResponses.GuildRequirements
-            {
-                RequireSubmission = self.Requirements.RequireSubmission,
-                MinRank = self.Requirements.MinRank,
-                MaxRank = self.Requirements.MaxRank,
-                MinPP = self.Requirements.MinPP,
-                MaxPP = self.Requirements.MaxPP,
-                AccountAgeUnix = self.Requirements.AccountAgeUnix
-            },
-            self.Status.Map()
-        );
+            (
+                RequireSubmission: self.Requirements.RequireSubmission,
+                MinRank: self.Requirements.MinRank,
+                MaxRank: self.Requirements.MaxRank,
+                MinPP: self.Requirements.MinPP,
+                MaxPP: self.Requirements.MaxPP,
+                AccountAgeUnix: self.Requirements.AccountAgeUnix
+            ),
+            self.Status.Map()) { DiscordInfo = self.DiscordInfo.Map() };
 
     public static Expression<Func<Guild, GuildResponses.GuildExtended>> MapGuildExtendedExpression
         => self => new GuildResponses.GuildExtended(
             new GuildResponses.Guild(
                 self.Id,
                 new GuildResponses.GuildInfo
-                {
-                    Name = self.Info.Name,
-                    SmallName = self.Info.SmallName,
-                    Description = self.Info.Description,
-                    Color = self.Info.Color.ToArgb(),
-                    CreatedAt = self.Info.CreatedAt
-                },
+                (
+                    Name: self.Info.Name,
+                    SmallName: self.Info.SmallName,
+                    Description: self.Info.Description,
+                    Color: self.Info.Color.ToArgb(),
+                    CreatedAt: self.Info.CreatedAt
+                ),
                 new GuildResponses.GuildRequirements
-                {
-                    RequireSubmission = self.Requirements.RequireSubmission,
-                    MinRank = self.Requirements.MinRank,
-                    MaxRank = self.Requirements.MaxRank,
-                    MinPP = self.Requirements.MinPP,
-                    MaxPP = self.Requirements.MaxPP,
-                    AccountAgeUnix = self.Requirements.AccountAgeUnix
-                },
-                self.Status.Map()),
+                (
+                    RequireSubmission: self.Requirements.RequireSubmission,
+                    MinRank: self.Requirements.MinRank,
+                    MaxRank: self.Requirements.MaxRank,
+                    MinPP: self.Requirements.MinPP,
+                    MaxPP: self.Requirements.MaxPP,
+                    AccountAgeUnix: self.Requirements.AccountAgeUnix
+                ),
+                self.Status.Map()
+            ) { DiscordInfo = self.DiscordInfo.Map() },
             self.Contexts.Select(c => new GuildResponses.GuildContext(
                 c.Id,
                 c.Type.Map(),
@@ -81,26 +81,35 @@ public static class GuildMappers
     public static GuildResponses.Guild Map(this Guild self) => new(
         self.Id,
         new GuildResponses.GuildInfo
-        {
-            Name = self.Info.Name,
-            SmallName = self.Info.SmallName,
-            Description = self.Info.Description,
-            Color = self.Info.Color.ToArgb(),
-            CreatedAt = self.Info.CreatedAt
-        },
+        (
+            Name: self.Info.Name,
+            SmallName: self.Info.SmallName,
+            Description: self.Info.Description,
+            Color: self.Info.Color.ToArgb(),
+            CreatedAt: self.Info.CreatedAt
+        ),
         new GuildResponses.GuildRequirements
-        {
-            RequireSubmission = self.Requirements.RequireSubmission,
-            MinRank = self.Requirements.MinRank,
-            MaxRank = self.Requirements.MaxRank,
-            MinPP = self.Requirements.MinPP,
-            MaxPP = self.Requirements.MaxPP,
-            AccountAgeUnix = self.Requirements.AccountAgeUnix
-        },
+        (
+            RequireSubmission: self.Requirements.RequireSubmission,
+            MinRank: self.Requirements.MinRank,
+            MaxRank: self.Requirements.MaxRank,
+            MinPP: self.Requirements.MinPP,
+            MaxPP: self.Requirements.MaxPP,
+            AccountAgeUnix: self.Requirements.AccountAgeUnix
+        ),
         self.Status.Map()
+    ) { DiscordInfo = self.DiscordInfo.Map() };
+
+    public static GuildResponses.GuildRequirements Map(this GuildRequirements self) => new(
+        RequireSubmission: self.RequireSubmission,
+        MinRank: self.MinRank,
+        MaxRank: self.MaxRank,
+        MinPP: self.MinPP,
+        MaxPP: self.MaxPP,
+        AccountAgeUnix: self.AccountAgeUnix
     );
 
-    public static GuildResponses.GuildRequirements Map(this GuildRequirements self) => new()
+    public static GuildRequirements Map(this GuildResponses.GuildRequirements self) => new()
     {
         RequireSubmission = self.RequireSubmission,
         MinRank = self.MinRank,
@@ -110,15 +119,13 @@ public static class GuildMappers
         AccountAgeUnix = self.AccountAgeUnix
     };
 
-    public static GuildRequirements Map(this GuildRequests.CreateGuildRequirements self) => new()
-    {
-        RequireSubmission = self.RequireSubmission,
-        MinRank = self.MinRank,
-        MaxRank = self.MaxRank,
-        MinPP = self.MinPP,
-        MaxPP = self.MaxPP,
-        AccountAgeUnix = self.AccountAgeUnix
-    };
+    public static GuildDiscordInfo Map(this GuildResponses.GuildDiscordInfo self) =>
+        ulong.TryParse(self.MainDiscordGuildId, out var id)
+            ? new GuildDiscordInfo(id)
+            : new GuildDiscordInfo(null);
+
+    public static GuildResponses.GuildDiscordInfo Map(this GuildDiscordInfo self) =>
+        new(self.MainDiscordGuildId?.ToString());
 
     public static GuildResponses.EGuildStatus Map(this Guild.EGuildStatus self) => self switch
     {
@@ -126,6 +133,15 @@ public static class GuildMappers
         Guild.EGuildStatus.Verified => GuildResponses.EGuildStatus.Verified,
         Guild.EGuildStatus.Featured => GuildResponses.EGuildStatus.Featured,
         Guild.EGuildStatus.Private => GuildResponses.EGuildStatus.Private,
+        _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
+    };
+
+    public static Guild.EGuildStatus Map(this GuildResponses.EGuildStatus self) => self switch
+    {
+        GuildResponses.EGuildStatus.Unverified => Guild.EGuildStatus.Unverified,
+        GuildResponses.EGuildStatus.Verified => Guild.EGuildStatus.Verified,
+        GuildResponses.EGuildStatus.Featured => Guild.EGuildStatus.Featured,
+        GuildResponses.EGuildStatus.Private => Guild.EGuildStatus.Private,
         _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
     };
 

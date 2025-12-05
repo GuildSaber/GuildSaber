@@ -31,17 +31,22 @@ public class PlayerEndpoints : IEndpoints
 
         group.MapGet("/@me", GetPlayerAtMeAsync)
             .WithName("GetPlayerAtMe")
-            .WithSummary("Get current player enriched")
+            .WithSummary("Get current player")
+            .WithDescription("Get the current player information.")
+            .RequireAuthorization();
+
+        group.MapGet("/{playerId}/extended", GetPlayerExtendedAsync)
+            .WithName("GetPlayerExtended")
+            .WithSummary("Get a player with extended information")
+            .WithDescription("Get a specific player with extended information by their Id."
+                             + " Which includes additional fields like guilds and permissions.");
+
+        group.MapGet("/@me/extended", GetPlayerExtendedAtMeAsync)
+            .WithName("GetPlayerExtendedAtMe")
+            .WithSummary("Get current player with extended information")
             .WithDescription("Get the current player information alongside their guilds and permissions.")
             .RequireAuthorization();
     }
-
-    private static async Task<Ok<PlayerAtMe>> GetPlayerAtMeAsync(
-        ServerDbContext dbContext, ClaimsPrincipal claimsPrincipal)
-        => TypedResults.Ok(await dbContext.Players
-            .Where(x => x.Id == claimsPrincipal.GetPlayerId())
-            .Select(PlayerMappers.MapPlayerAtMeExpression)
-            .FirstAsync());
 
     private static async Task<Results<Ok<Player>, NotFound>> GetPlayerAsync(
         PlayerId playerId, ServerDbContext dbContext)
@@ -53,6 +58,21 @@ public class PlayerEndpoints : IEndpoints
                 null => TypedResults.NotFound(),
                 var player => TypedResults.Ok(player.Value)
             };
+
+    private static Task<Results<Ok<Player>, NotFound>> GetPlayerAtMeAsync(
+        ClaimsPrincipal principal, ServerDbContext dbContext)
+        => GetPlayerAsync(principal.GetPlayerId()!.Value, dbContext);
+
+    private static async Task<Ok<PlayerExtended>> GetPlayerExtendedAsync(
+        PlayerId playerId, ServerDbContext dbContext)
+        => TypedResults.Ok(await dbContext.Players
+            .Where(x => x.Id == playerId)
+            .Select(PlayerMappers.MapPlayerExtendedExpression)
+            .FirstAsync());
+
+    private static Task<Ok<PlayerExtended>> GetPlayerExtendedAtMeAsync(
+        ClaimsPrincipal claimsPrincipal, ServerDbContext dbContext)
+        => GetPlayerExtendedAsync(claimsPrincipal.GetPlayerId()!.Value, dbContext);
 
     private static async Task<Ok<PagedList<Player>>> GetPlayersAsync(
         ServerDbContext dbContext,
@@ -78,7 +98,8 @@ public static class PlayerExtensions
     public static IQueryable<ServerPlayer> ApplySortOrder(
         this IQueryable<ServerPlayer> query, PlayerRequests.EPlayerSorter sortBy, EOrder order) => sortBy switch
     {
-        PlayerRequests.EPlayerSorter.Id => query.OrderBy(order, x => x.Id),
+        PlayerRequests.EPlayerSorter.Id => query
+            .OrderBy(order, x => x.Id),
         PlayerRequests.EPlayerSorter.CreationDate => query.OrderBy(order, x => x.Info.CreatedAt)
             .ThenBy(order, x => x.Id),
         _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)

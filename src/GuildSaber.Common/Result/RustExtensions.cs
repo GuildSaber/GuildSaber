@@ -20,7 +20,7 @@ public static class RustExtensions
         var result = await self;
         return result.IsSuccess
             ? result.Value
-            : throw new Exception(result.Error!.ToString()!);
+            : throw new ErrorException(result.Error!.ToString()!);
     }
 
     public static async Task<T> Unwrap<T>(this Task<Result<T>> self)
@@ -28,13 +28,13 @@ public static class RustExtensions
         var result = await self;
         return result.IsSuccess
             ? result.Value
-            : throw new Exception(result.Error);
+            : throw new ErrorException(result.Error);
     }
 
     public static async Task Unwrap<E>(this Task<UnitResult<E>> self)
     {
         var result = await self;
-        if (result.IsFailure) throw new Exception(result.Error!.ToString());
+        if (result.IsFailure) throw new ErrorException(result.Error!.ToString()!);
     }
 
 

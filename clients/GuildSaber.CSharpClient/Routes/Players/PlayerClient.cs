@@ -1,16 +1,19 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Internal;
 using GuildSaber.Api.Features.Players;
-using GuildSaber.CSharpClient.Auth;
 using GuildSaber.CSharpClient.Routes.Internal;
 using static GuildSaber.Api.Features.Players.PlayerResponses;
 
 namespace GuildSaber.CSharpClient.Routes.Players;
 
-public sealed class PlayerClient(HttpClient httpClient, JsonSerializerOptions jsonOptions)
+public sealed class PlayerClient(
+    HttpClient httpClient,
+    AuthenticationHeaderValue? authenticationHeader,
+    JsonSerializerOptions jsonOptions)
 {
     private Uri GetPlayersUrl(string? search, PaginatedRequestOptions<PlayerRequests.EPlayerSorter> requestOptions)
         => new(
@@ -30,17 +33,47 @@ public sealed class PlayerClient(HttpClient httpClient, JsonSerializerOptions js
                 .ReadFromJsonAsync<Player?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
         };
 
-    public async Task<Result<PlayerAtMe>> GetAtMeAsync(GuildSaberAuthentication auth, CancellationToken token)
+    /// <remarks>
+    /// Returned Player isn't nullable because an authenticated player will always exist (no 404).
+    /// </remarks>
+    public async Task<Result<Player>> GetAtMeAsync(CancellationToken token)
         => await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, "players/@me")
             {
-                Headers = { Authorization = auth.ToAuthenticationHeader() }
+                Headers = { Authorization = authenticationHeader }
             }, token).ConfigureAwait(false) switch
             {
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
-                    => Failure<PlayerAtMe>(
+                    => Failure<Player>(
                         $"Failed to retrieve current player, status code: {(int)statusCode} ({reasonPhrase})"),
                 var response => await Try(() => response.Content
-                    .ReadFromJsonAsync<PlayerAtMe>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+                    .ReadFromJsonAsync<Player>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+            };
+
+    public async Task<Result<PlayerExtended?>> GetByIdExtendedAsync(int playerId, CancellationToken token)
+        => await httpClient.GetAsync($"player/{playerId}", token).ConfigureAwait(false) switch
+        {
+            { StatusCode: HttpStatusCode.NotFound } => Success<PlayerExtended?>(null),
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<PlayerExtended?>(
+                    $"Failed to retrieve player extended with ID {playerId}, status code: {(int)statusCode} ({reasonPhrase})"),
+            var response => await Try(() => response.Content
+                .ReadFromJsonAsync<PlayerExtended?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+        };
+
+    /// <remarks>
+    /// Returned PlayerExtended isn't nullable because an authenticated player will always exist (no 404).
+    /// </remarks>
+    public async Task<Result<PlayerExtended>> GetExtendedAtMeAsync(CancellationToken token)
+        => await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, "players/@me/extended")
+            {
+                Headers = { Authorization = authenticationHeader }
+            }, token).ConfigureAwait(false) switch
+            {
+                { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                    => Failure<PlayerExtended>(
+                        $"Failed to retrieve current player extended, status code: {(int)statusCode} ({reasonPhrase})"),
+                var response => await Try(() => response.Content
+                    .ReadFromJsonAsync<PlayerExtended>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
             };
 
     public async Task<Result<PagedList<Player>>> GetAsync(

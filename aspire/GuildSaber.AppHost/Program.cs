@@ -42,7 +42,6 @@ builder.AddProject<GuildSaber_DiscordBot>("discord-bot", option => option.Exclud
     .WithEnvironment("AuthSettings:ApiKey", apiKey)
     .WithReference(discordbotDb).WaitFor(migrator)
     .WithReference(apiService).WaitFor(apiService)
-    .WithParentRelationship(apiService)
-    .WithExplicitStart();
+    .WithParentRelationship(apiService);
 
 builder.Build().Run();

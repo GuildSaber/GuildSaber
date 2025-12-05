@@ -183,4 +183,80 @@ public class GuildClientTests(GuildSaberClientDataClass dataClass)
         // Assert
         lastGuilds.Should().NotBeNull().And.BeEmpty("because there should be no more data after the last page");
     }
+
+    /*[Test]
+    public async Task SetDiscordGuildIdAsync_ShouldUpdateDiscordGuildId_WhenGuildExists()
+    {
+        // Arrange
+        var guildId = ValidGuildId;
+        ulong? discordGuildId = 976932780971798579;
+
+        // Act
+        var result =
+            await dataClass.GuildSaberClient.Guilds.SetDiscordGuildIdAsync(guildId, discordGuildId,
+                CancellationToken.None);
+
+        // Assert
+        result.SuccessShould().NotBeNull().And.BeOfType<Guild>()
+            .Which.DiscordInfo.MainDiscordGuildId.Should().Be(discordGuildId.ToString());
+    }
+
+    [Test]
+    public async Task SetDiscordGuildIdAsync_ShouldSetDiscordGuildIdToNull_WhenProvidedNullValue()
+    {
+        // Arrange
+        var guildId = ValidGuildId;
+        ulong? discordGuildId = null;
+
+        // Act
+        var result =
+            await dataClass.GuildSaberClient.Guilds.SetDiscordGuildIdAsync(guildId, discordGuildId,
+                CancellationToken.None);
+
+        // Assert
+        result.SuccessShould().NotBeNull().And.BeOfType<Guild>()
+            .Which.DiscordInfo.MainDiscordGuildId.Should().BeNull();
+    }
+
+    [Test]
+    public async Task SetDiscordGuildIdAsync_ShouldUpdateDiscordGuildIdTwice_WhenCalledConsecutively()
+    {
+        // Arrange
+        var guildId = ValidGuildId;
+        ulong? validDiscordGuildId = 976932780971798579;
+
+        // Act - First update to null
+        var firstResult =
+            await dataClass.GuildSaberClient.Guilds.SetDiscordGuildIdAsync(guildId, null, CancellationToken.None);
+
+        // Assert - First update
+        firstResult.SuccessShould().NotBeNull().And.BeOfType<Guild>()
+            .Which.DiscordInfo.MainDiscordGuildId.Should().BeNull();
+
+        // Act - Second update back to valid value
+        var secondResult =
+            await dataClass.GuildSaberClient.Guilds.SetDiscordGuildIdAsync(guildId, validDiscordGuildId,
+                CancellationToken.None);
+
+        // Assert - Second update
+        secondResult.SuccessShould().NotBeNull().And.BeOfType<Guild>()
+            .Which.DiscordInfo.MainDiscordGuildId.Should().Be(validDiscordGuildId.ToString());
+    }
+
+    [Test]
+    public async Task SetDiscordGuildIdAsync_ShouldReturnFailure_WhenGuildDoesNotExist()
+    {
+        // Arrange
+        var guildId = InvalidGuildId;
+        ulong? discordGuildId = 976932780971798579;
+
+        // Act
+        var result =
+            await dataClass.GuildSaberClient.Guilds.SetDiscordGuildIdAsync(guildId, discordGuildId,
+                CancellationToken.None);
+
+        // Assert
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Contain($"Guild with ID {guildId} not found");
+    }*/
 }

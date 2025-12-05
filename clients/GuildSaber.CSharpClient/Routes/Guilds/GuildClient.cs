@@ -1,5 +1,7 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Guilds;
@@ -9,7 +11,10 @@ using static GuildSaber.Api.Features.Guilds.GuildResponses;
 
 namespace GuildSaber.CSharpClient.Routes.Guilds;
 
-public sealed class GuildClient(HttpClient httpClient, JsonSerializerOptions jsonOptions)
+public sealed class GuildClient(
+    HttpClient httpClient,
+    AuthenticationHeaderValue? authenticationHeader,
+    JsonSerializerOptions jsonOptions)
 {
     private Uri GetGuildsUrl(string? search, PaginatedRequestOptions<GuildRequests.EGuildSorter> requestOptions)
         => new(
@@ -80,5 +85,40 @@ public sealed class GuildClient(HttpClient httpClient, JsonSerializerOptions jso
             if (result is { IsFailure: true } or { Value: null or [] })
                 yield break;
         }
+    }
+
+    public async Task<Result<Guild>> SetDiscordGuildIdAsync(int guildId, ulong? discordGuildId, CancellationToken token)
+    {
+        var request = new HttpRequestMessage(new HttpMethod("PATCH"), $"guilds/{guildId}")
+        {
+            Headers = { Authorization = authenticationHeader },
+            Content = new StringContent(
+                $$"""
+                  [{"op":
+                      "{{(discordGuildId is null ? "remove" : "replace")}}",
+                      "path":"/{{nameof(Guild.DiscordInfo)}}/{{nameof(GuildDiscordInfo.MainDiscordGuildId)}}",
+                      "value":"{{discordGuildId}}"
+                  }]
+                  """, Encoding.UTF8, "application/json-patch+json"
+            )
+        };
+
+        var response = await httpClient.SendAsync(request, token)
+            .ConfigureAwait(false);
+
+        return response switch
+        {
+            { StatusCode: HttpStatusCode.NotFound }
+                => Failure<Guild>($"Guild with ID {guildId} not found"),
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<Guild>(
+                    $"Failed to update guild {guildId}, status code: {(int)statusCode} ({reasonPhrase})"),
+            _ => await Try(async () =>
+            {
+                var guild = await response.Content.ReadFromJsonAsync<Guild>(jsonOptions, cancellationToken: token)
+                    .ConfigureAwait(false);
+                return guild!;
+            }).ConfigureAwait(false)
+        };
     }
 }

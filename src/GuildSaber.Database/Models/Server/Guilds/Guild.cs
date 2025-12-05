@@ -16,6 +16,7 @@ public class Guild
     public required GuildInfo Info { get; set; }
     public required GuildRequirements Requirements { get; set; }
     public required EGuildStatus Status { get; init; }
+    public required GuildDiscordInfo DiscordInfo { get; set; }
 
     public IList<Context> Contexts { get; init; } = null!;
     public IList<Member> Members { get; init; } = null!;
@@ -64,6 +65,7 @@ public class GuildConfiguration : IEntityTypeConfiguration<Guild>
             .ValueGeneratedOnAdd();
         builder.ComplexProperty(x => x.Info).Configure(new GuildInfoConfiguration());
         builder.ComplexProperty(x => x.Requirements).Configure(new GuildJoinRequirementsConfiguration());
+        builder.ComplexProperty(x => x.DiscordInfo).Configure(new GuildDiscordInfoConfiguration());
 
         builder.HasMany(x => x.Contexts)
             .WithOne().HasForeignKey(x => x.GuildId)

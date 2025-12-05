@@ -33,11 +33,12 @@ public static class PlayerMappers
             PlayerSubscriptionInfo = new PlayerResponses.PlayerSubscriptionInfo
             {
                 Tier = self.SubscriptionInfo.Tier.Map()
-            }
+            },
+            IsManager = self.IsManager
         };
 
-    public static Expression<Func<Player, PlayerResponses.PlayerAtMe>> MapPlayerAtMeExpression
-        => self => new PlayerResponses.PlayerAtMe
+    public static Expression<Func<Player, PlayerResponses.PlayerExtended>> MapPlayerExtendedExpression
+        => self => new PlayerResponses.PlayerExtended
         {
             Player = new PlayerResponses.Player
             {
@@ -63,7 +64,8 @@ public static class PlayerMappers
                 PlayerSubscriptionInfo = new PlayerResponses.PlayerSubscriptionInfo
                 {
                     Tier = self.SubscriptionInfo.Tier.Map()
-                }
+                },
+                IsManager = self.IsManager
             },
             Members = self.Members.Select(x => new MemberResponses.Member
             {
@@ -74,8 +76,7 @@ public static class PlayerMappers
                 EditedAt = x.EditedAt,
                 InitializedAt = x.CreatedAt,
                 Priority = x.Priority
-            }).ToArray(),
-            Roles = self.IsManager ? new[] { "Manager" } : Array.Empty<string>()
+            }).ToArray()
         };
 
     public static PlayerResponses.ESubscriptionTier Map(this PlayerSubscriptionInfo.ESubscriptionTier self) =>

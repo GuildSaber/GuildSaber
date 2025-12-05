@@ -5,7 +5,10 @@ using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Internal;
 using GuildSaber.Api.Transformers;
 using GuildSaber.Database.Contexts.Server;
+using GuildSaber.Database.Extensions;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.JsonPatch.SystemTextJson;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ServerGuild = GuildSaber.Database.Models.Server.Guilds.Guild;
 using static GuildSaber.Api.Features.Guilds.GuildResponses;
@@ -43,11 +46,17 @@ public class GuildEndpoints : IEndpoints
             .WithSummary("Get a guild")
             .WithDescription("Get a specific guild by its Id.");
 
-        group.MapGet("/{guildId}/extended", GetGuildExtended)
+        group.MapGet("/{guildId}/extended", GetGuildExtendedAsync)
             .WithName("GetGuildExtended")
-            .WithSummary("Get a guild with Extended Information")
+            .WithSummary("Get a guild with extended information")
             .WithDescription("Get a specific guild with extended information by its Id."
                              + " Which includes additional fields like categories and points.");
+
+        group.MapPatch("/{guildId}", PatchGuildAsync)
+            .WithName("PatchGuild")
+            .WithSummary("Patch a guild")
+            .WithDescription("Edit fields of a guild only by the given properties (json patch rfc6902).")
+            .RequireGuildPermission(EPermission.GuildLeader);
 
         group.MapDelete("/{guildId}", DeleteGuildAsync)
             .WithName("DeleteGuild")
@@ -136,7 +145,7 @@ public class GuildEndpoints : IEndpoints
                 var guild => TypedResults.Ok(guild)
             };
 
-    private static async Task<Results<Ok<GuildExtended>, NotFound>> GetGuildExtended(
+    private static async Task<Results<Ok<GuildExtended>, NotFound>> GetGuildExtendedAsync(
         GuildId guildId, ServerDbContext dbContext)
         => await dbContext.Guilds.AsSplitQuery()
                 .Where(x => x.Id == guildId)
@@ -146,6 +155,52 @@ public class GuildEndpoints : IEndpoints
                 null => TypedResults.NotFound(),
                 var guildExtended => TypedResults.Ok(guildExtended)
             };
+
+    private static async Task<Results<Ok<Guild>, BadRequest<string>, ValidationProblem>> PatchGuildAsync(
+        GuildId guildId,
+        [FromBody] JsonPatchDocument<Guild> patch,
+        ServerDbContext dbContext)
+    {
+        var patchedRequest = await dbContext.Guilds.Where(x => x.Id == guildId)
+            .Select(x => x.Map())
+            .FirstOrDefaultAsync();
+
+        if (patchedRequest is null)
+            return TypedResults.BadRequest($"Guild with id {guildId} not found");
+
+        var patchError = new Dictionary<string, string[]>();
+        patch.ApplyTo(patchedRequest, error =>
+        {
+            var path = error.Operation.path;
+            if (!patchError.ContainsKey(path))
+                patchError[path] = [];
+
+            patchError[path] = patchError[path].Append(error.ErrorMessage).ToArray();
+        });
+
+        if (patchError.Count > 0)
+            return TypedResults.ValidationProblem(detail: "Failed to apply patch due to errors.", errors: patchError);
+
+        if (patchedRequest.Id != guildId)
+            return TypedResults.BadRequest(
+                $"GuildId in the patch body: {patchedRequest.Id} isn't the same as the route GuildId: {guildId}");
+
+        if (!GuildService.ValidateGuildInfoAndRequirements(patchedRequest.Info, patchedRequest.Requirements)
+                .TryGetValue(out var tuple, out var errors))
+            return TypedResults.ValidationProblem(detail: "Failed to create guild due to validation errors.",
+                errors: errors);
+
+        var guild = new ServerGuild
+        {
+            Id = guildId,
+            Info = tuple.Item1,
+            Requirements = tuple.Item2,
+            Status = patchedRequest.Status.Map(),
+            DiscordInfo = patchedRequest.DiscordInfo.Map()
+        };
+
+        return TypedResults.Ok(await dbContext.UpdateAndSaveAsync(guild, x => x.Map()));
+    }
 }
 
 public static class GuildExtensions
@@ -153,7 +208,8 @@ public static class GuildExtensions
     public static IQueryable<ServerGuild> ApplySortOrder(
         this IQueryable<ServerGuild> query, GuildRequests.EGuildSorter sortBy, EOrder order) => sortBy switch
     {
-        GuildRequests.EGuildSorter.Id => query.OrderBy(order, guild => guild.Id),
+        GuildRequests.EGuildSorter.Id => query
+            .OrderBy(order, guild => guild.Id),
         GuildRequests.EGuildSorter.Name => query.OrderBy(order, guild => guild.Info.Name)
             .ThenBy(order, guild => guild.Id),
         GuildRequests.EGuildSorter.Popularity => query.OrderBy(order, x => x.Status)

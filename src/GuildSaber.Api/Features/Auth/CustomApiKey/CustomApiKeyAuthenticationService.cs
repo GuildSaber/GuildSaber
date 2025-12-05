@@ -18,12 +18,13 @@ public class CustomApiKeyAuthenticationService(
     HybridCache cache)
     : ICustomApiKeyAuthenticationService
 {
-    private static readonly Func<ServerDbContext, DiscordId, Task<PlayerId>>
-        _getPlayerIdByDiscordIdQueryAsync = EF.CompileAsyncQuery((ServerDbContext dbContext, DiscordId discordId) =>
-            dbContext.Players
-                .Where(x => x.LinkedAccounts.DiscordId == discordId)
-                .Select(x => x.Id)
-                .First());
+    private static readonly Func<ServerDbContext, DiscordId, Task<PlayerIdWithManagerFlag>>
+        _getPlayerIdWithManagerFlagByDiscordIdQueryAsync =
+            EF.CompileAsyncQuery((ServerDbContext dbContext, DiscordId discordId) =>
+                dbContext.Players
+                    .Where(x => x.LinkedAccounts.DiscordId == discordId)
+                    .Select(x => new PlayerIdWithManagerFlag(x.Id, x.IsManager))
+                    .First());
 
     public async Task<AuthenticateResult> AuthenticateAsync(BasicCredential credential, IPAddress? clientIp)
     {
@@ -33,28 +34,33 @@ public class CustomApiKeyAuthenticationService(
         if (!DiscordId.TryParse(credential.User).TryGetValue(out var discordId))
             return AuthenticateResult.Fail("Invalid Discord ID format.");
 
-        var playerId = await GetPlayerIdByDiscordIdd(discordId);
-        if (playerId == default)
+        var player = await GetPlayerIdWithManagerFlagByDiscordIdd(discordId);
+        if (player == default)
             return AuthenticateResult.Fail("No player associated with the provided Discord ID.");
 
         var identity = new ClaimsIdentity(
-            [new Claim(AuthConstants.PlayerIdClaimType, playerId.Value.ToString())],
+            [new Claim(AuthConstants.PlayerIdClaimType, player.PlayerId.ToString())],
             BasicAuthenticationDefaults.AuthenticationScheme
         );
+
+        if (player.IsManager)
+            identity.AddClaim(new Claim(ClaimTypes.Role, AuthConstants.ManagerRole));
 
         return AuthenticateResult.Success(
             new AuthenticationTicket(new ClaimsPrincipal(identity), BasicAuthenticationDefaults.AuthenticationScheme)
         );
     }
 
-    private ValueTask<PlayerId> GetPlayerIdByDiscordIdd(DiscordId discordId)
+    private readonly record struct PlayerIdWithManagerFlag(PlayerId PlayerId, bool IsManager);
+
+    private ValueTask<PlayerIdWithManagerFlag> GetPlayerIdWithManagerFlagByDiscordIdd(DiscordId discordId)
         => cache.GetOrCreateAsync($"PlayerIdByDiscordId_{discordId}", (scopeFactory, discordId),
             async static (state, _) =>
             {
                 await using var scope = state.scopeFactory.CreateAsyncScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
 
-                return await _getPlayerIdByDiscordIdQueryAsync(dbContext, state.discordId);
+                return await _getPlayerIdWithManagerFlagByDiscordIdQueryAsync(dbContext, state.discordId);
             },
             new HybridCacheEntryOptions
             {

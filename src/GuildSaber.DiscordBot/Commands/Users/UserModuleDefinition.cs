@@ -20,16 +20,36 @@ namespace GuildSaber.DiscordBot.Commands.Users;
 /// </remarks>
 [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel, InteractionContextType.BotDm)]
 [PermissionHandler.RequirePermissionAttributeSlash(User.EPermissions.None)]
-public partial class UserModuleSlash(
-    GuildSaberClient client,
-#pragma warning disable CS9113 // Parameter is unread.
-    DiscordBotDbContext dbContext,
-#pragma warning restore CS9113 // Parameter is unread.
-    IOptions<AuthSettings> authSettings)
-    : InteractionModuleBase<SocketInteractionContext>
+public partial class UserModuleSlash : InteractionModuleBase<SocketInteractionContext>
 {
-    public GuildSaberAuthentication CurrentUserAuth => new GuildSaberAuthentication.CustomBasicApiKeyAuthentication(
-        Key: authSettings.Value.ApiKey,
-        DiscordId: Context.User.Id.ToString()
-    );
+    public UserModuleSlash(
+        IHttpClientFactory httpClientFactory,
+        DiscordBotDbContext dbContext,
+        IOptions<AuthSettings> authSettings)
+    {
+        Client = new Lazy<GuildSaberClient>(() => new GuildSaberClient(
+            httpClientFactory.CreateClient("GuildSaber"),
+            new GuildSaberAuthentication.CustomBasicApiKeyAuthentication(
+                Key: authSettings.Value.ApiKey,
+                DiscordId: Context?.User?.Id.ToString() ?? string.Empty
+            )));
+        DbContext = dbContext;
+    }
+
+    private Lazy<GuildSaberClient> Client { get; }
+    public DiscordBotDbContext DbContext { get; }
+
+    public enum EDisplayChoice
+    {
+        Visible = 0,
+        Invisible = 1 << 0
+    }
+}
+
+public static class UserModuleSlashExtensions
+{
+    extension(UserModuleSlash.EDisplayChoice self)
+    {
+        public bool ToEphemeral() => self == UserModuleSlash.EDisplayChoice.Invisible;
+    }
 }

@@ -16,7 +16,7 @@ public partial class UserModuleSlash
     public async Task Guilds(
         [Summary("search", "Search term to filter guilds by name")] string search,
         [Summary("page", "Page number for pagination")] int page = 1
-    ) => await RespondAsync(embed: await GuildsCommand.GetGuilds(search, page, client));
+    ) => await RespondAsync(embed: await GuildsCommand.GetGuilds(search, page, Client.Value));
 }
 
 /// <summary>

@@ -4,7 +4,7 @@ namespace GuildSaber.Api.Features.Guilds;
 
 public static class GuildResponses
 {
-    public readonly record struct GuildInfo(
+    public record GuildInfo(
         string Name,
         string SmallName,
         string Description,
@@ -12,7 +12,7 @@ public static class GuildResponses
         DateTimeOffset CreatedAt
     );
 
-    public readonly record struct GuildRequirements(
+    public record GuildRequirements(
         bool RequireSubmission,
         int? MinRank,
         int? MaxRank,
@@ -21,12 +21,19 @@ public static class GuildResponses
         int? AccountAgeUnix
     );
 
+    public record GuildDiscordInfo(
+        string? MainDiscordGuildId
+    );
+
     public record Guild(
         int Id,
         GuildInfo Info,
         GuildRequirements Requirements,
         EGuildStatus Status
-    );
+    )
+    {
+        public required GuildDiscordInfo DiscordInfo { get; init; }
+    }
 
     public enum EGuildStatus : byte
     {

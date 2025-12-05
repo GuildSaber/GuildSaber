@@ -9,7 +9,8 @@ public static class PlayerResponses
         PlayerHardwareInfo PlayerHardwareInfo,
         PlayerInfo PlayerInfo,
         PlayerLinkedAccounts PlayerLinkedAccounts,
-        PlayerSubscriptionInfo PlayerSubscriptionInfo
+        PlayerSubscriptionInfo PlayerSubscriptionInfo,
+        bool IsManager
     );
 
     public readonly record struct PlayerHardwareInfo(
@@ -42,7 +43,7 @@ public static class PlayerResponses
         Tier3 = 3
     }
 
-    public readonly record struct PlayerAtMe(
+    public readonly record struct PlayerExtended(
         Player Player,
         MemberResponses.Member[] Members,
         string[] Roles

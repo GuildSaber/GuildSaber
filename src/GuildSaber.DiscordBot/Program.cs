@@ -1,5 +1,4 @@
-﻿using GuildSaber.CSharpClient;
-using GuildSaber.Database;
+﻿using GuildSaber.Database;
 using GuildSaber.Database.Contexts.DiscordBot;
 using GuildSaber.DiscordBot.Auth;
 using GuildSaber.DiscordBot.Core.Host;
@@ -16,7 +15,7 @@ builder.Services
 builder.AddNpgsqlDbContext<DiscordBotDbContext>(connectionName: Constants.DiscordBotDbConnectionStringKey,
     configureDbContextOptions: options => options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
 
-builder.Services.AddHttpClient<GuildSaberClient>(client =>
+builder.Services.AddHttpClient("GuildSaber", client =>
     {
         client.BaseAddress = new Uri("https+http://api");
         client.DefaultRequestHeaders.Add("User-Agent", "GuildSaber-Bot");
