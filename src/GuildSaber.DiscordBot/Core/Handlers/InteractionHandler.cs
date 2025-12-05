@@ -35,21 +35,21 @@ public class InteractionHandler(
         if (result.IsSuccess || result is not ExecuteResult { Exception.InnerException: var innerException })
             return;
 
-        var interaction = interactionContext.Interaction;
         logger.LogError("[HandleInteraction] {innerException}", innerException);
-        if (interaction.Type is InteractionType.ApplicationCommand)
-        {
-            var embed = new EmbedBuilder
-            {
-                Title = "Error",
-                Description = innerException?.Message ?? "An unknown error occurred.",
-                Color = Color.Red
-            }.Build();
 
-            if (interaction.HasResponded)
-                await interaction.FollowupAsync(embed: embed);
-            else
-                await interaction.RespondAsync(embed: embed);
-        }
+        var interaction = interactionContext.Interaction;
+        if (interaction.Type is not InteractionType.ApplicationCommand)
+            return;
+
+        var embed = new EmbedBuilder
+        {
+            Title = "Error",
+            Description = innerException?.Message ?? "An unknown error occurred.",
+            Color = Color.Red
+        }.Build();
+
+        await (interaction.HasResponded
+            ? interaction.FollowupAsync(embed: embed)
+            : interaction.RespondAsync(embed: embed));
     }
 }

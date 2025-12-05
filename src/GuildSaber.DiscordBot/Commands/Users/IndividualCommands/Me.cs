@@ -30,15 +30,23 @@ file static class MeCommand
 
         var atMe = await client.Players.GetExtendedAtMeAsync(CancellationToken.None)
             .Unwrap();
+        if (atMe is not { Player: var player, Members: var members })
+        {
+            embedBuilder.Title = "Whoops!";
+            embedBuilder.Color = Color.DarkOrange;
+            embedBuilder.Description = "Your discord account doesn't seem to be linked to any GuildSaber account." +
+                                       "\nPlease visit GuildSaber and link your account to use this command.";
+            return embedBuilder.Build();
+        }
 
-        embedBuilder.Title = $"{atMe.Player.PlayerInfo.Username}'s Profile";
+        embedBuilder.Title = $"{player.PlayerInfo.Username}'s Profile";
         embedBuilder.Color = Color.Blue;
-        embedBuilder.AddField("Player ID", atMe.Player.Id, true);
-        embedBuilder.AddField("Username", atMe.Player.PlayerInfo.Username, true);
+        embedBuilder.AddField("Player ID", player.Id, true);
+        embedBuilder.AddField("Username", player.PlayerInfo.Username, true);
         // add a field to see if the user is a manager
-        embedBuilder.AddField("Is Manager", atMe.Player.IsManager);
+        embedBuilder.AddField("Is Manager", player.IsManager);
 
-        foreach (var member in atMe.Members)
+        foreach (var member in members)
         {
             var guildId = member.GuildId;
             var permissionFlag = member.Permissions;

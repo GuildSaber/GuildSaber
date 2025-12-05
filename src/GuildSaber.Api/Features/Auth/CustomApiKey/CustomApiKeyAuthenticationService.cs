@@ -24,7 +24,7 @@ public class CustomApiKeyAuthenticationService(
                 dbContext.Players
                     .Where(x => x.LinkedAccounts.DiscordId == discordId)
                     .Select(x => new PlayerIdWithManagerFlag(x.Id, x.IsManager))
-                    .First());
+                    .FirstOrDefault());
 
     public async Task<AuthenticateResult> AuthenticateAsync(BasicCredential credential, IPAddress? clientIp)
     {

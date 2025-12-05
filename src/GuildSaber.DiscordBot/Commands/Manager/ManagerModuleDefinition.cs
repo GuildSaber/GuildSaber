@@ -1,11 +1,11 @@
 ﻿using Discord;
 using Discord.Interactions;
+using GuildSaber.Api.Features.Guilds.Members;
 using GuildSaber.CSharpClient;
 using GuildSaber.CSharpClient.Auth;
 using GuildSaber.Database.Contexts.DiscordBot;
-using GuildSaber.Database.Models.DiscordBot;
-using GuildSaber.DiscordBot.Auth;
 using GuildSaber.DiscordBot.Core.Handlers;
+using GuildSaber.DiscordBot.Settings;
 using Microsoft.Extensions.Options;
 
 namespace GuildSaber.DiscordBot.Commands.Manager;
@@ -19,7 +19,7 @@ namespace GuildSaber.DiscordBot.Commands.Manager;
 /// to reflect the context and permissions required for the commands to be executed in this module.
 /// </remarks>
 [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel, InteractionContextType.BotDm)]
-[PermissionHandler.RequirePermissionAttributeSlash(User.EPermissions.Manager)]
+[PermissionHandler.RequirePermissionAttributeSlash(MemberResponses.EPermission.None, requireManager: true)]
 public partial class ManagerModuleSlash : InteractionModuleBase<SocketInteractionContext>
 {
     public ManagerModuleSlash(

@@ -33,20 +33,19 @@ public sealed class PlayerClient(
                 .ReadFromJsonAsync<Player?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
         };
 
-    /// <remarks>
-    /// Returned Player isn't nullable because an authenticated player will always exist (no 404).
-    /// </remarks>
-    public async Task<Result<Player>> GetAtMeAsync(CancellationToken token)
+    public async Task<Result<Player?>> GetAtMeAsync(CancellationToken token)
         => await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, "players/@me")
             {
                 Headers = { Authorization = authenticationHeader }
             }, token).ConfigureAwait(false) switch
             {
+                { StatusCode: HttpStatusCode.Unauthorized or HttpStatusCode.NotFound }
+                    => Success<Player?>(null),
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
-                    => Failure<Player>(
+                    => Failure<Player?>(
                         $"Failed to retrieve current player, status code: {(int)statusCode} ({reasonPhrase})"),
                 var response => await Try(() => response.Content
-                    .ReadFromJsonAsync<Player>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+                    .ReadFromJsonAsync<Player?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
             };
 
     public async Task<Result<PlayerExtended?>> GetByIdExtendedAsync(int playerId, CancellationToken token)
@@ -60,20 +59,19 @@ public sealed class PlayerClient(
                 .ReadFromJsonAsync<PlayerExtended?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
         };
 
-    /// <remarks>
-    /// Returned PlayerExtended isn't nullable because an authenticated player will always exist (no 404).
-    /// </remarks>
-    public async Task<Result<PlayerExtended>> GetExtendedAtMeAsync(CancellationToken token)
+    public async Task<Result<PlayerExtended?>> GetExtendedAtMeAsync(CancellationToken token)
         => await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, "players/@me/extended")
             {
                 Headers = { Authorization = authenticationHeader }
             }, token).ConfigureAwait(false) switch
             {
+                { StatusCode: HttpStatusCode.Unauthorized or HttpStatusCode.NotFound }
+                    => Success<PlayerExtended?>(null),
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
-                    => Failure<PlayerExtended>(
+                    => Failure<PlayerExtended?>(
                         $"Failed to retrieve current player extended, status code: {(int)statusCode} ({reasonPhrase})"),
                 var response => await Try(() => response.Content
-                    .ReadFromJsonAsync<PlayerExtended>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+                    .ReadFromJsonAsync<PlayerExtended?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
             };
 
     public async Task<Result<PagedList<Player>>> GetAsync(

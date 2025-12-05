@@ -56,21 +56,26 @@ public class PlayerEndpoints : IEndpoints
                 .FirstOrDefaultAsync() switch
             {
                 null => TypedResults.NotFound(),
-                var player => TypedResults.Ok(player.Value)
+                { } player => TypedResults.Ok(player)
             };
 
     private static Task<Results<Ok<Player>, NotFound>> GetPlayerAtMeAsync(
         ClaimsPrincipal principal, ServerDbContext dbContext)
         => GetPlayerAsync(principal.GetPlayerId()!.Value, dbContext);
 
-    private static async Task<Ok<PlayerExtended>> GetPlayerExtendedAsync(
+    private static async Task<Results<Ok<PlayerExtended>, NotFound>> GetPlayerExtendedAsync(
         PlayerId playerId, ServerDbContext dbContext)
-        => TypedResults.Ok(await dbContext.Players
-            .Where(x => x.Id == playerId)
-            .Select(PlayerMappers.MapPlayerExtendedExpression)
-            .FirstAsync());
+        => await dbContext.Players
+                .Where(x => x.Id == playerId)
+                .Select(PlayerMappers.MapPlayerExtendedExpression)
+                .Cast<PlayerExtended?>()
+                .FirstOrDefaultAsync() switch
+            {
+                null => TypedResults.NotFound(),
+                { } playerExtended => TypedResults.Ok(playerExtended)
+            };
 
-    private static Task<Ok<PlayerExtended>> GetPlayerExtendedAtMeAsync(
+    private static Task<Results<Ok<PlayerExtended>, NotFound>> GetPlayerExtendedAtMeAsync(
         ClaimsPrincipal claimsPrincipal, ServerDbContext dbContext)
         => GetPlayerExtendedAsync(claimsPrincipal.GetPlayerId()!.Value, dbContext);
 

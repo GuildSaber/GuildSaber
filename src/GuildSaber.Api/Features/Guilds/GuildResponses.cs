@@ -29,11 +29,9 @@ public static class GuildResponses
         int Id,
         GuildInfo Info,
         GuildRequirements Requirements,
-        EGuildStatus Status
-    )
-    {
-        public required GuildDiscordInfo DiscordInfo { get; init; }
-    }
+        EGuildStatus Status,
+        GuildDiscordInfo DiscordInfo
+    );
 
     public enum EGuildStatus : byte
     {

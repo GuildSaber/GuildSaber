@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace GuildSaber.DiscordBot.Auth;
+namespace GuildSaber.DiscordBot.Settings;
 
 public class AuthSettings
 {

@@ -159,7 +159,8 @@ public class GuildEndpoints : IEndpoints
     private static async Task<Results<Ok<Guild>, BadRequest<string>, ValidationProblem>> PatchGuildAsync(
         GuildId guildId,
         [FromBody] JsonPatchDocument<Guild> patch,
-        ServerDbContext dbContext)
+        ServerDbContext dbContext,
+        ClaimsPrincipal claims)
     {
         var patchedRequest = await dbContext.Guilds.Where(x => x.Id == guildId)
             .Select(x => x.Map())
@@ -167,6 +168,11 @@ public class GuildEndpoints : IEndpoints
 
         if (patchedRequest is null)
             return TypedResults.BadRequest($"Guild with id {guildId} not found");
+
+        if (patch.Operations
+                .Any(x => string.Equals(x.path, $"/{nameof(Guild.Status)}", StringComparison.OrdinalIgnoreCase))
+            && !claims.IsManager())
+            return TypedResults.BadRequest("Only managers can modify guild status.");
 
         var patchError = new Dictionary<string, string[]>();
         patch.ApplyTo(patchedRequest, error =>

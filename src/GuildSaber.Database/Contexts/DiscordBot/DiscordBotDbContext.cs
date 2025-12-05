@@ -12,7 +12,6 @@ public sealed class DiscordBotDbContext : DbContext
     public DiscordBotDbContext(DbContextOptions<DiscordBotDbContext> options) : base(options) { }
     public DiscordBotDbContext() { }
 
-    public DbSet<User> Users { get; set; }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -22,12 +21,4 @@ public sealed class DiscordBotDbContext : DbContext
             services.GetRequiredService<ProviderConventionSetBuilderDependencies>())
         );
     }
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-        => modelBuilder.Entity<User>(x =>
-            {
-                x.HasKey(y => y.Id);
-                x.Property(y => y.Id).ValueGeneratedNever();
-            }
-        );
 }

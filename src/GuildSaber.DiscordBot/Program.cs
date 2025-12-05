@@ -1,7 +1,7 @@
 ﻿using GuildSaber.Database;
 using GuildSaber.Database.Contexts.DiscordBot;
-using GuildSaber.DiscordBot.Auth;
 using GuildSaber.DiscordBot.Core.Host;
+using GuildSaber.DiscordBot.Settings;
 using Microsoft.EntityFrameworkCore;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -22,7 +22,10 @@ builder.Services.AddHttpClient("GuildSaber", client =>
     }).UseSocketsHttpHandler((handler, _) => handler.PooledConnectionLifetime = TimeSpan.FromMinutes(5))
     .SetHandlerLifetime(Timeout.InfiniteTimeSpan);
 
+
 builder.AddServiceDefaults();
+
+builder.Services.AddHybridCache();
 builder.Services.AddDiscordBot(builder.Configuration);
 
 var app = builder.Build();

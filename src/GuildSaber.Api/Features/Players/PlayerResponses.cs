@@ -45,7 +45,6 @@ public static class PlayerResponses
 
     public readonly record struct PlayerExtended(
         Player Player,
-        MemberResponses.Member[] Members,
-        string[] Roles
+        MemberResponses.Member[] Members
     );
 }

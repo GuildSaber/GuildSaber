@@ -26,7 +26,9 @@ public static class GuildMappers
                 MaxPP: self.Requirements.MaxPP,
                 AccountAgeUnix: self.Requirements.AccountAgeUnix
             ),
-            self.Status.Map()) { DiscordInfo = self.DiscordInfo.Map() };
+            self.Status.Map(),
+            self.DiscordInfo.Map()
+        );
 
     public static Expression<Func<Guild, GuildResponses.GuildExtended>> MapGuildExtendedExpression
         => self => new GuildResponses.GuildExtended(
@@ -49,8 +51,9 @@ public static class GuildMappers
                     MaxPP: self.Requirements.MaxPP,
                     AccountAgeUnix: self.Requirements.AccountAgeUnix
                 ),
-                self.Status.Map()
-            ) { DiscordInfo = self.DiscordInfo.Map() },
+                self.Status.Map(),
+                self.DiscordInfo.Map()
+            ),
             self.Contexts.Select(c => new GuildResponses.GuildContext(
                 c.Id,
                 c.Type.Map(),
@@ -97,8 +100,9 @@ public static class GuildMappers
             MaxPP: self.Requirements.MaxPP,
             AccountAgeUnix: self.Requirements.AccountAgeUnix
         ),
-        self.Status.Map()
-    ) { DiscordInfo = self.DiscordInfo.Map() };
+        self.Status.Map(),
+        self.DiscordInfo.Map()
+    );
 
     public static GuildResponses.GuildRequirements Map(this GuildRequirements self) => new(
         RequireSubmission: self.RequireSubmission,
