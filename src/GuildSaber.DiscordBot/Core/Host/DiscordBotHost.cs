@@ -2,17 +2,15 @@
 using Discord.Interactions;
 using Discord.WebSocket;
 using GuildSaber.Database.Contexts.DiscordBot;
-using GuildSaber.Database.Models.DiscordBot;
 using GuildSaber.DiscordBot.Core.Handlers;
 using GuildSaber.DiscordBot.Core.Options;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace GuildSaber.DiscordBot.Core.Host;
 
 public class DiscordBotHost(
     IOptions<DiscordBotOptions> options,
-    IServiceProvider services,
+    //IServiceProvider services,
     DiscordSocketClient client,
     InteractionService interactionService,
     InteractionHandler interactionHandler,
@@ -23,9 +21,7 @@ public class DiscordBotHost(
         await interactionHandler.InitializeAsync();
         await client.SetGameAsync(options.Value.Status);
         //TODO: await using service scope?
-        var dbContext = services.GetRequiredService<DiscordBotDbContext>();
-
-        await EnsureManagerExistAsync(dbContext, options.Value);
+        //var dbContext = services.GetRequiredService<DiscordBotDbContext>();
 
         client.Log += msg =>
         {
@@ -55,21 +51,4 @@ public class DiscordBotHost(
 
     public Task StopAsync(CancellationToken cancellationToken)
         => client.StopAsync();
-
-    /// <summary>
-    /// Setup the database and ensure the manager user exists.
-    /// </summary>
-    /// <param name="dbContext"></param>
-    /// <param name="options"></param>
-    private static async Task EnsureManagerExistAsync(DiscordBotDbContext dbContext, DiscordBotOptions options)
-    {
-        if (!await dbContext.Users.AnyAsync(x => x.Id == options.ManagerId))
-            dbContext.Users.Add(new User
-            {
-                Id = options.ManagerId,
-                Permissions = User.EPermissions.Manager
-            });
-
-        await dbContext.SaveChangesAsync();
-    }
 }

@@ -1,5 +1,4 @@
 ﻿using GuildSaber.Database.Extensions;
-using GuildSaber.Database.Models.DiscordBot;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
