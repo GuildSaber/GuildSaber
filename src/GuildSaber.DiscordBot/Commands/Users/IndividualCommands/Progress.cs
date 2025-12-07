@@ -83,10 +83,9 @@ file static class ProgramCommand
 
     private static string MakeProgressBar(int value, int maxValue, int size)
     {
-        if (maxValue <= 0 || size <= 0)
-            return "[Invalid Progress Bar]";
+        if (size <= 0) return "[Invalid Progress Bar]";
 
-        var percentage = Math.Clamp((float)value / maxValue, 0f, 1f);
+        var percentage = maxValue == 0 ? 0 : Math.Clamp((float)value / maxValue, 0f, 1f);
         var progress = value > 0 ? Math.Max(1, (int)Math.Round(size * percentage)) : 0;
 
         var stringBuilder = new StringBuilder("[");
