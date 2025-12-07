@@ -6,7 +6,7 @@ namespace GuildSaber.Database.Models.Server.Guilds.Members;
 
 public class Member
 {
-    public Guild.GuildId GuildId { get; init; }
+    public GuildId GuildId { get; init; }
     public Player.PlayerId PlayerId { get; init; }
 
     public required DateTimeOffset CreatedAt { get; init; }

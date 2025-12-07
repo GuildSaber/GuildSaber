@@ -52,6 +52,11 @@ public class GuildEndpoints : IEndpoints
             .WithDescription("Get a specific guild with extended information by its Id."
                              + " Which includes additional fields like categories and points.");
 
+        group.MapGet("/by-discord-id/{discordGuildId:long}", GetGuildByDiscordIdAsync)
+            .WithName("GetGuildByDiscordId")
+            .WithSummary("Get a guild by Discord guild ID")
+            .WithDescription("Get a specific guild by its Discord guild ID.");
+
         group.MapPatch("/{guildId}", PatchGuildAsync)
             .WithName("PatchGuild")
             .WithSummary("Patch a guild")
@@ -156,6 +161,20 @@ public class GuildEndpoints : IEndpoints
                 var guildExtended => TypedResults.Ok(guildExtended)
             };
 
+    private static async Task<Results<Ok<Guild>, NotFound>> GetGuildByDiscordIdAsync(
+        ulong discordGuildId,
+        ServerDbContext dbContext)
+        => await dbContext.Guilds
+                .Where(x => x.DiscordInfo.MainDiscordGuildId == discordGuildId)
+                .Select(GuildMappers.MapGuildExpression)
+                .FirstOrDefaultAsync()
+            switch
+            {
+                null => TypedResults.NotFound(),
+                var guild => TypedResults.Ok(guild)
+            };
+
+
     private static async Task<Results<Ok<Guild>, BadRequest<string>, ValidationProblem>> PatchGuildAsync(
         GuildId guildId,
         [FromBody] JsonPatchDocument<Guild> patch,
@@ -196,13 +215,17 @@ public class GuildEndpoints : IEndpoints
             return TypedResults.ValidationProblem(detail: "Failed to create guild due to validation errors.",
                 errors: errors);
 
+        if (!patchedRequest.DiscordInfo.Map().TryGetValue(out var discordInfo, out var discordInfoError))
+            return TypedResults.ValidationProblem(detail: "Failed to validate Discord info.",
+                errors: new Dictionary<string, string[]> { { nameof(Guild.DiscordInfo), [discordInfoError] } });
+
         var guild = new ServerGuild
         {
             Id = guildId,
             Info = tuple.Item1,
             Requirements = tuple.Item2,
             Status = patchedRequest.Status.Map(),
-            DiscordInfo = patchedRequest.DiscordInfo.Map()
+            DiscordInfo = discordInfo
         };
 
         return TypedResults.Ok(await dbContext.UpdateAndSaveAsync(guild, x => x.Map()));

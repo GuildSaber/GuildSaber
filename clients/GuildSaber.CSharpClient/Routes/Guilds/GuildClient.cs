@@ -23,7 +23,7 @@ public sealed class GuildClient(
             UriKind.Relative
         );
 
-    public async Task<Result<Guild?>> GetByIdAsync(int guildId, CancellationToken token)
+    public async Task<Result<Guild?>> GetByIdAsync(GuildId guildId, CancellationToken token)
         => await httpClient.GetAsync($"guilds/{guildId}", token).ConfigureAwait(false) switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<Guild?>(null),
@@ -33,6 +33,18 @@ public sealed class GuildClient(
             var response => await Try(() => response.Content
                 .ReadFromJsonAsync<Guild>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
         };
+
+    public async Task<Result<Guild?>> GetByDiscordIdAsync(ulong discordGuildId, CancellationToken token)
+        => await httpClient.GetAsync($"guilds/by-discord-id/{discordGuildId}", token).ConfigureAwait(false) switch
+        {
+            { StatusCode: HttpStatusCode.NotFound } => Success<Guild?>(null),
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<Guild?>(
+                    $"Failed to retrieve guild with Discord ID {discordGuildId}, status code: {(int)statusCode} ({reasonPhrase})"),
+            var response => await Try(() => response.Content
+                .ReadFromJsonAsync<Guild>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+        };
+
 
     public async Task<Result<PagedList<Guild>>> GetAsync(
         string? search, PaginatedRequestOptions<GuildRequests.EGuildSorter> requestOptions, CancellationToken token)
@@ -87,7 +99,8 @@ public sealed class GuildClient(
         }
     }
 
-    public async Task<Result<Guild>> SetDiscordGuildIdAsync(int guildId, ulong? discordGuildId, CancellationToken token)
+    public async Task<Result<Guild>> SetDiscordGuildIdAsync(GuildId guildId, ulong? discordGuildId,
+                                                            CancellationToken token)
     {
         var request = new HttpRequestMessage(new HttpMethod("PATCH"), $"guilds/{guildId}")
         {

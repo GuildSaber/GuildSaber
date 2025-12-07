@@ -138,7 +138,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
 
                 yield return TryDeserializeMessage<GeneralSocketMessage>(mem.Span, _jsonOptions)
                     .TryGetValue(out var test, out var error)
-                    ? Success<GeneralSocketMessage, Error>(test)
+                    ? Success<GeneralSocketMessage, Error>(test!)
                     : Failure<GeneralSocketMessage, Error>(error);
 
                 _receiveBufferWPos = 0;
@@ -216,8 +216,13 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
         }
         catch (JsonException ex)
         {
+#if NETSTANDARD2_0
+            return Failure<T?, DeserializationError>(
+                new DeserializationError(ex, Encoding.UTF8.GetString(utf8Json.ToArray())));
+#else
             return Failure<T?, DeserializationError>(
                 new DeserializationError(ex, Encoding.UTF8.GetString(utf8Json)));
+#endif
         }
     }
 

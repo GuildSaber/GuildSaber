@@ -4,7 +4,7 @@ public static class MemberResponses
 {
     public readonly record struct Member(
         int PlayerId,
-        int GuildId,
+        GuildId GuildId,
         DateTimeOffset InitializedAt,
         DateTimeOffset EditedAt,
         EPermission Permissions,

@@ -4,7 +4,7 @@ public static class CategoryResponses
 {
     public readonly record struct Category(
         int Id,
-        int GuildId,
+        GuildId GuildId,
         CategoryInfo Info
     );
 

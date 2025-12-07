@@ -69,7 +69,7 @@ public static class RankedMapResponses
 
     public record RankedMap(
         long Id,
-        int GuildId,
+        GuildId GuildId,
         int ContextId,
         RankedMapInfo Info,
         RankedMapRequirements Requirements,

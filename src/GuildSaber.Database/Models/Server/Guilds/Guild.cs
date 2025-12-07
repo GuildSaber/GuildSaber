@@ -33,27 +33,6 @@ public class Guild
         Featured = 2,
         Private = 3
     }
-
-    public readonly record struct GuildId(int Value) : IEFStrongTypedId<GuildId, int>
-    {
-        public static bool TryParse(string from, out GuildId value)
-        {
-            if (int.TryParse(from, out var id))
-            {
-                value = new GuildId(id);
-                return true;
-            }
-
-            value = default;
-            return false;
-        }
-
-        public static implicit operator int(GuildId id)
-            => id.Value;
-
-        public override string ToString()
-            => Value.ToString();
-    }
 }
 
 public class GuildConfiguration : IEntityTypeConfiguration<Guild>
@@ -61,7 +40,7 @@ public class GuildConfiguration : IEntityTypeConfiguration<Guild>
     public void Configure(EntityTypeBuilder<Guild> builder)
     {
         builder.Property(x => x.Id)
-            .HasGenericConversion<Guild.GuildId, int>()
+            .HasConversion(from => from.Value, to => new GuildId { Value = to })
             .ValueGeneratedOnAdd();
         builder.ComplexProperty(x => x.Info).Configure(new GuildInfoConfiguration());
         builder.ComplexProperty(x => x.Requirements).Configure(new GuildJoinRequirementsConfiguration());

@@ -9,7 +9,7 @@ namespace GuildSaber.Database.Models.Server.Guilds.Members;
 public class MemberPointStat
 {
     public int Id { get; init; }
-    public Guild.GuildId GuildId { get; init; }
+    public GuildId GuildId { get; init; }
     public Context.ContextId ContextId { get; init; }
     public Player.PlayerId PlayerId { get; init; }
     public Point.PointId PointId { get; init; }

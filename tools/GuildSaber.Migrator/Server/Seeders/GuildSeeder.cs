@@ -1,5 +1,6 @@
 using System.Drawing;
 using GuildSaber.Common.Result;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,7 @@ public static class GuildSeeder
     [
         new()
         {
-            Id = new Guild.GuildId(1),
+            Id = new GuildId(1),
             Info = GuildInfo.TryCreate(
                 name: "Challenge Saber",
                 smallName: "CS",
@@ -30,7 +31,7 @@ public static class GuildSeeder
         },
         new()
         {
-            Id = new Guild.GuildId(2),
+            Id = new GuildId(2),
             Info = GuildInfo.TryCreate(
                 name: "Beat Saber Challenge Community",
                 smallName: "BSCC",

@@ -6,9 +6,6 @@ using GuildSaber.CSharpClient;
 
 namespace GuildSaber.DiscordBot.Commands.Users;
 
-/// <remarks>
-/// This class is partial because the command can only be registered in a module.
-/// </remarks>
 public partial class UserModuleSlash
 {
     [SlashCommand("me", "Get information about your account")]

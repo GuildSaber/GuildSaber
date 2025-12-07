@@ -26,7 +26,7 @@ public class BeatSaverApi(HttpClient httpClient)
         => await httpClient.GetAsync($"maps/id/{key}") switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<BeatMap?, Error>(null),
-            { StatusCode: HttpStatusCode.TooManyRequests, Headers: var headers } => Failure<BeatMap?, Error>(
+            { StatusCode: (HttpStatusCode)429, Headers: var headers } => Failure<BeatMap?, Error>(
                 new Error.RateLimitExceeded(headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(2))
             ),
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
@@ -41,7 +41,7 @@ public class BeatSaverApi(HttpClient httpClient)
         => await httpClient.GetAsync($"maps/hash/{hash}") switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<BeatMap?, Error>(null),
-            { StatusCode: HttpStatusCode.TooManyRequests, Headers: var headers } => Failure<BeatMap?, Error>(
+            { StatusCode: (HttpStatusCode)429, Headers: var headers } => Failure<BeatMap?, Error>(
                 new Error.RateLimitExceeded(headers.RetryAfter?.Delta ?? TimeSpan.FromMinutes(1))
             ),
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }

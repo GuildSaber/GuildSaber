@@ -15,7 +15,7 @@ public partial class ManagerModuleSlash
     {
         await DeferAsync(ephemeral: true);
         var guild = await Client.Value.Guilds
-            .SetDiscordGuildIdAsync(guildId, Context.Guild.Id, CancellationToken.None)
+            .SetDiscordGuildIdAsync(new GuildId(guildId), Context.Guild.Id, CancellationToken.None)
             .Unwrap();
 
         await FollowupAsync(

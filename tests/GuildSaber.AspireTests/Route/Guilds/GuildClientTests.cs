@@ -4,6 +4,7 @@ using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Internal;
 using GuildSaber.AspireTests.DataClasses;
 using GuildSaber.AspireTests.Utils;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient.Routes.Internal;
 using static GuildSaber.Api.Features.Guilds.GuildResponses;
 
@@ -12,14 +13,14 @@ namespace GuildSaber.AspireTests.Route.Guilds;
 [ClassDataSource<GuildSaberClientDataClass>]
 public class GuildClientTests(GuildSaberClientDataClass dataClass)
 {
-    private const int ValidGuildId = 1;
-    private const int InvalidGuildId = 999999;
+    private readonly GuildId _invalidGuildId = new(999999);
+    private readonly GuildId _validGuildId = new(1);
 
     [Test]
     public async Task GetByIdAsync_ShouldReturnGuild_WhenGuildExists()
     {
         // Arrange
-        var guildId = ValidGuildId;
+        var guildId = _validGuildId;
 
         // Act
         var result = await dataClass.GuildSaberClient.Guilds.GetByIdAsync(guildId, CancellationToken.None);
@@ -32,7 +33,7 @@ public class GuildClientTests(GuildSaberClientDataClass dataClass)
     public async Task GetByIdAsync_ShouldReturnNull_WhenGuildDoesNotExist()
     {
         // Arrange
-        var guildId = InvalidGuildId;
+        var guildId = _invalidGuildId;
 
         // Act
         var result = await dataClass.GuildSaberClient.Guilds.GetByIdAsync(guildId, CancellationToken.None);

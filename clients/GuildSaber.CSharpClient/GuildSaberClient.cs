@@ -6,6 +6,7 @@ using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.CSharpClient.Auth;
 using GuildSaber.CSharpClient.Routes.Guilds;
+using GuildSaber.CSharpClient.Routes.Guilds.Categories;
 using GuildSaber.CSharpClient.Routes.Players;
 
 namespace GuildSaber.CSharpClient;
@@ -70,6 +71,9 @@ public class GuildSaberClient : IDisposable
 
     public GuildClient Guilds => field ??= new GuildClient(_httpClient, _authenticationHeader, _jsonOptions);
     public PlayerClient Players => field ??= new PlayerClient(_httpClient, _authenticationHeader, _jsonOptions);
+
+    public CategoryClient Categories
+        => field ??= new CategoryClient(_httpClient, /*_authenticationHeader,*/ _jsonOptions);
 
     public void Dispose()
     {

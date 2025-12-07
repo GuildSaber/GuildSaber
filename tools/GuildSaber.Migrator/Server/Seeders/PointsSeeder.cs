@@ -1,6 +1,6 @@
 using GuildSaber.Common.Result;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
-using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using Microsoft.EntityFrameworkCore;
 
@@ -87,7 +87,7 @@ public static class PointsSeeder
         dbContext.Points.AddRange(new Point
         {
             Id = new Point.PointId(1),
-            GuildId = new Guild.GuildId(1),
+            GuildId = new GuildId(1),
             Info = PointInfo.TryCreate(
                 name: "CPP",
                 description: "Challenge Pass points. The amount you get per valid map pass is fixed,"
@@ -102,7 +102,7 @@ public static class PointsSeeder
         }, new Point
         {
             Id = new Point.PointId(2),
-            GuildId = new Guild.GuildId(2),
+            GuildId = new GuildId(2),
             Info = PointInfo.TryCreate(
                 name: "RPL",
                 description:

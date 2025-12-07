@@ -18,8 +18,6 @@
         <Compile Include="..\..\src\GuildSaber.Api\Features\**\*Requests.cs" Link="Routes\%(RecursiveDir)%(Filename)%(Extension)" />
         <Compile Include="..\..\src\GuildSaber.Api\Features\Internal\*.cs" Link="Routes\Internal\%(Filename)%(Extension)" />
         <Compile Remove="..\..\src\GuildSaber.Api\Features\Internal\*Extensions.cs" Link="Routes\Internal\%(Filename)%(Extension)" />
-        <Compile Include="..\..\src\GuildSaber.Common\Services\**\*StrongTypes\*.cs" Link="StrongTypes\%(Filename)%(Extension)" />
-        <Compile Include="..\..\src\GuildSaber.Common\GlobalUsings.cs" Link="%(Filename)%(Extension)" />
 
     </ItemGroup>
 
@@ -27,6 +25,10 @@
         <PackageReference Include="CSharpFunctionalExtensions" />
         <PackageReference Include="System.Net.Http.Json" />
         <PackageReference Include="System.Text.Json" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\GuildSaber.Common\GuildSaber.Common.csproj" />
     </ItemGroup>
 
 </Project>

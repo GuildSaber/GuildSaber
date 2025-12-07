@@ -250,6 +250,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
 
+OpenApiTypeTransformer.MapType<GuildId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
 OpenApiTypeTransformer.MapType<BeatSaverKey>(new OpenApiSchema { Type = JsonSchemaType.String, Example = "a3c3" });
 OpenApiTypeTransformer.MapType<SongHash>(new OpenApiSchema
     { Type = JsonSchemaType.String, Example = "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890" });

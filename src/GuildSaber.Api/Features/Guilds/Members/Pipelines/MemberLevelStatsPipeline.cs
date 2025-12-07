@@ -10,7 +10,7 @@ using GuildSaber.Database.Models.Server.RankedMaps;
 using Microsoft.EntityFrameworkCore;
 using AccStarQueryFunc = System.Func<
     GuildSaber.Database.Contexts.Server.ServerDbContext,
-    GuildSaber.Database.Models.Server.Guilds.Guild.GuildId,
+    GuildSaber.Common.StrongTypes.GuildId,
     GuildSaber.Database.Models.Server.Guilds.Context.ContextId,
     GuildSaber.Database.Models.Server.Players.Player.PlayerId,
     GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId,
@@ -20,7 +20,7 @@ using AccStarQueryFunc = System.Func<
 >;
 using DiffStarQueryFunc = System.Func<
     GuildSaber.Database.Contexts.Server.ServerDbContext,
-    GuildSaber.Database.Models.Server.Guilds.Guild.GuildId,
+    GuildSaber.Common.StrongTypes.GuildId,
     GuildSaber.Database.Models.Server.Guilds.Context.ContextId,
     GuildSaber.Database.Models.Server.Players.Player.PlayerId,
     GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId,
@@ -30,7 +30,7 @@ using DiffStarQueryFunc = System.Func<
 >;
 using RankedMapListPassCountQueryFunc = System.Func<
     GuildSaber.Database.Contexts.Server.ServerDbContext,
-    GuildSaber.Database.Models.Server.Guilds.Guild.GuildId,
+    GuildSaber.Common.StrongTypes.GuildId,
     GuildSaber.Database.Models.Server.Guilds.Context.ContextId,
     GuildSaber.Database.Models.Server.Players.Player.PlayerId,
     GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId,

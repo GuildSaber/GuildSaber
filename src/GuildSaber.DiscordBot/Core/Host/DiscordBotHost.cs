@@ -1,7 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using GuildSaber.Database.Contexts.DiscordBot;
 using GuildSaber.DiscordBot.Core.Handlers;
 using GuildSaber.DiscordBot.Core.Options;
 using Microsoft.Extensions.Options;
@@ -10,7 +9,6 @@ namespace GuildSaber.DiscordBot.Core.Host;
 
 public class DiscordBotHost(
     IOptions<DiscordBotOptions> options,
-    //IServiceProvider services,
     DiscordSocketClient client,
     InteractionService interactionService,
     InteractionHandler interactionHandler,
@@ -20,8 +18,6 @@ public class DiscordBotHost(
     {
         await interactionHandler.InitializeAsync();
         await client.SetGameAsync(options.Value.Status);
-        //TODO: await using service scope?
-        //var dbContext = services.GetRequiredService<DiscordBotDbContext>();
 
         client.Log += msg =>
         {

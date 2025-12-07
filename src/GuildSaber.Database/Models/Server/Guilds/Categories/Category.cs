@@ -7,7 +7,7 @@ namespace GuildSaber.Database.Models.Server.Guilds.Categories;
 public class Category
 {
     public CategoryId Id { get; init; }
-    public Guild.GuildId GuildId { get; init; }
+    public GuildId GuildId { get; init; }
     public CategoryInfo Info { get; init; }
 
     public readonly record struct CategoryId(int Value) : IEFStrongTypedId<CategoryId, int>

@@ -9,7 +9,7 @@ namespace GuildSaber.DiscordBot.Core.Host;
 /// <summary>
 /// Provides methods for building a Discord Bot instance
 /// </summary>
-public static class DiscordBotServiceConfigurator
+public static class DiscordBotDependencyExtensions
 {
     /// <summary>
     /// Adds services for a DiscordBot instance to the specified IServiceCollection.

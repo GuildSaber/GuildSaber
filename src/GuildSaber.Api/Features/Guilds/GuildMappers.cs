@@ -1,6 +1,8 @@
 using System.Linq.Expressions;
+using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds;
+using GuildSaber.Database.Models.StrongTypes;
 
 namespace GuildSaber.Api.Features.Guilds;
 
@@ -123,10 +125,9 @@ public static class GuildMappers
         AccountAgeUnix = self.AccountAgeUnix
     };
 
-    public static GuildDiscordInfo Map(this GuildResponses.GuildDiscordInfo self) =>
-        ulong.TryParse(self.MainDiscordGuildId, out var id)
-            ? new GuildDiscordInfo(id)
-            : new GuildDiscordInfo(null);
+    public static Result<GuildDiscordInfo> Map(this GuildResponses.GuildDiscordInfo self) => DiscordGuildId
+        .TryParse(self.MainDiscordGuildId)
+        .Map(id => new GuildDiscordInfo(id));
 
     public static GuildResponses.GuildDiscordInfo Map(this GuildDiscordInfo self) =>
         new(self.MainDiscordGuildId?.ToString());

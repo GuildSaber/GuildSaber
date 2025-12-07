@@ -10,7 +10,7 @@ namespace GuildSaber.Database.Models.Server.Guilds.Levels;
 public abstract class Level
 {
     public LevelId Id { get; init; }
-    public Guild.GuildId GuildId { get; init; }
+    public GuildId GuildId { get; init; }
     public Context.ContextId ContextId { get; init; }
     public Category.CategoryId? CategoryId { get; init; }
 

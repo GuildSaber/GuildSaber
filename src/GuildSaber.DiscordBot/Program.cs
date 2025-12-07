@@ -22,7 +22,6 @@ builder.Services.AddHttpClient("GuildSaber", client =>
     }).UseSocketsHttpHandler((handler, _) => handler.PooledConnectionLifetime = TimeSpan.FromMinutes(5))
     .SetHandlerLifetime(Timeout.InfiniteTimeSpan);
 
-
 builder.AddServiceDefaults();
 
 builder.Services.AddHybridCache();

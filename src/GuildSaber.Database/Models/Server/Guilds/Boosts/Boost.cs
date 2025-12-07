@@ -7,7 +7,7 @@ namespace GuildSaber.Database.Models.Server.Guilds.Boosts;
 public class Boost
 {
     public Player.PlayerId PlayerId { get; init; }
-    public Guild.GuildId GuildId { get; init; }
+    public GuildId GuildId { get; init; }
 
     public EBoostType Type { get; set; }
     public DateTimeOffset AddedAt { get; set; }

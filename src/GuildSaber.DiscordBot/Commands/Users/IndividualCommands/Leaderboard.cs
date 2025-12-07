@@ -3,9 +3,6 @@ using Discord.Interactions;
 
 namespace GuildSaber.DiscordBot.Commands.Users;
 
-/// <remarks>
-/// This class is partial because the command can only be registered in a module.
-/// </remarks>
 public partial class UserModuleSlash
 {
     [SlashCommand("addscore", "Adds a score to the leaderboard")]

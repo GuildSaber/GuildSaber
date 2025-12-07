@@ -7,9 +7,6 @@ using GuildSaber.CSharpClient.Routes.Internal;
 
 namespace GuildSaber.DiscordBot.Commands.Users;
 
-/// <remarks>
-/// This class is partial because the command can only be registered in a module.
-/// </remarks>
 public partial class UserModuleSlash
 {
     [SlashCommand("guilds", "Get the bot ping from discord")]

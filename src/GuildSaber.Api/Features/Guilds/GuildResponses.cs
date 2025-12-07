@@ -26,7 +26,7 @@ public static class GuildResponses
     );
 
     public record Guild(
-        int Id,
+        GuildId Id,
         GuildInfo Info,
         GuildRequirements Requirements,
         EGuildStatus Status,
