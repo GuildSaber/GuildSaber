@@ -19,4 +19,14 @@ public sealed class CategoryClient(
             var response => (await Try(() => response.Content.ReadFromJsonAsync<Category[]>(jsonOptions, token))
                 .ConfigureAwait(false))!
         };
+
+    public async Task<Result<Category?>> GetByIdAsync(int categoryId, CancellationToken token)
+        => await httpClient.GetAsync($"/categories/{categoryId}", token).ConfigureAwait(false) switch
+        {
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<Category?>(
+                    $"Failed to retrieve category with ID {categoryId}: {(int)statusCode} ({reasonPhrase})"),
+            var response => (await Try(() => response.Content.ReadFromJsonAsync<Category?>(jsonOptions, token))
+                .ConfigureAwait(false))!
+        };
 }

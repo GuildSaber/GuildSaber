@@ -15,7 +15,8 @@ public static class LevelStatMappers
                 new LevelStatResponses.LevelInfo(level.Info.Name, level.Info.Color.ToArgb()),
                 (int)level.Order,
                 level.IsLocking,
-                (int)((RankedMapListLevel)level).RequiredPassCount)
+                (int)((RankedMapListLevel)level).RequiredPassCount,
+                ((RankedMapListLevel)level).RankedMaps.Count)
             : level.Type == Level.ELevelType.DiffStar
                 ? new LevelStatResponses.Level.DiffStarLevel(
                     level.Id.Value,

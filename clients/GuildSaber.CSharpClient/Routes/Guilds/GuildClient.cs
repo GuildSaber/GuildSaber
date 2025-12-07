@@ -34,6 +34,17 @@ public sealed class GuildClient(
                 .ReadFromJsonAsync<Guild>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
         };
 
+    public async Task<Result<GuildExtended?>> GetExtendedByIdAsync(GuildId guildId, CancellationToken token)
+        => await httpClient.GetAsync($"guilds/{guildId}/extended", token).ConfigureAwait(false) switch
+        {
+            { StatusCode: HttpStatusCode.NotFound } => Success<GuildExtended?>(null),
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<GuildExtended?>(
+                    $"Failed to retrieve guild with ID {guildId}, status code: {(int)statusCode} ({reasonPhrase})"),
+            var response => await Try(() => response.Content
+                .ReadFromJsonAsync<GuildExtended>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+        };
+
     public async Task<Result<Guild?>> GetByDiscordIdAsync(ulong discordGuildId, CancellationToken token)
         => await httpClient.GetAsync($"guilds/by-discord-id/{discordGuildId}", token).ConfigureAwait(false) switch
         {

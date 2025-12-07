@@ -18,6 +18,11 @@ public class InteractionHandler(
     IServiceProvider services,
     ILogger<InteractionHandler> logger)
 {
+    public class GuildMissingException() : Exception("This discord server hasn't been registered in guild yet.");
+
+    public class PlayerNotFoundException() : Exception(
+        "Player with the specified discord ID was not found in the guild, did they link their discord account?");
+
     public async Task InitializeAsync()
     {
         await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
@@ -28,6 +33,7 @@ public class InteractionHandler(
 
     private Task HandleInteraction(SocketInteraction interaction)
         => commands.ExecuteCommandAsync(new SocketInteractionContext(client, interaction), services);
+
 
     private async Task GlobalExceptionHandler(
         SlashCommandInfo slashCommandInfo, IInteractionContext interactionContext, IResult result)
@@ -41,15 +47,36 @@ public class InteractionHandler(
         if (interaction.Type is not InteractionType.ApplicationCommand)
             return;
 
-        var embed = new EmbedBuilder
+        var embed = innerException switch
         {
-            Title = "Error",
-            Description = innerException?.Message ?? "An unknown error occurred.",
-            Color = Color.Red
-        }.Build();
+            PlayerNotFoundException => new EmbedBuilder
+            {
+                Title = "Player Not Found",
+                Description = innerException.Message,
+                Color = Color.Orange
+            },
+            GuildMissingException _ when interactionContext.Guild is null => new EmbedBuilder
+            {
+                Title = "Guild Not Found",
+                Description = "This command can only be used in a guild (server) context.",
+                Color = Color.Orange
+            },
+            GuildMissingException => new EmbedBuilder
+            {
+                Title = "Guild Not Found",
+                Description = innerException.Message,
+                Color = Color.Orange
+            },
+            _ => new EmbedBuilder
+            {
+                Title = "Error",
+                Description = innerException?.Message ?? "An unknown error occurred.",
+                Color = Color.Red
+            }
+        };
 
         await (interaction.HasResponded
-            ? interaction.FollowupAsync(embed: embed)
-            : interaction.RespondAsync(embed: embed));
+            ? interaction.FollowupAsync(embed: embed.Build())
+            : interaction.RespondAsync(embed: embed.Build()));
     }
 }

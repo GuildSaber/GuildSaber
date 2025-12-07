@@ -34,7 +34,8 @@ public static class LevelStatResponses
             LevelInfo Info,
             int Order,
             bool IsLocking,
-            int RequiredPassCount
+            int RequiredPassCount,
+            int RankedMapCount
         ) : Level(Id, CategoryId, Info, Order, IsLocking);
 
         public sealed record DiffStarLevel(

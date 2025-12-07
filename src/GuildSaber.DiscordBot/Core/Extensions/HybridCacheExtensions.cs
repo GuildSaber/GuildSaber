@@ -1,3 +1,4 @@
+using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Guilds.Categories;
 using GuildSaber.Api.Features.Guilds.Members;
 using GuildSaber.Common.Result;
@@ -52,6 +53,37 @@ public static class HybridCacheExtensions
             => self.GetOrCreateAsync($"GuildCategories_{id}", (id, client),
                 async static (state, token) => await state.client.Categories
                     .GetAllByGuildIdAsync(state.id, token)
+                    .Unwrap(),
+                new HybridCacheEntryOptions
+                {
+                    Expiration = TimeSpan.FromHours(5)
+                });
+
+        public ValueTask<CategoryResponses.Category?> GetCategoryByIdAsync(int id, GuildSaberClient client)
+            => self.GetOrCreateAsync($"CategoryById_{id}", (id, client),
+                async static (state, token) => await state.client.Categories
+                    .GetByIdAsync(state.id, token)
+                    .Unwrap(),
+                new HybridCacheEntryOptions
+                {
+                    Expiration = TimeSpan.FromHours(5)
+                });
+
+        public ValueTask<GuildResponses.Guild?> GetGuildFromDiscordGuildIdAsync(
+            DiscordGuildId id, GuildSaberClient client)
+            => self.GetOrCreateAsync($"GuildFromDiscordGuildId_{id}", (id, client),
+                async static (state, token) => await state.client.Guilds
+                    .GetByDiscordIdAsync(state.id, token)
+                    .Unwrap(),
+                new HybridCacheEntryOptions
+                {
+                    Expiration = TimeSpan.FromHours(5)
+                });
+
+        public ValueTask<GuildResponses.GuildExtended?> GetGuildExtendedAsync(GuildId id, GuildSaberClient client)
+            => self.GetOrCreateAsync($"GuildExtended_{id}", (id, client),
+                async static (state, token) => await state.client.Guilds
+                    .GetExtendedByIdAsync(state.id, token)
                     .Unwrap(),
                 new HybridCacheEntryOptions
                 {
