@@ -30,14 +30,16 @@ public static class PermissionHandler
             => context switch
             {
                 _ when !requireManager && permissions == MemberResponses.EPermission.None => Succeed(),
-                { User: SocketUser user } => (await services.GetRequiredService<HybridCache>()
-                        .GetUserPermissionsOnDiscordGuildsAsync(user.DiscordId, services))
-                    .TryGetValue(context.Guild.DiscordId, out var value) switch
+                { User: SocketUser user } => await services.GetRequiredService<HybridCache>()
+                        .GetUserPermissionsOnDiscordGuildsAsync(user.DiscordId, services) switch
                     {
-                        _ when requireManager && !value.IsManager
+                        { IsManager: true } => Succeed(),
+                        _ when requireManager
                             => await Error("You must be a guild manager to execute this command.", context),
-                        _ when value.Permissions.HasFlag(permissions) => Succeed(),
-                        _ when value.IsManager => Succeed(),
+                        { DiscordGuildPermissions: var dict }
+                            when dict.TryGetValue(context.Guild.DiscordId, out var permission)
+                                 && permission.HasFlag(permissions)
+                            => Succeed(),
                         _ => await Error("You don't have the required permissions to execute this command.", context)
                     },
                 _ => await Error("You are not a valid user.", context)

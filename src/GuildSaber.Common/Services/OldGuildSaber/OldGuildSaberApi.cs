@@ -67,11 +67,27 @@ public class OldGuildSaberApi(HttpClient httpClient)
     public async IAsyncEnumerable<Result<PagedRankedDifficulties.RankedMapData[]?>> GetGuildRankedMaps(
         int guildId, PaginatedRequestOptions<RankedMapsSortBy> requestOptions)
     {
+        var rateLimitRetries = 0;
         while (requestOptions.Page <= requestOptions.MaxPage)
         {
             var url = GetRankedDifficultiesUrl(guildId, requestOptions);
             var response = await httpClient.GetAsync(url);
+            if (response.StatusCode == (HttpStatusCode)429)
+            {
+                rateLimitRetries++;
+                if (rateLimitRetries > 8)
+                {
+                    yield return Failure<PagedRankedDifficulties.RankedMapData[]?>(
+                        $"Exceeded maximum retries due to rate limiting when retrieving ranked difficulties for guild {guildId} at page {requestOptions.Page}");
+                    yield break;
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(4));
+                continue;
+            }
+
             requestOptions.Page++;
+            rateLimitRetries = 0;
 
             Result<PagedRankedDifficulties.RankedMapData[]?> result;
             yield return result = response switch
@@ -85,7 +101,7 @@ public class OldGuildSaberApi(HttpClient httpClient)
                     .Map(PagedRankedDifficulties.RankedMapData[]? (parsed) => parsed is null ? [] : parsed.RankedMaps)
             };
 
-            if (result is { IsFailure: true } or { Value: null })
+            if (result is { IsFailure: true } or { Value: null or [] })
                 yield break;
         }
     }

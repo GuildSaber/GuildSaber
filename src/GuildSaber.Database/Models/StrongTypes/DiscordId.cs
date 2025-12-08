@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Database.Models.StrongTypes;
@@ -29,4 +31,34 @@ public readonly record struct DiscordId
 
     public override string ToString()
         => _value.ToString();
+}
+
+public class DiscordIdJsonConverter : JsonConverter<DiscordId>
+{
+    public override DiscordId ReadAsPropertyName(
+        ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var propertyName = reader.GetString();
+        return ulong.TryParse(propertyName, out var value)
+            ? DiscordId.CreateUnsafe(value).Value
+            : throw new JsonException($"Cannot convert '{propertyName}' to DiscordId");
+    }
+
+    public override void WriteAsPropertyName(Utf8JsonWriter writer, DiscordId value, JsonSerializerOptions options)
+        => writer.WritePropertyName(value.ToString());
+
+    public override DiscordId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.String &&
+            ulong.TryParse(reader.GetString(), out var stringValue))
+            return DiscordId.CreateUnsafe(stringValue).Value;
+
+        if (reader.TokenType == JsonTokenType.Number && reader.TryGetUInt64(out var value))
+            return DiscordId.CreateUnsafe(value).Value;
+
+        throw new JsonException("Cannot convert to DiscordId");
+    }
+
+    public override void Write(Utf8JsonWriter writer, DiscordId value, JsonSerializerOptions options)
+        => writer.WriteNumberValue(value);
 }

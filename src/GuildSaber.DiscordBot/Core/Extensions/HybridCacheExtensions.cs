@@ -10,13 +10,18 @@ namespace GuildSaber.DiscordBot.Core.Extensions;
 
 public static class HybridCacheExtensions
 {
-    public readonly record struct MemberPermissionWithIsManager(
-        MemberResponses.EPermission Permissions,
+    public readonly record struct DiscordPlayerPermissionGroup(
+        Dictionary<DiscordGuildId, MemberResponses.EPermission> DiscordGuildPermissions,
         bool IsManager
     );
 
     extension(HybridCache self)
     {
+        /// <summary>
+        /// Tag used to invalidate cache entries related to Discord Guild ID changes.
+        /// </summary>
+        public string DiscordGuildIdChangeTag => "DiscordGuildIdChange";
+
         public ValueTask<GuildId?> FindGuildIdFromDiscordGuildIdAsync(DiscordGuildId id, GuildSaberClient client)
             => self.GetOrCreateAsync($"GuildId_{id}", (id, client),
                 async static (state, token) => (await state.client.Guilds
@@ -25,7 +30,7 @@ public static class HybridCacheExtensions
                 new HybridCacheEntryOptions
                 {
                     Expiration = TimeSpan.FromHours(5)
-                });
+                }, [self.DiscordGuildIdChangeTag]);
 
         public ValueTask<DiscordGuildId?> FindDiscordGuildIdFromGuildId(GuildId id, GuildSaberClient client)
             => self.GetOrCreateAsync($"DiscordGuildId_{id}", (id, client),
@@ -47,7 +52,7 @@ public static class HybridCacheExtensions
                 new HybridCacheEntryOptions
                 {
                     Expiration = TimeSpan.FromHours(5)
-                });
+                }, [self.DiscordGuildIdChangeTag]);
 
         public ValueTask<CategoryResponses.Category[]> GetGuildCategoriesAsync(GuildId id, GuildSaberClient client)
             => self.GetOrCreateAsync($"GuildCategories_{id}", (id, client),
@@ -78,7 +83,7 @@ public static class HybridCacheExtensions
                 new HybridCacheEntryOptions
                 {
                     Expiration = TimeSpan.FromHours(5)
-                });
+                }, [self.DiscordGuildIdChangeTag]);
 
         public ValueTask<GuildResponses.GuildExtended?> GetGuildExtendedAsync(GuildId id, GuildSaberClient client)
             => self.GetOrCreateAsync($"GuildExtended_{id}", (id, client),
@@ -94,8 +99,8 @@ public static class HybridCacheExtensions
         /// Get the permissions of a user by their Discord User ID.
         /// </summary>
         /// <returns>A dictionary mapping Discord Guild IDs to the user's permissions in those guilds.</returns>
-        public ValueTask<Dictionary<DiscordGuildId, MemberPermissionWithIsManager>>
-            GetUserPermissionsOnDiscordGuildsAsync(DiscordId id, IServiceProvider services)
+        public ValueTask<DiscordPlayerPermissionGroup> GetUserPermissionsOnDiscordGuildsAsync(
+            DiscordId id, IServiceProvider services)
             => self.GetOrCreateAsync($"DiscordUserPermissions_{id}",
                 (services, id, self),
                 async static (state, token) =>
@@ -104,10 +109,14 @@ public static class HybridCacheExtensions
                     var response = await client.Players.GetExtendedAtMeAsync(token)
                         .Unwrap();
 
-                    if (response is not { Player: var player, Members: var members })
-                        return new Dictionary<DiscordGuildId, MemberPermissionWithIsManager>();
+                    if (response is not { Player.IsManager: var isManager, Members: var members })
+                        return new DiscordPlayerPermissionGroup
+                        (
+                            DiscordGuildPermissions: new Dictionary<DiscordGuildId, MemberResponses.EPermission>(),
+                            IsManager: false
+                        );
 
-                    var permissionsByGuild = new Dictionary<DiscordGuildId, MemberPermissionWithIsManager>();
+                    var permissionsByGuild = new Dictionary<DiscordGuildId, MemberResponses.EPermission>();
                     foreach (var member in members)
                     {
                         var discordGuildId = await state.self.FindDiscordGuildIdFromGuildId(member.GuildId, client);
@@ -115,15 +124,19 @@ public static class HybridCacheExtensions
 
                         permissionsByGuild.Add(
                             discordGuildId.Value,
-                            new MemberPermissionWithIsManager(member.Permissions, player.IsManager)
+                            member.Permissions
                         );
                     }
 
-                    return permissionsByGuild;
+                    return new DiscordPlayerPermissionGroup
+                    (
+                        DiscordGuildPermissions: permissionsByGuild,
+                        IsManager: isManager
+                    );
                 },
                 new HybridCacheEntryOptions
                 {
                     Expiration = TimeSpan.FromMinutes(20)
-                });
+                }, tags: [self.DiscordGuildIdChangeTag]);
     }
 }

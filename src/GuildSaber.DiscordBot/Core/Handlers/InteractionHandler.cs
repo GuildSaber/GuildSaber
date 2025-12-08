@@ -2,6 +2,7 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using GuildSaber.DiscordBot.Core.TypeConverters;
 
 namespace GuildSaber.DiscordBot.Core.Handlers;
 
@@ -25,6 +26,7 @@ public class InteractionHandler(
 
     public async Task InitializeAsync()
     {
+        commands.AddTypeConverter<GuildId>(new GuildIdTypeConverter());
         await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
 
         client.InteractionCreated += HandleInteraction;
@@ -33,7 +35,6 @@ public class InteractionHandler(
 
     private Task HandleInteraction(SocketInteraction interaction)
         => commands.ExecuteCommandAsync(new SocketInteractionContext(client, interaction), services);
-
 
     private async Task GlobalExceptionHandler(
         SlashCommandInfo slashCommandInfo, IInteractionContext interactionContext, IResult result)

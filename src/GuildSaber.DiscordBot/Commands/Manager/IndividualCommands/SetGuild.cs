@@ -1,5 +1,6 @@
 ﻿using Discord.Interactions;
 using GuildSaber.Common.Result;
+using GuildSaber.DiscordBot.Core.Extensions;
 
 namespace GuildSaber.DiscordBot.Commands.Manager;
 
@@ -11,13 +12,15 @@ public partial class ManagerModuleSlash
     [SlashCommand("setguild", "Sets this discord guild as the MainDiscordGuildId of a guild")]
     public async Task SetGuild(
         [Summary("guildId", "The guildId of the guild you want this discordGuild to be set as MainDiscordGuildId")]
-        int guildId)
+        GuildId guildId)
     {
         await DeferAsync(ephemeral: true);
+
         var guild = await Client.Value.Guilds
-            .SetDiscordGuildIdAsync(new GuildId(guildId), Context.Guild.Id, CancellationToken.None)
+            .SetDiscordGuildIdAsync(guildId, Context.Guild.Id, CancellationToken.None)
             .Unwrap();
 
+        await Cache.RemoveByTagAsync(Cache.DiscordGuildIdChangeTag);
         await FollowupAsync(
             $"Set this discord guild {Context.Guild.Id} as the MainDiscordGuildId of guild '{guild.Info.Name}' (ID: {guild.Id})"
         );

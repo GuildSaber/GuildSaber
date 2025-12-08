@@ -21,7 +21,7 @@ public static class ContextSeeder
                 Info = new ContextInfo
                 {
                     Description = "The main context of the guild, where all the maps are ranked.",
-                    Name = "Default"
+                    Name = "General"
                 }
             },
             new Context
@@ -32,7 +32,7 @@ public static class ContextSeeder
                 Info = new ContextInfo
                 {
                     Description = "The main context of the guild, where all the maps are ranked.",
-                    Name = "Default"
+                    Name = "General"
                 }
             });
     }

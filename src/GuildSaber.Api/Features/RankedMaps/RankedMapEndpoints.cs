@@ -106,7 +106,7 @@ public class RankedMapEndpoints : IEndpoints
         RankedMapRequest.ERankedMapSorter sortBy = RankedMapRequest.ERankedMapSorter.DifficultyStar,
         EOrder order = EOrder.Asc)
     {
-        var query = dbContext.RankedMaps.Where(x => x.ContextId == contextId);
+        var query = dbContext.RankedMaps.AsSplitQuery().Where(x => x.ContextId == contextId);
         if (!string.IsNullOrWhiteSpace(search))
         {
             if (search.Length is < 10 and >= 5 && search.StartsWith("!bsr"))

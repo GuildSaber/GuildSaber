@@ -56,7 +56,6 @@ public sealed class GuildClient(
                 .ReadFromJsonAsync<Guild>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
         };
 
-
     public async Task<Result<PagedList<Guild>>> GetAsync(
         string? search, PaginatedRequestOptions<GuildRequests.EGuildSorter> requestOptions, CancellationToken token)
         => await httpClient.GetAsync(GetGuildsUrl(search, requestOptions), token).ConfigureAwait(false) switch
@@ -110,8 +109,8 @@ public sealed class GuildClient(
         }
     }
 
-    public async Task<Result<Guild>> SetDiscordGuildIdAsync(GuildId guildId, ulong? discordGuildId,
-                                                            CancellationToken token)
+    public async Task<Result<Guild>> SetDiscordGuildIdAsync(
+        GuildId guildId, ulong? discordGuildId, CancellationToken token)
     {
         var request = new HttpRequestMessage(new HttpMethod("PATCH"), $"guilds/{guildId}")
         {

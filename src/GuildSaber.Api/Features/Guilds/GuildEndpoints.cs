@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ServerGuild = GuildSaber.Database.Models.Server.Guilds.Guild;
 using static GuildSaber.Api.Features.Guilds.GuildResponses;
+using GuildDiscordInfo = GuildSaber.Database.Models.Server.Guilds.GuildDiscordInfo;
 
 namespace GuildSaber.Api.Features.Guilds;
 
@@ -218,6 +219,26 @@ public class GuildEndpoints : IEndpoints
         if (!patchedRequest.DiscordInfo.Map().TryGetValue(out var discordInfo, out var discordInfoError))
             return TypedResults.ValidationProblem(detail: "Failed to validate Discord info.",
                 errors: new Dictionary<string, string[]> { { nameof(Guild.DiscordInfo), [discordInfoError] } });
+
+        // Make sure no other guild has the same MainDiscordGuildId
+        if (discordInfo is { MainDiscordGuildId: var newDiscordGuildId })
+        {
+            var otherGuild = await dbContext.Guilds
+                .Where(x => x.DiscordInfo.MainDiscordGuildId == newDiscordGuildId)
+                .FirstOrDefaultAsync();
+
+            if (otherGuild is not null)
+            {
+                if (!claims.IsManager())
+                    return TypedResults.BadRequest(
+                        $"Discord Guild ID {newDiscordGuildId} is already assigned to another guild (ID: {otherGuild.Id})." +
+                        $"Only managers can reassign Discord Guild IDs."
+                    );
+
+                otherGuild.DiscordInfo = new GuildDiscordInfo(null);
+                await dbContext.UpdateAndSaveAsync(otherGuild);
+            }
+        }
 
         var guild = new ServerGuild
         {

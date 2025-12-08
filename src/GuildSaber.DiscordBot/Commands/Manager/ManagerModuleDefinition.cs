@@ -6,6 +6,7 @@ using GuildSaber.CSharpClient.Auth;
 using GuildSaber.Database.Contexts.DiscordBot;
 using GuildSaber.DiscordBot.Core.Handlers;
 using GuildSaber.DiscordBot.Settings;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Options;
 
 namespace GuildSaber.DiscordBot.Commands.Manager;
@@ -25,7 +26,8 @@ public partial class ManagerModuleSlash : InteractionModuleBase<SocketInteractio
     public ManagerModuleSlash(
         IHttpClientFactory httpClientFactory,
         DiscordBotDbContext dbContext,
-        IOptions<AuthSettings> authSettings)
+        IOptions<AuthSettings> authSettings,
+        HybridCache cache)
     {
         Client = new Lazy<GuildSaberClient>(() => new GuildSaberClient(
             httpClientFactory.CreateClient("GuildSaber"),
@@ -34,8 +36,10 @@ public partial class ManagerModuleSlash : InteractionModuleBase<SocketInteractio
                 DiscordId: Context?.User?.Id.ToString() ?? string.Empty
             )));
         DbContext = dbContext;
+        Cache = cache;
     }
 
     private Lazy<GuildSaberClient> Client { get; }
     public DiscordBotDbContext DbContext { get; }
+    public HybridCache Cache { get; }
 }

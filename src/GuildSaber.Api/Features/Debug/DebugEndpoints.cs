@@ -20,6 +20,7 @@ using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace GuildSaber.Api.Features.Debug;
@@ -34,6 +35,14 @@ public class DebugEndpoints : IEndpoints
         group.MapGet("/import-old-gs-maps/{guildId}/stream", ImportOldGuildSaberMapsAsync)
             .WithSummary("Import ranked maps from old GuildSaber system.")
             .WithDescription("Streams import progress via SSE. Import stops on client disconnect.");
+
+        group.MapPost("/import-old-gs-maps/{guildId}", ImportOldGuildSaberMapsBackgroundAsync)
+            .WithName("ImportOldGuildSaberMapsBackground")
+            .WithSummary("Import ranked maps from old GuildSaber")
+            .WithDescription("Import ranked maps from old GuildSaber for a specific guild.")
+            .Produces<IResult>(StatusCodes.Status202Accepted)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .RequireManager();
 
         group.MapPost("/import-beatleader-scores/{playerId}", EnqueueBeatLeaderPlayerScoresImportAsync)
             .WithSummary("Enqueue BeatLeader player scores import.")
@@ -178,6 +187,8 @@ public class DebugEndpoints : IEndpoints
             values: ImportOldGuildSaberMapsStream(
                     guildId,
                     new ContextId(guildId),
+                    0,
+                    int.MaxValue,
                     dbContext,
                     oldGuildSaberApi,
                     rankedMapService,
@@ -238,9 +249,65 @@ public class DebugEndpoints : IEndpoints
         return TypedResults.Accepted((string?)null);
     }
 
+    /// <summary>
+    /// Imports ranked maps from the old GuildSaber system for a specific guild using a background task.
+    /// </summary>
+    /// <remarks>
+    /// This endpoint queues a background task to import maps and returns immediately.
+    /// The import process runs asynchronously and logs progress.
+    /// Returns 202 Accepted when the import task is successfully queued.
+    /// Returns 404 Not Found when the guild context doesn't exist.
+    /// </remarks>
+    private static async Task<Results<Accepted, NotFound<string>>> ImportOldGuildSaberMapsBackgroundAsync(
+        GuildId guildId,
+        [FromQuery] int count,
+        [FromQuery] int page,
+        ServerDbContext dbContext,
+        IBackgroundTaskQueue taskQueue,
+        IServiceScopeFactory serviceScopeFactory,
+        ILogger<DebugEndpoints> logger,
+        CancellationToken cancellationToken)
+    {
+        if (!await dbContext.Contexts.AnyAsync(x => x.Id == guildId && x.GuildId == guildId, cancellationToken))
+            return TypedResults.NotFound($"Guild context for guild {guildId} not found.");
+
+        var contextId = new ContextId(guildId);
+
+        await taskQueue.QueueBackgroundWorkItemAsync(async token =>
+        {
+            logger.LogInformation("Starting import of old GuildSaber maps for guild {GuildId}", guildId);
+
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+            var scopedDbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
+            var oldGuildSaberApi = scope.ServiceProvider.GetRequiredService<OldGuildSaberApi>();
+            var rankedMapService = scope.ServiceProvider.GetRequiredService<RankedMapService>();
+            var scopedLogger = scope.ServiceProvider.GetRequiredService<ILogger<DebugEndpoints>>();
+
+            await foreach (var success in ImportOldGuildSaberMapsStream(
+                               guildId,
+                               contextId,
+                               page,
+                               count,
+                               scopedDbContext,
+                               oldGuildSaberApi,
+                               rankedMapService,
+                               scopedLogger,
+                               token))
+                scopedLogger.LogInformation(success.RankedMap
+                    .Map(success.Song, success.SongDifficulty, success.GameMode)
+                    .ToString());
+
+            logger.LogInformation("Completed import of old GuildSaber maps for guild {GuildId}", guildId);
+        });
+
+        return TypedResults.Accepted((string?)null);
+    }
+
     public static async IAsyncEnumerable<RankedMapService.CreateResponse.Success> ImportOldGuildSaberMapsStream(
         GuildId guildId,
         ContextId contextId,
+        int page,
+        int count,
         ServerDbContext dbContext,
         OldGuildSaberApi oldGuildSaberApi,
         RankedMapService rankedMapService,
@@ -250,10 +317,10 @@ public class DebugEndpoints : IEndpoints
         const int pageSize = 10;
         var request = new OldGuildSaberApi.PaginatedRequestOptions<RankedMapsSortBy>
         {
-            Page = 1,
+            Page = page,
             PageSize = pageSize,
-            MaxPage = int.MaxValue,
-            SortBy = RankedMapsSortBy.Weight,
+            MaxPage = count / pageSize,
+            SortBy = RankedMapsSortBy.EditedTime,
             Reverse = true
         };
 
@@ -380,11 +447,6 @@ public class DebugEndpoints : IEndpoints
                     continue;
 
                 var (level, levelNumber) = levelDict[(difficulty.LevelId, difficulty.GuildCategoryId ?? 0)];
-                var levelIds = new int[2];
-                levelIds[0] = level.Id;
-                if (difficulty.GuildCategoryId.HasValue && difficulty.GuildCategoryId != 0)
-                    levelIds[1] = levelDict[(difficulty.LevelId, 0)].Item1.Id;
-
                 var createRankedMap = new RankedMapRequest.CreateRankedMap
                 (
                     ManualRating: new RankedMapRequest.ManualRating(
@@ -408,7 +470,9 @@ public class DebugEndpoints : IEndpoints
                     CategoryIds: difficulty.GuildCategoryId.HasValue && difficulty.GuildCategoryId != 0
                         ? [categoryDict[difficulty.GuildCategoryId.Value].Id]
                         : [],
-                    LevelIds: levelIds
+                    LevelIds: difficulty.GuildCategoryId.HasValue && difficulty.GuildCategoryId != 0
+                        ? [level.Id, levelDict[(difficulty.LevelId, 0)].Item1.Id]
+                        : [level.Id]
                 );
 
                 var tryCount = 0;
@@ -427,6 +491,22 @@ public class DebugEndpoints : IEndpoints
                         continue;
                     }
 
+                    if (createResult is RankedMapService.CreateResponse.NotOnBeatSaver notOnBeatSaver)
+                    {
+                        logger.LogWarning("Map not on BeatSaver: {BeatSaverKey}", notOnBeatSaver.BeatSaverKey);
+                        break;
+                    }
+
+                    if (createResult is RankedMapService.CreateResponse.ValidationFailure validationFailure)
+                    {
+                        logger.LogWarning(
+                            "Validation failed when importing BeatSaver map {BeatSaverKey} difficulty {DifficultyId} characteristic {Characteristic} for guild {GuildId}: {Errors}",
+                            createRankedMap.BaseMapVersion.BeatSaverKey, difficulty.DifficultyId,
+                            difficulty.GameModeName, guildId, string.Join(", ", validationFailure.Errors)
+                        );
+                        break;
+                    }
+
                     if (createResult is not RankedMapService.CreateResponse.UnexpectedFailure failure)
                         continue;
 
@@ -442,9 +522,8 @@ public class DebugEndpoints : IEndpoints
 
     private static Expression<Func<RankedMap, bool>> MapDifficultyIsAlreadyRankedOnGuild(
         GuildId guildId, EDifficulty difficulty, BeatSaverKey beatSaverKey, string gameMode, ServerDbContext dbContext)
-        => rankedMap => rankedMap.GuildId == guildId
-                        && rankedMap.MapVersions.Any(y => y.SongDifficulty.GameMode.Name.Contains(gameMode))
-                        && rankedMap.MapVersions.Any(y => y.SongDifficulty.Difficulty == difficulty)
-                        && rankedMap.MapVersions.Any(y => dbContext
-                            .Songs.Any(z => z.Id == y.SongId && z.BeatSaverKey == beatSaverKey));
+        => rankedMap => rankedMap.GuildId == guildId && rankedMap.MapVersions.Any(y =>
+            y.SongDifficulty.GameMode.Name.Contains(gameMode)
+            && y.SongDifficulty.Difficulty == difficulty
+            && dbContext.Songs.Any(z => z.Id == y.SongId && z.BeatSaverKey == beatSaverKey));
 }
