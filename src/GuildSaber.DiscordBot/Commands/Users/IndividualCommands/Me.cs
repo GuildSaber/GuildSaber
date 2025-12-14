@@ -53,8 +53,17 @@ public partial class UserModuleSlash
 /// </summary>
 file static class MeCommand
 {
+    public readonly record struct TrophiesCount(
+        int Plastic,
+        int Silver,
+        int Gold,
+        int Diamond,
+        int Ruby
+    );
+
     [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
-    public static async Task<Stream?> GeneratePlayerCardAsync(GuildId guildId, int contextId, GuildSaberClient client)
+    public static async Task<Stream?> GeneratePlayerCardAsync(GuildId guildId, int contextId,
+                                                              GuildSaberClient client)
     {
         var atMe = await client.Players.GetExtendedAtMeAsync(CancellationToken.None).Unwrap();
         if (atMe is not { Player: var player })
@@ -76,6 +85,9 @@ file static class MeCommand
             as LevelStatResponses.MemberLevelStat?;
 
         var categories = await client.Categories.GetAllByGuildIdAsync(guildId, CancellationToken.None).Unwrap();
+        var contextStats = (await client.ContextStats.GetAtMeAsync(contextId, CancellationToken.None)).Unwrap();
+        if (!contextStats.HasValue)
+            throw new InvalidOperationException("Failed to retrieve context stats for player.");
 
         const int width = 902;
         var height = 340 + (int)Math.Ceiling(categories.Length / 2.0) * 43;
@@ -112,24 +124,57 @@ file static class MeCommand
             ctx.DrawImage(guildLogoImage, new Point(width - 100, 20), 1f);
 
             // Point stats
-            ctx.DrawText(new RichTextOptions(regularTextFont)
+            var simplePointsWithRank = contextStats.Value.SimplePointsWithRank
+                .Where(x => x.CategoryId is null)
+                .ToArray();
+            switch (simplePointsWithRank.Length)
             {
-                Origin = new PointF(256, 126),
-                FallbackFontFamilies = [fontAwesome]
-            }, "🏅 7249 CPP (#237)", new SolidBrush(Color.Gold), null);
+                case 1:
+                {
+                    var pointWithRank = simplePointsWithRank[0];
+                    ctx.DrawText(new RichTextOptions(regularTextFont)
+                        {
+                            Origin = new PointF(256, 126),
+                            FallbackFontFamilies = [fontAwesome]
+                        }, $"🏅 {pointWithRank.Points:00} {pointWithRank.Name} (#{pointWithRank.Rank})",
+                        new SolidBrush(Color.Gold), null);
+                    break;
+                }
+                case 2:
+                    ctx.DrawText(new RichTextOptions(regularTextFont)
+                        {
+                            Origin = new PointF(256, 106),
+                            FallbackFontFamilies = [fontAwesome]
+                        },
+                        $"🏅 {simplePointsWithRank[0].Points:00} {simplePointsWithRank[0].Name} (#{simplePointsWithRank[0].Rank})",
+                        new SolidBrush(Color.Gold), null);
+
+                    ctx.DrawText(new RichTextOptions(regularTextFont)
+                        {
+                            Origin = new PointF(256, 142),
+                            FallbackFontFamilies = [fontAwesome]
+                        },
+                        $"🏅 {simplePointsWithRank[1].Points:00} {simplePointsWithRank[1].Name} (#{simplePointsWithRank[1].Rank})",
+                        new SolidBrush(Color.Gold), null);
+                    break;
+                default:
+                    throw new InvalidOperationException("Unexpected number of simple points with rank.");
+            }
 
             // Passes stats
             ctx.DrawText(new RichTextOptions(regularTextFont)
-            {
-                Origin = new PointF(256 + 306, 126),
-                FallbackFontFamilies = [fontAwesome],
-            }, "⭐ 780 passes (#128)", new SolidBrush(Color.Gold), null);
+                {
+                    Origin = new PointF(256 + 325, 126),
+                    FallbackFontFamilies = [fontAwesome]
+                },
+                $"⭐ {contextStats.Value.PassCountWithRank.PassCount} passes (#{contextStats.Value.PassCountWithRank.Rank})",
+                new SolidBrush(Color.Gold), null);
 
             // Global level
             ctx.DrawText(new RichTextOptions(globalLevelFont)
             {
                 Origin = new PointF(614, 180),
-                FallbackFontFamilies = [fontAwesome],
+                FallbackFontFamilies = [fontAwesome]
             }, currentLevel?.Level.Info.Name ?? "", new SolidBrush(secondaryColor), null);
 
             // Equilibrium label
@@ -141,7 +186,7 @@ file static class MeCommand
             for (var i = 0; i < 5; i++)
             {
                 var dotColor = i < equilibriumLevel ? secondaryColor : Color.FromRgb(217, 217, 217);
-                ctx.Fill(dotColor, new EllipsePolygon(dotStartX + (i * 37), 205, 10));
+                ctx.Fill(dotColor, new EllipsePolygon(dotStartX + i * 37, 205, 10));
             }
 
             // Equilibrium percentage
@@ -156,19 +201,20 @@ file static class MeCommand
             const int trophySpacing = 140;
             const int trophySize = 35;
 
+            var trophiesCount = CalculateTrophies(levelStats);
             var trophies = new[]
             {
-                ("Resources/Trophies/Plastic.webp", 53),
-                ("Resources/Trophies/Silver.webp", 43),
-                ("Resources/Trophies/Gold.webp", 11),
-                ("Resources/Trophies/Diamond.webp", 0),
-                ("Resources/Trophies/Ruby.webp", 0)
+                ("Resources/Trophies/Plastic.webp", trophiesCount.Plastic),
+                ("Resources/Trophies/Silver.webp", trophiesCount.Silver),
+                ("Resources/Trophies/Gold.webp", trophiesCount.Gold),
+                ("Resources/Trophies/Diamond.webp", trophiesCount.Diamond),
+                ("Resources/Trophies/Ruby.webp", trophiesCount.Ruby)
             };
 
             for (var i = 0; i < trophies.Length; i++)
             {
                 var (trophyFile, count) = trophies[i];
-                var xPosition = trophyStartX + (i * trophySpacing);
+                var xPosition = trophyStartX + i * trophySpacing;
 
                 using var trophyStream = File.OpenRead(trophyFile);
                 using var trophyImage = Image.Load<Rgba32>(trophyStream);
@@ -183,7 +229,6 @@ file static class MeCommand
 
             // Category levels
             const int categoryStartY = 340;
-
             const int categoryLeftX = 160;
             const int categoryRightX = 480;
             const int categoryRowSpacing = 43;
@@ -199,7 +244,7 @@ file static class MeCommand
                 var categoryColor = Color.FromArgb(categoryLevelStat.Value.Level.Info.Color);
                 var isLeftColumn = categoryIndex % 2 == 0;
                 var xPosition = isLeftColumn ? categoryLeftX : categoryRightX;
-                var yPosition = categoryStartY + ((categoryIndex / 2) * categoryRowSpacing);
+                var yPosition = categoryStartY + categoryIndex / 2 * categoryRowSpacing;
 
                 ctx.DrawText($"{category.Info.Name}: ", boldTextFont, Color.White, new PointF(xPosition, yPosition));
 
@@ -217,5 +262,50 @@ file static class MeCommand
         await image.SaveAsPngAsync(stream);
         stream.Position = 0;
         return stream;
+    }
+
+    public static TrophiesCount CalculateTrophies(LevelStatResponses.MemberLevelStat[] levelStats)
+    {
+        var plastic = 0;
+        var silver = 0;
+        var gold = 0;
+        var diamond = 0;
+        var ruby = 0;
+
+        foreach (var stat in levelStats)
+        {
+            if (!stat.IsCompleted)
+                continue;
+
+            var completionPercent = stat.Level switch
+            {
+                LevelStatResponses.Level.RankedMapListLevel listLevel =>
+                    stat.PassCount.HasValue && listLevel.RankedMapCount > 0
+                        ? stat.PassCount.Value / (float)listLevel.RankedMapCount
+                        : 0f,
+                _ => 0f
+            };
+
+            switch (completionPercent)
+            {
+                case <= 0.25f:
+                    plastic++;
+                    break;
+                case <= 0.5f:
+                    silver++;
+                    break;
+                case <= 0.75f:
+                    gold++;
+                    break;
+                case < 1.0f:
+                    diamond++;
+                    break;
+                default:
+                    ruby++;
+                    break;
+            }
+        }
+
+        return new TrophiesCount(plastic, silver, gold, diamond, ruby);
     }
 }

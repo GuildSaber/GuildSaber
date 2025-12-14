@@ -20,14 +20,6 @@ public static class DiscordColorExtensions
 
 public static class ImageSharpColorExtensions
 {
-    public static IPath ToRoundedRectangle(this RectangleF rectangle, float cornerRadius) => new PathBuilder()
-        .AddArc(new PointF(rectangle.Left + cornerRadius, rectangle.Top + cornerRadius), cornerRadius, cornerRadius, 0, 180, 90)
-        .AddArc(new PointF(rectangle.Right - cornerRadius, rectangle.Top + cornerRadius), cornerRadius, cornerRadius, 0, 270, 90)
-        .AddArc(new PointF(rectangle.Right - cornerRadius, rectangle.Bottom - cornerRadius), cornerRadius, cornerRadius, 0, 0, 90)
-        .AddArc(new PointF(rectangle.Left + cornerRadius, rectangle.Bottom - cornerRadius), cornerRadius, cornerRadius, 0, 90, 90)
-        .CloseFigure()
-        .Build();
-    
     extension(SixLabors.ImageSharp.Color)
     {
         public static SixLabors.ImageSharp.Color FromArgb(int argb)
@@ -38,4 +30,16 @@ public static class ImageSharpColorExtensions
             return SixLabors.ImageSharp.Color.FromRgb(r, g, b);
         }
     }
+
+    public static IPath ToRoundedRectangle(this RectangleF rectangle, float cornerRadius) => new PathBuilder()
+        .AddArc(new PointF(rectangle.Left + cornerRadius, rectangle.Top + cornerRadius), cornerRadius, cornerRadius, 0,
+            180, 90)
+        .AddArc(new PointF(rectangle.Right - cornerRadius, rectangle.Top + cornerRadius), cornerRadius, cornerRadius, 0,
+            270, 90)
+        .AddArc(new PointF(rectangle.Right - cornerRadius, rectangle.Bottom - cornerRadius), cornerRadius, cornerRadius,
+            0, 0, 90)
+        .AddArc(new PointF(rectangle.Left + cornerRadius, rectangle.Bottom - cornerRadius), cornerRadius, cornerRadius,
+            0, 90, 90)
+        .CloseFigure()
+        .Build();
 }

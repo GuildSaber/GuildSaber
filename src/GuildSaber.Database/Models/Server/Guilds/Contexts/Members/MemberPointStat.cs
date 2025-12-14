@@ -18,6 +18,8 @@ public class MemberPointStat
     public float Points { get; set; }
     public float Xp { get; set; }
     public int PassCount { get; set; }
+
+    public Point Point { get; init; } = null!;
 }
 
 public class MemberPointStatConfiguration : IEntityTypeConfiguration<MemberPointStat>
@@ -32,7 +34,7 @@ public class MemberPointStatConfiguration : IEntityTypeConfiguration<MemberPoint
             .WithMany(x => x.PointStats)
             .HasForeignKey(x => new { x.GuildId, x.ContextId, x.PlayerId });
 
-        builder.HasOne<Point>()
+        builder.HasOne(x => x.Point)
             .WithMany()
             .HasForeignKey(x => x.PointId);
 

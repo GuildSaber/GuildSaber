@@ -28,25 +28,25 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Resources\Trophies\" />
+        <Folder Include="Resources\Trophies\" />
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Ressources\Trophies\Diamond.webp">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Ressources\Trophies\Ruby.webp">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Ressources\Trophies\Plastic.webp">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Ressources\Trophies\Gold.webp">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Ressources\Trophies\Silver.webp">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+        <None Update="Ressources\Trophies\Diamond.webp">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Ressources\Trophies\Ruby.webp">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Ressources\Trophies\Plastic.webp">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Ressources\Trophies\Gold.webp">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Ressources\Trophies\Silver.webp">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

@@ -7,7 +7,9 @@ using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.CSharpClient.Auth;
 using GuildSaber.CSharpClient.Routes.Guilds;
 using GuildSaber.CSharpClient.Routes.Guilds.Categories;
+using GuildSaber.CSharpClient.Routes.Guilds.Members.ContextStats;
 using GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
+using GuildSaber.CSharpClient.Routes.Leaderboards;
 using GuildSaber.CSharpClient.Routes.Players;
 
 namespace GuildSaber.CSharpClient;
@@ -79,6 +81,12 @@ public class GuildSaberClient : IDisposable
 
     public LevelStatClient LevelStats
         => field ??= new LevelStatClient(HttpClient, _authenticationHeader, _jsonOptions);
+
+    public ContextStatClient ContextStats
+        => field ??= new ContextStatClient(HttpClient, _authenticationHeader, _jsonOptions);
+
+    public LeaderboardClient Leaderboards
+        => field ??= new LeaderboardClient(HttpClient, _jsonOptions);
 
     public void Dispose()
     {
