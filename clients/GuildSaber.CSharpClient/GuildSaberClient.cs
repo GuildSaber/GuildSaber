@@ -14,6 +14,8 @@ namespace GuildSaber.CSharpClient;
 
 public class GuildSaberClient : IDisposable
 {
+    public readonly HttpClient HttpClient;
+
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -34,18 +36,17 @@ public class GuildSaberClient : IDisposable
     };
 
     private readonly bool _disposeHttpClient;
-    private readonly HttpClient _httpClient;
     private readonly AuthenticationHeaderValue? _authenticationHeader;
 
     public GuildSaberClient(HttpClient httpClient, GuildSaberAuthentication? authentication)
     {
         if (httpClient.BaseAddress is null)
             throw new ArgumentNullException(nameof(httpClient.BaseAddress), "HttpClient must have a BaseAddress set.");
-        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        _httpClient.Timeout = TimeSpan.FromSeconds(30);
+        HttpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        HttpClient.Timeout = TimeSpan.FromSeconds(30);
 
-        if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "GuildSaber.CSharpClient/1.0");
+        if (!HttpClient.DefaultRequestHeaders.Contains("User-Agent"))
+            HttpClient.DefaultRequestHeaders.Add("User-Agent", "GuildSaber.CSharpClient/1.0");
 
         _authenticationHeader = authentication?.ToAuthenticationHeader();
     }
@@ -70,18 +71,18 @@ public class GuildSaberClient : IDisposable
     }, authentication) => _disposeHttpClient = true;
 #endif
 
-    public GuildClient Guilds => field ??= new GuildClient(_httpClient, _authenticationHeader, _jsonOptions);
-    public PlayerClient Players => field ??= new PlayerClient(_httpClient, _authenticationHeader, _jsonOptions);
+    public GuildClient Guilds => field ??= new GuildClient(HttpClient, _authenticationHeader, _jsonOptions);
+    public PlayerClient Players => field ??= new PlayerClient(HttpClient, _authenticationHeader, _jsonOptions);
 
     public CategoryClient Categories
-        => field ??= new CategoryClient(_httpClient, /*_authenticationHeader,*/ _jsonOptions);
+        => field ??= new CategoryClient(HttpClient, /*_authenticationHeader,*/ _jsonOptions);
 
     public LevelStatClient LevelStats
-        => field ??= new LevelStatClient(_httpClient, _authenticationHeader, _jsonOptions);
+        => field ??= new LevelStatClient(HttpClient, _authenticationHeader, _jsonOptions);
 
     public void Dispose()
     {
         if (_disposeHttpClient)
-            _httpClient.Dispose();
+            HttpClient.Dispose();
     }
 }

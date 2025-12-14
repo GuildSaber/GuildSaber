@@ -28,8 +28,9 @@ contributions are valued and recognized. See [LICENSE-NOTICE.md](LICENSE-NOTICE.
 ### Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [JetBrain Mono Font](https://www.jetbrains.com/lp/mono/)
 - [Docker](https://www.docker.com/products/docker-desktop)
-- [JetBrains Rider](https://www.jetbrains.com/rider/) (recommended) or Visual Studio 2022+
+- [JetBrains Rider](https://www.jetbrains.com/rider/) (recommended) or Visual Studio 2026+
 
 ### Configuration
 
@@ -110,7 +111,7 @@ GuildSaber uses Entity Framework Core (EFCore) for database schema management. M
 
 ### Prerequisites
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [EFCore CLI tools](https://learn.microsoft.com/en-us/ef/core/cli/dotnet) (install with
   `dotnet tool install --global dotnet-ef` if not already installed)
 

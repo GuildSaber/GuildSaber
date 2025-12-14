@@ -17,12 +17,36 @@
         </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
         <PackageReference Include="Microsoft.Extensions.Hosting" />
+        <PackageReference Include="SixLabors.ImageSharp" />
+        <PackageReference Include="SixLabors.ImageSharp.Drawing" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj" />
         <ProjectReference Include="..\..\clients\GuildSaber.CSharpClient\GuildSaber.CSharpClient.csproj" />
         <ProjectReference Include="..\GuildSaber.Database\GuildSaber.Database.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Resources\Trophies\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Ressources\Trophies\Diamond.webp">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Ressources\Trophies\Ruby.webp">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Ressources\Trophies\Plastic.webp">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Ressources\Trophies\Gold.webp">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Ressources\Trophies\Silver.webp">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

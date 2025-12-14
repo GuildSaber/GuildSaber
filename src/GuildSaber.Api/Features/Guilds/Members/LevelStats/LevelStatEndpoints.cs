@@ -43,6 +43,7 @@ public class LevelStatEndpoints : IEndpoints
             .Where(x =>
                 x.ContextId == contextId &&
                 x.PlayerId == playerId)
+            .OrderBy(x => x.Level.Order)
             .Select(LevelStatMappers.MapMemberLevelStatExpression(dbContext))
             .ToListAsync()
         );

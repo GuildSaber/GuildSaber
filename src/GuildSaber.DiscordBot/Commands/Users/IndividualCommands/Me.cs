@@ -1,18 +1,50 @@
-﻿using Discord;
+﻿using System.Diagnostics.CodeAnalysis;
+using Discord;
 using Discord.Interactions;
-using GuildSaber.Common.Helpers;
+using GuildSaber.Api.Features.Guilds.Members.LevelStats;
 using GuildSaber.Common.Result;
 using GuildSaber.CSharpClient;
+using GuildSaber.DiscordBot.AutocompleteHandlers;
+using GuildSaber.DiscordBot.Core.Extensions;
+using SixLabors.Fonts;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using Color = SixLabors.ImageSharp.Color;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace GuildSaber.DiscordBot.Commands.Users;
 
 public partial class UserModuleSlash
 {
     [SlashCommand("me", "Get information about your account")]
-    public async Task Me([Summary("VisibleToOther")] EDisplayChoice displayChoice = EDisplayChoice.Invisible)
+    public async Task Me(
+        [Autocomplete<ContextAutocompleteHandler>] int contextId,
+        [Summary("VisibleToOther")] EDisplayChoice displayChoice = EDisplayChoice.Invisible)
     {
         await DeferAsync(ephemeral: displayChoice.ToEphemeral());
-        await FollowupAsync(embed: await MeCommand.GetAtMe(Client.Value));
+        var stream = await MeCommand.GeneratePlayerCardAsync(
+            (await Cache.FindGuildIdFromDiscordGuildIdAsync(Context.Guild.DiscordId, Client.Value))
+            .ValueOrGuildMissingException(),
+            contextId,
+            Client.Value
+        );
+        if (stream is null)
+        {
+            await FollowupAsync(embed: new EmbedBuilder
+            {
+                Title = "Whoops!",
+                Color = Discord.Color.DarkOrange,
+                Description = "Your discord account doesn't seem to be linked to any GuildSaber account." +
+                              "\nPlease visit GuildSaber and link your account to use this command."
+            }.Build());
+
+            return;
+        }
+
+        await FollowupWithFileAsync(stream, "PlayerCard.png", "[Profile Link](<https://beatleader.com/u/kuurama>)");
     }
 }
 
@@ -21,45 +53,169 @@ public partial class UserModuleSlash
 /// </summary>
 file static class MeCommand
 {
-    public static async Task<Embed> GetAtMe(GuildSaberClient client)
+    [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
+    public static async Task<Stream?> GeneratePlayerCardAsync(GuildId guildId, int contextId, GuildSaberClient client)
     {
-        var embedBuilder = new EmbedBuilder();
+        var atMe = await client.Players.GetExtendedAtMeAsync(CancellationToken.None).Unwrap();
+        if (atMe is not { Player: var player })
+            return null;
 
-        var atMe = await client.Players.GetExtendedAtMeAsync(CancellationToken.None)
-            .Unwrap();
-        if (atMe is not { Player: var player, Members: var members })
+        // Avatar
+        await using var avatarStream = await client.HttpClient.GetStreamAsync(player.PlayerInfo.AvatarUrl);
+        using var avatarImage = Image.Load<Rgba32>(avatarStream);
+        avatarImage.Mutate(a => a.Resize(216, 216));
+
+        // Guild Logo
+        await using var guildLogoStream = await client.HttpClient
+            .GetStreamAsync($"https://cdn.guildsaber.com/Guild/{guildId}/Logo.jpg");
+        using var guildLogoImage = Image.Load<Rgba32>(guildLogoStream);
+        guildLogoImage.Mutate(a => a.Resize(80, 80));
+
+        var levelStats = await client.LevelStats.GetAtMeAsync(contextId, CancellationToken.None).Unwrap();
+        var currentLevel = levelStats.LastOrDefault(x => x is { IsCompleted: true, Level.CategoryId: null })
+            as LevelStatResponses.MemberLevelStat?;
+
+        var categories = await client.Categories.GetAllByGuildIdAsync(guildId, CancellationToken.None).Unwrap();
+
+        const int width = 902;
+        var height = 340 + (int)Math.Ceiling(categories.Length / 2.0) * 43;
+        const string fontFamily = "JetBrainsMono NF";
+
+        var fontAwesome = SystemFonts.Get("Font Awesome 6 Free Solid");
+        var regularTextFont = SystemFonts.CreateFont(fontFamily, 26, FontStyle.Regular);
+        var boldTextFont = SystemFonts.CreateFont(fontFamily, 26, FontStyle.Bold);
+        var globalLevelFont = SystemFonts.CreateFont(fontFamily + " ExtraBold", 48, FontStyle.BoldItalic);
+
+        var primaryColor = Color.FromRgb(26, 28, 30);
+        var secondaryColor = currentLevel is not null
+            ? Color.FromArgb(currentLevel.Value.Level.Info.Color)
+            : Color.Black;
+
+        using var image = new Image<Rgba32>(width, height);
+        image.Mutate(ctx =>
         {
-            embedBuilder.Title = "Whoops!";
-            embedBuilder.Color = Color.DarkOrange;
-            embedBuilder.Description = "Your discord account doesn't seem to be linked to any GuildSaber account." +
-                                       "\nPlease visit GuildSaber and link your account to use this command.";
-            return embedBuilder.Build();
-        }
+            // Background
+            ctx.Fill(primaryColor, new RectangleF(0, 0, width, height)
+                .ToRoundedRectangle(10));
 
-        embedBuilder.Title = $"{player.PlayerInfo.Username}'s Profile";
-        embedBuilder.Color = Color.Blue;
-        embedBuilder.AddField("Player ID", player.Id, true);
-        embedBuilder.AddField("Username", player.PlayerInfo.Username, true);
-        // add a field to see if the user is a manager
-        embedBuilder.AddField("Is Manager", player.IsManager);
+            // Avatar
+            ctx.DrawImage(avatarImage, new Point(20, 20), 1f);
 
-        foreach (var member in members)
-        {
-            var guildId = member.GuildId;
-            var permissionFlag = member.Permissions;
+            // Player name
+            ctx.DrawText(player.PlayerInfo.Username switch
+            {
+                { Length: > 14 } name => name[..12] + "..",
+                var name => name
+            }, SystemFonts.CreateFont(fontFamily, 64, FontStyle.Regular), Color.White, new PointF(256, 17));
 
-            var guild = await client.Guilds
-                .GetByIdAsync(guildId, CancellationToken.None)
-                .Unwrap();
-            if (guild is null) continue;
+            // Guild logo
+            ctx.DrawImage(guildLogoImage, new Point(width - 100, 20), 1f);
 
-            embedBuilder.AddField(
-                $"{guild.Info.Name} (ID: {guild.Id})",
-                $"Permissions: {permissionFlag
-                    .GetFlags()
-                    .Aggregate("", (current, flag) => current + flag + ", ")}");
-        }
+            // Point stats
+            ctx.DrawText(new RichTextOptions(regularTextFont)
+            {
+                Origin = new PointF(256, 126),
+                FallbackFontFamilies = [fontAwesome]
+            }, "🏅 7249 CPP (#237)", new SolidBrush(Color.Gold), null);
 
-        return embedBuilder.Build();
+            // Passes stats
+            ctx.DrawText(new RichTextOptions(regularTextFont)
+            {
+                Origin = new PointF(256 + 306, 126),
+                FallbackFontFamilies = [fontAwesome],
+            }, "⭐ 780 passes (#128)", new SolidBrush(Color.Gold), null);
+
+            // Global level
+            ctx.DrawText(new RichTextOptions(globalLevelFont)
+            {
+                Origin = new PointF(614, 180),
+                FallbackFontFamilies = [fontAwesome],
+            }, currentLevel?.Level.Info.Name ?? "", new SolidBrush(secondaryColor), null);
+
+            // Equilibrium label
+            ctx.DrawText("", boldTextFont, Color.FromRgb(217, 217, 217), new PointF(256, 190));
+
+            // Equilibrium dots
+            var dotStartX = 256 + 55;
+            var equilibriumLevel = 3; // Example: 3 out of 5
+            for (var i = 0; i < 5; i++)
+            {
+                var dotColor = i < equilibriumLevel ? secondaryColor : Color.FromRgb(217, 217, 217);
+                ctx.Fill(dotColor, new EllipsePolygon(dotStartX + (i * 37), 205, 10));
+            }
+
+            // Equilibrium percentage
+            ctx.DrawText("(69%)", regularTextFont, Color.FromRgb(217, 217, 217), new PointF(256 + 226, 190));
+
+            // Separator line
+            ctx.DrawLine(secondaryColor, thickness: 6, new PointF(0, 256), new PointF(width, 256));
+
+            // Trophies
+            const int trophyStartY = 275;
+            const int trophyStartX = 130;
+            const int trophySpacing = 140;
+            const int trophySize = 35;
+
+            var trophies = new[]
+            {
+                ("Resources/Trophies/Plastic.webp", 53),
+                ("Resources/Trophies/Silver.webp", 43),
+                ("Resources/Trophies/Gold.webp", 11),
+                ("Resources/Trophies/Diamond.webp", 0),
+                ("Resources/Trophies/Ruby.webp", 0)
+            };
+
+            for (var i = 0; i < trophies.Length; i++)
+            {
+                var (trophyFile, count) = trophies[i];
+                var xPosition = trophyStartX + (i * trophySpacing);
+
+                using var trophyStream = File.OpenRead(trophyFile);
+                using var trophyImage = Image.Load<Rgba32>(trophyStream);
+                trophyImage.Mutate(a => a.Resize(trophySize, trophySize));
+                ctx.DrawImage(trophyImage, new Point(xPosition, trophyStartY), 1f);
+
+                var countText = count.ToString();
+                var countSize = TextMeasurer.MeasureSize(countText, new TextOptions(regularTextFont));
+                ctx.DrawText(countText, regularTextFont, Color.White,
+                    new PointF(xPosition + trophySize + 4, trophyStartY + (trophySize - countSize.Height) / 2));
+            }
+
+            // Category levels
+            const int categoryStartY = 340;
+
+            const int categoryLeftX = 160;
+            const int categoryRightX = 480;
+            const int categoryRowSpacing = 43;
+            var categoryIndex = 0;
+
+            foreach (var category in categories)
+            {
+                LevelStatResponses.MemberLevelStat? categoryLevelStat = levelStats
+                    .LastOrDefault(x => x.Level.CategoryId == category.Id && x.IsCompleted);
+                if (categoryLevelStat is null)
+                    continue;
+
+                var categoryColor = Color.FromArgb(categoryLevelStat.Value.Level.Info.Color);
+                var isLeftColumn = categoryIndex % 2 == 0;
+                var xPosition = isLeftColumn ? categoryLeftX : categoryRightX;
+                var yPosition = categoryStartY + ((categoryIndex / 2) * categoryRowSpacing);
+
+                ctx.DrawText($"{category.Info.Name}: ", boldTextFont, Color.White, new PointF(xPosition, yPosition));
+
+                var categoryNameSize = TextMeasurer
+                    .MeasureSize($"{category.Info.Name}: ", new TextOptions(boldTextFont));
+
+                ctx.DrawText(categoryLevelStat.Value.Level.Info.Name, boldTextFont, categoryColor,
+                    new PointF(xPosition + categoryNameSize.Width + 10, yPosition));
+
+                categoryIndex++;
+            }
+        });
+
+        var stream = new MemoryStream();
+        await image.SaveAsPngAsync(stream);
+        stream.Position = 0;
+        return stream;
     }
 }
