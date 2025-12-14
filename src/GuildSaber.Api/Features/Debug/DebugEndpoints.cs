@@ -377,7 +377,7 @@ public class DebugEndpoints : IEndpoints
                     CategoryId = null,
                     Info = new LevelInfo
                     {
-                        Name = Name_2_50.CreateUnsafe($"Level {oldLevel.LevelNumber:G}").Value,
+                        Name = Name_2_50.CreateUnsafe($"Lvl {oldLevel.LevelNumber:G}").Value,
                         Color = Color.FromArgb(oldLevel.Color)
                     },
                     Order = await dbContext.Levels
@@ -388,6 +388,8 @@ public class DebugEndpoints : IEndpoints
                 };
 
                 dbContext.Levels.Add(level);
+                await dbContext.SaveChangesAsync(token);
+                dbContext.ChangeTracker.Clear();
             }
 
             levelDict[(oldLevel.Id, 0)] = (level, oldLevel.LevelNumber);
@@ -399,7 +401,7 @@ public class DebugEndpoints : IEndpoints
                     x.GuildId == guildId &&
                     x.ContextId == contextId &&
                     x.CategoryId == category.Id &&
-                    x.Info.Name == $"Level {oldLevel.LevelNumber:G} - {category.Info.Name}"
+                    x.Info.Name == $"Lvl {oldLevel.LevelNumber:G}"
                 );
                 if (categoryLevel is null)
                 {
@@ -410,7 +412,7 @@ public class DebugEndpoints : IEndpoints
                         CategoryId = category.Id,
                         Info = new LevelInfo
                         {
-                            Name = Name_2_50.CreateUnsafe($"Level {oldLevel.LevelNumber:G} - {category.Info.Name}")
+                            Name = Name_2_50.CreateUnsafe($"Lvl {oldLevel.LevelNumber:G}")
                                 .Value,
                             Color = Color.FromArgb(oldLevel.Color)
                         },
@@ -422,6 +424,8 @@ public class DebugEndpoints : IEndpoints
                     };
 
                     dbContext.Levels.Add(categoryLevel);
+                    await dbContext.SaveChangesAsync(token);
+                    dbContext.ChangeTracker.Clear();
                 }
 
                 levelDict[(oldLevel.Id, oldCategory.Id)] = (categoryLevel, oldLevel.LevelNumber);

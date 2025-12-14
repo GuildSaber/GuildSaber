@@ -53,7 +53,7 @@ public partial class UserModuleSlash
 /// </summary>
 file static class MeCommand
 {
-    public readonly record struct TrophiesCount(
+    public record struct TrophiesCount(
         int Plastic,
         int Silver,
         int Gold,
@@ -104,7 +104,7 @@ file static class MeCommand
             : Color.Black;
 
         using var image = new Image<Rgba32>(width, height);
-        image.Mutate(ctx =>
+        ProcessingExtensions.Mutate((Image)image, ctx =>
         {
             // Background
             ctx.Fill(primaryColor, new RectangleF(0, 0, width, height)
@@ -136,7 +136,7 @@ file static class MeCommand
                         {
                             Origin = new PointF(256, 126),
                             FallbackFontFamilies = [fontAwesome]
-                        }, $"🏅 {pointWithRank.Points:00} {pointWithRank.Name} (#{pointWithRank.Rank})",
+                        }, $"🏅 {pointWithRank.Points:0.##} {pointWithRank.Name} (#{pointWithRank.Rank})",
                         new SolidBrush(Color.Gold), null);
                     break;
                 }
@@ -146,7 +146,7 @@ file static class MeCommand
                             Origin = new PointF(256, 106),
                             FallbackFontFamilies = [fontAwesome]
                         },
-                        $"🏅 {simplePointsWithRank[0].Points:00} {simplePointsWithRank[0].Name} (#{simplePointsWithRank[0].Rank})",
+                        $"🏅 {simplePointsWithRank[0].Points:0.##} {simplePointsWithRank[0].Name} (#{simplePointsWithRank[0].Rank})",
                         new SolidBrush(Color.Gold), null);
 
                     ctx.DrawText(new RichTextOptions(regularTextFont)
@@ -154,7 +154,7 @@ file static class MeCommand
                             Origin = new PointF(256, 142),
                             FallbackFontFamilies = [fontAwesome]
                         },
-                        $"🏅 {simplePointsWithRank[1].Points:00} {simplePointsWithRank[1].Name} (#{simplePointsWithRank[1].Rank})",
+                        $"🏅 {simplePointsWithRank[1].Points:0.##} {simplePointsWithRank[1].Name} (#{simplePointsWithRank[1].Rank})",
                         new SolidBrush(Color.Gold), null);
                     break;
                 default:
@@ -171,26 +171,16 @@ file static class MeCommand
                 new SolidBrush(Color.Gold), null);
 
             // Global level
+            const int startX = 601;
+            var globalLevelText = currentLevel?.Level.Info.Name ?? "";
+            var globalLevelSize = TextMeasurer.MeasureSize(globalLevelText, new TextOptions(globalLevelFont));
+            var globalLevelX = startX + (width - startX - 20 - globalLevelSize.Width) / 2;
+
             ctx.DrawText(new RichTextOptions(globalLevelFont)
             {
-                Origin = new PointF(614, 180),
+                Origin = new PointF(globalLevelX, 185),
                 FallbackFontFamilies = [fontAwesome]
-            }, currentLevel?.Level.Info.Name ?? "", new SolidBrush(secondaryColor), null);
-
-            // Equilibrium label
-            ctx.DrawText("", boldTextFont, Color.FromRgb(217, 217, 217), new PointF(256, 190));
-
-            // Equilibrium dots
-            var dotStartX = 256 + 55;
-            var equilibriumLevel = 3; // Example: 3 out of 5
-            for (var i = 0; i < 5; i++)
-            {
-                var dotColor = i < equilibriumLevel ? secondaryColor : Color.FromRgb(217, 217, 217);
-                ctx.Fill(dotColor, new EllipsePolygon(dotStartX + i * 37, 205, 10));
-            }
-
-            // Equilibrium percentage
-            ctx.DrawText("(69%)", regularTextFont, Color.FromRgb(217, 217, 217), new PointF(256 + 226, 190));
+            }, globalLevelText, new SolidBrush(secondaryColor), null);
 
             // Separator line
             ctx.DrawLine(secondaryColor, thickness: 6, new PointF(0, 256), new PointF(width, 256));
@@ -229,10 +219,13 @@ file static class MeCommand
 
             // Category levels
             const int categoryStartY = 340;
-            const int categoryLeftX = 160;
-            const int categoryRightX = 480;
             const int categoryRowSpacing = 43;
             var categoryIndex = 0;
+
+            var categoryLevelOrders = new List<int>(categories.Length);
+            var maxCategoryLabelWidth = categories
+                .Select(category => TextMeasurer.MeasureSize($"{category.Info.Name}: ", new TextOptions(boldTextFont)))
+                .Select(categoryLabelSize => categoryLabelSize.Width).Prepend(0f).Max();
 
             foreach (var category in categories)
             {
@@ -243,19 +236,45 @@ file static class MeCommand
 
                 var categoryColor = Color.FromArgb(categoryLevelStat.Value.Level.Info.Color);
                 var isLeftColumn = categoryIndex % 2 == 0;
-                var xPosition = isLeftColumn ? categoryLeftX : categoryRightX;
+                var baseX = isLeftColumn ? 160 : 480;
                 var yPosition = categoryStartY + categoryIndex / 2 * categoryRowSpacing;
 
-                ctx.DrawText($"{category.Info.Name}: ", boldTextFont, Color.White, new PointF(xPosition, yPosition));
+                var categoryLabel = $"{category.Info.Name}: ";
+                var categoryLabelSize = TextMeasurer.MeasureSize(categoryLabel, new TextOptions(boldTextFont));
 
-                var categoryNameSize = TextMeasurer
-                    .MeasureSize($"{category.Info.Name}: ", new TextOptions(boldTextFont));
+                // Draw category name right-aligned to maxCategoryLabelWidth
+                ctx.DrawText(categoryLabel, boldTextFont, Color.White,
+                    new PointF(baseX + maxCategoryLabelWidth - categoryLabelSize.Width, yPosition));
 
+                // Draw level name after the widest label position
                 ctx.DrawText(categoryLevelStat.Value.Level.Info.Name, boldTextFont, categoryColor,
-                    new PointF(xPosition + categoryNameSize.Width + 10, yPosition));
+                    new PointF(baseX + maxCategoryLabelWidth + 10, yPosition));
 
+                categoryLevelOrders.Add(categoryLevelStat.Value.Level.Order);
                 categoryIndex++;
             }
+
+            /* We simulate the level equilibrium via level orders because there are no level number
+             * (unlike legacy GuildSaber) */
+            var equilibriumPercentage = categoryLevelOrders.Count > 1
+                ? Math.Max(0f, 100f - StandardDeviation(categoryLevelOrders) * 100f / categoryLevelOrders.Average())
+                : 100f;
+
+            // Equilibrium label
+            ctx.DrawText("", boldTextFont, Color.FromRgb(217, 217, 217), new PointF(256, 190));
+
+            // Equilibrium dots
+            const int dotStartX = 256 + 55;
+            var equilibriumLevel = (int)Math.Round(equilibriumPercentage / 20.0);
+            for (var i = 0; i < 5; i++)
+            {
+                var dotColor = i < equilibriumLevel ? secondaryColor : Color.FromRgb(217, 217, 217);
+                ctx.Fill(dotColor, new EllipsePolygon(dotStartX + i * 37, 205, 10));
+            }
+
+            // Equilibrium percentage
+            ctx.DrawText($"({equilibriumPercentage:0.##}%)", regularTextFont, Color.FromRgb(217, 217, 217),
+                new PointF(256 + 226, 190));
         });
 
         var stream = new MemoryStream();
@@ -264,14 +283,9 @@ file static class MeCommand
         return stream;
     }
 
-    public static TrophiesCount CalculateTrophies(LevelStatResponses.MemberLevelStat[] levelStats)
+    private static TrophiesCount CalculateTrophies(LevelStatResponses.MemberLevelStat[] levelStats)
     {
-        var plastic = 0;
-        var silver = 0;
-        var gold = 0;
-        var diamond = 0;
-        var ruby = 0;
-
+        var trophyCount = new TrophiesCount(0, 0, 0, 0, 0);
         foreach (var stat in levelStats)
         {
             if (!stat.IsCompleted)
@@ -289,23 +303,34 @@ file static class MeCommand
             switch (completionPercent)
             {
                 case <= 0.25f:
-                    plastic++;
+                    trophyCount.Plastic++;
                     break;
                 case <= 0.5f:
-                    silver++;
+                    trophyCount.Silver++;
                     break;
                 case <= 0.75f:
-                    gold++;
+                    trophyCount.Gold++;
                     break;
                 case < 1.0f:
-                    diamond++;
+                    trophyCount.Diamond++;
                     break;
                 default:
-                    ruby++;
+                    trophyCount.Ruby++;
                     break;
             }
         }
 
-        return new TrophiesCount(plastic, silver, gold, diamond, ruby);
+        return trophyCount;
+    }
+
+    private static double StandardDeviation(IReadOnlyCollection<int> sequence)
+    {
+        if (sequence.Count == 0)
+            return 0;
+
+        var average = sequence.Average();
+        var sum = sequence.Sum(x => Math.Pow(x - average, 2));
+
+        return Math.Sqrt(sum / (sequence.Count - 1));
     }
 }
