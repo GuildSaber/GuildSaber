@@ -11,6 +11,9 @@ builder.Configuration.AddJsonFile("appsettings.Development.json", optional: true
 builder.Services
     .AddOptionsWithValidateOnStart<AuthSettings>()
     .Bind(builder.Configuration.GetSection(AuthSettings.AuthSettingsSectionKey)).ValidateDataAnnotations();
+builder.Services
+    .AddOptionsWithValidateOnStart<EmojiSettings>()
+    .Bind(builder.Configuration.GetSection(EmojiSettings.EmojiSettingsSectionKey)).ValidateDataAnnotations();
 
 builder.AddNpgsqlDbContext<DiscordBotDbContext>(connectionName: Constants.DiscordBotDbConnectionStringKey,
     configureDbContextOptions: options => options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));

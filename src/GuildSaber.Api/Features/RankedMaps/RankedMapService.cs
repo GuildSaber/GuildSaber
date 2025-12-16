@@ -130,10 +130,10 @@ public class RankedMapService(
         .FirstOrDefaultAsync();
 
     private async Task<GameMode?> GetGameMode(string name)
-        => await dbContext.GameModes.FirstOrDefaultAsync(x => EF.Functions.Like(x.Name, name));
+        => await dbContext.GameModes.FirstOrDefaultAsync(x => EF.Functions.ILike(x.Name, name));
 
     private async Task<PlayMode?> GetPlayMode(string name)
-        => await dbContext.PlayModes.FirstOrDefaultAsync(x => EF.Functions.Like(x.Name, name));
+        => await dbContext.PlayModes.FirstOrDefaultAsync(x => EF.Functions.ILike(x.Name, name));
 
     private async Task<Result<(Song song, SongDifficulty difficulty)>> InsertOrUpdateSongAndDifficulty(
         BeatMap beatMap,

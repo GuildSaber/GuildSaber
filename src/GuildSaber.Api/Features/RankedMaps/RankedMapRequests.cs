@@ -39,7 +39,8 @@ public class RankedMapRequest
         EditTime = 1,
         CreationTime = 2,
         DifficultyStar = 3,
-        AccuracyStar = 4
+        AccuracyStar = 4,
+        Name = 5
     }
 
     /// <param name="DifficultyStar">

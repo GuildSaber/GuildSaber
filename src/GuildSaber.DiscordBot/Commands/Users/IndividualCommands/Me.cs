@@ -22,12 +22,11 @@ public partial class UserModuleSlash
     [SlashCommand("me", "Get information about your account")]
     public async Task Me(
         [Autocomplete<ContextAutocompleteHandler>] int contextId,
-        [Summary("VisibleToOther")] EDisplayChoice displayChoice = EDisplayChoice.Invisible)
+        [Summary("VisibleToOther")] EDisplayChoice displayChoice = EDisplayChoice.Visible)
     {
         await DeferAsync(ephemeral: displayChoice.ToEphemeral());
         var stream = await MeCommand.GeneratePlayerCardAsync(
-            (await Cache.FindGuildIdFromDiscordGuildIdAsync(Context.Guild.DiscordId, Client.Value))
-            .ValueOrGuildMissingException(),
+            await GetGuildIdAsync(),
             contextId,
             Client.Value
         );

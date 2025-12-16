@@ -107,6 +107,7 @@ public class RankedMapEndpoints : IEndpoints
         EOrder order = EOrder.Asc)
     {
         var query = dbContext.RankedMaps.AsSplitQuery().Where(x => x.ContextId == contextId);
+
         if (!string.IsNullOrWhiteSpace(search))
         {
             if (search.Length is < 10 and >= 5 && search.StartsWith("!bsr"))
@@ -117,12 +118,13 @@ public class RankedMapEndpoints : IEndpoints
             else
             {
                 query = query.Where(x => x.MapVersions.Any(version =>
-                    version.Song.Info.SongName.Contains(search) ||
-                    version.Song.Info.SongAuthorName.Contains(search) ||
-                    version.Song.Info.MapperName.Contains(search) ||
+                    EF.Functions.ILike(version.Song.Info.SongName, $"%{search}%") ||
+                    EF.Functions.ILike(version.Song.Info.SongAuthorName, $"%{search}%") ||
+                    EF.Functions.ILike(version.Song.Info.MapperName, $"%{search}%") ||
                     search.Length < 5 && version.Song.BeatSaverKey != null
-                                      && ((string)version.Song.BeatSaverKey).Contains(search) ||
-                    search.Length > 36 && search.Length < 43 && ((string)version.Song.Hash).Contains(search)));
+                                      && EF.Functions.ILike(version.Song.BeatSaverKey, $"%{search}%") ||
+                    search.Length > 36 && search.Length < 43 &&
+                    EF.Functions.ILike(version.Song.Hash, $"%{search}%")));
             }
         }
 
@@ -146,6 +148,10 @@ public static class RankedMapExtensions
         RankedMapRequest.ERankedMapSorter.DifficultyStar => query.OrderBy(order, x => x.Rating.DiffStar)
             .ThenBy(order, x => x.Id),
         RankedMapRequest.ERankedMapSorter.AccuracyStar => query.OrderBy(order, x => x.Rating.AccStar)
+            .ThenBy(order, x => x.Id),
+        RankedMapRequest.ERankedMapSorter.Name => query.OrderBy(order, x => x.MapVersions
+                .Select(v => v.Song.Info.SongName)
+                .FirstOrDefault())
             .ThenBy(order, x => x.Id),
         _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
     };

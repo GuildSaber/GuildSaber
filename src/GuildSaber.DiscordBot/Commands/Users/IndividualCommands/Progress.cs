@@ -1,9 +1,9 @@
 using System.Text;
 using Discord;
 using Discord.Interactions;
+using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Common.Result;
 using GuildSaber.CSharpClient;
-using GuildSaber.Database.Models.StrongTypes;
 using GuildSaber.DiscordBot.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Extensions;
 using Microsoft.Extensions.Caching.Hybrid;
@@ -20,7 +20,7 @@ public partial class UserModuleSlash
         [Summary("VisibleToOther")] EDisplayChoice displayChoice = EDisplayChoice.Visible)
     {
         await DeferAsync(ephemeral: displayChoice.ToEphemeral());
-        await FollowupAsync(embed: await ProgramCommand.MakeProgress(Client.Value, Cache, Context.Guild.DiscordId,
+        await FollowupAsync(embed: await ProgramCommand.MakeProgress(await GetGuildAsync(), Client.Value, Cache,
             contextId, categoryId));
     }
 }
@@ -28,10 +28,9 @@ public partial class UserModuleSlash
 file static class ProgramCommand
 {
     public static async Task<Embed> MakeProgress(
-        GuildSaberClient client, HybridCache cache, DiscordGuildId discordGuildId, int contextId, int? categoryId)
+        GuildResponses.Guild guild, GuildSaberClient client, HybridCache cache, int contextId, int? categoryId)
     {
-        var (guild, player, stats) = (
-            (await cache.GetGuildFromDiscordGuildIdAsync(discordGuildId, client)).ValueOrGuildMissingException(),
+        var (player, stats) = (
             (await client.Players.GetAtMeAsync(CancellationToken.None)).Unwrap().ValueOrPlayerNotFoundException(),
             (await client.LevelStats.GetAtMeAsync(contextId, CancellationToken.None)).Unwrap()
         );

@@ -1,3 +1,4 @@
+using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using Color = Discord.Color;
@@ -15,6 +16,16 @@ public static class DiscordColorExtensions
             var b = (byte)(argb & 0xFF);
             return new Color(r, g, b);
         }
+
+        public static Color FromDifficulty(EDifficulty difficulty) => difficulty switch
+        {
+            EDifficulty.Easy => FromArgb(0x3CB371),
+            EDifficulty.Normal => FromArgb(0x59B0F4),
+            EDifficulty.Hard => FromArgb(0xEE5E44),
+            EDifficulty.Expert => FromArgb(0xBF2A42),
+            EDifficulty.ExpertPlus => FromArgb(0x8F48DB),
+            _ => FromArgb(0xFFFFFF)
+        };
     }
 }
 

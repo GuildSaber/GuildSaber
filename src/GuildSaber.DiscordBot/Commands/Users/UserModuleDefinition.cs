@@ -1,9 +1,12 @@
 ﻿using Discord;
 using Discord.Interactions;
+using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Guilds.Members;
+using GuildSaber.Common.Result;
 using GuildSaber.CSharpClient;
 using GuildSaber.CSharpClient.Auth;
 using GuildSaber.Database.Contexts.DiscordBot;
+using GuildSaber.DiscordBot.Core.Extensions;
 using GuildSaber.DiscordBot.Core.Handlers;
 using GuildSaber.DiscordBot.Settings;
 using Microsoft.Extensions.Caching.Hybrid;
@@ -27,6 +30,7 @@ public partial class UserModuleSlash : InteractionModuleBase<SocketInteractionCo
         IHttpClientFactory httpClientFactory,
         DiscordBotDbContext dbContext,
         IOptions<AuthSettings> authSettings,
+        IOptions<EmojiSettings> emojiSettings,
         HybridCache cache)
     {
         Client = new Lazy<GuildSaberClient>(() => new GuildSaberClient(
@@ -36,18 +40,32 @@ public partial class UserModuleSlash : InteractionModuleBase<SocketInteractionCo
                 DiscordId: Context?.User?.Id.ToString() ?? string.Empty
             )));
         DbContext = dbContext;
+        EmojiSettings = emojiSettings;
         Cache = cache;
     }
 
     private Lazy<GuildSaberClient> Client { get; }
-    public DiscordBotDbContext DbContext { get; }
-    public HybridCache Cache { get; }
+    private DiscordBotDbContext DbContext { get; }
+    private IOptions<EmojiSettings> EmojiSettings { get; }
+    private HybridCache Cache { get; }
 
     public enum EDisplayChoice
     {
         Visible = 0,
         Invisible = 1 << 0
     }
+
+    public async ValueTask<GuildId> GetGuildIdAsync() =>
+        (await Cache.FindGuildIdFromDiscordGuildIdAsync(Context.Guild.DiscordId, Client.Value))
+        .ValueOrGuildMissingException();
+
+    public async ValueTask<GuildResponses.Guild> GetGuildAsync() =>
+        (await Client.Value.Guilds.GetByIdAsync(await GetGuildIdAsync(), CancellationToken.None))
+        .Unwrap().ValueOrGuildMissingException();
+
+    public async ValueTask<GuildResponses.GuildExtended> GetGuildExtendedAsync() =>
+        (await Client.Value.Guilds.GetExtendedByIdAsync(await GetGuildIdAsync(), CancellationToken.None))
+        .Unwrap().ValueOrGuildMissingException();
 }
 
 public static class UserModuleSlashExtensions

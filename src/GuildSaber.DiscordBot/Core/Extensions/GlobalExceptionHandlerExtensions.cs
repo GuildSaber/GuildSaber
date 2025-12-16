@@ -31,6 +31,12 @@ public static class GlobalExceptionExtensions
             => self ?? throw new InteractionHandler.GuildMissingException();
     }
 
+    extension(GuildResponses.GuildExtended? self)
+    {
+        public GuildResponses.GuildExtended ValueOrGuildMissingException()
+            => self ?? throw new InteractionHandler.GuildMissingException();
+    }
+
     extension(PlayerResponses.Player? self)
     {
         public PlayerResponses.Player ValueOrPlayerNotFoundException()

@@ -92,7 +92,7 @@ public class GuildEndpoints : IEndpoints
     {
         var query = dbContext.Guilds.AsQueryable();
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(x => ((string)x.Info.Name).Contains(search));
+            query = query.Where(x => EF.Functions.ILike(x.Info.Name, $"%{search}%"));
 
         return TypedResults.Ok(await query
             .ApplySortOrder(sortBy, order)

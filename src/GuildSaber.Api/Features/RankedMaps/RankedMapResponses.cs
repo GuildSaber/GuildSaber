@@ -75,6 +75,7 @@ public static class RankedMapResponses
         RankedMapRequirements Requirements,
         RankedMapRating Rating,
         MapVersion[] Versions,
-        int[] CategoryIds
+        int[] CategoryIds,
+        int[] LevelIds
     );
 }

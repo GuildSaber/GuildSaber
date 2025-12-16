@@ -9,7 +9,7 @@ namespace GuildSaber.DiscordBot.Commands.Users;
 
 public partial class UserModuleSlash
 {
-    [SlashCommand("guilds", "Get the bot ping from discord")]
+    [SlashCommand("guilds", "Search for guilds by name")]
     public async Task Guilds(
         [Summary("search", "Search term to filter guilds by name")] string search,
         [Summary("page", "Page number for pagination")] int page = 1
@@ -43,11 +43,12 @@ file static class GuildsCommand
         embedBuilder.WithColor(Color.Blue);
         if (pagedGuilds.Data.Length == 0)
         {
-            embedBuilder.Description = "No guilds found.";
+            embedBuilder.Description = $"No guilds found for the given search term: {search}.";
             return embedBuilder.Build();
         }
 
-        embedBuilder.Title = $"Guilds (Page {pagedGuilds.Page} of {pagedGuilds.TotalPages})";
+        embedBuilder.Title =
+            $"Guilds (Page {pagedGuilds.Page} of {pagedGuilds.TotalPages}) with search term: '{search}'";
         foreach (var guild in pagedGuilds.Data) embedBuilder.AddField(guild.Info.Name, guild.Info.Description);
 
         return embedBuilder.Build();

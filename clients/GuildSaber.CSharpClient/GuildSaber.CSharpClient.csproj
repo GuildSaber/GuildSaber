@@ -31,4 +31,8 @@
         <ProjectReference Include="..\..\src\GuildSaber.Common\GuildSaber.Common.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Folder Include="Routes\RankedMaps\MapVersions\" />
+    </ItemGroup>
+
 </Project>
