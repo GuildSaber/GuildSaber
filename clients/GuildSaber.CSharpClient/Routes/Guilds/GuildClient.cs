@@ -11,6 +11,9 @@ using static GuildSaber.Api.Features.Guilds.GuildResponses;
 
 namespace GuildSaber.CSharpClient.Routes.Guilds;
 
+/// <summary>
+/// Client for interacting with guild endpoints.
+/// </summary>
 public sealed class GuildClient(
     HttpClient httpClient,
     AuthenticationHeaderValue? authenticationHeader,
@@ -23,7 +26,13 @@ public sealed class GuildClient(
             UriKind.Relative
         );
 
-    public async Task<Result<Guild?>> GetByIdAsync(GuildId guildId, CancellationToken token)
+    /// <summary>
+    /// Gets a guild by its ID.
+    /// </summary>
+    /// <param name="guildId">The ID of the guild to retrieve.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the guild if found, or null if not found.</returns>
+    public async Task<Result<Guild?>> GetByIdAsync(GuildId guildId, CancellationToken token = default)
         => await httpClient.GetAsync($"guilds/{guildId}", token).ConfigureAwait(false) switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<Guild?>(null),
@@ -34,7 +43,13 @@ public sealed class GuildClient(
                 .ReadFromJsonAsync<Guild>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
         };
 
-    public async Task<Result<GuildExtended?>> GetExtendedByIdAsync(GuildId guildId, CancellationToken token)
+    /// <summary>
+    /// Gets extended guild information by its ID.
+    /// </summary>
+    /// <param name="guildId">The ID of the guild to retrieve.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the extended guild info if found, or null if not found.</returns>
+    public async Task<Result<GuildExtended?>> GetExtendedByIdAsync(GuildId guildId, CancellationToken token = default)
         => await httpClient.GetAsync($"guilds/{guildId}/extended", token).ConfigureAwait(false) switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<GuildExtended?>(null),
@@ -45,7 +60,13 @@ public sealed class GuildClient(
                 .ReadFromJsonAsync<GuildExtended>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
         };
 
-    public async Task<Result<Guild?>> GetByDiscordIdAsync(ulong discordGuildId, CancellationToken token)
+    /// <summary>
+    /// Gets a guild by its Discord guild ID.
+    /// </summary>
+    /// <param name="discordGuildId">The Discord guild ID to search for.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the guild if found, or null if not found.</returns>
+    public async Task<Result<Guild?>> GetByDiscordIdAsync(ulong discordGuildId, CancellationToken token = default)
         => await httpClient.GetAsync($"guilds/by-discord-id/{discordGuildId}", token).ConfigureAwait(false) switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<Guild?>(null),
@@ -56,8 +77,16 @@ public sealed class GuildClient(
                 .ReadFromJsonAsync<Guild>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
         };
 
+    /// <summary>
+    /// Gets a paginated list of guilds with optional search filtering.
+    /// </summary>
+    /// <param name="search">Optional search term to filter guilds by name.</param>
+    /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing a paginated list of guilds.</returns>
     public async Task<Result<PagedList<Guild>>> GetAsync(
-        string? search, PaginatedRequestOptions<GuildRequests.EGuildSorter> requestOptions, CancellationToken token)
+        string? search, PaginatedRequestOptions<GuildRequests.EGuildSorter> requestOptions,
+        CancellationToken token = default)
         => await httpClient.GetAsync(GetGuildsUrl(search, requestOptions), token).ConfigureAwait(false) switch
         {
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
@@ -109,8 +138,15 @@ public sealed class GuildClient(
         }
     }
 
+    /// <summary>
+    /// Sets or removes the Discord guild ID for a guild.
+    /// </summary>
+    /// <param name="guildId">The ID of the guild to update.</param>
+    /// <param name="discordGuildId">The Discord guild ID to set, or null to remove.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the updated guild.</returns>
     public async Task<Result<Guild>> SetDiscordGuildIdAsync(
-        GuildId guildId, ulong? discordGuildId, CancellationToken token)
+        GuildId guildId, ulong? discordGuildId, CancellationToken token = default)
     {
         var request = new HttpRequestMessage(new HttpMethod("PATCH"), $"guilds/{guildId}")
         {

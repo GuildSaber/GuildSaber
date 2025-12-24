@@ -7,13 +7,23 @@ using static GuildSaber.Api.Features.Guilds.Members.LevelStats.LevelStatResponse
 
 namespace GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
 
+/// <summary>
+/// Client for interacting with member level stat endpoints.
+/// </summary>
 public sealed class LevelStatClient(
     HttpClient httpClient,
     AuthenticationHeaderValue? authenticationHeader,
     JsonSerializerOptions jsonOptions)
 {
+    /// <summary>
+    /// Gets level stats for a specific player in a specific context.
+    /// </summary>
+    /// <param name="contextId">The context identifier.</param>
+    /// <param name="playerId">The player identifier.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing an array of member level stats.</returns>
     public async Task<Result<MemberLevelStat[]>> GetByPlayerIdAsync(
-        int contextId, int playerId, CancellationToken token)
+        int contextId, int playerId, CancellationToken token = default)
         => await httpClient.GetAsync($"contexts/{contextId}/members/{playerId}/level-stats", token)
                 .ConfigureAwait(false) switch
             {
@@ -25,7 +35,13 @@ public sealed class LevelStatClient(
                     .ConfigureAwait(false))!
             };
 
-    public async Task<Result<MemberLevelStat[]>> GetAtMeAsync(int contextId, CancellationToken token)
+    /// <summary>
+    /// Gets level stats for the currently authenticated player in a specific context.
+    /// </summary>
+    /// <param name="contextId">The context identifier.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing an array of member level stats, or failure if unauthorized or not found.</returns>
+    public async Task<Result<MemberLevelStat[]>> GetAtMeAsync(int contextId, CancellationToken token = default)
         => await httpClient.SendAsync(
                     new HttpRequestMessage(HttpMethod.Get, $"contexts/{contextId}/members/@me/level-stats")
                     {

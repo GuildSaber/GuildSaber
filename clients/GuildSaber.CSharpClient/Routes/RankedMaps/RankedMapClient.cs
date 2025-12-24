@@ -41,12 +41,19 @@ public class RankedMapClient(HttpClient httpClient, JsonSerializerOptions jsonOp
                     .ConfigureAwait(false)
             };
 
-
+    /// <summary>
+    /// Gets a paginated list of ranked maps for a specific context with optional search filtering.
+    /// </summary>
+    /// <param name="contextId">The context identifier.</param>
+    /// <param name="search">Optional search term to filter ranked maps.</param>
+    /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing a paginated list of ranked maps.</returns>
     public async Task<Result<PagedList<RankedMap>>> GetAsync(
         int contextId,
         string? search,
         PaginatedRequestOptions<RankedMapRequest.ERankedMapSorter> requestOptions,
-        CancellationToken token)
+        CancellationToken token = default)
         => await httpClient.GetAsync(GetRankedMapUrl(contextId, search, requestOptions), token)
                 .ConfigureAwait(false) switch
             {
@@ -58,6 +65,21 @@ public class RankedMapClient(HttpClient httpClient, JsonSerializerOptions jsonOp
                     .ConfigureAwait(false)
             };
 
+    /// <summary>
+    /// Asynchronously retrieves ranked maps with automatic pagination.
+    /// </summary>
+    /// <param name="contextId">The context identifier.</param>
+    /// <param name="search">Optional search term to filter ranked maps.</param>
+    /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <returns>
+    /// An async enumerable sequence of <see cref="Result{T}" /> containing arrays of <see cref="RankedMap" />.
+    /// </returns>
+    /// <remarks>
+    /// Each successful result contains:
+    /// - A page of ranked maps when data is available
+    /// - An empty array when no more data is available (HTTP 2XX)
+    /// Enumeration stops automatically after receiving an empty array or an error.
+    /// </remarks>
     public async IAsyncEnumerable<Result<RankedMap[]>> GetAsyncEnumerable(
         int contextId,
         string? search,

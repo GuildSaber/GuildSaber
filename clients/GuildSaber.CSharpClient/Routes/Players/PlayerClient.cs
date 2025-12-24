@@ -10,6 +10,9 @@ using static GuildSaber.Api.Features.Players.PlayerResponses;
 
 namespace GuildSaber.CSharpClient.Routes.Players;
 
+/// <summary>
+/// Client for interacting with player endpoints.
+/// </summary>
 public sealed class PlayerClient(
     HttpClient httpClient,
     AuthenticationHeaderValue? authenticationHeader,
@@ -22,7 +25,13 @@ public sealed class PlayerClient(
             UriKind.Relative
         );
 
-    public async Task<Result<Player?>> GetByIdAsync(int playerId, CancellationToken token)
+    /// <summary>
+    /// Gets a player by their ID.
+    /// </summary>
+    /// <param name="playerId">The ID of the player to retrieve.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the player if found, or null if not found.</returns>
+    public async Task<Result<Player?>> GetByIdAsync(int playerId, CancellationToken token = default)
         => await httpClient.GetAsync($"player/{playerId}", token).ConfigureAwait(false) switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<Player?>(null),
@@ -33,7 +42,12 @@ public sealed class PlayerClient(
                 .ReadFromJsonAsync<Player?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
         };
 
-    public async Task<Result<Player?>> GetAtMeAsync(CancellationToken token)
+    /// <summary>
+    /// Gets the currently authenticated player.
+    /// </summary>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the current player if authenticated, or null if unauthorized or not found.</returns>
+    public async Task<Result<Player?>> GetAtMeAsync(CancellationToken token = default)
         => await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, "players/@me")
             {
                 Headers = { Authorization = authenticationHeader }
@@ -48,7 +62,13 @@ public sealed class PlayerClient(
                     .ReadFromJsonAsync<Player?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
             };
 
-    public async Task<Result<PlayerExtended?>> GetByIdExtendedAsync(int playerId, CancellationToken token)
+    /// <summary>
+    /// Gets extended player information by their ID.
+    /// </summary>
+    /// <param name="playerId">The ID of the player to retrieve.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the extended player info if found, or null if not found.</returns>
+    public async Task<Result<PlayerExtended?>> GetByIdExtendedAsync(int playerId, CancellationToken token = default)
         => await httpClient.GetAsync($"player/{playerId}", token).ConfigureAwait(false) switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<PlayerExtended?>(null),
@@ -59,7 +79,12 @@ public sealed class PlayerClient(
                 .ReadFromJsonAsync<PlayerExtended?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
         };
 
-    public async Task<Result<PlayerExtended?>> GetExtendedAtMeAsync(CancellationToken token)
+    /// <summary>
+    /// Gets extended information for the currently authenticated player.
+    /// </summary>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the extended player info if authenticated, or null if unauthorized or not found.</returns>
+    public async Task<Result<PlayerExtended?>> GetExtendedAtMeAsync(CancellationToken token = default)
         => await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, "players/@me/extended")
             {
                 Headers = { Authorization = authenticationHeader }
@@ -74,8 +99,16 @@ public sealed class PlayerClient(
                     .ReadFromJsonAsync<PlayerExtended?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
             };
 
+    /// <summary>
+    /// Gets a paginated list of players with optional search filtering.
+    /// </summary>
+    /// <param name="search">Optional search term to filter players by name.</param>
+    /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing a paginated list of players.</returns>
     public async Task<Result<PagedList<Player>>> GetAsync(
-        string? search, PaginatedRequestOptions<PlayerRequests.EPlayerSorter> requestOptions, CancellationToken token)
+        string? search, PaginatedRequestOptions<PlayerRequests.EPlayerSorter> requestOptions,
+        CancellationToken token = default)
         => await httpClient.GetAsync(GetPlayersUrl(search, requestOptions), token).ConfigureAwait(false) switch
         {
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }

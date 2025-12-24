@@ -7,13 +7,23 @@ using static GuildSaber.Api.Features.Guilds.Members.ContextStats.ContextStatResp
 
 namespace GuildSaber.CSharpClient.Routes.Guilds.Members.ContextStats;
 
+/// <summary>
+/// Client for interacting with member context stat endpoints.
+/// </summary>
 public sealed class ContextStatClient(
     HttpClient httpClient,
     AuthenticationHeaderValue? authenticationHeader,
     JsonSerializerOptions jsonOptions)
 {
-    public async Task<Result<MemberContextStat?>> GetMemberContextStatsAsync(
-        int contextId, int playerId, CancellationToken token)
+    /// <summary>
+    /// Gets context stats for a specific player in a specific context.
+    /// </summary>
+    /// <param name="contextId">The context identifier.</param>
+    /// <param name="playerId">The player identifier.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the member context stat if found, or null if not found.</returns>
+    public async Task<Result<MemberContextStat?>> GetByPlayerIdAsync(
+        int contextId, int playerId, CancellationToken token = default)
         => await httpClient.GetAsync($"contexts/{contextId}/members/{playerId}/context-stats", token)
                 .ConfigureAwait(false) switch
             {
@@ -26,7 +36,13 @@ public sealed class ContextStatClient(
                     .ConfigureAwait(false)
             };
 
-    public async Task<Result<MemberContextStat?>> GetAtMeAsync(int contextId, CancellationToken token)
+    /// <summary>
+    /// Gets context stats for the currently authenticated player in a specific context.
+    /// </summary>
+    /// <param name="contextId">The context identifier.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the member context stat if authenticated, or failure if unauthorized or not found.</returns>
+    public async Task<Result<MemberContextStat?>> GetAtMeAsync(int contextId, CancellationToken token = default)
         => await httpClient.SendAsync(
                     new HttpRequestMessage(HttpMethod.Get, $"contexts/{contextId}/members/@me/context-stats")
                     {

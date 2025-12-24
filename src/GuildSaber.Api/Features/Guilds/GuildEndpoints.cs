@@ -258,8 +258,7 @@ public static class GuildExtensions
     public static IQueryable<ServerGuild> ApplySortOrder(
         this IQueryable<ServerGuild> query, GuildRequests.EGuildSorter sortBy, EOrder order) => sortBy switch
     {
-        GuildRequests.EGuildSorter.Id => query
-            .OrderBy(order, guild => guild.Id),
+        GuildRequests.EGuildSorter.Id => query.OrderBy(order, guild => guild.Id),
         GuildRequests.EGuildSorter.Name => query.OrderBy(order, guild => guild.Info.Name)
             .ThenBy(order, guild => guild.Id),
         GuildRequests.EGuildSorter.Popularity => query.OrderBy(order, x => x.Status)

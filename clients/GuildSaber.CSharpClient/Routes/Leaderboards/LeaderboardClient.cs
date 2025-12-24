@@ -9,6 +9,9 @@ using static GuildSaber.Api.Features.RankedScores.RankedScoreResponses;
 
 namespace GuildSaber.CSharpClient.Routes.Leaderboards;
 
+/// <summary>
+/// Client for interacting with leaderboard endpoints.
+/// </summary>
 public sealed class LeaderboardClient(
     HttpClient httpClient,
     JsonSerializerOptions jsonOptions)
@@ -48,12 +51,21 @@ public sealed class LeaderboardClient(
             UriKind.Relative
         );
 
+    /// <summary>
+    /// Gets a paginated leaderboard for a specific ranked map.
+    /// </summary>
+    /// <param name="contextId">The context identifier.</param>
+    /// <param name="pointId">The point identifier.</param>
+    /// <param name="rankedMapId">The ranked map identifier.</param>
+    /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing a paginated list of ranked scores with player information.</returns>
     public async Task<Result<PagedList<RankedScoreWithPlayer>>> GetRankedMapLeaderboardAsync(
         int contextId,
         int pointId,
         long rankedMapId,
         PaginatedRequestOptions<LeaderboardRequests.ERankedMapLeaderboardSorter> requestOptions,
-        CancellationToken token)
+        CancellationToken token = default)
         => await httpClient.GetAsync(
                     GetRankedMapLeaderboardUrl(contextId, pointId, rankedMapId, requestOptions), token)
                 .ConfigureAwait(false) switch
@@ -66,11 +78,19 @@ public sealed class LeaderboardClient(
                     .ConfigureAwait(false)
             };
 
+    /// <summary>
+    /// Gets a paginated member point stat leaderboard for a specific context and point type.
+    /// </summary>
+    /// <param name="contextId">The context identifier.</param>
+    /// <param name="pointId">The point identifier.</param>
+    /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing a paginated list of member point stats.</returns>
     public async Task<Result<PagedList<MemberPointStat>>> GetMemberPointStatLeaderboardAsync(
         int contextId,
         int pointId,
         PaginatedRequestOptions<LeaderboardRequests.EMemberStatLeaderboardSorter> requestOptions,
-        CancellationToken token)
+        CancellationToken token = default)
         => await httpClient.GetAsync(
                     GetMemberPointStatLeaderboardUrl(contextId, pointId, requestOptions), token)
                 .ConfigureAwait(false) switch
@@ -83,12 +103,21 @@ public sealed class LeaderboardClient(
                     .ConfigureAwait(false)
             };
 
+    /// <summary>
+    /// Gets a paginated member point stat leaderboard for a specific category.
+    /// </summary>
+    /// <param name="contextId">The context identifier.</param>
+    /// <param name="pointId">The point identifier.</param>
+    /// <param name="categoryId">The category identifier.</param>
+    /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing a paginated list of member point stats for the specified category.</returns>
     public async Task<Result<PagedList<MemberPointStat>>> GetMemberCategoryPointStatLeaderboardAsync(
         int contextId,
         int pointId,
         int categoryId,
         PaginatedRequestOptions<LeaderboardRequests.EMemberStatLeaderboardSorter> requestOptions,
-        CancellationToken token)
+        CancellationToken token = default)
         => await httpClient.GetAsync(
                     GetMemberCategoryPointStatLeaderboardUrl(contextId, pointId, categoryId, requestOptions), token)
                 .ConfigureAwait(false) switch
