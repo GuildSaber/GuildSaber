@@ -5,6 +5,7 @@ using GuildSaber.Api.Transformers;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using static GuildSaber.Api.Features.Guilds.Members.LevelStats.LevelStatResponses;
 
 namespace GuildSaber.Api.Features.Guilds.Members.LevelStats;
 
@@ -28,14 +29,14 @@ public class LevelStatEndpoints : IEndpoints
             .RequireAuthorization();
     }
 
-    public static Task<Ok<List<LevelStatResponses.MemberLevelStat>>>
+    public static Task<Ok<List<MemberLevelStat>>>
         GetCurrentMemberLevelStatsAsync(
             ContextId contextId,
             ServerDbContext dbContext,
             ClaimsPrincipal claimsPrincipal)
         => GetMemberLevelStatsAsync(contextId, claimsPrincipal.GetPlayerId()!.Value, dbContext);
 
-    public static async Task<Ok<List<LevelStatResponses.MemberLevelStat>>> GetMemberLevelStatsAsync(
+    public static async Task<Ok<List<MemberLevelStat>>> GetMemberLevelStatsAsync(
         ContextId contextId,
         PlayerId playerId,
         ServerDbContext dbContext)

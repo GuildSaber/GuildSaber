@@ -13,7 +13,7 @@ public class RankedMap
     public RankedMapId Id { get; init; }
 
     public GuildId GuildId { get; init; }
-    public Context.ContextId ContextId { get; init; }
+    public ContextId ContextId { get; init; }
 
     public required RankedMapInfo Info { get; set; }
     public required RankedMapRequirements Requirements { get; init; }

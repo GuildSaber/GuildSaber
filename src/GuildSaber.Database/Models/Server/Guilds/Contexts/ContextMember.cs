@@ -11,7 +11,7 @@ namespace GuildSaber.Database.Models.Server.Guilds;
 public class ContextMember
 {
     public GuildId GuildId { get; init; }
-    public Context.ContextId ContextId { get; init; }
+    public ContextId ContextId { get; init; }
     public Player.PlayerId PlayerId { get; init; }
 
     public IList<MemberPointStat> PointStats { get; init; } = null!;

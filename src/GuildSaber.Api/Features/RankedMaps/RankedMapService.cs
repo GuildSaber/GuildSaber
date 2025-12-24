@@ -259,25 +259,22 @@ public class RankedMapService(
             errors.Add(new KeyValuePair<string, string[]>("CategoryIds", categoryErrors));
         }
 
-        var levels = request.LevelIds is { Length: > 0 }
-            ? await dbContext.Levels
-                .AsTracking()
-                .OfType<RankedMapListLevel>()
-                .Where(x => ((IEnumerable<int>)request.LevelIds).Contains(x.Id) && x.GuildId == guildId)
-                .ToArrayAsync()
-            : [];
+        var levels = await dbContext.Levels
+            .AsTracking()
+            .OfType<RankedMapListLevel>()
+            .Where(x => ((IEnumerable<int>)request.LevelIds).Contains(x.Id) && x.GuildId == guildId)
+            .ToArrayAsync();
 
-        if (request.LevelIds is { Length: > 0 })
-            if (levels.Length != request.LevelIds.Length)
-            {
-                var levelErrors = request.LevelIds
-                    .Where(levelId => levels.All(x => x.Id != levelId))
-                    .Select(levelId =>
-                        $"Level with ID '{levelId}' does not exist in the guild or is not of type RankedMapListLevel.")
-                    .ToArray();
+        if (levels.Length != request.LevelIds.Length)
+        {
+            var levelErrors = request.LevelIds
+                .Where(levelId => levels.All(x => x.Id != levelId))
+                .Select(levelId =>
+                    $"Level with ID '{levelId}' does not exist in the guild or is not of type RankedMapListLevel.")
+                .ToArray();
 
-                errors.Add(new KeyValuePair<string, string[]>("LevelIds", levelErrors));
-            }
+            errors.Add(new KeyValuePair<string, string[]>("LevelIds", levelErrors));
+        }
 
         if (errors.Count > 0)
             return Failure<RankedMap, List<KeyValuePair<string, string[]>>>(errors);

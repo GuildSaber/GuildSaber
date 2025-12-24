@@ -11,7 +11,7 @@ public abstract class Level
 {
     public LevelId Id { get; init; }
     public GuildId GuildId { get; init; }
-    public Context.ContextId ContextId { get; init; }
+    public ContextId ContextId { get; init; }
     public Category.CategoryId? CategoryId { get; init; }
 
     public required LevelInfo Info { get; set; }
@@ -20,6 +20,10 @@ public abstract class Level
     public required bool IsLocking { get; set; }
 
     public ELevelType Type { get; private init; }
+
+    public Guild Guild { get; init; } = null!;
+    public Context Context { get; init; } = null!;
+    public Category? Category { get; init; }
     public enum ELevelType : byte { RankedMapList = 0, DiffStar = 1, AccStar = 2 }
 
     [JsonConverter(typeof(LevelIdJsonConverter))]
@@ -63,15 +67,15 @@ public class LevelConfiguration : IEntityTypeConfiguration<Level>
 
         builder.ComplexProperty(x => x.Info).Configure(new LevelInfoConfiguration());
 
-        builder.HasOne<Guild>()
+        builder.HasOne(x => x.Guild)
             .WithMany()
             .HasForeignKey(x => x.GuildId);
 
-        builder.HasOne<Context>()
+        builder.HasOne(x => x.Context)
             .WithMany(x => x.Levels)
             .HasForeignKey(x => x.ContextId);
 
-        builder.HasOne<Category>()
+        builder.HasOne(x => x.Category)
             .WithMany()
             .HasForeignKey(x => x.CategoryId)
             .OnDelete(DeleteBehavior.Cascade)

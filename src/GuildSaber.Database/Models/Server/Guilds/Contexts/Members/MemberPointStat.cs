@@ -10,7 +10,7 @@ public class MemberPointStat
 {
     public int Id { get; init; }
     public GuildId GuildId { get; init; }
-    public Context.ContextId ContextId { get; init; }
+    public ContextId ContextId { get; init; }
     public Player.PlayerId PlayerId { get; init; }
     public Point.PointId PointId { get; init; }
     public Category.CategoryId? CategoryId { get; init; }

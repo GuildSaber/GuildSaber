@@ -83,6 +83,6 @@ public class RankedMapRequest
         RankedMapRequirements Requirements,
         ManualRating ManualRating,
         int[] CategoryIds,
-        int[]? LevelIds
+        int[] LevelIds
     );
 }

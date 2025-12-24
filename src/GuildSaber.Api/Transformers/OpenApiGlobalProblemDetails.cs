@@ -64,11 +64,9 @@ public static class OpenApiGlobalProblemDetails
                 var isHttpValidationProblemDetails = problemDetailsContent
                     ?.Schema is OpenApiSchemaReference { Reference.Id: "HttpValidationProblemDetails" };
 
-                var problemDetails = isHttpValidationProblemDetails switch
-                {
-                    true => TypedResults.ValidationProblem(new Dictionary<string, string[]>()).ProblemDetails,
-                    false => TypedResults.Problem(statusCode: statusCode).ProblemDetails
-                };
+                var problemDetails = isHttpValidationProblemDetails
+                    ? TypedResults.ValidationProblem(new Dictionary<string, string[]>()).ProblemDetails
+                    : TypedResults.Problem(statusCode: statusCode).ProblemDetails;
 
                 var example = new JsonObject();
 

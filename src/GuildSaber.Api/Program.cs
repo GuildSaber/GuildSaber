@@ -251,13 +251,12 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 
 OpenApiTypeTransformer.MapType<GuildId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
+OpenApiTypeTransformer.MapType<ContextId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
 OpenApiTypeTransformer.MapType<BeatSaverKey>(new OpenApiSchema { Type = JsonSchemaType.String, Example = "a3c3" });
 OpenApiTypeTransformer.MapType<SongHash>(new OpenApiSchema
     { Type = JsonSchemaType.String, Example = "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890" });
 OpenApiTypeTransformer.MapType<SSLeaderboardId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
 OpenApiTypeTransformer.MapType<BLLeaderboardId>(new OpenApiSchema { Type = JsonSchemaType.String, Example = "a3c391" });
-OpenApiTypeTransformer.MapType<ContextId>(new OpenApiSchema
-    { Type = JsonSchemaType.Integer, Format = "int32" });
 OpenApiTypeTransformer.MapType<RankedMapRequest.EModifiers>(new OpenApiSchema
     { Example = nameof(RankedMapRequest.EModifiers.None) });
 builder.Services.AddOpenApi(options =>

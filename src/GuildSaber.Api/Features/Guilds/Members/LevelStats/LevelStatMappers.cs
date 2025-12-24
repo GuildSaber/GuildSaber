@@ -24,7 +24,7 @@ public static class LevelStatMappers
                     new LevelStatResponses.LevelInfo(level.Info.Name, level.Info.Color.ToArgb()),
                     (int)level.Order,
                     level.IsLocking,
-                    ((DiffStarLevel)level).MinDiffStar,
+                    ((DiffStarLevel)level).MinStar,
                     (int)((DiffStarLevel)level).RequiredPassCount)
                 : new LevelStatResponses.Level.AccStarLevel(
                     level.Id.Value,
@@ -32,7 +32,7 @@ public static class LevelStatMappers
                     new LevelStatResponses.LevelInfo(level.Info.Name, level.Info.Color.ToArgb()),
                     (int)level.Order,
                     level.IsLocking,
-                    ((AccStarLevel)level).MinAccStar,
+                    ((AccStarLevel)level).MinStar,
                     (int)((AccStarLevel)level).RequiredPassCount);
 
     public static Expression<Func<MemberLevelStat, LevelStatResponses.MemberLevelStat>>

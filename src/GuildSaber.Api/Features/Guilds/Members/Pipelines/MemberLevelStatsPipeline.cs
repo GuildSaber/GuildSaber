@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using AccStarQueryFunc = System.Func<
     GuildSaber.Database.Contexts.Server.ServerDbContext,
     GuildSaber.Common.StrongTypes.GuildId,
-    GuildSaber.Database.Models.Server.Guilds.Context.ContextId,
+    GuildSaber.Common.StrongTypes.ContextId,
     GuildSaber.Database.Models.Server.Players.Player.PlayerId,
     GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId,
     int?,
@@ -21,7 +21,7 @@ using AccStarQueryFunc = System.Func<
 using DiffStarQueryFunc = System.Func<
     GuildSaber.Database.Contexts.Server.ServerDbContext,
     GuildSaber.Common.StrongTypes.GuildId,
-    GuildSaber.Database.Models.Server.Guilds.Context.ContextId,
+    GuildSaber.Common.StrongTypes.ContextId,
     GuildSaber.Database.Models.Server.Players.Player.PlayerId,
     GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId,
     int?,
@@ -31,7 +31,7 @@ using DiffStarQueryFunc = System.Func<
 using RankedMapListPassCountQueryFunc = System.Func<
     GuildSaber.Database.Contexts.Server.ServerDbContext,
     GuildSaber.Common.StrongTypes.GuildId,
-    GuildSaber.Database.Models.Server.Guilds.Context.ContextId,
+    GuildSaber.Common.StrongTypes.ContextId,
     GuildSaber.Database.Models.Server.Players.Player.PlayerId,
     GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId,
     GuildSaber.Database.Models.Server.Guilds.Levels.Level.LevelId,
@@ -180,7 +180,7 @@ public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext)
             memberLevelStat.PlayerId,
             pointId,
             level.CategoryId,
-            level.MinDiffStar,
+            level.MinStar,
             (int)level.RequiredPassCount - 1
         );
     }
@@ -197,7 +197,7 @@ public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext)
             memberLevelStat.PlayerId,
             pointId,
             level.CategoryId,
-            level.MinAccStar,
+            level.MinStar,
             (int)level.RequiredPassCount - 1
         );
     }

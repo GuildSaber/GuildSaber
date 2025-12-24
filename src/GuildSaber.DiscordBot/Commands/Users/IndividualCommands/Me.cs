@@ -294,7 +294,7 @@ file record struct CardResources(Image<Rgba32> Avatar, Image<Rgba32> GuildLogo, 
             SystemFonts.CreateFont(fontFamily, 26, FontStyle.Bold),
             SystemFonts.CreateFont(fontFamily, 64, FontStyle.Regular),
             SystemFonts.CreateFont(fontFamily + " ExtraBold", 48, FontStyle.BoldItalic),
-            SystemFonts.Get("Font Awesome 6 Free Solid")
+            SystemFonts.Get("Font Awesome 7 Free Solid")
         );
 
         return new CardResources(avatarImage, guildLogoImage, fonts);
