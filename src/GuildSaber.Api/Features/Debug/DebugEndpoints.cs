@@ -464,7 +464,9 @@ public class DebugEndpoints : IEndpoints
                             : null,
                         ProhibitedModifiers: ModifiersMapper.ToModifiers(difficulty.ProhibitedModifiers).Map(),
                         MandatoryModifiers: ModifiersMapper.ToModifiers(difficulty.MandatoryModifiers).Map(),
-                        MinAccuracy: (int)((float)difficulty.MinScoreRequirement / difficulty.MaxScore * 100f)),
+                        MinAccuracy: difficulty.MinScoreRequirement is not 0
+                            ? (int)((float)difficulty.MinScoreRequirement / difficulty.MaxScore * 100f)
+                            : null),
                     BaseMapVersion: new MapVersionRequests.AddMapVersion(
                         BeatSaverKey: rankedMap.BeatSaverId.Value,
                         Characteristic: difficulty.GameModeName!,

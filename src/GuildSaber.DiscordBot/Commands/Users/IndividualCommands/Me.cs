@@ -25,12 +25,16 @@ public partial class UserModuleSlash
         [Summary("VisibleToOther")] EDisplayChoice displayChoice = EDisplayChoice.Visible)
     {
         await DeferAsync(ephemeral: displayChoice.ToEphemeral());
-        var stream = await MeCommand.GeneratePlayerCardAsync(
-            await GetGuildIdAsync(),
-            contextId,
-            Client.Value
-        );
-        if (stream is null)
+
+        var guildIdTask = GetGuildIdAsync().AsTask();
+        var playerTask = Client.Value.Players.GetExtendedAtMeAsync();
+
+        await Task.WhenAll(guildIdTask, playerTask);
+
+        var guildId = guildIdTask.Result;
+        var atMe = playerTask.Result.Unwrap();
+
+        if (atMe is not { Player: var player })
         {
             await FollowupAsync(embed: new EmbedBuilder
             {
@@ -43,6 +47,7 @@ public partial class UserModuleSlash
             return;
         }
 
+        var stream = await MeCommand.GeneratePlayerCardAsync(guildId, contextId, Client.Value, player);
         await FollowupWithFileAsync(stream, "PlayerCard.png", "[Profile Link](<https://beatleader.com/u/kuurama>)");
     }
 }
@@ -52,14 +57,16 @@ public partial class UserModuleSlash
 /// </summary>
 file static class MeCommand
 {
-    public static async Task<Stream?> GeneratePlayerCardAsync(GuildId guildId, int contextId, GuildSaberClient client)
+    public static async Task<Stream> GeneratePlayerCardAsync(
+        GuildId guildId, int contextId, GuildSaberClient client, PlayerResponses.Player player)
     {
-        var atMe = await client.Players.GetExtendedAtMeAsync(CancellationToken.None).Unwrap();
-        if (atMe is not { Player: var player })
-            return null;
+        var resourcesTask = CardResources.LoadAsync(client, guildId, player);
+        var dataTask = CardData.BuildAsync(client, guildId, contextId);
 
-        var resources = await CardResources.LoadAsync(client, guildId, player);
-        var data = await CardData.BuildAsync(client, guildId, contextId);
+        await Task.WhenAll(resourcesTask, dataTask);
+
+        var resources = resourcesTask.Result;
+        var data = dataTask.Result;
         var dimensions = new CardDimensions(902, 340 + (int)Math.Ceiling(data.Categories.Length / 2.0) * 43);
 
         using var image = new Image<Rgba32>(dimensions.Width, dimensions.Height);
@@ -267,26 +274,10 @@ file record struct CardResources(Image<Rgba32> Avatar, Image<Rgba32> GuildLogo, 
     public static async Task<CardResources> LoadAsync(
         GuildSaberClient client, GuildId guildId, PlayerResponses.Player player)
     {
-        await using var avatarStream = await client.HttpClient.GetStreamAsync(player.PlayerInfo.AvatarUrl);
-        var avatarImage = Image.Load<Rgba32>(avatarStream);
-        avatarImage.Mutate(a => a.Resize(216, 216));
+        var avatarTask = LoadAvatarAsync(client, player.PlayerInfo.AvatarUrl);
+        var guildLogoTask = LoadGuildLogoAsync(client, guildId);
 
-        Image<Rgba32> guildLogoImage;
-        try
-        {
-            await using var guildLogoStream = await client.HttpClient
-                .GetStreamAsync($"https://cdn.guildsaber.com/Guild/{guildId}/Logo.jpg");
-            guildLogoImage = Image.Load<Rgba32>(guildLogoStream);
-            guildLogoImage.Mutate(a => a.Resize(80, 80));
-        }
-        catch // Create a fallback image with "?"
-        {
-            guildLogoImage = new Image<Rgba32>(80, 80);
-            var font = SystemFonts.CreateFont("JetBrainsMono NF", 48, FontStyle.Bold);
-            guildLogoImage.Mutate(ctx => ctx
-                .Fill(Color.FromRgb(50, 50, 50))
-                .DrawText("?", font, Color.White, new PointF(25, 10)));
-        }
+        await Task.WhenAll(avatarTask, guildLogoTask);
 
         const string fontFamily = "JetBrainsMono NF";
         var fonts = new CardFonts(
@@ -297,7 +288,36 @@ file record struct CardResources(Image<Rgba32> Avatar, Image<Rgba32> GuildLogo, 
             SystemFonts.Get("Font Awesome 7 Free Solid")
         );
 
-        return new CardResources(avatarImage, guildLogoImage, fonts);
+        return new CardResources(avatarTask.Result, guildLogoTask.Result, fonts);
+    }
+
+    private static async Task<Image<Rgba32>> LoadAvatarAsync(GuildSaberClient client, string avatarUrl)
+    {
+        await using var avatarStream = await client.HttpClient.GetStreamAsync(avatarUrl);
+        var avatarImage = Image.Load<Rgba32>(avatarStream);
+        avatarImage.Mutate(a => a.Resize(216, 216));
+        return avatarImage;
+    }
+
+    private static async Task<Image<Rgba32>> LoadGuildLogoAsync(GuildSaberClient client, GuildId guildId)
+    {
+        try
+        {
+            await using var guildLogoStream = await client.HttpClient
+                .GetStreamAsync($"https://cdn.guildsaber.com/Guild/{guildId}/Logo.jpg");
+            var guildLogoImage = Image.Load<Rgba32>(guildLogoStream);
+            guildLogoImage.Mutate(a => a.Resize(80, 80));
+            return guildLogoImage;
+        }
+        catch // Create a fallback image with "?"
+        {
+            var guildLogoImage = new Image<Rgba32>(80, 80);
+            var font = SystemFonts.CreateFont("JetBrainsMono NF", 48, FontStyle.Bold);
+            guildLogoImage.Mutate(ctx => ctx
+                .Fill(Color.FromRgb(50, 50, 50))
+                .DrawText("?", font, Color.White, new PointF(25, 10)));
+            return guildLogoImage;
+        }
     }
 }
 
@@ -343,14 +363,22 @@ file record struct CardData(
 {
     public static async Task<CardData> BuildAsync(GuildSaberClient client, GuildId guildId, int contextId)
     {
-        var levelStats = await client.LevelStats.GetAtMeAsync(contextId, CancellationToken.None).Unwrap();
+        var levelStatsTask = client.LevelStats.GetAtMeAsync(contextId);
+        var categoriesTask = client.Categories.GetAllByGuildIdAsync(guildId);
+        var contextStatsTask = client.ContextStats.GetAtMeAsync(contextId);
+
+        await Task.WhenAll(levelStatsTask, categoriesTask, contextStatsTask);
+
+        var levelStats = levelStatsTask.Result.Unwrap();
+        var categories = categoriesTask.Result.Unwrap();
+        var contextStats = contextStatsTask.Result.Unwrap();
+
+        if (!contextStats.HasValue)
+            throw new InvalidOperationException("Failed to retrieve context stats for player.");
+
         var currentLevel = levelStats.LastOrDefault(x => x is { IsCompleted: true, Level.CategoryId: null })
             as LevelStatResponses.MemberLevelStat?;
 
-        var categories = await client.Categories.GetAllByGuildIdAsync(guildId, CancellationToken.None).Unwrap();
-        var contextStats = (await client.ContextStats.GetAtMeAsync(contextId, CancellationToken.None)).Unwrap();
-        if (!contextStats.HasValue)
-            throw new InvalidOperationException("Failed to retrieve context stats for player.");
 
         var primaryColor = Color.FromRgb(26, 28, 30);
         var secondaryColor = currentLevel is not null

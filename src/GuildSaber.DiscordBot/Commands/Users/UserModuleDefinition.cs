@@ -60,11 +60,11 @@ public partial class UserModuleSlash : InteractionModuleBase<SocketInteractionCo
         .ValueOrGuildMissingException();
 
     public async ValueTask<GuildResponses.Guild> GetGuildAsync() =>
-        (await Client.Value.Guilds.GetByIdAsync(await GetGuildIdAsync(), CancellationToken.None))
+        (await Client.Value.Guilds.GetByIdAsync(await GetGuildIdAsync()))
         .Unwrap().ValueOrGuildMissingException();
 
     public async ValueTask<GuildResponses.GuildExtended> GetGuildExtendedAsync() =>
-        (await Client.Value.Guilds.GetExtendedByIdAsync(await GetGuildIdAsync(), CancellationToken.None))
+        (await Client.Value.Guilds.GetExtendedByIdAsync(await GetGuildIdAsync()))
         .Unwrap().ValueOrGuildMissingException();
 }
 

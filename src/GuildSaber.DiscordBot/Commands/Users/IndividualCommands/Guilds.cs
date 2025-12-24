@@ -33,7 +33,7 @@ file static class GuildsCommand
             Order = EOrder.Desc,
             SortBy = GuildRequests.EGuildSorter.Name
         };
-        var guilds = await client.Guilds.GetAsync(search, pageOption, CancellationToken.None);
+        var guilds = await client.Guilds.GetAsync(search, pageOption);
         if (!guilds.TryGetValue(out var pagedGuilds, out var error))
         {
             embedBuilder.Description = $"Error fetching guilds: {error}";

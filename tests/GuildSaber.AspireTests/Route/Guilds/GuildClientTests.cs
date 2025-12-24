@@ -23,7 +23,7 @@ public class GuildClientTests(GuildSaberClientDataClass dataClass)
         var guildId = _validGuildId;
 
         // Act
-        var result = await dataClass.GuildSaberClient.Guilds.GetByIdAsync(guildId, CancellationToken.None);
+        var result = await dataClass.GuildSaberClient.Guilds.GetByIdAsync(guildId);
 
         // Assert
         result.SuccessShould().NotBeNull().And.BeOfType<Guild>().Which.Id.Should().Be(1);
@@ -36,7 +36,7 @@ public class GuildClientTests(GuildSaberClientDataClass dataClass)
         var guildId = _invalidGuildId;
 
         // Act
-        var result = await dataClass.GuildSaberClient.Guilds.GetByIdAsync(guildId, CancellationToken.None);
+        var result = await dataClass.GuildSaberClient.Guilds.GetByIdAsync(guildId);
 
         // Assert
         result.SuccessShould().BeNull();
@@ -57,7 +57,7 @@ public class GuildClientTests(GuildSaberClientDataClass dataClass)
         };
 
         // Act
-        var result = await dataClass.GuildSaberClient.Guilds.GetAsync(search, requestOptions, CancellationToken.None);
+        var result = await dataClass.GuildSaberClient.Guilds.GetAsync(search, requestOptions);
 
         // Assert
         result.SuccessShould().NotBeNull().And.BeOfType<PagedList<Guild>>()
@@ -79,7 +79,7 @@ public class GuildClientTests(GuildSaberClientDataClass dataClass)
         };
 
         // Act
-        var result = await dataClass.GuildSaberClient.Guilds.GetAsync(search, requestOptions, CancellationToken.None);
+        var result = await dataClass.GuildSaberClient.Guilds.GetAsync(search, requestOptions);
 
         // Assert
         result.SuccessShould().NotBeNull().And.BeOfType<PagedList<Guild>>()
@@ -194,8 +194,7 @@ public class GuildClientTests(GuildSaberClientDataClass dataClass)
 
         // Act
         var result =
-            await dataClass.GuildSaberClient.Guilds.SetDiscordGuildIdAsync(guildId, discordGuildId,
-                CancellationToken.None);
+            await dataClass.GuildSaberClient.Guilds.SetDiscordGuildIdAsync(guildId, discordGuildId);
 
         // Assert
         result.SuccessShould().NotBeNull().And.BeOfType<Guild>()
@@ -211,8 +210,7 @@ public class GuildClientTests(GuildSaberClientDataClass dataClass)
 
         // Act
         var result =
-            await dataClass.GuildSaberClient.Guilds.SetDiscordGuildIdAsync(guildId, discordGuildId,
-                CancellationToken.None);
+            await dataClass.GuildSaberClient.Guilds.SetDiscordGuildIdAsync(guildId, discordGuildId);
 
         // Assert
         result.SuccessShould().NotBeNull().And.BeOfType<Guild>()
@@ -228,7 +226,7 @@ public class GuildClientTests(GuildSaberClientDataClass dataClass)
 
         // Act - First update to null
         var firstResult =
-            await dataClass.GuildSaberClient.Guilds.SetDiscordGuildIdAsync(guildId, null, CancellationToken.None);
+            await dataClass.GuildSaberClient.Guilds.SetDiscordGuildIdAsync(guildId, null);
 
         // Assert - First update
         firstResult.SuccessShould().NotBeNull().And.BeOfType<Guild>()
@@ -236,8 +234,7 @@ public class GuildClientTests(GuildSaberClientDataClass dataClass)
 
         // Act - Second update back to valid value
         var secondResult =
-            await dataClass.GuildSaberClient.Guilds.SetDiscordGuildIdAsync(guildId, validDiscordGuildId,
-                CancellationToken.None);
+            await dataClass.GuildSaberClient.Guilds.SetDiscordGuildIdAsync(guildId, validDiscordGuildId);
 
         // Assert - Second update
         secondResult.SuccessShould().NotBeNull().And.BeOfType<Guild>()
@@ -253,8 +250,7 @@ public class GuildClientTests(GuildSaberClientDataClass dataClass)
 
         // Act
         var result =
-            await dataClass.GuildSaberClient.Guilds.SetDiscordGuildIdAsync(guildId, discordGuildId,
-                CancellationToken.None);
+            await dataClass.GuildSaberClient.Guilds.SetDiscordGuildIdAsync(guildId, discordGuildId);
 
         // Assert
         result.IsFailure.Should().BeTrue();
