@@ -1,11 +1,10 @@
 services:
-  env-dashboard:
+  guildsaber-env-dashboard:
     image: "mcr.microsoft.com/dotnet/nightly/aspire-dashboard:latest"
     environment:
       ASPIRE_DASHBOARD_FORWARDEDHEADERS_ENABLED: "true"
-    ports:
-      - "8080:18888"
     expose:
+      - "18888"
       - "18889"
       - "18890"
     networks:
@@ -29,6 +28,7 @@ services:
       - "aspire"
   migrator:
     image: "${MIGRATOR_IMAGE}"
+    pull_policy: always
     environment:
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
@@ -50,7 +50,7 @@ services:
       DISCORDBOT_DB_URI: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/discordbot-db"
       DISCORDBOT_DB_JDBCCONNECTIONSTRING: "jdbc:postgresql://postgres:5432/discordbot-db"
       DISCORDBOT_DB_DATABASENAME: "discordbot-db"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://guildsaber-env-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "migrator"
     depends_on:
@@ -60,12 +60,13 @@ services:
       - "aspire"
   api:
     image: "${API_IMAGE}"
+    pull_policy: always
     environment:
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
       OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
-      HTTPS_PORTS: "${API_PORT}"
+      HTTP_PORTS: "${API_PORT}"
       ASPNETCORE_ENVIRONMENT: ""
       AuthSettings:ApiKey:Key: "${API_KEY}"
       ConnectionStrings__server-db: "Host=postgres;Port=5432;Username=postgres;Password=${POSTGRES_PASSWORD};Database=server-db"
@@ -84,11 +85,30 @@ services:
       scoresaber_api: "https://scoresaber.com/"
       services__beatleader-socket__default__0: "wss://sockets.api.beatleader.com/"
       beatleader_socket: "wss://sockets.api.beatleader.com/"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
+      AuthSettings:Manager:SteamIds:0: "${AUTHSETTINGS_MANAGER_STEAMIDS_0}"
+      AuthSettings:Manager:SteamIds:1: "${AUTHSETTINGS_MANAGER_STEAMIDS_1}"
+      AuthSettings:Session:ExpireAfter: "${AUTHSETTINGS_SESSION_EXPIREAFTER}"
+      AuthSettings:Session:MaxSessionCount: "${AUTHSETTINGS_SESSION_MAXSESSIONCOUNT}"
+      AuthSettings:Jwt:Issuer: "${AUTHSETTINGS_JWT_ISSUER}"
+      AuthSettings:Jwt:Audience: "${AUTHSETTINGS_JWT_AUDIENCE}"
+      AuthSettings:Jwt:Secret: "${AUTHSETTINGS_JWT_SECRET}"
+      AuthSettings:BeatLeader:ClientId: "${AUTHSETTINGS_BEATLEADER_CLIENTID}"
+      AuthSettings:BeatLeader:ClientSecret: "${AUTHSETTINGS_BEATLEADER_CLIENTSECRET}"
+      AuthSettings:Discord:ClientId: "${AUTHSETTINGS_DISCORD_CLIENTID}"
+      AuthSettings:Discord:ClientSecret: "${AUTHSETTINGS_DISCORD_CLIENTSECRET}"
+      AuthSettings:Redirect:AllowedOriginUrls:0: "${AUTHSETTINGS_REDIRECT_ALLOWEDORIGINURLS_0}"
+      AuthSettings:Redirect:AllowedOriginUrls:1: "${AUTHSETTINGS_REDIRECT_ALLOWEDORIGINURLS_1}"
+      GuildSettings:Creation:RequiredSubscriptionTier: "${GUILDSETTINGS_CREATION_REQUIREDSUBSCRIPTIONTIER}"
+      GuildSettings:Creation:MaxGuildCountPerUser: "${GUILDSETTINGS_CREATION_MAXGUILDCOUNTPERUSER}"
+      RankedMapSettings:DefaultSettings:MaxRankedMapCount: "${RANKEDMAPSETTINGS_DEFAULTSETTINGS_MAXRANKEDMAPCOUNT}"
+      RankedMapSettings:BoostSettings:MapCountBoosts:Tier1: "${RANKEDMAPSETTINGS_BOOSTSETTINGS_MAPCOUNTBOOSTS_TIER1}"
+      RankedMapSettings:BoostSettings:MapCountBoosts:Tier2: "${RANKEDMAPSETTINGS_BOOSTSETTINGS_MAPCOUNTBOOSTS_TIER2}"
+      RankedMapSettings:BoostSettings:MapCountBoosts:Tier3: "${RANKEDMAPSETTINGS_BOOSTSETTINGS_MAPCOUNTBOOSTS_TIER3}"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://guildsaber-env-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "api"
     ports:
-      - "7149:${API_PORT}"
+      - "${API_PORT}"
     depends_on:
       migrator:
         condition: "service_completed_successfully"
@@ -96,6 +116,7 @@ services:
       - "aspire"
   discord-bot:
     image: "${DISCORD_BOT_IMAGE}"
+    pull_policy: always
     environment:
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
@@ -110,8 +131,21 @@ services:
       DISCORDBOT_DB_URI: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/discordbot-db"
       DISCORDBOT_DB_JDBCCONNECTIONSTRING: "jdbc:postgresql://postgres:5432/discordbot-db"
       DISCORDBOT_DB_DATABASENAME: "discordbot-db"
-      API_HTTPS: "https://api:${API_PORT}"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
+      API_HTTP: "http://api:${API_PORT}"
+      services__api__http__0: "http://api:${API_PORT}"
+      DiscordBotOptions:Id: "${DISCORDBOTOPTIONS_ID}"
+      DiscordBotOptions:Name: "${DISCORDBOTOPTIONS_NAME}"
+      DiscordBotOptions:Status: "${DISCORDBOTOPTIONS_STATUS}"
+      DiscordBotOptions:Token: "${DISCORDBOTOPTIONS_TOKEN}"
+      DiscordBotOptions:GuildId: "${DISCORDBOTOPTIONS_GUILDID}"
+      EmojiSettings:WatchingYou: "${EMOJISETTINGS_WATCHINGYOU}"
+      EmojiSettings:NeedConfirmation: "${EMOJISETTINGS_NEEDCONFIRMATION}"
+      EmojiSettings:Trophies:Plastic: "${EMOJISETTINGS_TROPHIES_PLASTIC}"
+      EmojiSettings:Trophies:Silver: "${EMOJISETTINGS_TROPHIES_SILVER}"
+      EmojiSettings:Trophies:Gold: "${EMOJISETTINGS_TROPHIES_GOLD}"
+      EmojiSettings:Trophies:Diamond: "${EMOJISETTINGS_TROPHIES_DIAMOND}"
+      EmojiSettings:Trophies:Ruby: "${EMOJISETTINGS_TROPHIES_RUBY}"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://guildsaber-env-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "discord-bot"
     depends_on:

@@ -402,6 +402,5 @@ FodyWeavers.xsd
 # app config files
 **/appsettings.Development.json
 
-**/Migrations
 .env
 .env.*

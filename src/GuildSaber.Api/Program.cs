@@ -117,7 +117,10 @@ builder.Services.AddAuthentication(options => options.DefaultScheme = JwtBearerD
     }).AddCookie("BeatLeaderCookies", options =>
     {
         options.Cookie.Name = "BeatLeader";
-        options.Cookie.SameSite = SameSiteMode.None;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+            ? CookieSecurePolicy.None
+            : CookieSecurePolicy.Always;
     }).AddDiscord(options =>
         {
             var settings = authSettings.GetSection(nameof(AuthSettings.Discord)).Get<DiscordAuthSettings>()!;
@@ -129,7 +132,10 @@ builder.Services.AddAuthentication(options => options.DefaultScheme = JwtBearerD
     ).AddCookie("DiscordCookies", options =>
     {
         options.Cookie.Name = "Discord";
-        options.Cookie.SameSite = SameSiteMode.None;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+            ? CookieSecurePolicy.None
+            : CookieSecurePolicy.Always;
     }).AddJwtBearer(options =>
     {
         var settings = authSettings.GetSection(nameof(AuthSettings.Jwt)).Get<JwtAuthSettings>()!;
@@ -141,6 +147,7 @@ builder.Services.AddAuthentication(options => options.DefaultScheme = JwtBearerD
             ValidateIssuerSigningKey = true,
             ClockSkew = TimeSpan.Zero
         };
+        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
         options.Events = new JwtBearerEvents
         {
             OnTokenValidated = async context =>

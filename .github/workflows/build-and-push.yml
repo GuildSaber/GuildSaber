@@ -3,16 +3,22 @@ on:
   push:
     branches:
       - main
-
+      - dev
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        include:
+          - project: api
+          - project: discord-bot
+          - project: migrator
     env:
       GITHUB_REGISTRY: ghcr.io
-      IMAGE_PREFIX: ${{ github.repository_owner }}
+      IMAGE_PREFIX: guildsaber
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,37 +39,99 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build and push API image
-      - name: Build, tag and push API image
+      - name: Build, tag and push image
         run: |
-          aspire deploy build-api
-          docker tag api:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-api:latest
-          docker tag api:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-api:${{ github.sha }}
-          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-api:latest
-          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-api:${{ github.sha }}
+          aspire deploy --step build-${{ matrix.project }}
+          docker tag ${{ matrix.project }}:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ env.IMAGE_PREFIX }}-${{ matrix.project }}:${{ github.ref_name }}
+          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ env.IMAGE_PREFIX }}-${{ matrix.project }}:${{ github.ref_name }}
 
-      # Build and push Web image
-      - name: Build, tag and push Discord Bot image
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || (github.ref == 'refs/heads/dev' && 'dev' || '') }}
+    steps:
+      - name: Deploy to Dokploy and check response
         run: |
-          aspire deploy build-discord-bot
-          docker tag discord-bot:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-discord-bot:latest
-          docker tag discord-bot:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-discord-bot:${{ github.sha }}
-          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-discord-bot:latest
-          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-discord-bot:${{ github.sha }}
+          RESPONSE=$(curl --silent --show-error --write-out "HTTPSTATUS:%{http_code}" \
+            -X POST ${{ secrets.DOKPLOY_BASE_URL }}/api/compose.deploy \
+            -H "x-api-key: ${{ secrets.DOKPLOY_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"composeId": "${{ secrets.COMPOSE_ID }}"}')
+          BODY=$(echo "$RESPONSE" | sed -e 's/HTTPSTATUS\:.*//g')
+          STATUS=$(echo "$RESPONSE" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
+          echo "Status: $STATUS"
+          echo "Body: $BODY"
+          if [[ "$STATUS" != 2* ]]; then
+            echo "Dokploy deployment failed with HTTP code $STATUS"
+            exit 1
+          fi
+          if ! echo "$BODY" | jq -e '.success == true' > /dev/null; then
+            echo "Dokploy deployment did not return success: true"
+            exit 1
+          fi
+          echo "$(echo "$BODY" | jq -r '.message')"
 
-      # Build and push Migrator image
-      - name: Build, tag and push Migrator image
+      - name: Wait for Dokploy deployment to finish
         run: |
-          aspire deploy build-migrator
-          docker tag migrator:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-migrator:latest
-          docker tag migrator:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-migrator:${{ github.sha }}
-          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-migrator:latest
-          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-migrator:${{ github.sha }}
-
-      # Trigger Dokploy deployment
-      - name: Deploy to Dokploy
-        run: |
-          curl -X POST ${{ secrets.DOKPLOY_WEBHOOK_URL }} \
-          -H "Authorization: Bearer ${{ secrets.DOKPLOY_API_TOKEN }}" \
-          -H "Content-Type: application/json" \
-          -d '{"ref": "${{ github.sha }}"}'
+          set -e
+          TIMEOUT=300  # 5 minutes
+          INTERVAL=1
+          ELAPSED=0
+          MATCHED=false
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            RESPONSE=$(curl --silent --show-error --write-out "HTTPSTATUS:%{http_code}" \
+              -G "${{ secrets.DOKPLOY_BASE_URL }}/api/deployment.allByCompose" \
+              --data-urlencode "composeId=${{ secrets.COMPOSE_ID }}" \
+              -H "x-api-key: ${{ secrets.DOKPLOY_API_KEY }}")
+            BODY=$(echo "$RESPONSE" | sed -e 's/HTTPSTATUS:.*//g')
+            STATUS=$(echo "$RESPONSE" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
+            echo "HTTP status: $STATUS"
+            echo "Raw response: $BODY"
+            if [ "$STATUS" != "200" ]; then
+              echo "Error: HTTP response code is $STATUS"
+              exit 1
+            fi
+            # Check if response is valid JSON array
+            if ! echo "$BODY" | jq -e 'type == "array"' > /dev/null 2>&1; then
+              echo "Error: Response is not a valid JSON array."
+              echo "$BODY"
+              exit 1
+            fi
+            # Get the first deployment object
+            DEPLOYMENT=$(echo "$BODY" | jq '.[0]')
+            if [ "$DEPLOYMENT" = "null" ]; then
+              echo "No deployments found yet. Waiting..."
+              sleep $INTERVAL
+              ELAPSED=$((ELAPSED+INTERVAL))
+              continue
+            fi
+            # Extract commit id from desc (format: "Commit: <commit_id>")
+            DESC=$(echo "$DEPLOYMENT" | jq -r '.description // empty')
+            COMMIT_ID=$(echo "$DESC" | sed -n 's/^Commit: //p')
+            STATUS_DEPLOY=$(echo "$DEPLOYMENT" | jq -r '.status // empty')
+            echo "Found deployment: description='$DESC', commit_id='$COMMIT_ID', status='$STATUS_DEPLOY'"
+            if [ "$COMMIT_ID" = "${{ github.sha }}" ]; then
+              MATCHED=true
+              if [ "$STATUS_DEPLOY" = "done" ]; then
+                echo "Deployment finished successfully."
+                exit 0
+              elif [ "$STATUS_DEPLOY" = "error" ]; then
+                echo "Deployment failed with status 'error'."
+                exit 1
+              else
+                echo "Deployment is still running. Waiting..."
+                sleep $INTERVAL
+                ELAPSED=$((ELAPSED+INTERVAL))
+                continue
+              fi
+            else
+              echo "Deployment commit id does not match. Waiting..."
+              sleep $INTERVAL
+              ELAPSED=$((ELAPSED+INTERVAL))
+              continue
+            fi
+          done
+          if [ "$MATCHED" = false ]; then
+            echo "Timed out waiting for deployment with commit id ${GITHUB_SHA}."
+            exit 1
+          fi

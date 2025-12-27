@@ -31,4 +31,13 @@
         <Folder Include="Models\DiscordBot\" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Content Include="Contexts\Server\Migrations\**\*.*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Contexts\DiscordBot\Migrations\**\*.*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
 </Project>
