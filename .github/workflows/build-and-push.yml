@@ -1,0 +1,69 @@
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      GITHUB_REGISTRY: ghcr.io
+      IMAGE_PREFIX: ${{ github.repository_owner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            10.x.x
+
+      - name: Install Aspire CLI
+        run: dotnet tool install -g aspire --prerelease
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GITHUB_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build and push API image
+      - name: Build, tag and push API image
+        run: |
+          aspire deploy build-api
+          docker tag api:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-api:latest
+          docker tag api:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-api:${{ github.sha }}
+          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-api:latest
+          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-api:${{ github.sha }}
+
+      # Build and push Web image
+      - name: Build, tag and push Discord Bot image
+        run: |
+          aspire deploy build-discord-bot
+          docker tag discord-bot:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-discord-bot:latest
+          docker tag discord-bot:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-discord-bot:${{ github.sha }}
+          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-discord-bot:latest
+          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-discord-bot:${{ github.sha }}
+
+      # Build and push Migrator image
+      - name: Build, tag and push Migrator image
+        run: |
+          aspire deploy build-migrator
+          docker tag migrator:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-migrator:latest
+          docker tag migrator:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-migrator:${{ github.sha }}
+          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-migrator:latest
+          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-migrator:${{ github.sha }}
+
+      # Trigger Dokploy deployment
+      - name: Deploy to Dokploy
+        run: |
+          curl -X POST ${{ secrets.DOKPLOY_WEBHOOK_URL }} \
+          -H "Authorization: Bearer ${{ secrets.DOKPLOY_API_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{"ref": "${{ github.sha }}"}'

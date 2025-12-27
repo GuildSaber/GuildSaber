@@ -2,6 +2,13 @@ using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+builder.AddDockerComposeEnvironment("env")
+    .WithDashboard(dashboard =>
+    {
+        dashboard.WithHostPort(8080)
+            .WithForwardedHeaders(enabled: true);
+    });
+
 var postgres = builder.AddPostgres("postgres", port: 5432)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume(isReadOnly: false);

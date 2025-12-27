@@ -1,0 +1,129 @@
+services:
+  env-dashboard:
+    image: "mcr.microsoft.com/dotnet/nightly/aspire-dashboard:latest"
+    environment:
+      ASPIRE_DASHBOARD_FORWARDEDHEADERS_ENABLED: "true"
+    ports:
+      - "8080:18888"
+    expose:
+      - "18889"
+      - "18890"
+    networks:
+      - "aspire"
+    restart: "always"
+  postgres:
+    image: "docker.io/library/postgres:17.6"
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    expose:
+      - "5432"
+    volumes:
+      - type: "volume"
+        target: "/var/lib/postgresql/data"
+        source: "guildsaber.apphost-edbb947576-postgres-data"
+        read_only: false
+    networks:
+      - "aspire"
+  migrator:
+    image: "${MIGRATOR_IMAGE}"
+    environment:
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+      ASPNETCORE_ENVIRONMENT: ""
+      ConnectionStrings__server-db: "Host=postgres;Port=5432;Username=postgres;Password=${POSTGRES_PASSWORD};Database=server-db"
+      SERVER_DB_HOST: "postgres"
+      SERVER_DB_PORT: "5432"
+      SERVER_DB_USERNAME: "postgres"
+      SERVER_DB_PASSWORD: "${POSTGRES_PASSWORD}"
+      SERVER_DB_URI: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/server-db"
+      SERVER_DB_JDBCCONNECTIONSTRING: "jdbc:postgresql://postgres:5432/server-db"
+      SERVER_DB_DATABASENAME: "server-db"
+      ConnectionStrings__discordbot-db: "Host=postgres;Port=5432;Username=postgres;Password=${POSTGRES_PASSWORD};Database=discordbot-db"
+      DISCORDBOT_DB_HOST: "postgres"
+      DISCORDBOT_DB_PORT: "5432"
+      DISCORDBOT_DB_USERNAME: "postgres"
+      DISCORDBOT_DB_PASSWORD: "${POSTGRES_PASSWORD}"
+      DISCORDBOT_DB_URI: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/discordbot-db"
+      DISCORDBOT_DB_JDBCCONNECTIONSTRING: "jdbc:postgresql://postgres:5432/discordbot-db"
+      DISCORDBOT_DB_DATABASENAME: "discordbot-db"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_SERVICE_NAME: "migrator"
+    depends_on:
+      postgres:
+        condition: "service_started"
+    networks:
+      - "aspire"
+  api:
+    image: "${API_IMAGE}"
+    environment:
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      HTTPS_PORTS: "${API_PORT}"
+      ASPNETCORE_ENVIRONMENT: ""
+      AuthSettings:ApiKey:Key: "${API_KEY}"
+      ConnectionStrings__server-db: "Host=postgres;Port=5432;Username=postgres;Password=${POSTGRES_PASSWORD};Database=server-db"
+      SERVER_DB_HOST: "postgres"
+      SERVER_DB_PORT: "5432"
+      SERVER_DB_USERNAME: "postgres"
+      SERVER_DB_PASSWORD: "${POSTGRES_PASSWORD}"
+      SERVER_DB_URI: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/server-db"
+      SERVER_DB_JDBCCONNECTIONSTRING: "jdbc:postgresql://postgres:5432/server-db"
+      SERVER_DB_DATABASENAME: "server-db"
+      services__beatleader-api__default__0: "https://api.beatleader.com/"
+      beatleader_api: "https://api.beatleader.com/"
+      services__beatsaver-api__default__0: "https://api.beatsaver.com/"
+      beatsaver_api: "https://api.beatsaver.com/"
+      services__scoresaber-api__default__0: "https://scoresaber.com/"
+      scoresaber_api: "https://scoresaber.com/"
+      services__beatleader-socket__default__0: "wss://sockets.api.beatleader.com/"
+      beatleader_socket: "wss://sockets.api.beatleader.com/"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_SERVICE_NAME: "api"
+    ports:
+      - "7149:${API_PORT}"
+    depends_on:
+      migrator:
+        condition: "service_completed_successfully"
+    networks:
+      - "aspire"
+  discord-bot:
+    image: "${DISCORD_BOT_IMAGE}"
+    environment:
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+      ASPNETCORE_ENVIRONMENT: ""
+      AuthSettings:ApiKey: "${API_KEY}"
+      ConnectionStrings__discordbot-db: "Host=postgres;Port=5432;Username=postgres;Password=${POSTGRES_PASSWORD};Database=discordbot-db"
+      DISCORDBOT_DB_HOST: "postgres"
+      DISCORDBOT_DB_PORT: "5432"
+      DISCORDBOT_DB_USERNAME: "postgres"
+      DISCORDBOT_DB_PASSWORD: "${POSTGRES_PASSWORD}"
+      DISCORDBOT_DB_URI: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/discordbot-db"
+      DISCORDBOT_DB_JDBCCONNECTIONSTRING: "jdbc:postgresql://postgres:5432/discordbot-db"
+      DISCORDBOT_DB_DATABASENAME: "discordbot-db"
+      API_HTTPS: "https://api:${API_PORT}"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_SERVICE_NAME: "discord-bot"
+    depends_on:
+      migrator:
+        condition: "service_started"
+      api:
+        condition: "service_started"
+    networks:
+      - "aspire"
+networks:
+  aspire:
+    driver: "bridge"
+volumes:
+  guildsaber.apphost-edbb947576-postgres-data:
+    driver: "local"
