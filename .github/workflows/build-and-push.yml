@@ -24,7 +24,7 @@ jobs:
             10.x.x
 
       - name: Install Aspire CLI
-        run: dotnet tool install -g aspire --prerelease
+        run: dotnet tool install -g Aspire.Cli --version 13.1.0
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
