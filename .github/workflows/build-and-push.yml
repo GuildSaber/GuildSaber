@@ -12,7 +12,7 @@ jobs:
       packages: write
     env:
       GITHUB_REGISTRY: ghcr.io
-      IMAGE_PREFIX: ${{ github.repository_owner }}
+      IMAGE_PREFIX: guildsaber
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
       # Build and push API image
       - name: Build, tag and push API image
         run: |
-          aspire deploy build-api
+          aspire deploy --step build-api
           docker tag api:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-api:latest
           docker tag api:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-api:${{ github.sha }}
           docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-api:latest
@@ -45,7 +45,7 @@ jobs:
       # Build and push Web image
       - name: Build, tag and push Discord Bot image
         run: |
-          aspire deploy build-discord-bot
+          aspire deploy --step build-discord-bot
           docker tag discord-bot:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-discord-bot:latest
           docker tag discord-bot:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-discord-bot:${{ github.sha }}
           docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-discord-bot:latest
@@ -54,7 +54,7 @@ jobs:
       # Build and push Migrator image
       - name: Build, tag and push Migrator image
         run: |
-          aspire deploy build-migrator
+          aspire deploy --step build-migrator
           docker tag migrator:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-migrator:latest
           docker tag migrator:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-migrator:${{ github.sha }}
           docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-migrator:latest
