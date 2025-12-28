@@ -4,7 +4,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddDockerComposeEnvironment("guildsaber-env")
     .WithDashboard(dashboard => dashboard
-        .WithHostPort(8080)
+        .WithHostPort(3080)
         .WithForwardedHeaders(enabled: true)
         .WithContainerName("aspire-dashboard"));
 

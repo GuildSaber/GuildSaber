@@ -5,7 +5,7 @@ services:
     environment:
       ASPIRE_DASHBOARD_FORWARDEDHEADERS_ENABLED: "true"
     ports:
-      - "8080:18888"
+      - "3080:18888"
     expose:
       - "18889"
       - "18890"
@@ -30,6 +30,7 @@ services:
       - "aspire"
   migrator:
     image: "${MIGRATOR_IMAGE}"
+    pull_policy: always
     environment:
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
@@ -61,6 +62,7 @@ services:
       - "aspire"
   api:
     image: "${API_IMAGE}"
+    pull_policy: always
     environment:
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
@@ -115,6 +117,7 @@ services:
       - "aspire"
   discord-bot:
     image: "${DISCORD_BOT_IMAGE}"
+    pull_policy: always
     environment:
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
