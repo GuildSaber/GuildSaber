@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Configuration
-    .AddEnvironmentVariables()
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-    .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true);
+    .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables();
 
 builder.Services
     .AddOptionsWithValidateOnStart<AuthSettings>()
