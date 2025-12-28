@@ -5,9 +5,10 @@ using GuildSaber.DiscordBot.Settings;
 using Microsoft.EntityFrameworkCore;
 
 var builder = Host.CreateApplicationBuilder(args);
-builder.Configuration.AddEnvironmentVariables();
-builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-builder.Configuration.AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true);
+builder.Configuration
+    .AddEnvironmentVariables()
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true);
 
 builder.Services
     .AddOptionsWithValidateOnStart<AuthSettings>()
