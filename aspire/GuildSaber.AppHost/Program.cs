@@ -30,7 +30,7 @@ var apiKey = builder.AddParameter("api-key", Convert.ToBase64String(Guid.NewGuid
 var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.ExcludeLaunchProfile = true)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
     .WithEnvironment("AuthSettings:ApiKey:Key", apiKey)
-    .WithHttpsEndpoint(port: 7149)
+    .WithHttpEndpoint(port: 5042, targetPort: 5042)
     .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints()
     .WithReference(guildsaberDb).WaitForCompletion(migrator)
@@ -38,9 +38,6 @@ var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.Ex
     .WithReference("beatsaver-api", new Uri("https://api.beatsaver.com/"))
     .WithReference("scoresaber-api", new Uri("https://scoresaber.com/"))
     .WithReference("beatleader-socket", new Uri("wss://sockets.api.beatleader.com/"));
-
-if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
-    apiService.WithHttpEndpoint(port: 5033);
 
 builder.AddProject<GuildSaber_DiscordBot>("discord-bot", option => option.ExcludeLaunchProfile = true)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))

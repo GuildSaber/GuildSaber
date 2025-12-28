@@ -65,7 +65,7 @@ services:
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
       OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
-      HTTPS_PORTS: "${API_PORT}"
+      HTTP_PORTS: "5042"
       ASPNETCORE_ENVIRONMENT: ""
       AuthSettings:ApiKey:Key: "${API_KEY}"
       ConnectionStrings__server-db: "Host=postgres;Port=5432;Username=postgres;Password=${POSTGRES_PASSWORD};Database=server-db"
@@ -88,7 +88,7 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "api"
     ports:
-      - "7149:${API_PORT}"
+      - "5042:5042"
     depends_on:
       migrator:
         condition: "service_completed_successfully"
@@ -110,7 +110,8 @@ services:
       DISCORDBOT_DB_URI: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/discordbot-db"
       DISCORDBOT_DB_JDBCCONNECTIONSTRING: "jdbc:postgresql://postgres:5432/discordbot-db"
       DISCORDBOT_DB_DATABASENAME: "discordbot-db"
-      API_HTTPS: "https://api:${API_PORT}"
+      API_HTTP: "http://api:5042"
+      services__api__http__0: "http://api:5042"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://env-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "discord-bot"
