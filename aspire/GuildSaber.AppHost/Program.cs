@@ -48,8 +48,10 @@ var discordBot = builder.AddProject<GuildSaber_DiscordBot>("discord-bot", option
 // Bind environment variables in publish mode (for production deployments)
 if (builder.ExecutionContext.IsPublishMode)
 {
-    apiService.WithEnvironment("AuthSettings:Manager:SteamIds", builder
-            .AddParameter("AuthSettings-Manager-SteamIds"))
+    apiService.WithEnvironment("AuthSettings:Manager:SteamIds:0", builder
+            .AddParameter("AuthSettings-Manager-SteamIds-0"))
+        .WithEnvironment("AuthSettings:Manager:SteamIds:1", builder
+            .AddParameter("AuthSettings-Manager-SteamIds-1"))
         .WithEnvironment("AuthSettings:Session:ExpireAfter", builder
             .AddParameter("AuthSettings-Session-ExpireAfter"))
         .WithEnvironment("AuthSettings:Session:MaxSessionCount", builder
