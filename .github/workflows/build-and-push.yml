@@ -80,7 +80,7 @@ jobs:
           MATCHED=false
           while [ $ELAPSED -lt $TIMEOUT ]; do
             RESPONSE=$(curl --silent --show-error --write-out "HTTPSTATUS:%{http_code}" \
-              -G "${{ secrets.DOKPLOY_BASE_URL }}/deployment.allByCompose" \
+              -G "${{ secrets.DOKPLOY_BASE_URL }}/api/deployment.allByCompose" \
               --data-urlencode "composeId=${{ secrets.COMPOSE_ID }}" \
               -H "x-api-key: ${{ secrets.DOKPLOY_API_KEY }}")
             BODY=$(echo "$RESPONSE" | sed -e 's/HTTPSTATUS:.*//g')
