@@ -9,7 +9,7 @@ public static class BeatLeaderExtensions
     extension(LeaderboardsResponse self)
     {
         public BLLeaderboardId? FindLeaderboardId(EDifficulty difficulty, string gameMode)
-            => FindLeaderboardId(self, difficulty.ToString(), gameMode);
+            => self.FindLeaderboardId(difficulty.ToString(), gameMode);
 
         public BLLeaderboardId? FindLeaderboardId(string difficulty, string gameMode)
             => self.Leaderboards
