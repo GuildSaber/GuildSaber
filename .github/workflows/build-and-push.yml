@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - dev
 
 jobs:
   build:
@@ -10,6 +11,12 @@ jobs:
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        include:
+          - project: api
+          - project: discord-bot
+          - project: migrator
     env:
       GITHUB_REGISTRY: ghcr.io
       IMAGE_PREFIX: guildsaber
@@ -33,34 +40,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build and push API image
-      - name: Build, tag and push API image
+      - name: Build, tag and push image
         run: |
-          aspire deploy --step build-api
-          docker tag api:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-api:latest
-          docker tag api:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-api:${{ github.sha }}
-          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-api:latest
-          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-api:${{ github.sha }}
+          aspire deploy --step build-${{ matrix.project }}
+          docker tag ${{ matrix.project }}:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ env.IMAGE_PREFIX }}-${{ matrix.project }}:${{ github.ref_name }}
+          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ env.IMAGE_PREFIX }}-${{ matrix.project }}:${{ github.ref_name }}
 
-      # Build and push Web image
-      - name: Build, tag and push Discord Bot image
-        run: |
-          aspire deploy --step build-discord-bot
-          docker tag discord-bot:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-discord-bot:latest
-          docker tag discord-bot:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-discord-bot:${{ github.sha }}
-          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-discord-bot:latest
-          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-discord-bot:${{ github.sha }}
-
-      # Build and push Migrator image
-      - name: Build, tag and push Migrator image
-        run: |
-          aspire deploy --step build-migrator
-          docker tag migrator:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-migrator:latest
-          docker tag migrator:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-migrator:${{ github.sha }}
-          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-migrator:latest
-          docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/guildsaber-migrator:${{ github.sha }}
-
-      # Trigger Dokploy deployment
+  deploy:
+    steps:
       - name: Deploy to Dokploy
         run: |
           curl -X POST ${{ secrets.DOKPLOY_WEBHOOK_URL }} \
