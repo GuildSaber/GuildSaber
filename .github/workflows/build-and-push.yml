@@ -4,12 +4,9 @@ on:
     branches:
       - main
       - dev
-env:
-  DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || (github.ref == 'refs/heads/dev' && 'dev' || '') }}
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: ${{ env.DEPLOY_ENV }}
     permissions:
       contents: read
       packages: write
@@ -51,7 +48,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    environment: ${{ env.DEPLOY_ENV }}
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || (github.ref == 'refs/heads/dev' && 'dev' || '') }}
     steps:
       - name: Deploy to Dokploy and check response
         run: |
