@@ -193,7 +193,7 @@ public class AuthEndpoints : IEndpoints
                 statusCode: StatusCodes.Status400BadRequest))
             .Bind(discordId => authService
                 .GetPlayerIdAsync(discordId)
-                .ToResult<PlayerId, ProblemHttpResult>(() => throw new UnreachableException())
+                .ToResult(() => "Treating as result")
                 .Compensate(async _ => await BeatLeaderId
                     .TryParseUnsafe(blClaims?.FindFirstValue(ClaimTypes.NameIdentifier))
                     .MapError(_ => TypedResults.Problem(
