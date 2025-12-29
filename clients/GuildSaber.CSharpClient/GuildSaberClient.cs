@@ -71,7 +71,7 @@ public class GuildSaberClient : IDisposable
 
 #if NETCOREAPP2_1_OR_GREATER
     /// <summary>
-    /// Initializes a new instance of the <see cref="GuildSaberClient"/> class with a base URI.
+    /// Initializes a new instance of the <see cref="GuildSaberClient" /> class with a base URI.
     /// Creates an internal HTTP client with optimized connection pooling settings.
     /// </summary>
     /// <param name="baseUri">The base URI for the GuildSaber API.</param>

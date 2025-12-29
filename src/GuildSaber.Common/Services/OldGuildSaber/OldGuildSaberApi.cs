@@ -10,7 +10,7 @@ namespace GuildSaber.Common.Services.OldGuildSaber;
 
 public class OldGuildSaberApi(HttpClient httpClient)
 {
-    private const string ApiLink = "https://api.guildsaber.com/";
+    private const string ApiLink = "https://api-legacy.guildsaber.com/";
 
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {

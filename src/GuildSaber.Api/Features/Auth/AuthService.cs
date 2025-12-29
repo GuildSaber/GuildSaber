@@ -51,6 +51,9 @@ public class AuthService(
             .FirstOrDefaultAsync();
         if (player is null) return false;
 
+        if (player.LinkedAccounts.DiscordId == discordId)
+            return true;
+
         player.LinkedAccounts = player.LinkedAccounts with { DiscordId = discordId };
         return await dbContext.SaveChangesAsync() > 0;
     }
