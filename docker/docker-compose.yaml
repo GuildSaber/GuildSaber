@@ -3,9 +3,8 @@ services:
     image: "mcr.microsoft.com/dotnet/nightly/aspire-dashboard:latest"
     environment:
       ASPIRE_DASHBOARD_FORWARDEDHEADERS_ENABLED: "true"
-    ports:
-      - "3080:18888"
     expose:
+      - "18888"
       - "18889"
       - "18890"
     networks:
@@ -67,7 +66,7 @@ services:
       OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
       OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
-      HTTP_PORTS: "5042"
+      HTTP_PORTS: "${API_PORT}"
       ASPNETCORE_ENVIRONMENT: ""
       AuthSettings:ApiKey:Key: "${API_KEY}"
       ConnectionStrings__server-db: "Host=postgres;Port=5432;Username=postgres;Password=${POSTGRES_PASSWORD};Database=server-db"
@@ -109,7 +108,7 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "api"
     ports:
-      - "5042:5042"
+      - "${API_PORT}"
     depends_on:
       migrator:
         condition: "service_completed_successfully"
@@ -132,8 +131,8 @@ services:
       DISCORDBOT_DB_URI: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/discordbot-db"
       DISCORDBOT_DB_JDBCCONNECTIONSTRING: "jdbc:postgresql://postgres:5432/discordbot-db"
       DISCORDBOT_DB_DATABASENAME: "discordbot-db"
-      API_HTTP: "http://api:5042"
-      services__api__http__0: "http://api:5042"
+      API_HTTP: "http://api:${API_PORT}"
+      services__api__http__0: "http://api:${API_PORT}"
       DiscordBotOptions:Id: "${DISCORDBOTOPTIONS_ID}"
       DiscordBotOptions:Name: "${DISCORDBOTOPTIONS_NAME}"
       DiscordBotOptions:Status: "${DISCORDBOTOPTIONS_STATUS}"

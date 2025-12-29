@@ -4,8 +4,8 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddDockerComposeEnvironment("guildsaber-env")
     .WithDashboard(dashboard => dashboard
-        .WithHostPort(3080)
-        .WithForwardedHeaders(enabled: true));
+        .WithForwardedHeaders(enabled: true)
+        .WithHostPort());
 
 var postgres = builder.AddPostgres("postgres", port: 5432)
     .WithLifetime(ContainerLifetime.Persistent)
@@ -28,14 +28,17 @@ var apiKey = builder.AddParameter("api-key", builder.Configuration["ApiKey"]!, s
 var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.ExcludeLaunchProfile = true)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
     .WithEnvironment("AuthSettings:ApiKey:Key", apiKey)
-    .WithHttpEndpoint(port: 5042, targetPort: 5042, isProxied: false)
-    .WithHttpHealthCheck("/health")
-    .WithExternalHttpEndpoints()
+    .WithHttpEndpoint(port: builder.ExecutionContext.IsRunMode ? 5042 : null, isProxied: false)
     .WithReference(guildsaberDb).WaitForCompletion(migrator)
     .WithReference("beatleader-api", new Uri("https://api.beatleader.com/"))
     .WithReference("beatsaver-api", new Uri("https://api.beatsaver.com/"))
     .WithReference("scoresaber-api", new Uri("https://scoresaber.com/"))
     .WithReference("beatleader-socket", new Uri("wss://sockets.api.beatleader.com/"));
+
+
+apiService
+    .WithHttpHealthCheck("/health")
+    .WithExternalHttpEndpoints();
 
 var discordBot = builder.AddProject<GuildSaber_DiscordBot>("discord-bot", option => option.ExcludeLaunchProfile = true)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
