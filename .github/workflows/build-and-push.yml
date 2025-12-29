@@ -106,10 +106,10 @@ jobs:
               continue
             fi
             # Extract commit id from desc (format: "Commit: <commit_id>")
-            DESC=$(echo "$DEPLOYMENT" | jq -r '.desc // empty')
+            DESC=$(echo "$DEPLOYMENT" | jq -r '.description // empty')
             COMMIT_ID=$(echo "$DESC" | sed -n 's/^Commit: //p')
             STATUS_DEPLOY=$(echo "$DEPLOYMENT" | jq -r '.status // empty')
-            echo "Found deployment: desc='$DESC', commit_id='$COMMIT_ID', status='$STATUS_DEPLOY'"
+            echo "Found deployment: description='$DESC', commit_id='$COMMIT_ID', status='$STATUS_DEPLOY'"
             if [ "$COMMIT_ID" = "${{ github.sha }}" ]; then
               MATCHED=true
               if [ "$STATUS_DEPLOY" = "done" ]; then
