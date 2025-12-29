@@ -117,7 +117,7 @@ builder.Services.AddAuthentication(options => options.DefaultScheme = JwtBearerD
     }).AddCookie("BeatLeaderCookies", options =>
     {
         options.Cookie.Name = "BeatLeader";
-        options.Cookie.SameSite = SameSiteMode.None;
+        options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
             ? CookieSecurePolicy.None
             : CookieSecurePolicy.Always;
@@ -132,7 +132,7 @@ builder.Services.AddAuthentication(options => options.DefaultScheme = JwtBearerD
     ).AddCookie("DiscordCookies", options =>
     {
         options.Cookie.Name = "Discord";
-        options.Cookie.SameSite = SameSiteMode.None;
+        options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
             ? CookieSecurePolicy.None
             : CookieSecurePolicy.Always;
