@@ -5,8 +5,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 builder.AddDockerComposeEnvironment("guildsaber-env")
     .WithDashboard(dashboard => dashboard
         .WithHostPort(3080)
-        .WithForwardedHeaders(enabled: true)
-        .WithContainerName("aspire-dashboard"));
+        .WithForwardedHeaders(enabled: true));
 
 var postgres = builder.AddPostgres("postgres", port: 5432)
     .WithLifetime(ContainerLifetime.Persistent)

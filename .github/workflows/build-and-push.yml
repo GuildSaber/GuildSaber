@@ -53,7 +53,7 @@ jobs:
       - name: Deploy to Dokploy and check response
         run: |
           RESPONSE=$(curl --silent --show-error --write-out "HTTPSTATUS:%{http_code}" \
-            -X POST ${{ secrets.DOKPLOY_COMPOSE_DEPLOY_URL }} \
+            -X POST ${{ secrets.DOKPLOY_BASE_URL }}/api/compose.deploy \
             -H "x-api-key: ${{ secrets.DOKPLOY_API_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{"composeId": "${{ secrets.COMPOSE_ID }}"}')
@@ -70,3 +70,54 @@ jobs:
             exit 1
           fi
           echo "$(echo "$BODY" | jq -r '.message')"
+
+      - name: Wait for Dokploy deployment to finish
+        run: |
+          set -e
+          TIMEOUT=300  # 5 minutes
+          INTERVAL=1
+          ELAPSED=0
+          MATCHED=false
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            RESPONSE=$(curl --silent --show-error \
+              -G "${{ secrets.DOKPLOY_BASE_URL }}/deployment.allByCompose" \
+              --data-urlencode "composeId=${{ secrets.COMPOSE_ID }}" \
+              -H "x-api-key: ${{ secrets.DOKPLOY_API_KEY }}")
+            # Get the first deployment object
+            DEPLOYMENT=$(echo "$RESPONSE" | jq '.[0]')
+            if [ "$DEPLOYMENT" = "null" ]; then
+              echo "No deployments found yet. Waiting..."
+              sleep $INTERVAL
+              ELAPSED=$((ELAPSED+INTERVAL))
+              continue
+            fi
+            # Extract commit id from desc (format: "Commit: <commit_id>")
+            DESC=$(echo "$DEPLOYMENT" | jq -r '.desc // empty')
+            COMMIT_ID=$(echo "$DESC" | sed -n 's/^Commit: //p')
+            STATUS=$(echo "$DEPLOYMENT" | jq -r '.status // empty')
+            echo "Found deployment: desc='$DESC', commit_id='$COMMIT_ID', status='$STATUS'"
+            if [ "$COMMIT_ID" = "${{ github.sha }}" ]; then
+              MATCHED=true
+              if [ "$STATUS" = "done" ]; then
+                echo "Deployment finished successfully."
+                exit 0
+              elif [ "$STATUS" = "error" ]; then
+                echo "Deployment failed with status 'error'."
+                exit 1
+              else
+                echo "Deployment is still running. Waiting..."
+                sleep $INTERVAL
+                ELAPSED=$((ELAPSED+INTERVAL))
+                continue
+              fi
+            else
+              echo "Deployment commit id does not match. Waiting..."
+              sleep $INTERVAL
+              ELAPSED=$((ELAPSED+INTERVAL))
+              continue
+            fi
+          done
+          if [ "$MATCHED" = false ]; then
+            echo "Timed out waiting for deployment with commit id ${GITHUB_SHA}."
+            exit 1
+          fi
