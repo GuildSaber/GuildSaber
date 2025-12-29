@@ -52,7 +52,7 @@ jobs:
     steps:
       - name: Deploy to Dokploy
         run: |
-          curl -X POST ${{ secrets.DOKPLOY_WEBHOOK_URL }} \
-          -H "Authorization: Bearer ${{ secrets.DOKPLOY_API_TOKEN }}" \
+          curl -X POST ${{ secrets.DOKPLOY_COMPOSE_DEPLOY_URL }} \
+          -H "x-api-key: ${{ secrets.DOKPLOY_API_KEY }}" \
           -H "Content-Type: application/json" \
-          -d '{"ref": "${{ github.sha }}"}'
+          -d '{"composeId": "${{ secrets.COMPOSE_ID }}"}'
