@@ -110,7 +110,7 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "api"
     ports:
-      - "5042"
+      - "5042:5042"
     depends_on:
       migrator:
         condition: "service_completed_successfully"

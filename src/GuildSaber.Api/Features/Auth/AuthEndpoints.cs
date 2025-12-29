@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Claims;
 using System.Web;
 using AspNet.Security.OAuth.BeatLeader;
@@ -109,12 +110,15 @@ public class AuthEndpoints : IEndpoints
     private static async Task<Results<Ok<TokenResponse>, ProblemHttpResult>> HandleDiscordCallbackAsync(
         HttpContext httpContext, AuthService authService)
     {
-        var authResult = await AuthenticateAsync(httpContext, DiscordAuthenticationDefaults.AuthenticationScheme);
-        if (!authResult.TryGetValue(out var authValue))
+        if (!(await AuthenticateAsync(httpContext, DiscordAuthenticationDefaults.AuthenticationScheme))
+            .TryGetValue(out var discordAuthValue))
             return TypedResults.Problem("Authentication failed. Please ensure you are logged in with Discord.",
                 statusCode: StatusCodes.Status401Unauthorized);
 
-        return await DiscordCallBackPipeline(httpContext, authService, authValue.claimsPrincipal)
+        var blClaims = (await AuthenticateAsync(httpContext, BeatLeaderAuthenticationDefaults.AuthenticationScheme))
+            .Match(static ClaimsPrincipal? (authValue) => authValue.claimsPrincipal, _ => null);
+
+        return await DiscordCallBackPipeline(httpContext, authService, discordAuthValue.claimsPrincipal, blClaims)
             .Match(token => token, error => (Results<Ok<TokenResponse>, ProblemHttpResult>)error);
     }
 
@@ -143,7 +147,10 @@ public class AuthEndpoints : IEndpoints
             return TypedResults.Problem("Authentication failed. Please ensure you are logged in with Discord.",
                 statusCode: StatusCodes.Status401Unauthorized);
 
-        var result = await DiscordCallBackPipeline(httpContext, authService, authValue.claimsPrincipal);
+        var blClaims = (await AuthenticateAsync(httpContext, BeatLeaderAuthenticationDefaults.AuthenticationScheme))
+            .Match(static ClaimsPrincipal? (authValue) => authValue.claimsPrincipal, _ => null);
+
+        var result = await DiscordCallBackPipeline(httpContext, authService, authValue.claimsPrincipal, blClaims);
         return BuildCallbackRedirect(result, returnUrl);
     }
 
@@ -180,15 +187,28 @@ public class AuthEndpoints : IEndpoints
     }
 
     private static async Task<Result<Ok<TokenResponse>, ProblemHttpResult>> DiscordCallBackPipeline(
-        HttpContext httpContext, AuthService authService, ClaimsPrincipal claimsPrincipal)
-        => await DiscordId.TryParse(claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier))
+        HttpContext httpContext, AuthService authService, ClaimsPrincipal discordClaims, ClaimsPrincipal? blClaims)
+        => await DiscordId.TryParse(discordClaims.FindFirstValue(ClaimTypes.NameIdentifier))
             .MapError(_ => TypedResults.Problem("Failed to parse Discord ID from authentication claims.",
                 statusCode: StatusCodes.Status400BadRequest))
             .Bind(discordId => authService
                 .GetPlayerIdAsync(discordId)
-                .ToResult(() => TypedResults.Problem(
-                    "Discord account is not linked to any player.",
-                    statusCode: StatusCodes.Status422UnprocessableEntity)))
+                .ToResult<PlayerId, ProblemHttpResult>(() => throw new UnreachableException())
+                .Compensate(async _ => await BeatLeaderId
+                    .TryParseUnsafe(blClaims?.FindFirstValue(ClaimTypes.NameIdentifier))
+                    .MapError(_ => TypedResults.Problem(
+                        "Discord account is not linked to any player, please create/login in an account using BeatLeader first.",
+                        statusCode: StatusCodes.Status422UnprocessableEntity))
+                    .Bind(beatleaderId => authService
+                        .GetPlayerIdAsync(beatleaderId)
+                        .ToResult(() => TypedResults.Problem(
+                            "Can't find the player linked to the provided BeatLeader account.",
+                            statusCode: StatusCodes.Status500InternalServerError)))
+                    .Bind(async playerId => await authService.LinkDiscordIdAsync(playerId, discordId)
+                        ? Success<PlayerId, ProblemHttpResult>(playerId)
+                        : Failure<PlayerId, ProblemHttpResult>(TypedResults.Problem(
+                            "Failed to link Discord account to player.",
+                            statusCode: StatusCodes.Status500InternalServerError)))))
             .Bind(playerId => authService
                 .CreateSession(playerId, httpContext)
                 .MapError(MapSessionCreationErrorResponse))

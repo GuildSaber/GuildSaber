@@ -29,7 +29,7 @@ var apiKey = builder.AddParameter("api-key", builder.Configuration["ApiKey"]!, s
 var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.ExcludeLaunchProfile = true)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
     .WithEnvironment("AuthSettings:ApiKey:Key", apiKey)
-    .WithHttpEndpoint(targetPort: 5042)
+    .WithHttpEndpoint(port: 5042, targetPort: 5042, isProxied: false)
     .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints()
     .WithReference(guildsaberDb).WaitForCompletion(migrator)
