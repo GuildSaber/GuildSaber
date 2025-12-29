@@ -194,7 +194,7 @@ public class AuthEndpoints : IEndpoints
             .Bind(discordId => authService
                 .GetPlayerIdAsync(discordId)
                 .ToResult(() => "Treating as result")
-                .Compensate(async _ => await BeatLeaderId
+                .Compensate(_ => BeatLeaderId
                     .TryParseUnsafe(blClaims?.FindFirstValue(ClaimTypes.NameIdentifier))
                     .MapError(_ => TypedResults.Problem(
                         "Discord account is not linked to any player, please create/login in an account using BeatLeader first.",

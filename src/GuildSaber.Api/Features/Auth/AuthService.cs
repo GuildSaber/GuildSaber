@@ -46,12 +46,13 @@ public class AuthService(
 
     public async Task<bool> LinkDiscordIdAsync(PlayerId playerId, DiscordId discordId)
     {
-        var player = await dbContext.Players.FindAsync(playerId);
+        var player = await dbContext.Players.AsTracking()
+            .Where(x => x.Id == playerId)
+            .FirstOrDefaultAsync();
         if (player is null) return false;
 
         player.LinkedAccounts = player.LinkedAccounts with { DiscordId = discordId };
-        await dbContext.SaveChangesAsync();
-        return true;
+        return await dbContext.SaveChangesAsync() > 0;
     }
 
     private async Task<int> GetValidSessionCountAsync(PlayerId playerId, DateTimeOffset currentTime)
