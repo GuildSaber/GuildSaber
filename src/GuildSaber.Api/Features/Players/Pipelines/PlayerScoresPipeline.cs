@@ -137,6 +137,8 @@ public sealed class PlayerScoresPipeline(
             await memberLevelStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key,
                 tuple.Value.Points.FirstOrDefault()?.Id ?? default);
         }
+
+        logger.LogInformation("Completed importing ScoreSaber scores for player {PlayerId}", playerId);
     }
 
     public static async Task<Maybe<SongDifficultyId>> GetSongDifficultyIdAsync(

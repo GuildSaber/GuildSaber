@@ -3,6 +3,8 @@ using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
+using GuildSaber.Common.Services.ScoreSaber;
+using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Mappers.BeatLeader;
@@ -21,6 +23,7 @@ public class AuthService(
     IOptions<ManagerSettings> managerSettings,
     IHttpUserAgentParserAccessor userAgentParser,
     BeatLeaderApi beatLeaderApi,
+    ScoreSaberApi scoreSaberApi,
     ServerDbContext dbContext,
     TimeProvider timeProvider)
 {
@@ -58,9 +61,8 @@ public class AuthService(
         return await dbContext.SaveChangesAsync() > 0;
     }
 
-    private async Task<int> GetValidSessionCountAsync(PlayerId playerId, DateTimeOffset currentTime)
-        => await dbContext.Sessions
-            .CountAsync(s => s.PlayerId == playerId && s.IsValid && s.ExpiresAt > currentTime);
+    private Task<int> GetValidSessionCountAsync(PlayerId playerId, DateTimeOffset currentTime)
+        => dbContext.Sessions.CountAsync(s => s.PlayerId == playerId && s.IsValid && s.ExpiresAt > currentTime);
 
     public async Task<Result<string, SessionCreationError>> CreateSession(PlayerId playerId, HttpContext httpContext)
     {
@@ -92,9 +94,9 @@ public class AuthService(
         return token.Token;
     }
 
-    public async Task<Result<PlayerId>> CreateUserAsync(BeatLeaderId beatleaderId)
-        => await beatLeaderApi.GetPlayerProfileWithStatsAsync(beatleaderId)
-            .Bind(blPlayer => blPlayer == null
+    public Task<Result<Player>> CreatePlayerAsync(BeatLeaderId beatleaderId)
+        => beatLeaderApi.GetPlayerProfileWithStatsAsync(beatleaderId)
+            .Bind(async blPlayer => blPlayer == null
                 ? Failure<Player>("Player not found on BeatLeader.")
                 : Success(new Player
                 {
@@ -109,12 +111,17 @@ public class AuthService(
                         HMD = blPlayer.ScoreStats.TopHMD.Map(),
                         Platform = PlatformMappers.Map(blPlayer.Platform)
                     },
-                    LinkedAccounts = new PlayerLinkedAccounts(beatleaderId, null, null),
+                    LinkedAccounts = new PlayerLinkedAccounts(
+                        beatleaderId,
+                        await scoreSaberApi.PlayerExistsAsync(beatleaderId).Unwrap()
+                            ? ScoreSaberId.CreateUnsafe(beatleaderId).Value
+                            : null,
+                        DiscordId: null),
                     SubscriptionInfo = new PlayerSubscriptionInfo(PlayerSubscriptionInfo.ESubscriptionTier.None),
                     IsManager = managerSettings.Value.SteamIds.Contains(blPlayer.Id)
                 }))
             .Map(static (player, dbContext) => dbContext
-                .AddAndSaveAsync(player, x => x.Id), dbContext);
+                .AddAndSaveAsync(player), dbContext);
 }
 
 public abstract record SessionCreationError;
