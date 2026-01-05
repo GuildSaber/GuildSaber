@@ -46,6 +46,12 @@ public class PlayerEndpoints : IEndpoints
             .WithSummary("Get current player with extended information")
             .WithDescription("Get the current player information alongside their guilds and permissions.")
             .RequireAuthorization();
+
+        group.MapDelete("/{playerId}", DeletePlayerAsync)
+            .WithName("DeletePlayer")
+            .WithSummary("Delete a player")
+            .WithDescription("Delete a specific player by their Id.")
+            .RequireManager();
     }
 
     private static async Task<Results<Ok<Player>, NotFound>> GetPlayerAsync(
@@ -95,6 +101,18 @@ public class PlayerEndpoints : IEndpoints
             .ApplySortOrder(sortBy, order)
             .Select(PlayerMappers.MapPlayerExpression)
             .ToPagedListAsync(page, pageSize));
+    }
+
+    private static async Task<Results<NoContent, NotFound>> DeletePlayerAsync(
+        PlayerId playerId, ServerDbContext dbContext)
+    {
+        var affectedRows = await dbContext.Players
+            .Where(x => x.Id == playerId)
+            .ExecuteDeleteAsync();
+
+        return affectedRows > 0
+            ? TypedResults.NoContent()
+            : TypedResults.NotFound();
     }
 }
 
