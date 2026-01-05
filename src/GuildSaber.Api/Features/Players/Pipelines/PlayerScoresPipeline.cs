@@ -24,6 +24,38 @@ public sealed class PlayerScoresPipeline(
     MemberLevelStatsPipeline memberLevelStatsPipeline,
     ILogger<PlayerScoresPipeline> logger)
 {
+    public async Task RecalculatePlayerScoresAsync(PlayerId playerId, CancellationToken token)
+    {
+        logger.LogInformation("Recalculating scores for player {PlayerId}", playerId);
+        var contextsWithPoints = new Dictionary<ContextId, Context>();
+
+        await foreach (var scoreChunk in dbContext.Scores
+                           .Where(s => s.PlayerId == playerId)
+                           .AsAsyncEnumerable()
+                           .Chunk(100)
+                           .WithCancellation(token))
+        foreach (var score in scoreChunk)
+        {
+            var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(score);
+
+            foreach (var context in pipelineResult.ImpactedContextsWithPoints)
+                contextsWithPoints.TryAdd(context.Id, context);
+        }
+
+        foreach (var tuple in contextsWithPoints)
+        {
+            await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value);
+            await memberLevelStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key,
+                tuple.Value.Points.FirstOrDefault()?.Id ?? default);
+        }
+
+        logger.LogInformation("Completed recalculating scores for player {PlayerId}", playerId);
+    }
+
+    /// <remarks>
+    /// All player scores end up being imported/updated via the ScoreAddOrUpdatePipeline.
+    /// Not just scores of maps that are already in the db, all of them.
+    /// </remarks>
     public async Task ImportBeatLeaderScoresAsync(PlayerId playerId, BeatLeaderId beatLeaderId, CancellationToken token)
     {
         logger.LogInformation("Importing BeatLeader scores for player {PlayerId}", playerId);
@@ -67,6 +99,10 @@ public sealed class PlayerScoresPipeline(
         logger.LogInformation("Completed importing BeatLeader scores for player {PlayerId}", playerId);
     }
 
+    /// <remarks>
+    /// All player scores end up being imported/updated via the ScoreAddOrUpdatePipeline.
+    /// Not just scores of maps that are already in the db, all of them.
+    /// </remarks>
     public async Task ImportScoreSaberScoresAsync(PlayerId playerId, ScoreSaberId scoreSaberId, CancellationToken token)
     {
         logger.LogInformation("Importing ScoreSaber scores for player {PlayerId}", playerId);

@@ -112,15 +112,12 @@ public class DebugEndpoints : IEndpoints
         IBackgroundTaskQueue taskQueue,
         IServiceScopeFactory serviceScopeFactory)
     {
-        var scores = await dbContext.Scores.Where(x => x.PlayerId == playerId)
-            .ToListAsync();
-
-        await taskQueue.QueueBackgroundWorkItemAsync(async _ =>
+        await taskQueue.QueueBackgroundWorkItemAsync(async token =>
         {
             await using var scope = serviceScopeFactory.CreateAsyncScope();
-            var pipeline = scope.ServiceProvider.GetRequiredService<ScoreAddOrUpdatePipeline>();
+            var pipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
 
-            foreach (var rankedScore in scores) await pipeline.ExecuteAsync(rankedScore);
+            await pipeline.RecalculatePlayerScoresAsync(playerId, token);
         });
 
         return TypedResults.Ok();
@@ -455,7 +452,7 @@ public class DebugEndpoints : IEndpoints
                 (
                     ManualRating: new RankedMapRequest.ManualRating(
                         DifficultyStar: levelNumber,
-                        AccuracyStar: 0f),
+                        AccuracyStar: null),
                     Requirements: new RankedMapRequest.RankedMapRequirements(
                         NeedConfirmation: difficulty.Requirements.HasFlag(ERequirements.NeedAdminConfirmation),
                         NeedFullCombo: difficulty.Requirements.HasFlag(ERequirements.FullCombo),
