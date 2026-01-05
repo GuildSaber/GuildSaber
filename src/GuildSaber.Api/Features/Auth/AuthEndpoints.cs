@@ -5,6 +5,8 @@ using AspNet.Security.OAuth.Discord;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Settings;
+using GuildSaber.Api.Features.Players.Pipelines;
+using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Transformers;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Database.Models.StrongTypes;
@@ -205,14 +207,16 @@ public class AuthEndpoints : IEndpoints
     }
 
     private static async Task<Results<Ok<TokenResponse>, ProblemHttpResult>> HandleBeatLeaderCallbackAsync(
-        HttpContext httpContext, AuthService authService)
+        HttpContext httpContext, AuthService authService, IBackgroundTaskQueue taskQueue,
+        IServiceScopeFactory scopeFactory)
     {
         var authResult = await AuthenticateAsync(httpContext, BeatLeaderAuthenticationDefaults.AuthenticationScheme);
         if (!authResult.TryGetValue(out var authValue))
             return TypedResults.Problem("Authentication failed. Please ensure you are logged in with BeatLeader.",
                 statusCode: StatusCodes.Status401Unauthorized);
 
-        return await BeatLeaderCallBackPipeline(httpContext, authService, authValue.claimsPrincipal)
+        return await BeatLeaderCallBackPipeline(
+                httpContext, authService, authValue.claimsPrincipal, taskQueue, scopeFactory)
             .Match(token => token, error => (Results<Ok<TokenResponse>, ProblemHttpResult>)error);
     }
 
@@ -238,6 +242,7 @@ public class AuthEndpoints : IEndpoints
 
     private static async Task<Results<RedirectHttpResult, ProblemHttpResult>> HandleBeatLeaderCallbackWithRedirectAsync(
         HttpContext httpContext, AuthService authService, [FromQuery] string returnUrl,
+        IBackgroundTaskQueue taskQueue, IServiceScopeFactory scopeFactory,
         IOptionsSnapshot<RedirectSettings> redirectSettings)
     {
         if (!IsValidRedirectUrl(returnUrl, redirectSettings.Value))
@@ -249,7 +254,8 @@ public class AuthEndpoints : IEndpoints
             return TypedResults.Problem("Authentication failed. Please ensure you are logged in with BeatLeader.",
                 statusCode: StatusCodes.Status401Unauthorized);
 
-        var result = await BeatLeaderCallBackPipeline(httpContext, authService, authValue.claimsPrincipal);
+        var result = await BeatLeaderCallBackPipeline(httpContext, authService, authValue.claimsPrincipal,
+            taskQueue, scopeFactory);
         return BuildTokenCallbackRedirect(result, returnUrl);
     }
 
@@ -335,7 +341,8 @@ public class AuthEndpoints : IEndpoints
                         statusCode: StatusCodes.Status500InternalServerError))));
 
     private static Task<Result<Ok<TokenResponse>, ProblemHttpResult>> BeatLeaderCallBackPipeline(
-        HttpContext httpContext, AuthService authService, ClaimsPrincipal claimsPrincipal)
+        HttpContext httpContext, AuthService authService, ClaimsPrincipal claimsPrincipal,
+        IBackgroundTaskQueue taskQueue, IServiceScopeFactory scopeFactory)
         => BeatLeaderId.TryParseUnsafe(claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier))
             .MapError(_ => TypedResults.Problem("Failed to parse BeatLeaderId from authentication claims.",
                 statusCode: StatusCodes.Status400BadRequest))
@@ -343,7 +350,24 @@ public class AuthEndpoints : IEndpoints
                 .GetPlayerIdAsync(beatleaderId)
                 .ToResult(() => "Treating as result")
                 .Compensate(_ => authService
-                    .CreateUserAsync(beatleaderId)
+                    .CreatePlayerAsync(beatleaderId)
+                    .Map(static async (player, state) =>
+                    {
+                        await state.taskQueue.QueueBackgroundWorkItemAsync(async token =>
+                        {
+                            await using var scope = state.scopeFactory.CreateAsyncScope();
+                            var pipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
+
+                            await pipeline.ImportBeatLeaderScoresAsync(
+                                player.Id, player.LinkedAccounts.BeatLeaderId, token
+                            );
+
+                            if (player.LinkedAccounts.ScoreSaberId is { } scoreSaberId)
+                                await pipeline.ImportScoreSaberScoresAsync(player.Id, scoreSaberId, token);
+                        });
+
+                        return player.Id;
+                    }, (taskQueue, scopeFactory))
                     .MapError(error => TypedResults.Problem(error.ToString(),
                         statusCode: StatusCodes.Status422UnprocessableEntity))))
             .Bind(playerId => authService
