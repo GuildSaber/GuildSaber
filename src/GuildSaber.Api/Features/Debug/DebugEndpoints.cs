@@ -7,7 +7,6 @@ using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Api.Features.RankedMaps.MapVersions;
-using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Transformers;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
@@ -91,9 +90,9 @@ public class DebugEndpoints : IEndpoints
             .WithDescription("Recalculates member levels for all contexts the player is a member of.")
             .RequireManager();
 
-        group.MapPost("/refetch-player-ranked-scores/{playerId}", RefetchPlayerRankedScores)
-            .WithSummary("Refetch player ranked scores.")
-            .WithDescription("Refetches all ranked scores for the specified player.")
+        group.MapPost("/recalculate-player-scores/{playerId}", RecalculatePlayerScores)
+            .WithSummary("Recalculate player scores.")
+            .WithDescription("Recalculates all player scores for the specified player.")
             .RequireManager();
 
         group.MapPost("delete-member-point-stats/{playerId}", async (PlayerId playerId, ServerDbContext dbContext) =>
@@ -107,20 +106,17 @@ public class DebugEndpoints : IEndpoints
             .RequireManager();
     }
 
-    private static async Task<Ok> RefetchPlayerRankedScores(
+    private static async Task<Ok> RecalculatePlayerScores(
         PlayerId playerId, ServerDbContext dbContext,
         IBackgroundTaskQueue taskQueue,
         IServiceScopeFactory serviceScopeFactory)
     {
-        var scores = await dbContext.Scores.Where(x => x.PlayerId == playerId)
-            .ToListAsync();
-
-        await taskQueue.QueueBackgroundWorkItemAsync(async _ =>
+        await taskQueue.QueueBackgroundWorkItemAsync(async token =>
         {
             await using var scope = serviceScopeFactory.CreateAsyncScope();
-            var pipeline = scope.ServiceProvider.GetRequiredService<ScoreAddOrUpdatePipeline>();
+            var pipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
 
-            foreach (var rankedScore in scores) await pipeline.ExecuteAsync(rankedScore);
+            await pipeline.RecalculatePlayerScoresAsync(playerId, token);
         });
 
         return TypedResults.Ok();
@@ -455,7 +451,7 @@ public class DebugEndpoints : IEndpoints
                 (
                     ManualRating: new RankedMapRequest.ManualRating(
                         DifficultyStar: levelNumber,
-                        AccuracyStar: 0f),
+                        AccuracyStar: null),
                     Requirements: new RankedMapRequest.RankedMapRequirements(
                         NeedConfirmation: difficulty.Requirements.HasFlag(ERequirements.NeedAdminConfirmation),
                         NeedFullCombo: difficulty.Requirements.HasFlag(ERequirements.FullCombo),

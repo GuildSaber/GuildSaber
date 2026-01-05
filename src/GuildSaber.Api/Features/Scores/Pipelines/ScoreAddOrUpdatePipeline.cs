@@ -49,6 +49,9 @@ public sealed class ScoreAddOrUpdatePipeline(
 
     public readonly record struct PipelineResult(Context[] ImpactedContextsWithPoints);
 
+    /// <remarks>
+    /// There is codebase assumption that all scores going in are stored and updated by default, don't change this behavior.
+    /// </remarks>
     public async Task<PipelineResult> ExecuteAsync(AbstractScore scoreToAdd)
         => await (await UpdateScoreIfChangedAsync(scoreToAdd, dbContext)
                 .Or(() => dbContext.AddAndSaveAsync(scoreToAdd))

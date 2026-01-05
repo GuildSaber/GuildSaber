@@ -13,6 +13,7 @@ using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Features.RankedMaps;
+using GuildSaber.Api.Features.Scores;
 using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Transformers;
@@ -240,7 +241,7 @@ builder.Services.AddTransient<ScoreAddOrUpdatePipeline>();
 builder.Services.AddTransient<PlayerScoresPipeline>();
 builder.Services.AddTransient<MemberPointStatsPipeline>();
 builder.Services.AddTransient<MemberLevelStatsPipeline>();
-//builder.Services.AddHostedService<BLScoreSyncWorker>();
+builder.Services.AddHostedService<BLScoreSyncWorker>();
 builder.Services.AddHostedService<QueueProcessingService>();
 builder.Services.AddSingleton<IBackgroundTaskQueue>(_ => new BackgroundTaskQueue(capacity: 100));
 

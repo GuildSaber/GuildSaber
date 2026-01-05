@@ -1,4 +1,7 @@
+using System.Diagnostics;
 using CSharpFunctionalExtensions;
+using GuildSaber.Api.Features.Players.Pipelines;
+using GuildSaber.Api.Queuing;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
@@ -12,7 +15,12 @@ using static GuildSaber.Api.Features.Guilds.Members.MemberService.JoinResponse;
 
 namespace GuildSaber.Api.Features.Guilds.Members;
 
-public class MemberService(ServerDbContext dbContext, BeatLeaderApi beatLeaderApi, TimeProvider timeProvider)
+public class MemberService(
+    ServerDbContext dbContext,
+    BeatLeaderApi beatLeaderApi,
+    TimeProvider timeProvider,
+    IBackgroundTaskQueue taskQueue,
+    IServiceScopeFactory serviceScopeFactory)
 {
     public abstract record JoinResponse
     {
@@ -86,10 +94,24 @@ public class MemberService(ServerDbContext dbContext, BeatLeaderApi beatLeaderAp
                             return inserted;
                         }, verifySucceeded: (_, _) => Task.FromResult(true)),
                 dbContext)
-            .Match(member => member.JoinState == Member.EJoinState.Requested
-                    ? new Requested(member)
-                    : new Success(member),
-                err => err
+            .Match(async member =>
+                {
+                    if (member.JoinState == Member.EJoinState.Requested)
+                        return new Requested(member);
+
+                    await taskQueue.QueueBackgroundWorkItemAsync(async token =>
+                    {
+                        await using var scope = serviceScopeFactory.CreateAsyncScope();
+                        var playerScopePipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
+
+                        // Since all scores are stored by default on ScoreAddOrUpdate pipeline, we don't need to re-import scores here.
+                        await playerScopePipeline.RecalculatePlayerScoresAsync(member.PlayerId, token);
+                    });
+
+                    Trace.Assert(member.JoinState == Member.EJoinState.Joined);
+                    return new Success(member);
+                },
+                Task.FromResult
             );
 
     /// <summary>
