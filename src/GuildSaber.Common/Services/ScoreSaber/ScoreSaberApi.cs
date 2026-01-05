@@ -99,4 +99,13 @@ public class ScoreSaberApi(HttpClient httpClient)
             var response => await Try(() => response.Content
                 .ReadFromJsonAsync<LeaderboardInfo>(_jsonOptions))
         };
+
+    public async Task<Result<bool>> PlayerExistsAsync(ulong scoreSaberId) => await httpClient
+            .GetAsync($"api/player/{scoreSaberId}/basic") switch
+        {
+            { StatusCode: HttpStatusCode.NotFound } => Success(false),
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<bool>($"Failed to check existence of player {scoreSaberId}: {statusCode} {reasonPhrase}"),
+            _ => Success(true)
+        };
 }
