@@ -47,6 +47,11 @@ var discordBot = builder.AddProject<GuildSaber_DiscordBot>("discord-bot", option
     .WithReference(apiService).WaitFor(apiService)
     .WithParentRelationship(apiService);
 
+var website = builder.AddViteApp("website", "../../src/GuildSaber.Website")
+    .WithEndpoint("http", (endpointAnnotation) => endpointAnnotation.Port = 5044)
+    .WithExternalHttpEndpoints()
+    .WithReference(apiService).WaitFor(apiService);
+
 // Bind environment variables in publish mode (for production deployments)
 if (builder.ExecutionContext.IsPublishMode)
 {
