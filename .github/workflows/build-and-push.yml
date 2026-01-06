@@ -42,7 +42,7 @@ jobs:
 
       - name: Build, tag and push image
         run: |
-          aspire deploy --step build-${{ matrix.project }}
+          aspire do build-${{ matrix.project }}
           docker tag ${{ matrix.project }}:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ env.IMAGE_PREFIX }}-${{ matrix.project }}:${{ github.ref_name }}
           docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ env.IMAGE_PREFIX }}-${{ matrix.project }}:${{ github.ref_name }}
 
