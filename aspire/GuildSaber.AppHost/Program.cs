@@ -5,7 +5,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 builder.AddDockerComposeEnvironment("guildsaber-env")
     .WithDashboard(dashboard => dashboard
         .WithForwardedHeaders(enabled: true)
-        .WithHostPort());
+        .WithExternalHttpEndpoints());
 
 var postgres = builder.AddPostgres("postgres", port: 5432)
     .WithLifetime(ContainerLifetime.Persistent)
@@ -28,15 +28,12 @@ var apiKey = builder.AddParameter("api-key", builder.Configuration["ApiKey"]!, s
 var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.ExcludeLaunchProfile = true)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
     .WithEnvironment("AuthSettings:ApiKey:Key", apiKey)
-    .WithHttpEndpoint(port: builder.ExecutionContext.IsRunMode ? 5042 : null, isProxied: false)
     .WithReference(guildsaberDb).WaitForCompletion(migrator)
     .WithReference("beatleader-api", new Uri("https://api.beatleader.com/"))
     .WithReference("beatsaver-api", new Uri("https://api.beatsaver.com/"))
     .WithReference("scoresaber-api", new Uri("https://scoresaber.com/"))
-    .WithReference("beatleader-socket", new Uri("wss://sockets.api.beatleader.com/"));
-
-
-apiService
+    .WithReference("beatleader-socket", new Uri("wss://sockets.api.beatleader.com/"))
+    .WithHttpEndpoint(port: builder.ExecutionContext.IsRunMode ? 5042 : null, isProxied: false)
     .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints();
 
@@ -48,9 +45,11 @@ var discordBot = builder.AddProject<GuildSaber_DiscordBot>("discord-bot", option
     .WithParentRelationship(apiService);
 
 var website = builder.AddViteApp("website", "../../src/GuildSaber.Website")
-    .WithEndpoint("http", (endpointAnnotation) => endpointAnnotation.Port = 5044)
+    .WithEndpoint("http", endpointAnnotation => endpointAnnotation.Port = 5044)
     .WithExternalHttpEndpoints()
     .WithReference(apiService).WaitFor(apiService);
+
+apiService.PublishWithContainerFiles(website, "./wwwroot");
 
 // Bind environment variables in publish mode (for production deployments)
 if (builder.ExecutionContext.IsPublishMode)
