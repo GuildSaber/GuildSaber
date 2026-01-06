@@ -3,7 +3,7 @@ services:
     image: "mcr.microsoft.com/dotnet/nightly/aspire-dashboard:latest"
     environment:
       ASPIRE_DASHBOARD_FORWARDEDHEADERS_ENABLED: "true"
-    expose:
+    ports:
       - "18888"
       - "18889"
       - "18890"
