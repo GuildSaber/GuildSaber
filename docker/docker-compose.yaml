@@ -4,9 +4,10 @@ services:
     environment:
       ASPIRE_DASHBOARD_FORWARDEDHEADERS_ENABLED: "true"
     expose:
-      - "18888"
       - "18889"
       - "18890"
+    ports:
+      - "${DASHBOARD_PORT}:18888"
     networks:
       - "aspire"
     restart: "always"
@@ -151,6 +152,25 @@ services:
     depends_on:
       migrator:
         condition: "service_started"
+      api:
+        condition: "service_started"
+    networks:
+      - "aspire"
+  website:
+    image: "${WEBSITE_IMAGE}"
+    pull_policy: always
+    environment:
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+      HTTP_PORTS: "${WEBSITE_PORT}"
+      services__api__http__0: "http://api:${API_PORT}"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://guildsaber-env-dashboard:18889"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_SERVICE_NAME: "website"
+    ports:
+      - "${WEBSITE_PORT}"
+    depends_on:
       api:
         condition: "service_started"
     networks:

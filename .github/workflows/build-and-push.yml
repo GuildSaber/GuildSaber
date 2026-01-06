@@ -16,6 +16,7 @@ jobs:
           - project: api
           - project: discord-bot
           - project: migrator
+          - project: website
     env:
       GITHUB_REGISTRY: ghcr.io
       IMAGE_PREFIX: guildsaber
@@ -59,8 +60,6 @@ jobs:
             -d '{"composeId": "${{ secrets.COMPOSE_ID }}"}')
           BODY=$(echo "$RESPONSE" | sed -e 's/HTTPSTATUS\:.*//g')
           STATUS=$(echo "$RESPONSE" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
-          echo "Status: $STATUS"
-          echo "Body: $BODY"
           if [[ "$STATUS" != 2* ]]; then
             echo "Dokploy deployment failed with HTTP code $STATUS"
             exit 1
@@ -85,8 +84,6 @@ jobs:
               -H "x-api-key: ${{ secrets.DOKPLOY_API_KEY }}")
             BODY=$(echo "$RESPONSE" | sed -e 's/HTTPSTATUS:.*//g')
             STATUS=$(echo "$RESPONSE" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
-            echo "HTTP status: $STATUS"
-            echo "Raw response: $BODY"
             if [ "$STATUS" != "200" ]; then
               echo "Error: HTTP response code is $STATUS"
               exit 1
