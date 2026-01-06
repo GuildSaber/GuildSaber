@@ -311,17 +311,21 @@ app.UseAuthorization();
 
 #region Endpoints & UI
 
+app.UseFileServer(new FileServerOptions { RequestPath = "/website" });
+
 app.MapOpenApi();
 app.MapDefaultEndpoints()
     .MapEndpoints<Program>();
 
-app.MapScalarApiReference("/", options => options
+app.MapScalarApiReference("/docs", options => options
     .WithTitle("GuildSaber's Api")
     .WithTheme(ScalarTheme.Purple)
     .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch)
     .AddPreferredSecuritySchemes(JwtBearerDefaults.AuthenticationScheme)
     .EnablePersistentAuthentication()
 );
+
+app.MapGet("/", () => Results.Redirect("/docs")).ExcludeFromDescription();
 
 #endregion
 
