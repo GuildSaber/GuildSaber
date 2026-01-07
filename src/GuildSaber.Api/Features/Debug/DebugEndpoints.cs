@@ -329,7 +329,7 @@ public class DebugEndpoints : IEndpoints
                 x.GuildId == guildId &&
                 x.ContextId == contextId &&
                 x.CategoryId == null &&
-                x.Info.Name == $"Level {oldLevel.LevelNumber:G}");
+                x.Info.Name == $"Lvl {oldLevel.LevelNumber:G}");
             if (level is null)
             {
                 level = new RankedMapListLevel
