@@ -93,38 +93,63 @@ public sealed class ScoreAddOrUpdatePipeline(
     /// </param>
     private static async Task<Maybe<AbstractScore>> UpdateScoreIfChangedAsync(
         AbstractScore score, ServerDbContext dbContext)
-    {
-        if (score is BeatLeaderScore { BeatLeaderScoreId: not null } blScore)
+        => score switch
         {
-            var oldScore = await SameBeatLeaderScoreWithoutIdExistsAsync(blScore, dbContext);
-            if (oldScore is null)
-                return None;
+            BeatLeaderScore leaderScore => await UpdateScoreIfChangedAsync(leaderScore, dbContext),
+            ScoreSaberScore saberScore => await UpdateScoreIfChangedAsync(saberScore, dbContext),
+            _ => throw new InvalidOperationException("Score must be either a BeatLeaderScore or a ScoreSaberScore.")
+        };
 
-            blScore.Id = oldScore.Id;
-            dbContext.BeatLeaderScores.Update(blScore);
-            await dbContext.SaveChangesAsync();
-
-            return blScore;
-        }
-
-        if (score is not ScoreSaberScore ssScore)
-            throw new InvalidOperationException("Score must be either a BeatLeaderScore or a ScoreSaberScore.");
-
-        var oldSsScore = await SameScoreSaberScoreExistsAsync(ssScore, dbContext);
-        if (oldSsScore is null)
+    /// <summary>
+    /// Update the BeatLeader score if it already exists without an ID.
+    /// If it doesn't exist, return None.
+    /// If it exists and has no ID, just return the old score.
+    /// </summary>
+    /// <param name="score"></param>
+    /// <param name="dbContext"></param>
+    /// <remarks>
+    /// BeatLeader can send the same score multiple times, first without a BLScoreId, then with it.
+    /// We want to avoid creating duplicates (when sent multiple times),
+    /// and we also want to update the existing score with the BLScoreId when it arrives.
+    /// </remarks>
+    /// <returns></returns>
+    private static async Task<Maybe<AbstractScore>> UpdateScoreIfChangedAsync(
+        BeatLeaderScore score, ServerDbContext dbContext)
+    {
+        var oldScore = await SameBeatLeaderScoreIgnoringBLScoreIdExistsAsync(score, dbContext);
+        if (oldScore is null)
             return None;
 
-        ssScore.Id = oldSsScore.Id;
-        dbContext.ScoreSaberScores.Update(ssScore);
+        /* It was already there, but the incoming score has no scoreId, there is no need to update the score.
+         * It might just be a full score recalculation/refresh (no need to update). */
+        if (score.BeatLeaderScoreId is null)
+            return oldScore;
+
+        score.Id = oldScore.Id;
+        dbContext.BeatLeaderScores.Update(score);
         await dbContext.SaveChangesAsync();
 
-        return ssScore;
+        return score;
+    }
+
+    private static async Task<Maybe<AbstractScore>> UpdateScoreIfChangedAsync(
+        ScoreSaberScore score, ServerDbContext dbContext)
+    {
+        var oldScore = await SameScoreSaberScoreExistsAsync(score, dbContext);
+        if (oldScore is null)
+            return None;
+
+        score.Id = oldScore.Id;
+        dbContext.ScoreSaberScores.Update(score);
+        await dbContext.SaveChangesAsync();
+
+        return score;
     }
 
     /// <summary>
-    /// Check if there is the same BeatLeader score (without an ID) already existing in the database.
+    /// Check if there is the same BeatLeader score already existing, ignoring the BeatLeaderScoreId.
     /// </summary>
-    private static Task<BeatLeaderScore?> SameBeatLeaderScoreWithoutIdExistsAsync(
+    private static Task<BeatLeaderScore?> SameBeatLeaderScoreIgnoringBLScoreIdExistsAsync(
         BeatLeaderScore score, ServerDbContext dbContext)
         => dbContext.BeatLeaderScores.FirstOrDefaultAsync(x =>
             x.PlayerId == score.PlayerId
