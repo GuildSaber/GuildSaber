@@ -19,7 +19,7 @@ public partial class UserModuleSlash
         [Summary("Context")] [Autocomplete(typeof(ContextAutocompleteHandler))] int contextId,
         [Summary("Category")] [Autocomplete(typeof(CategoryAutocompleteHandler))] int? categoryId = null,
         [Summary("Level", "The level number (order) to get the playlist for")] uint? levelOrder = null,
-        [Summary("VisibleToOther")] EDisplayChoice displayChoice = EDisplayChoice.Visible)
+        [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Visible)
     {
         await DeferAsync(ephemeral: displayChoice.ToEphemeral());
 

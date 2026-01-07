@@ -12,11 +12,23 @@ namespace GuildSaber.Api.Features.Auth.Authorization;
 public class GuildPermissionClaimTransformer(IServiceScopeFactory scopeFactory, HybridCache cache)
     : IClaimsTransformation
 {
+    private static readonly HybridCacheEntryOptions _cacheEntryOptions = new()
+    {
+        Expiration = TimeSpan.FromMinutes(2)
+    };
+
     private static readonly Func<ServerDbContext, PlayerId, IAsyncEnumerable<PlayerGuildPermissions>>
         _getMemberPermissionsByPlayerIdQuery = EF.CompileAsyncQuery((ServerDbContext dbContext, PlayerId playerId) =>
             dbContext.Members
                 .Where(m => m.PlayerId == playerId)
                 .Select(m => new PlayerGuildPermissions(m.GuildId, m.Permissions)));
+
+    private static readonly Func<ServerDbContext, PlayerId, Task<bool>> _isPlayerManagerQuery
+        = EF.CompileAsyncQuery((ServerDbContext dbContext, PlayerId playerId) =>
+            dbContext.Players
+                .Where(x => x.Id == playerId)
+                .Select(x => x.IsManager)
+                .FirstOrDefault());
 
     public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
@@ -29,6 +41,9 @@ public class GuildPermissionClaimTransformer(IServiceScopeFactory scopeFactory, 
         var playerIdClaim = claimsIdentity.FindFirst(AuthConstants.PlayerIdClaimType);
         if (playerIdClaim == null || !PlayerId.TryParse(playerIdClaim.Value, out var playerId))
             return principal;
+
+        if (await IsPlayerManagerAsync(playerId))
+            claimsIdentity.AddClaim(new Claim(ClaimTypes.Role, AuthConstants.ManagerRole));
 
         foreach (var perm in await GetMemberPermissionsByPlayerId(playerId))
             claimsIdentity.AddClaim(new Claim(
@@ -50,9 +65,15 @@ public class GuildPermissionClaimTransformer(IServiceScopeFactory scopeFactory, 
 
                 return await _getMemberPermissionsByPlayerIdQuery(dbContext, state.playerId)
                     .ToArrayAsync(token);
-            },
-            new HybridCacheEntryOptions
+            }, _cacheEntryOptions);
+
+    private ValueTask<bool> IsPlayerManagerAsync(PlayerId playerId)
+        => cache.GetOrCreateAsync($"IsPlayerManager_{playerId}", (scopeFactory, playerId),
+            async static (state, _) =>
             {
-                Expiration = TimeSpan.FromMinutes(5)
-            });
+                await using var scope = state.scopeFactory.CreateAsyncScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
+
+                return await _isPlayerManagerQuery(dbContext, state.playerId);
+            }, _cacheEntryOptions);
 }

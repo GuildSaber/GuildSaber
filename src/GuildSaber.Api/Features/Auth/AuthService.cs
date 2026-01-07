@@ -5,12 +5,12 @@ using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Mappers.BeatLeader;
 using GuildSaber.Database.Models.Server.Auth;
 using GuildSaber.Database.Models.Server.Players;
-using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MyCSharp.HttpUserAgentParser.AspNetCore;
@@ -104,7 +104,8 @@ public class AuthService(
                     {
                         Username = blPlayer.Name,
                         AvatarUrl = blPlayer.Avatar,
-                        Country = blPlayer.Country
+                        Country = blPlayer.Country,
+                        CreatedAt = timeProvider.GetUtcNow()
                     },
                     HardwareInfo = new PlayerHardwareInfo
                     {

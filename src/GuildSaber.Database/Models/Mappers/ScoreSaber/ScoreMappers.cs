@@ -1,5 +1,4 @@
 using GuildSaber.Common.Services.ScoreSaber.Models.Responses;
-using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.Server.Scores;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using GuildSaber.Database.Models.StrongTypes;
@@ -9,7 +8,7 @@ namespace GuildSaber.Database.Models.Mappers.ScoreSaber;
 public static class ScoreMappers
 {
     public static ScoreSaberScore Map(
-        this Score score, Player.PlayerId playerId,
+        this Score score, PlayerId playerId,
         SongDifficulty.SongDifficultyId songDifficultyId) => new()
     {
         PlayerId = playerId,

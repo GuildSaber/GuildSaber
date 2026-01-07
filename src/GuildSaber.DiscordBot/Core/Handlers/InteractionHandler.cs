@@ -3,6 +3,8 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using GuildSaber.DiscordBot.Core.TypeConverters;
+using GuildSaber.DiscordBot.Settings;
+using Microsoft.Extensions.Options;
 
 namespace GuildSaber.DiscordBot.Core.Handlers;
 
@@ -17,12 +19,18 @@ public class InteractionHandler(
     DiscordSocketClient client,
     InteractionService commands,
     IServiceProvider services,
-    ILogger<InteractionHandler> logger)
+    ILogger<InteractionHandler> logger,
+    IOptions<LinkSettings> websiteSettings)
 {
+    private const string WebsiteIdentifier = "Website";
+
     public class GuildMissingException() : Exception("This discord server hasn't been registered in guild yet.");
 
     public class PlayerNotFoundException() : Exception(
-        "Player with the specified discord ID was not found in the guild, did they link their discord account?");
+        "The specified player was not found in the guild, did they join the guild context or even link their discord account?");
+
+    public class CurrentPlayerNotRegisteredException() : Exception(
+        $"Your discord account isn't linked on GuildSaber, please login and link it first on the {WebsiteIdentifier}.");
 
     public async Task InitializeAsync()
     {
@@ -55,6 +63,14 @@ public class InteractionHandler(
                 Title = "Player Not Found",
                 Description = innerException.Message,
                 Color = Color.Orange
+            },
+            CurrentPlayerNotRegisteredException ex => new EmbedBuilder
+            {
+                Title = "Whoops! (You are not registered)",
+                Description = ex.Message.Replace(
+                    WebsiteIdentifier,
+                    $"[Website]({websiteSettings.Value.WebsiteBaseUri})"),
+                Color = Color.DarkOrange
             },
             GuildMissingException _ when interactionContext.Guild is null => new EmbedBuilder
             {

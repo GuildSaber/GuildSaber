@@ -7,7 +7,7 @@ namespace GuildSaber.Database.Models.Server.Guilds.Members;
 public class Member
 {
     public GuildId GuildId { get; init; }
-    public Player.PlayerId PlayerId { get; init; }
+    public PlayerId PlayerId { get; init; }
 
     public required DateTimeOffset CreatedAt { get; init; }
     public required DateTimeOffset EditedAt { get; set; }

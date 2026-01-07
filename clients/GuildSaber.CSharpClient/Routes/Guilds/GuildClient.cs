@@ -66,7 +66,8 @@ public sealed class GuildClient(
     /// <param name="discordGuildId">The Discord guild ID to search for.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing the guild if found, or null if not found.</returns>
-    public async Task<Result<Guild?>> GetByDiscordIdAsync(ulong discordGuildId, CancellationToken token = default)
+    public async Task<Result<Guild?>> GetByDiscordIdAsync(DiscordGuildId discordGuildId,
+                                                          CancellationToken token = default)
         => await httpClient.GetAsync($"guilds/by-discord-id/{discordGuildId}", token).ConfigureAwait(false) switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<Guild?>(null),
@@ -75,6 +76,24 @@ public sealed class GuildClient(
                     $"Failed to retrieve guild with Discord ID {discordGuildId}, status code: {(int)statusCode} ({reasonPhrase})"),
             var response => await Try(() => response.Content
                 .ReadFromJsonAsync<Guild>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+        };
+
+    /// <summary>
+    /// Looks up a guild's ID by its Discord guild ID.
+    /// </summary>
+    /// <param name="discordGuildId">The Discord guild ID to look up.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the guild ID if found, or null if not found.</returns>
+    public async Task<Result<GuildId?>> LookupGuildIdByDiscordGuildIdAsync(
+        DiscordGuildId discordGuildId, CancellationToken token = default)
+        => await httpClient.GetAsync($"guilds/lookup/discord/{discordGuildId}", token).ConfigureAwait(false) switch
+        {
+            { StatusCode: HttpStatusCode.NotFound } => Success<GuildId?>(null),
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<GuildId?>(
+                    $"Failed to lookup guild by Discord ID {discordGuildId}, status code: {(int)statusCode} ({reasonPhrase})"),
+            var response => await Try(() => response.Content
+                .ReadFromJsonAsync<GuildId?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
         };
 
     /// <summary>
@@ -168,7 +187,11 @@ public sealed class GuildClient(
         return response switch
         {
             { StatusCode: HttpStatusCode.NotFound }
-                => Failure<Guild>($"Guild with ID {guildId} not found"),
+                => Failure<Guild>($"Guild with ID {guildId} not found."),
+            { StatusCode: HttpStatusCode.Unauthorized }
+                => Failure<Guild>(
+                    $"You are not authorized to modify the Discord guild ID for guild {guildId}. " +
+                    "This action requires either manager privileges or the GuildLeader role in this guild."),
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<Guild>(
                     $"Failed to update guild {guildId}, status code: {(int)statusCode} ({reasonPhrase})"),

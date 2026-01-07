@@ -5,7 +5,7 @@ namespace GuildSaber.Api.Features.Players;
 public static class PlayerResponses
 {
     public readonly record struct Player(
-        int Id,
+        PlayerId Id,
         PlayerHardwareInfo PlayerHardwareInfo,
         PlayerInfo PlayerInfo,
         PlayerLinkedAccounts PlayerLinkedAccounts,

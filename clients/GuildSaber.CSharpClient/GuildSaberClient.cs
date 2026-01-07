@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient.Auth;
 using GuildSaber.CSharpClient.Routes.Guilds;
 using GuildSaber.CSharpClient.Routes.Guilds.Categories;
@@ -34,6 +35,9 @@ public class GuildSaberClient : IDisposable
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         Converters =
         {
+            new GuildIdJsonConverter(),
+            new ContextIdJsonConverter(),
+            new PlayerIdJsonConverter(),
             new JsonStringEnumConverter(JsonNamingPolicy.CamelCase),
             new SongHashJsonConverter(),
             new BeatSaverKeyJsonConverter(),

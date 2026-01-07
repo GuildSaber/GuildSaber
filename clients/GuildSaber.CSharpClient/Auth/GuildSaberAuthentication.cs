@@ -5,7 +5,7 @@ namespace GuildSaber.CSharpClient.Auth;
 
 public abstract record GuildSaberAuthentication
 {
-    public sealed record CustomBasicApiKeyAuthentication(string Key, string DiscordId) : GuildSaberAuthentication;
+    public sealed record CustomBasicApiKeyAuthentication(string Key, DiscordId? DiscordId) : GuildSaberAuthentication;
     public sealed record BearerAuthentication(string Token) : GuildSaberAuthentication;
 }
 

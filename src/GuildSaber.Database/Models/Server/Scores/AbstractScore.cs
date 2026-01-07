@@ -5,7 +5,6 @@ using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SongDifficultyId = GuildSaber.Database.Models.Server.Songs.SongDifficulties.SongDifficulty.SongDifficultyId;
-using PlayerId = GuildSaber.Database.Models.Server.Players.Player.PlayerId;
 
 namespace GuildSaber.Database.Models.Server.Scores;
 

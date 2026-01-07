@@ -17,12 +17,15 @@ public partial class UserModuleSlash
     public async Task Progress(
         [Summary("Context")] [Autocomplete(typeof(ContextAutocompleteHandler))] int contextId,
         [Summary("Category")] [Autocomplete(typeof(CategoryAutocompleteHandler))] int? categoryId = null,
-        [Summary("VisibleToOther")] EDisplayChoice displayChoice = EDisplayChoice.Visible)
+        [Summary("User", "The user to show progress for (you if empty)")] IUser? user = null,
+        [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Visible)
     {
         await DeferAsync(ephemeral: displayChoice.ToEphemeral());
 
         var guildTask = GetGuildAsync().AsTask();
-        var playerTask = Client.Value.Players.GetAtMeAsync();
+        var playerTask = user is null
+            ? GetPlayerAtMeAsync().AsTask()
+            : GetPlayerAsync(user.DiscordId).AsTask();
         var statsTask = Client.Value.LevelStats.GetAtMeAsync(contextId);
         var categoryNameTask = categoryId is not null
             ? Cache.GetCategoryByIdAsync(categoryId.Value, Client.Value).AsTask()
@@ -32,7 +35,7 @@ public partial class UserModuleSlash
 
         var progressData = new ProgressCommand.ProgressData(
             Guild: guildTask.Result,
-            Player: playerTask.Result.Unwrap().ValueOrPlayerNotFoundException(),
+            Player: playerTask.Result,
             Stats: statsTask.Result.Unwrap(),
             CategoryId: categoryId,
             CategoryName: categoryId is not null ? categoryNameTask.Result!.Value.Info.Name : "map"

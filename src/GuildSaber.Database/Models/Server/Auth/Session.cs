@@ -15,7 +15,7 @@ namespace GuildSaber.Database.Models.Server.Auth;
 public class Session
 {
     public required UuidV7 SessionId { get; init; }
-    public required Player.PlayerId PlayerId { get; init; }
+    public required PlayerId PlayerId { get; init; }
     public required DateTimeOffset IssuedAt { get; init; }
     public required DateTimeOffset ExpiresAt { get; init; }
     public required string Browser { get; init; }

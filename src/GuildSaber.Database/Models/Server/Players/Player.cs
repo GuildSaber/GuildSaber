@@ -15,27 +15,6 @@ public class Player
     public bool IsManager { get; set; }
 
     public IList<Member> Members { get; init; } = null!;
-
-    public readonly record struct PlayerId(int Value) : IEFStrongTypedId<PlayerId, int>
-    {
-        public static bool TryParse(string from, out PlayerId value)
-        {
-            if (int.TryParse(from, out var id))
-            {
-                value = new PlayerId(id);
-                return true;
-            }
-
-            value = default;
-            return false;
-        }
-
-        public static implicit operator int(PlayerId id)
-            => id.Value;
-
-        public override string ToString()
-            => Value.ToString();
-    }
 }
 
 public class PlayerConfiguration : IEntityTypeConfiguration<Player>
@@ -43,7 +22,7 @@ public class PlayerConfiguration : IEntityTypeConfiguration<Player>
     public void Configure(EntityTypeBuilder<Player> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Id).HasGenericConversion<Player.PlayerId, int>()
+        builder.Property(x => x.Id).HasConversion(from => from.Value, to => new PlayerId(to))
             .ValueGeneratedOnAdd();
         builder.ComplexProperty(x => x.Info);
         builder.ComplexProperty(x => x.HardwareInfo);

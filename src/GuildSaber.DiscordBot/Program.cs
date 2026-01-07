@@ -16,6 +16,9 @@ builder.Services
 builder.Services
     .AddOptionsWithValidateOnStart<EmojiSettings>()
     .Bind(builder.Configuration.GetSection(EmojiSettings.EmojiSettingsSectionKey)).ValidateDataAnnotations();
+builder.Services
+    .AddOptionsWithValidateOnStart<LinkSettings>()
+    .Bind(builder.Configuration.GetSection(LinkSettings.LinkSettingsSectionsKey)).ValidateDataAnnotations();
 
 builder.AddNpgsqlDbContext<DiscordBotDbContext>(connectionName: Constants.DiscordBotDbConnectionStringKey,
     configureDbContextOptions: options => options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));

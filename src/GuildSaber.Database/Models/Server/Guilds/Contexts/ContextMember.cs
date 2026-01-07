@@ -1,5 +1,4 @@
 using GuildSaber.Database.Models.Server.Guilds.Members;
-using GuildSaber.Database.Models.Server.Players;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,7 +11,7 @@ public class ContextMember
 {
     public GuildId GuildId { get; init; }
     public ContextId ContextId { get; init; }
-    public Player.PlayerId PlayerId { get; init; }
+    public PlayerId PlayerId { get; init; }
 
     public IList<MemberPointStat> PointStats { get; init; } = null!;
     public IList<MemberLevelStat> LevelStats { get; init; } = null!;

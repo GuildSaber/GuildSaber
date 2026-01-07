@@ -1,6 +1,5 @@
 using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds.Points;
-using GuildSaber.Database.Models.Server.Players;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -11,7 +10,7 @@ public class MemberPointStat
     public int Id { get; init; }
     public GuildId GuildId { get; init; }
     public ContextId ContextId { get; init; }
-    public Player.PlayerId PlayerId { get; init; }
+    public PlayerId PlayerId { get; init; }
     public Point.PointId PointId { get; init; }
     public Category.CategoryId? CategoryId { get; init; }
 

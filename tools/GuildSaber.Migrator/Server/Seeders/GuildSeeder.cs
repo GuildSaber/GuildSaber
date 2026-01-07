@@ -27,7 +27,7 @@ public static class GuildSeeder
                 RequireSubmission = false
             },
             Status = Guild.EGuildStatus.Featured,
-            DiscordInfo = new GuildDiscordInfo(null)
+            DiscordInfo = new GuildDiscordInfo(null, null)
         },
         new()
         {
@@ -50,7 +50,7 @@ public static class GuildSeeder
                 MaxPP = 10000,
                 AccountAgeUnix = TimeSpan.FromDays(365 * 6).Seconds
             },
-            DiscordInfo = new GuildDiscordInfo(null)
+            DiscordInfo = new GuildDiscordInfo(null, null)
         }
     ];
 

@@ -1,5 +1,4 @@
 using GuildSaber.Database.Models.Server.Guilds.Levels;
-using GuildSaber.Database.Models.Server.Players;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -10,7 +9,7 @@ public class MemberLevelStat
     public int Id { get; init; }
     public GuildId GuildId { get; init; }
     public ContextId ContextId { get; init; }
-    public Player.PlayerId PlayerId { get; init; }
+    public PlayerId PlayerId { get; init; }
     public Level.LevelId LevelId { get; init; }
 
     public bool IsCompleted { get; set; }

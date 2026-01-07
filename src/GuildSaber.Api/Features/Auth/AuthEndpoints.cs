@@ -9,7 +9,7 @@ using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Transformers;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
-using GuildSaber.Database.Models.StrongTypes;
+using GuildSaber.Common.StrongTypes;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

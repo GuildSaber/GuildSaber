@@ -92,8 +92,12 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
                 (dbContext, playerId, timeProvider))
             .Match(guild => new CreateResponse.Success(guild), err => err);
 
-    public static Result<(GuildInfo, GuildRequirements), List<KeyValuePair<string, string[]>>>
-        ValidateGuildInfoAndRequirements(GuildResponses.GuildInfo info, GuildResponses.GuildRequirements requirements)
+    public static Result<(GuildInfo, GuildRequirements, string? DiscordInviteCode),
+            List<KeyValuePair<string, string[]>>>
+        ValidateGuildCreationRequest(
+            GuildResponses.GuildInfo info,
+            GuildResponses.GuildRequirements requirements,
+            string? discordInviteCode)
     {
         var nameResult = Name_5_50.TryCreate(info.Name);
         var descriptionResult = Description.TryCreate(info.Description);
@@ -111,8 +115,14 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
             validationErrors.Add(new KeyValuePair<string, string[]>(
                 nameof(GuildResponses.GuildInfo.Description), [descriptionError]));
 
+        if (discordInviteCode is { Length: > 32 })
+            validationErrors.Add(new KeyValuePair<string, string[]>(
+                nameof(GuildResponses.GuildDiscordInfo.InviteCode),
+                ["Discord invite code must be 32 characters or less."]));
+
         if (validationErrors.Count > 0)
-            return Failure<(GuildInfo, GuildRequirements), List<KeyValuePair<string, string[]>>>(validationErrors);
+            return Failure<(GuildInfo, GuildRequirements, string?), List<KeyValuePair<string, string[]>>>(
+                validationErrors);
 
         return (new GuildInfo
         {
@@ -121,16 +131,18 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
             Description = descriptionResult.Value,
             Color = Color.FromArgb(info.Color),
             CreatedAt = DateTimeOffset.UtcNow
-        }, requirements.Map());
+        }, requirements.Map(), discordInviteCode);
     }
 
     /// <summary>
     /// Validates the guild creation request and constructs a new Guild object
     /// </summary>
     private static Result<Guild, List<KeyValuePair<string, string[]>>> MakeGuildAndValidate(
-        GuildResponses.GuildInfo info, GuildResponses.GuildRequirements requirements)
+        GuildResponses.GuildInfo info,
+        GuildResponses.GuildRequirements requirements,
+        string? discordInviteCode = null)
     {
-        var validationResult = ValidateGuildInfoAndRequirements(info, requirements);
+        var validationResult = ValidateGuildCreationRequest(info, requirements, discordInviteCode);
         if (!validationResult.TryGetValue(out var tuple, out var errors))
             return Failure<Guild, List<KeyValuePair<string, string[]>>>(errors);
 
@@ -139,7 +151,8 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
             Info = tuple.Item1,
             Requirements = tuple.Item2,
             Status = Guild.EGuildStatus.Unverified,
-            DiscordInfo = new GuildDiscordInfo(null)
+            // Discord Guild should only be set after by a patch request (by the guild leader or a manager)
+            DiscordInfo = new GuildDiscordInfo(null, tuple.DiscordInviteCode)
         });
     }
 

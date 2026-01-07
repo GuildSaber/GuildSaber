@@ -23,10 +23,10 @@ public partial class UserModuleSlash
         [Autocomplete<ContextAutocompleteHandler>] int contextId,
         [Summary("search", "The search term to find ranked maps")] string search,
         [Summary("page", "Page number for pagination")] int page = 1,
-        [Summary("VisibleToOther")] EDisplayChoice displayChoice = EDisplayChoice.Invisible
+        [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Secret
     ) => await RespondAsync(ephemeral: displayChoice.ToEphemeral(), components: (await SearchCommand
-            .GetRankedMapsComponentAsync(await GetGuildIdAsync(), contextId, search, page, Client.Value, Cache,
-                EmojiSettings))
+            .GetRankedMapsComponentAsync(
+                await GetGuildIdAsync(), contextId, search, page, Client.Value, Cache, EmojiSettings))
         .Build());
 
     [ComponentInteraction("search_prev_*_*_*")]
@@ -69,9 +69,7 @@ file static class SearchCommand
         var rankedMapsTask = client.RankedMaps.GetAsync(contextId, search, pageOption);
 
         await Task.WhenAll(categoriesTask, rankedMapsTask);
-
-        var categories = categoriesTask.Result;
-        var rankedMaps = rankedMapsTask.Result;
+        var (categories, rankedMaps) = (categoriesTask.Result, rankedMapsTask.Result);
 
         return !rankedMaps.TryGetValue(out var pagedRankedMaps, out var error)
             ? new ComponentBuilderV2().WithTextDisplay($"Error fetching ranked maps: {error}")
@@ -99,8 +97,8 @@ file static class SearchCommand
             builder.WithContainer(BuildRankedMapDisplayContainer(rankedMap, categories, emojiSettings));
 
         if (pagedRankedMaps.TotalCount == pagedRankedMaps.Data.Length)
-            return builder.WithTextDisplay(
-                $"Found **{pagedRankedMaps.TotalCount}** ranked maps for the search term: '{search}'.");
+            return builder.WithTextDisplay($"Found **{pagedRankedMaps.TotalCount}** ranked maps" +
+                                           $" for the search term: '{search}'.");
 
         builder.WithTextDisplay($"(Page: **{pagedRankedMaps.Page}**/{pagedRankedMaps.TotalPages}) " +
                                 $"Found **{pagedRankedMaps.TotalCount}** ranked maps for the search term: '{search}'.");

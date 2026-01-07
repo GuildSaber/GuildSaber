@@ -2,8 +2,8 @@
 using Discord.Interactions;
 using GuildSaber.Api.Features.Guilds.Members;
 using GuildSaber.CSharpClient;
-using GuildSaber.CSharpClient.Auth;
 using GuildSaber.Database.Contexts.DiscordBot;
+using GuildSaber.DiscordBot.Core.Extensions;
 using GuildSaber.DiscordBot.Core.Handlers;
 using GuildSaber.DiscordBot.Settings;
 using Microsoft.Extensions.Caching.Hybrid;
@@ -19,22 +19,19 @@ namespace GuildSaber.DiscordBot.Commands.Manager;
 /// Change <see cref="CommandContextTypeAttribute" /> and <see cref="PermissionHandler.RequirePermissionAttributeSlash" />
 /// to reflect the context and permissions required for the commands to be executed in this module.
 /// </remarks>
-[CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel, InteractionContextType.BotDm)]
+[CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
 [PermissionHandler.RequirePermissionAttributeSlash(MemberResponses.EPermission.None, requireManager: true)]
-public partial class ManagerModuleSlash : InteractionModuleBase<SocketInteractionContext>
+public class ManagerModuleSlash : InteractionModuleBase<SocketInteractionContext>
 {
     public ManagerModuleSlash(
         IHttpClientFactory httpClientFactory,
         DiscordBotDbContext dbContext,
         IOptions<AuthSettings> authSettings,
+        IServiceProvider services,
         HybridCache cache)
     {
-        Client = new Lazy<GuildSaberClient>(() => new GuildSaberClient(
-            httpClientFactory.CreateClient("GuildSaber"),
-            new GuildSaberAuthentication.CustomBasicApiKeyAuthentication(
-                Key: authSettings.Value.ApiKey,
-                DiscordId: Context?.User?.Id.ToString() ?? string.Empty
-            )));
+        Client = new Lazy<GuildSaberClient>(() => GuildSaberClient
+            .GetAuthenticatedClient(Context?.User?.DiscordId, services));
         DbContext = dbContext;
         Cache = cache;
     }

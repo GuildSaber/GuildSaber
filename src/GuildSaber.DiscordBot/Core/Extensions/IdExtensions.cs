@@ -1,5 +1,5 @@
 using Discord;
-using GuildSaber.Database.Models.StrongTypes;
+using GuildSaber.Common.StrongTypes;
 
 namespace GuildSaber.DiscordBot.Core.Extensions;
 

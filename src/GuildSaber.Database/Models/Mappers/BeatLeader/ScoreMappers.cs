@@ -1,5 +1,4 @@
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
-using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.Server.Scores;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using GuildSaber.Database.Models.StrongTypes;
@@ -10,7 +9,7 @@ namespace GuildSaber.Database.Models.Mappers.BeatLeader;
 public static class ScoreMappers
 {
     public static BeatLeaderScore Map<T>(
-        this T uploadScore, Player.PlayerId playerId,
+        this T uploadScore, PlayerId playerId,
         SongDifficulty.SongDifficultyId songDifficultyId) where T : IUnprocessedScore => new()
     {
         PlayerId = playerId,
@@ -31,7 +30,7 @@ public static class ScoreMappers
     };
 
     public static BeatLeaderScore Map<T>(
-        this T score, Player.PlayerId playerId,
+        this T score, PlayerId playerId,
         SongDifficulty.SongDifficultyId songDifficultyId,
         ScoreStatistics? scoreStatistics) where T : IProcessedScore => new()
     {

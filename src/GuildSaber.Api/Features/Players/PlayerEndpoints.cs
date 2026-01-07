@@ -4,6 +4,7 @@ using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Internal;
 using GuildSaber.Api.Transformers;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
@@ -52,6 +53,11 @@ public class PlayerEndpoints : IEndpoints
             .WithSummary("Delete a player")
             .WithDescription("Delete a specific player by their Id.")
             .RequireManager();
+
+        group.MapGet("/lookup/discord/{discordId}", LookupPlayerIdByDiscordIdAsync)
+            .WithName("LookupPlayerByDiscordId")
+            .WithSummary("Lookup player ID by Discord ID")
+            .WithDescription("Resolve a player's ID from their linked Discord account ID.");
     }
 
     private static async Task<Results<Ok<Player>, NotFound>> GetPlayerAsync(
@@ -114,6 +120,17 @@ public class PlayerEndpoints : IEndpoints
             ? TypedResults.NoContent()
             : TypedResults.NotFound();
     }
+
+    private static async Task<Results<Ok<PlayerId>, NotFound>> LookupPlayerIdByDiscordIdAsync(
+        DiscordId discordId, ServerDbContext dbContext)
+        => await dbContext.Players
+                .Where(x => x.LinkedAccounts.DiscordId == discordId)
+                .Select(x => (PlayerId?)x.Id)
+                .FirstOrDefaultAsync() switch
+            {
+                null => TypedResults.NotFound(),
+                { } playerId => TypedResults.Ok(playerId)
+            };
 }
 
 public static class PlayerExtensions

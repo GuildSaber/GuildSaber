@@ -6,7 +6,7 @@ namespace GuildSaber.Database.Models.Server.Guilds.Boosts;
 
 public class Boost
 {
-    public Player.PlayerId PlayerId { get; init; }
+    public PlayerId PlayerId { get; init; }
     public GuildId GuildId { get; init; }
 
     public EBoostType Type { get; set; }

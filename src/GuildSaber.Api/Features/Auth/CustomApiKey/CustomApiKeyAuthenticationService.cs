@@ -3,8 +3,8 @@ using System.Security.Claims;
 using GuildSaber.Api.Features.Auth.CustomApiKey.Interfaces;
 using GuildSaber.Api.Features.Auth.CustomApiKey.ValidationTypes;
 using GuildSaber.Api.Features.Auth.Settings;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
-using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
@@ -34,7 +34,7 @@ public class CustomApiKeyAuthenticationService(
         if (!DiscordId.TryParse(credential.User).TryGetValue(out var discordId))
             return AuthenticateResult.Fail("Invalid Discord ID format.");
 
-        var player = await GetPlayerIdWithManagerFlagByDiscordIdd(discordId);
+        var player = await GetPlayerIdWithManagerFlagByDiscordId(discordId);
         if (player == default)
             return AuthenticateResult.Fail("No player associated with the provided Discord ID.");
 
@@ -43,9 +43,6 @@ public class CustomApiKeyAuthenticationService(
             BasicAuthenticationDefaults.AuthenticationScheme
         );
 
-        if (player.IsManager)
-            identity.AddClaim(new Claim(ClaimTypes.Role, AuthConstants.ManagerRole));
-
         return AuthenticateResult.Success(
             new AuthenticationTicket(new ClaimsPrincipal(identity), BasicAuthenticationDefaults.AuthenticationScheme)
         );
@@ -53,7 +50,7 @@ public class CustomApiKeyAuthenticationService(
 
     private readonly record struct PlayerIdWithManagerFlag(PlayerId PlayerId, bool IsManager);
 
-    private ValueTask<PlayerIdWithManagerFlag> GetPlayerIdWithManagerFlagByDiscordIdd(DiscordId discordId)
+    private ValueTask<PlayerIdWithManagerFlag> GetPlayerIdWithManagerFlagByDiscordId(DiscordId discordId)
         => cache.GetOrCreateAsync($"PlayerIdByDiscordId_{discordId}", (scopeFactory, discordId),
             async static (state, _) =>
             {
