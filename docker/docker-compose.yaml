@@ -137,7 +137,7 @@ services:
       DiscordBotOptions:Name: "${DISCORDBOTOPTIONS_NAME}"
       DiscordBotOptions:Status: "${DISCORDBOTOPTIONS_STATUS}"
       DiscordBotOptions:Token: "${DISCORDBOTOPTIONS_TOKEN}"
-      LinkSettings:WebsiteBaseUri: "${LINKSETTINGS_BASEURI}"
+      LinkSettings:WebsiteBaseUri: "${LINKSETTINGS_WEBSITEBASEURI}"
       LinkSettings:CdnBaseUri: "${LINKSETTINGS_CDNBASEURI}"
       EmojiSettings:WatchingYou: "${EMOJISETTINGS_WATCHINGYOU}"
       EmojiSettings:NeedConfirmation: "${EMOJISETTINGS_NEEDCONFIRMATION}"
