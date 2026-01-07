@@ -1,14 +1,12 @@
-﻿using Discord.Interactions;
+using Discord.Interactions;
 using GuildSaber.Common.Result;
 using GuildSaber.DiscordBot.Core.Extensions;
 
-namespace GuildSaber.DiscordBot.Commands.Manager;
+namespace GuildSaber.DiscordBot.Commands.Users;
 
-/// <remarks>
-/// This class is partial because the command can only be registered in a module.
-/// </remarks>
-public partial class ManagerModuleSlash
+public partial class UserModuleSlash
 {
+    /// <remarks>Yes, we don't require any player perms to run it, because it's gonna reject if the user can't</remarks>
     [SlashCommand("setguild", "Sets this discord guild as the MainDiscordGuildId of a guild")]
     public async Task SetGuild(
         [Summary("guildId", "The guildId of the guild you want this discordGuild to be set as MainDiscordGuildId")]

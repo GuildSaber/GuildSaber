@@ -31,8 +31,8 @@ public sealed class PlayerClient(
     /// <param name="playerId">The ID of the player to retrieve.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing the player if found, or null if not found.</returns>
-    public async Task<Result<Player?>> GetByIdAsync(int playerId, CancellationToken token = default)
-        => await httpClient.GetAsync($"player/{playerId}", token).ConfigureAwait(false) switch
+    public async Task<Result<Player?>> GetByIdAsync(PlayerId playerId, CancellationToken token = default)
+        => await httpClient.GetAsync($"players/{playerId}", token).ConfigureAwait(false) switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<Player?>(null),
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
@@ -40,6 +40,24 @@ public sealed class PlayerClient(
                     $"Failed to retrieve player with ID {playerId}, status code: {(int)statusCode} ({reasonPhrase})"),
             var response => await Try(() => response.Content
                 .ReadFromJsonAsync<Player?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+        };
+
+    /// <summary>
+    /// Gets extended player information by their ID.
+    /// </summary>
+    /// <param name="playerId">The ID of the player to retrieve.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the extended player info if found, or null if not found.</returns>
+    public async Task<Result<PlayerExtended?>> GetExtendedByIdAsync(PlayerId playerId,
+                                                                    CancellationToken token = default)
+        => await httpClient.GetAsync($"players/{playerId}/extended", token).ConfigureAwait(false) switch
+        {
+            { StatusCode: HttpStatusCode.NotFound } => Success<PlayerExtended?>(null),
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<PlayerExtended?>(
+                    $"Failed to retrieve player extended with ID {playerId}, status code: {(int)statusCode} ({reasonPhrase})"),
+            var response => await Try(() => response.Content
+                .ReadFromJsonAsync<PlayerExtended?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
         };
 
     /// <summary>
@@ -63,23 +81,6 @@ public sealed class PlayerClient(
             };
 
     /// <summary>
-    /// Gets extended player information by their ID.
-    /// </summary>
-    /// <param name="playerId">The ID of the player to retrieve.</param>
-    /// <param name="token">Cancellation token.</param>
-    /// <returns>A result containing the extended player info if found, or null if not found.</returns>
-    public async Task<Result<PlayerExtended?>> GetByIdExtendedAsync(int playerId, CancellationToken token = default)
-        => await httpClient.GetAsync($"player/{playerId}", token).ConfigureAwait(false) switch
-        {
-            { StatusCode: HttpStatusCode.NotFound } => Success<PlayerExtended?>(null),
-            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
-                => Failure<PlayerExtended?>(
-                    $"Failed to retrieve player extended with ID {playerId}, status code: {(int)statusCode} ({reasonPhrase})"),
-            var response => await Try(() => response.Content
-                .ReadFromJsonAsync<PlayerExtended?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
-        };
-
-    /// <summary>
     /// Gets extended information for the currently authenticated player.
     /// </summary>
     /// <param name="token">Cancellation token.</param>
@@ -97,6 +98,45 @@ public sealed class PlayerClient(
                         $"Failed to retrieve current player extended, status code: {(int)statusCode} ({reasonPhrase})"),
                 var response => await Try(() => response.Content
                     .ReadFromJsonAsync<PlayerExtended?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+            };
+
+    /// <summary>
+    /// Looks up a player's ID by their linked Discord account ID.
+    /// </summary>
+    /// <param name="discordId">The Discord ID to look up.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the player ID if found, or null if not found.</returns>
+    public async Task<Result<PlayerId?>> LookupPlayerIdByDiscordIdAsync(
+        DiscordId discordId, CancellationToken token = default)
+        => await httpClient.GetAsync($"players/lookup/discord/{discordId}", token).ConfigureAwait(false) switch
+        {
+            { StatusCode: HttpStatusCode.NotFound } => Success<PlayerId?>(null),
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<PlayerId?>(
+                    $"Failed to lookup player by Discord ID {discordId}, status code: {(int)statusCode} ({reasonPhrase})"),
+            var response => await Try(() => response.Content
+                .ReadFromJsonAsync<PlayerId?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+        };
+
+    /// <summary>
+    /// Deletes a player.
+    /// </summary>
+    /// <param name="playerId">The ID of the player to delete.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result indicating success (true) or not found (false).</returns>
+    public async Task<Result<bool>> DeleteAsync(PlayerId playerId, CancellationToken token = default)
+        => await httpClient.SendAsync(
+                new HttpRequestMessage(HttpMethod.Delete, $"players/{playerId}")
+                {
+                    Headers = { Authorization = authenticationHeader }
+                }, token).ConfigureAwait(false) switch
+            {
+                { StatusCode: HttpStatusCode.NoContent } => Success(true),
+                { StatusCode: HttpStatusCode.NotFound } => Success(false),
+                { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                    => Failure<bool>(
+                        $"Failed to delete player {playerId}: {(int)statusCode} ({reasonPhrase})"),
+                _ => Success(true)
             };
 
     /// <summary>

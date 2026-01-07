@@ -4,6 +4,7 @@ using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Internal;
 using GuildSaber.Api.Transformers;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -53,7 +54,7 @@ public class GuildEndpoints : IEndpoints
             .WithDescription("Get a specific guild with extended information by its Id."
                              + " Which includes additional fields like categories and points.");
 
-        group.MapGet("/by-discord-id/{discordGuildId:long}", GetGuildByDiscordIdAsync)
+        group.MapGet("/by-discord-id/{discordGuildId}", GetGuildByDiscordIdAsync)
             .WithName("GetGuildByDiscordId")
             .WithSummary("Get a guild by Discord guild ID")
             .WithDescription("Get a specific guild by its Discord guild ID.");
@@ -69,6 +70,11 @@ public class GuildEndpoints : IEndpoints
             .WithSummary("Delete a guild")
             .WithDescription("Delete a guild by its Id.")
             .RequireManager();
+
+        group.MapGet("/lookup/discord/{discordGuildId}", LookupGuildIdByDiscordGuildIdAsync)
+            .WithName("LookupGuildByDiscordGuildId")
+            .WithSummary("Lookup guild ID by Discord guild ID")
+            .WithDescription("Resolve a guild's ID from its linked Discord guild ID.");
     }
 
     private static async Task<Results<NoContent, NotFound>> DeleteGuildAsync(GuildId guildId, ServerDbContext dbContext)
@@ -163,8 +169,7 @@ public class GuildEndpoints : IEndpoints
             };
 
     private static async Task<Results<Ok<Guild>, NotFound>> GetGuildByDiscordIdAsync(
-        ulong discordGuildId,
-        ServerDbContext dbContext)
+        DiscordGuildId discordGuildId, ServerDbContext dbContext)
         => await dbContext.Guilds
                 .Where(x => x.DiscordInfo.MainDiscordGuildId == discordGuildId)
                 .Select(GuildMappers.MapGuildExpression)
@@ -173,6 +178,17 @@ public class GuildEndpoints : IEndpoints
             {
                 null => TypedResults.NotFound(),
                 var guild => TypedResults.Ok(guild)
+            };
+
+    private static async Task<Results<Ok<GuildId>, NotFound>> LookupGuildIdByDiscordGuildIdAsync(
+        DiscordGuildId discordGuildId, ServerDbContext dbContext)
+        => await dbContext.Guilds
+                .Where(x => x.DiscordInfo.MainDiscordGuildId == discordGuildId)
+                .Select(x => (GuildId?)x.Id)
+                .FirstOrDefaultAsync() switch
+            {
+                null => TypedResults.NotFound(),
+                { } guildId => TypedResults.Ok(guildId)
             };
 
 
@@ -211,7 +227,10 @@ public class GuildEndpoints : IEndpoints
             return TypedResults.BadRequest(
                 $"GuildId in the patch body: {patchedRequest.Id} isn't the same as the route GuildId: {guildId}");
 
-        if (!GuildService.ValidateGuildInfoAndRequirements(patchedRequest.Info, patchedRequest.Requirements)
+        if (!GuildService.ValidateGuildCreationRequest(
+                    patchedRequest.Info,
+                    patchedRequest.Requirements,
+                    patchedRequest.DiscordInfo.InviteCode)
                 .TryGetValue(out var tuple, out var errors))
             return TypedResults.ValidationProblem(detail: "Failed to create guild due to validation errors.",
                 errors: errors);
@@ -235,7 +254,7 @@ public class GuildEndpoints : IEndpoints
                         $"Only managers can reassign Discord Guild IDs."
                     );
 
-                otherGuild.DiscordInfo = new GuildDiscordInfo(null);
+                otherGuild.DiscordInfo = new GuildDiscordInfo(null, null);
                 await dbContext.UpdateAndSaveAsync(otherGuild);
             }
         }

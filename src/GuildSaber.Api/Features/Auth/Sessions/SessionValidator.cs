@@ -21,13 +21,6 @@ public class SessionValidator(IServiceScopeFactory scopeFactory, HybridCache cac
                 .Select(s => new SessionLightDto(s.SessionId, s.PlayerId, s.IsValid))
                 .FirstOrDefault());
 
-    private static readonly Func<ServerDbContext, PlayerId, Task<bool>> _isPlayerManagerQuery
-        = EF.CompileAsyncQuery((ServerDbContext dbContext, PlayerId playerId) =>
-            dbContext.Players
-                .Where(x => x.Id == playerId)
-                .Select(x => x.IsManager)
-                .FirstOrDefault());
-
     private readonly record struct SessionLightDto(UuidV7 SessionId, PlayerId PlayerId, bool IsValid);
 
     private ValueTask<SessionLightDto> GetSessionByIdAsync(UuidV7 sessionId)
@@ -40,16 +33,6 @@ public class SessionValidator(IServiceScopeFactory scopeFactory, HybridCache cac
                 return await _getSessionByIdQuery(dbContext, state.sessionId);
             }, _cacheEntryOptions);
 
-    private ValueTask<bool> IsPlayerManagerAsync(PlayerId playerId)
-        => cache.GetOrCreateAsync($"IsPlayerManager_{playerId}", (scopeFactory, playerId),
-            async static (state, _) =>
-            {
-                await using var scope = state.scopeFactory.CreateAsyncScope();
-                var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
-
-                return await _isPlayerManagerQuery(dbContext, state.playerId);
-            }, _cacheEntryOptions);
-
     /// <summary>
     /// Validates session existence and validity in database.
     /// If valid, enriches the principal with a claim containing the PlayerId.
@@ -60,7 +43,7 @@ public class SessionValidator(IServiceScopeFactory scopeFactory, HybridCache cac
     /// It doesn't check for the session time because the jwt should have been checked by its authentication handler.
     /// </remarks>
     /// <returns>True if session is valid, otherwise False</returns>
-    public async Task<UnitResult<string>> ValidateSessionAsync(UuidV7 sessionId, ClaimsPrincipal? principal)
+    public async Task<UnitResult<string>> ValidateAndApplySessionAsync(UuidV7 sessionId, ClaimsPrincipal? principal)
     {
         if (principal?.Identity is not ClaimsIdentity identity)
             return Failure("Expected SessionPrincipal.Identity to be ClaimsIdentity");
@@ -72,9 +55,6 @@ public class SessionValidator(IServiceScopeFactory scopeFactory, HybridCache cac
 
         if (!session.IsValid)
             return Failure("Session is not valid");
-
-        if (await IsPlayerManagerAsync(session.PlayerId))
-            identity.AddClaim(new Claim(ClaimTypes.Role, AuthConstants.ManagerRole));
 
         identity.AddClaim(new Claim(AuthConstants.PlayerIdClaimType, session.PlayerId.ToString()));
         return Success();

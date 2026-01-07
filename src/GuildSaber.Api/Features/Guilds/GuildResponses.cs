@@ -22,7 +22,8 @@ public static class GuildResponses
     );
 
     public record GuildDiscordInfo(
-        string? MainDiscordGuildId
+        DiscordGuildId? MainDiscordGuildId,
+        string? InviteCode
     );
 
     public record Guild(

@@ -2,8 +2,8 @@ using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Guilds.Categories;
 using GuildSaber.Api.Features.Guilds.Members;
 using GuildSaber.Common.Result;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
-using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.Extensions.Caching.Hybrid;
 
 namespace GuildSaber.DiscordBot.Core.Extensions;
@@ -24,9 +24,9 @@ public static class HybridCacheExtensions
 
         public ValueTask<GuildId?> FindGuildIdFromDiscordGuildIdAsync(DiscordGuildId id, GuildSaberClient client)
             => self.GetOrCreateAsync($"GuildId_{id}", (id, client),
-                async static (state, token) => (await state.client.Guilds
-                    .GetByDiscordIdAsync(state.id, token)
-                    .Unwrap())?.Id,
+                async static (state, token) => await state.client.Guilds
+                    .LookupGuildIdByDiscordGuildIdAsync(state.id, token)
+                    .Unwrap(),
                 new HybridCacheEntryOptions
                 {
                     Expiration = TimeSpan.FromHours(5)
@@ -34,21 +34,9 @@ public static class HybridCacheExtensions
 
         public ValueTask<DiscordGuildId?> FindDiscordGuildIdFromGuildId(GuildId id, GuildSaberClient client)
             => self.GetOrCreateAsync($"DiscordGuildId_{id}", (id, client),
-                async static (state, token) =>
-                {
-                    var guildResult = await state.client.Guilds.GetByIdAsync(state.id, token)
-                        .Unwrap();
-
-                    if (guildResult?.DiscordInfo.MainDiscordGuildId is null)
-                        return null;
-
-                    if (!DiscordGuildId.TryParse(guildResult.DiscordInfo.MainDiscordGuildId)
-                            .TryGetValue(out var discordGuildId, out var error))
-                        throw new InvalidOperationException(
-                            $"Guild {state.id} has an invalid Discord Guild ID: {guildResult.DiscordInfo.MainDiscordGuildId} (Error: {error})");
-
-                    return discordGuildId as DiscordGuildId?;
-                },
+                async static (state, token) => (await state.client.Guilds
+                        .GetByIdAsync(state.id, token))
+                    .Unwrap()?.DiscordInfo.MainDiscordGuildId,
                 new HybridCacheEntryOptions
                 {
                     Expiration = TimeSpan.FromHours(5)
@@ -106,16 +94,13 @@ public static class HybridCacheExtensions
                 async static (state, token) =>
                 {
                     var client = GuildSaberClient.GetAuthenticatedClient(state.id, state.services);
-                    var response = await client.Players.GetExtendedAtMeAsync(token)
+                    var playerExtended = await client.Players.GetExtendedAtMeAsync(token)
                         .Unwrap();
 
-                    if (response is not { Player.IsManager: var isManager, Members: var members })
-                        return new DiscordPlayerPermissionGroup
-                        (
-                            DiscordGuildPermissions: new Dictionary<DiscordGuildId, MemberResponses.EPermission>(),
-                            IsManager: false
-                        );
+                    if (playerExtended is null)
+                        return new DiscordPlayerPermissionGroup(DiscordGuildPermissions: [], IsManager: false);
 
+                    var (members, isManager) = (playerExtended.Value.Members, playerExtended.Value.Player.IsManager);
                     var permissionsByGuild = new Dictionary<DiscordGuildId, MemberResponses.EPermission>();
                     foreach (var member in members)
                     {

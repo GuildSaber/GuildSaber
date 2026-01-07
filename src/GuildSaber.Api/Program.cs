@@ -24,6 +24,7 @@ using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.OldGuildSaber;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.StrongTypes;
@@ -169,7 +170,7 @@ builder.Services.AddAuthentication(options => options.DefaultScheme = JwtBearerD
                 }
 
                 // Validate session from the database + enrich principal with PlayerId claim.
-                var sessionResult = await sessionValidator.ValidateSessionAsync(sessionUuId, context.Principal);
+                var sessionResult = await sessionValidator.ValidateAndApplySessionAsync(sessionUuId, context.Principal);
                 if (sessionResult.TryGetError(out var error))
                     context.Fail(error);
             }
@@ -260,6 +261,11 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 OpenApiTypeTransformer.MapType<GuildId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
 OpenApiTypeTransformer.MapType<ContextId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
+OpenApiTypeTransformer.MapType<PlayerId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
+OpenApiTypeTransformer.MapType<DiscordId>(new OpenApiSchema
+    { Type = JsonSchemaType.String, Example = "123456789012345678" });
+OpenApiTypeTransformer.MapType<DiscordGuildId>(new OpenApiSchema
+    { Type = JsonSchemaType.String, Example = "987654321098765432" });
 OpenApiTypeTransformer.MapType<BeatSaverKey>(new OpenApiSchema { Type = JsonSchemaType.String, Example = "a3c3" });
 OpenApiTypeTransformer.MapType<SongHash>(new OpenApiSchema
     { Type = JsonSchemaType.String, Example = "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890" });

@@ -22,33 +22,22 @@ public partial class UserModuleSlash
     [SlashCommand("me", "Get information about your account")]
     public async Task Me(
         [Autocomplete<ContextAutocompleteHandler>] int contextId,
-        [Summary("VisibleToOther")] EDisplayChoice displayChoice = EDisplayChoice.Visible)
+        [Summary("User", "The user to get the player card for (you if empty)")] IUser? user = null,
+        [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Visible)
     {
         await DeferAsync(ephemeral: displayChoice.ToEphemeral());
 
         var guildIdTask = GetGuildIdAsync().AsTask();
-        var playerTask = Client.Value.Players.GetExtendedAtMeAsync();
+        var playerTask = user is null
+            ? GetPlayerExtendedAtMeAsync().AsTask()
+            : GetPlayerExtendedAsync(user.DiscordId).AsTask();
 
         await Task.WhenAll(guildIdTask, playerTask);
 
-        var guildId = guildIdTask.Result;
-        var atMe = playerTask.Result.Unwrap();
-
-        if (atMe is not { Player: var player })
-        {
-            await FollowupAsync(embed: new EmbedBuilder
-            {
-                Title = "Whoops!",
-                Color = Discord.Color.DarkOrange,
-                Description = "Your discord account doesn't seem to be linked to any GuildSaber account." +
-                              "\nPlease visit GuildSaber and link your account to use this command."
-            }.Build());
-
-            return;
-        }
-
-        var stream = await MeCommand.GeneratePlayerCardAsync(guildId, contextId, Client.Value, player);
-        await FollowupWithFileAsync(stream, "PlayerCard.png", "[Profile Link](<https://beatleader.com/u/kuurama>)");
+        var (guildId, atMe) = (guildIdTask.Result, playerTask.Result);
+        var stream = await MeCommand.GeneratePlayerCardAsync(guildId, contextId, Client.Value, atMe.Player);
+        await FollowupWithFileAsync(stream, "PlayerCard.png",
+            $"[Profile Link](<https://beatleader.com/u/{atMe.Player.PlayerLinkedAccounts.BeatLeaderId}>)");
     }
 }
 

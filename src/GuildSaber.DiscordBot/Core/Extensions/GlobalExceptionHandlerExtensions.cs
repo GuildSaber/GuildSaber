@@ -1,6 +1,6 @@
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Players;
-using GuildSaber.Database.Models.StrongTypes;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.DiscordBot.Core.Handlers;
 
 namespace GuildSaber.DiscordBot.Core.Extensions;
@@ -46,6 +46,15 @@ public static class GlobalExceptionExtensions
     extension(PlayerResponses.PlayerExtended? self)
     {
         public PlayerResponses.PlayerExtended ValueOrPlayerNotFoundException()
+            => self ?? throw new InteractionHandler.PlayerNotFoundException();
+
+        public PlayerResponses.PlayerExtended ValueOrCurrentPlayerNotRegisteredException()
+            => self ?? throw new InteractionHandler.CurrentPlayerNotRegisteredException();
+    }
+
+    extension(PlayerId? self)
+    {
+        public PlayerId ValueOrPlayerNotFoundException()
             => self ?? throw new InteractionHandler.PlayerNotFoundException();
     }
 }

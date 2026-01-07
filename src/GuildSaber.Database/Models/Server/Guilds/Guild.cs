@@ -40,7 +40,7 @@ public class GuildConfiguration : IEntityTypeConfiguration<Guild>
     public void Configure(EntityTypeBuilder<Guild> builder)
     {
         builder.Property(x => x.Id)
-            .HasConversion(from => from.Value, to => new GuildId { Value = to })
+            .HasConversion(from => from.Value, to => new GuildId(to))
             .ValueGeneratedOnAdd();
         builder.ComplexProperty(x => x.Info).Configure(new GuildInfoConfiguration());
         builder.ComplexProperty(x => x.Requirements).Configure(new GuildJoinRequirementsConfiguration());

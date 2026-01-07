@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using CSharpFunctionalExtensions;
 
-namespace GuildSaber.Database.Models.StrongTypes;
+namespace GuildSaber.Common.StrongTypes;
 
 public readonly record struct DiscordId
 {
@@ -28,6 +28,18 @@ public readonly record struct DiscordId
     [return: NotNullIfNotNull(nameof(value))]
     public static DiscordId? CreateUnsafe(ulong? value)
         => value is null ? null : new DiscordId(value.Value);
+
+    public static bool TryParse(string? from, out DiscordId value)
+    {
+        if (ulong.TryParse(from, out var id))
+        {
+            value = new DiscordId(id);
+            return true;
+        }
+
+        value = default;
+        return false;
+    }
 
     public override string ToString()
         => _value.ToString();
@@ -60,5 +72,5 @@ public class DiscordIdJsonConverter : JsonConverter<DiscordId>
     }
 
     public override void Write(Utf8JsonWriter writer, DiscordId value, JsonSerializerOptions options)
-        => writer.WriteNumberValue(value);
+        => writer.WriteStringValue(value.ToString());
 }
