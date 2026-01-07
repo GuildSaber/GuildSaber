@@ -31,10 +31,6 @@ public class DebugEndpoints : IEndpoints
         var group = endpoints.MapGroup("/debug")
             .WithTag("Debug", "Endpoints for debugging and testing purposes");
 
-        group.MapGet("/import-old-gs-maps/{guildId}/stream", ImportOldGuildSaberMapsAsync)
-            .WithSummary("Import ranked maps from old GuildSaber system.")
-            .WithDescription("Streams import progress via SSE. Import stops on client disconnect.");
-
         group.MapPost("/import-old-gs-maps/{guildId}", ImportOldGuildSaberMapsBackgroundAsync)
             .WithName("ImportOldGuildSaberMapsBackground")
             .WithSummary("Import ranked maps from old GuildSaber")
@@ -170,29 +166,6 @@ public class DebugEndpoints : IEndpoints
         return TypedResults.Ok();
     }
 
-    private static async Task<Results<NotFound<string>, ServerSentEventsResult<RankedMapResponses.RankedMap>>>
-        ImportOldGuildSaberMapsAsync(
-            GuildId guildId, ServerDbContext dbContext, OldGuildSaberApi oldGuildSaberApi,
-            RankedMapService rankedMapService, ILogger<DebugEndpoints> logger,
-            CancellationToken cancellationToken)
-    {
-        if (!await dbContext.Contexts.AnyAsync(x => x.Id == guildId && x.GuildId == guildId, cancellationToken))
-            return TypedResults.NotFound($"Guild context for guild {guildId} not found.");
-
-        return TypedResults.ServerSentEvents(eventType: "import-ranked-map",
-            values: ImportOldGuildSaberMapsStream(
-                    guildId,
-                    new ContextId(guildId),
-                    0,
-                    int.MaxValue,
-                    dbContext,
-                    oldGuildSaberApi,
-                    rankedMapService,
-                    logger,
-                    cancellationToken)
-                .Select(success => success.RankedMap.Map(success.Song, success.SongDifficulty, success.GameMode)));
-    }
-
     public static async Task<Results<Accepted, NotFound<string>>> EnqueueBeatLeaderPlayerScoresImportAsync(
         PlayerId playerId,
         ServerDbContext dbContext,
@@ -280,15 +253,8 @@ public class DebugEndpoints : IEndpoints
             var scopedLogger = scope.ServiceProvider.GetRequiredService<ILogger<DebugEndpoints>>();
 
             await foreach (var success in ImportOldGuildSaberMapsStream(
-                               guildId,
-                               contextId,
-                               page,
-                               count,
-                               scopedDbContext,
-                               oldGuildSaberApi,
-                               rankedMapService,
-                               scopedLogger,
-                               token))
+                               guildId, contextId, page, count, scopedDbContext, oldGuildSaberApi, rankedMapService,
+                               scopedLogger, token))
                 scopedLogger.LogInformation(success.RankedMap
                     .Map(success.Song, success.SongDifficulty, success.GameMode)
                     .ToString());
