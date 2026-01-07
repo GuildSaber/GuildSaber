@@ -1,3 +1,4 @@
+using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Players;
 using GuildSaber.Common.StrongTypes;
@@ -41,6 +42,9 @@ public static class GlobalExceptionExtensions
     {
         public PlayerResponses.Player ValueOrPlayerNotFoundException()
             => self ?? throw new InteractionHandler.PlayerNotFoundException();
+
+        public PlayerResponses.Player ValueOrCurrentPlayerNotRegisteredException()
+            => self ?? throw new InteractionHandler.CurrentPlayerNotRegisteredException();
     }
 
     extension(PlayerResponses.PlayerExtended? self)
@@ -50,6 +54,17 @@ public static class GlobalExceptionExtensions
 
         public PlayerResponses.PlayerExtended ValueOrCurrentPlayerNotRegisteredException()
             => self ?? throw new InteractionHandler.CurrentPlayerNotRegisteredException();
+    }
+
+    extension<T>(Result<T> self)
+    {
+        public T UnwrapOrPlayerDidNotJoinGuildContextException()
+            => self.IsSuccess ? self.Value : throw new InteractionHandler.PlayerDidNotJoinGuildContextException();
+
+        public T UnwrapOrCurrentPlayerDidNotJoinGuildContextException()
+            => self.IsSuccess
+                ? self.Value
+                : throw new InteractionHandler.CurrentPlayerDidNotJoinGuildContextException();
     }
 
     extension(PlayerId? self)

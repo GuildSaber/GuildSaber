@@ -61,6 +61,10 @@ public partial class UserModuleSlash : InteractionModuleBase<SocketInteractionCo
         (await Cache.FindGuildIdFromDiscordGuildIdAsync(Context.Guild.DiscordId, Client.Value))
         .ValueOrGuildMissingException();
 
+    public async ValueTask<PlayerId> GetPlayerId(DiscordId id) =>
+        (await Client.Value.Players.LookupPlayerIdByDiscordIdAsync(id)
+            .Unwrap()).ValueOrPlayerNotFoundException();
+
     public async ValueTask<GuildResponses.Guild> GetGuildAsync() =>
         (await Client.Value.Guilds.GetByIdAsync(await GetGuildIdAsync()))
         .Unwrap().ValueOrGuildMissingException();
@@ -69,31 +73,31 @@ public partial class UserModuleSlash : InteractionModuleBase<SocketInteractionCo
         (await Client.Value.Guilds.GetExtendedByIdAsync(await GetGuildIdAsync()))
         .Unwrap().ValueOrGuildMissingException();
 
-    public async ValueTask<PlayerId> GetPlayerId(DiscordId id) =>
-        (await Client.Value.Players.LookupPlayerIdByDiscordIdAsync(id)
-            .Unwrap()).ValueOrPlayerNotFoundException();
-
     public async ValueTask<PlayerResponses.Player> GetPlayerAtMeAsync() =>
         (await Client.Value.Players.GetAtMeAsync())
-        .Unwrap().ValueOrPlayerNotFoundException();
-
-    public async ValueTask<PlayerResponses.Player> GetPlayerAsync(PlayerId playerId) =>
-        (await Client.Value.Players.GetByIdAsync(playerId))
-        .Unwrap().ValueOrPlayerNotFoundException();
+        .UnwrapOrCurrentPlayerDidNotJoinGuildContextException()
+        .ValueOrCurrentPlayerNotRegisteredException();
 
     public async ValueTask<PlayerResponses.Player> GetPlayerAsync(DiscordId discordId) =>
         await GetPlayerAsync(await GetPlayerId(discordId));
 
-    public async ValueTask<PlayerResponses.PlayerExtended> GetPlayerExtendedAsync(PlayerId playerId) =>
-        (await Client.Value.Players.GetExtendedByIdAsync(playerId))
-        .Unwrap().ValueOrPlayerNotFoundException();
+    public async ValueTask<PlayerResponses.Player> GetPlayerAsync(PlayerId playerId) =>
+        (await Client.Value.Players.GetByIdAsync(playerId))
+        .UnwrapOrPlayerDidNotJoinGuildContextException()
+        .ValueOrPlayerNotFoundException();
 
     public async ValueTask<PlayerResponses.PlayerExtended> GetPlayerExtendedAsync(DiscordId discordId) =>
         await GetPlayerExtendedAsync(await GetPlayerId(discordId));
 
+    public async ValueTask<PlayerResponses.PlayerExtended> GetPlayerExtendedAsync(PlayerId playerId) =>
+        (await Client.Value.Players.GetExtendedByIdAsync(playerId))
+        .UnwrapOrPlayerDidNotJoinGuildContextException()
+        .ValueOrPlayerNotFoundException();
+
     public async ValueTask<PlayerResponses.PlayerExtended> GetPlayerExtendedAtMeAsync() =>
         (await Client.Value.Players.GetExtendedAtMeAsync())
-        .Unwrap().ValueOrCurrentPlayerNotRegisteredException();
+        .UnwrapOrCurrentPlayerDidNotJoinGuildContextException()
+        .ValueOrCurrentPlayerNotRegisteredException();
 }
 
 public static class UserModuleSlashExtensions

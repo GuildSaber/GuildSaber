@@ -14,12 +14,10 @@ namespace GuildSaber.DiscordBot.Core.Handlers;
 /// <param name="client"></param>
 /// <param name="commands"></param>
 /// <param name="services"></param>
-/// <param name="logger"></param>
 public class InteractionHandler(
     DiscordSocketClient client,
     InteractionService commands,
     IServiceProvider services,
-    ILogger<InteractionHandler> logger,
     IOptions<LinkSettings> websiteSettings)
 {
     private const string WebsiteIdentifier = "Website";
@@ -27,10 +25,18 @@ public class InteractionHandler(
     public class GuildMissingException() : Exception("This discord server hasn't been registered in guild yet.");
 
     public class PlayerNotFoundException() : Exception(
-        "The specified player was not found in the guild, did they join the guild context or even link their discord account?");
+        $"The specified player was not found, did they make an account and linked their discord? (here is the {WebsiteIdentifier})");
 
     public class CurrentPlayerNotRegisteredException() : Exception(
         $"Your discord account isn't linked on GuildSaber, please login and link it first on the {WebsiteIdentifier}.");
+
+    public class PlayerDidNotJoinGuildContextException() : Exception(
+        $"The specified player hasn't joined this guild context yet, they need to join the guild context from " +
+        $"the {WebsiteIdentifier} in order to use this command.");
+
+    public class CurrentPlayerDidNotJoinGuildContextException() : Exception(
+        "You haven't joined the guild context yet, please join the guild context from the " +
+        $"{WebsiteIdentifier} in order to use this command.");
 
     public async Task InitializeAsync()
     {
@@ -50,44 +56,61 @@ public class InteractionHandler(
         if (result.IsSuccess || result is not ExecuteResult { Exception.InnerException: var innerException })
             return;
 
-        logger.LogError("[HandleInteraction] {innerException}", innerException);
-
         var interaction = interactionContext.Interaction;
         if (interaction.Type is not InteractionType.ApplicationCommand)
             return;
 
+        var message = innerException?.Message ?? "An unknown error occurred.";
         var embed = innerException switch
         {
             PlayerNotFoundException => new EmbedBuilder
             {
                 Title = "Player Not Found",
-                Description = innerException.Message,
+                Description = message.Replace(
+                    WebsiteIdentifier,
+                    $"[Website]({websiteSettings.Value.WebsiteBaseUri})"),
                 Color = Color.Orange
             },
-            CurrentPlayerNotRegisteredException ex => new EmbedBuilder
+            CurrentPlayerNotRegisteredException => new EmbedBuilder
             {
                 Title = "Whoops! (You are not registered)",
-                Description = ex.Message.Replace(
+                Description = message.Replace(
                     WebsiteIdentifier,
                     $"[Website]({websiteSettings.Value.WebsiteBaseUri})"),
                 Color = Color.DarkOrange
             },
-            GuildMissingException _ when interactionContext.Guild is null => new EmbedBuilder
+            PlayerDidNotJoinGuildContextException => new EmbedBuilder
+            {
+                Title = message.Replace(
+                    WebsiteIdentifier,
+                    $"[Website]({websiteSettings.Value.WebsiteBaseUri})"),
+                Description = innerException.Message,
+                Color = Color.Orange
+            },
+            CurrentPlayerDidNotJoinGuildContextException => new EmbedBuilder
+            {
+                Title = message.Replace(
+                    WebsiteIdentifier,
+                    $"[Website]({websiteSettings.Value.WebsiteBaseUri})"),
+                Description = innerException.Message,
+                Color = Color.Orange
+            },
+            GuildMissingException when interactionContext.Guild is null => new EmbedBuilder
             {
                 Title = "Guild Not Found",
-                Description = "This command can only be used in a guild (server) context.",
+                Description = "This command can only be used within a discord guild/server.",
                 Color = Color.Orange
             },
             GuildMissingException => new EmbedBuilder
             {
                 Title = "Guild Not Found",
-                Description = innerException.Message,
+                Description = message,
                 Color = Color.Orange
             },
             _ => new EmbedBuilder
             {
                 Title = "Error",
-                Description = innerException?.Message ?? "An unknown error occurred.",
+                Description = message,
                 Color = Color.Red
             }
         };
