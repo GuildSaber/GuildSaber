@@ -5,6 +5,9 @@ This repository is licensed under the GNU Affero General Public License v3.0 (AG
 **Utility Code Exception**: Common sense utility code that isn't business logic (such as helper methods, extensions, and
 convenience utilities) is not subject to AGPL-3.0 restrictions and can be freely used without limitations.
 
+**Resources Exception**: Distributed resources are not subject to AGPL-3.0 restrictions and follows their respective
+licenses (if there is any) included in their distributed directories.
+
 This exception applies to code that:
 
 - Provides general programming utilities

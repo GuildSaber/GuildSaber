@@ -30,7 +30,7 @@ public class InteractionHandler(
     public class CurrentPlayerNotRegisteredException() : Exception(
         $"Your discord account isn't linked on GuildSaber, please login and link it first on the {WebsiteIdentifier}.");
 
-    public class PlayerDidNotJoinGuildContextException() : Exception(
+    public class PlayerIsNotInGuildContextException() : Exception(
         $"The specified player hasn't joined this guild context yet, they need to join the guild context from " +
         $"the {WebsiteIdentifier} in order to use this command.");
 
@@ -79,20 +79,20 @@ public class InteractionHandler(
                     $"[Website]({websiteSettings.Value.WebsiteBaseUri})"),
                 Color = Color.DarkOrange
             },
-            PlayerDidNotJoinGuildContextException => new EmbedBuilder
+            PlayerIsNotInGuildContextException => new EmbedBuilder
             {
-                Title = message.Replace(
+                Title = "Player isn't in this guild context yet",
+                Description = message.Replace(
                     WebsiteIdentifier,
                     $"[Website]({websiteSettings.Value.WebsiteBaseUri})"),
-                Description = innerException.Message,
                 Color = Color.Orange
             },
             CurrentPlayerDidNotJoinGuildContextException => new EmbedBuilder
             {
-                Title = message.Replace(
+                Title = "You haven't joined the guild context yet",
+                Description = message.Replace(
                     WebsiteIdentifier,
                     $"[Website]({websiteSettings.Value.WebsiteBaseUri})"),
-                Description = innerException.Message,
                 Color = Color.Orange
             },
             GuildMissingException when interactionContext.Guild is null => new EmbedBuilder

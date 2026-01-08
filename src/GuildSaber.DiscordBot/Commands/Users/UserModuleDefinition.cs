@@ -83,7 +83,7 @@ public partial class UserModuleSlash : InteractionModuleBase<SocketInteractionCo
 
     public async ValueTask<PlayerResponses.Player> GetPlayerAsync(PlayerId playerId) =>
         (await Client.Value.Players.GetByIdAsync(playerId))
-        .UnwrapOrPlayerDidNotJoinGuildContextException()
+        .UnwrapOrPlayerIsNotInGuildContextException()
         .ValueOrPlayerNotFoundException();
 
     public async ValueTask<PlayerResponses.PlayerExtended> GetPlayerExtendedAsync(DiscordId discordId) =>
@@ -91,7 +91,7 @@ public partial class UserModuleSlash : InteractionModuleBase<SocketInteractionCo
 
     public async ValueTask<PlayerResponses.PlayerExtended> GetPlayerExtendedAsync(PlayerId playerId) =>
         (await Client.Value.Players.GetExtendedByIdAsync(playerId))
-        .UnwrapOrPlayerDidNotJoinGuildContextException()
+        .UnwrapOrPlayerIsNotInGuildContextException()
         .ValueOrPlayerNotFoundException();
 
     public async ValueTask<PlayerResponses.PlayerExtended> GetPlayerExtendedAtMeAsync() =>

@@ -58,8 +58,8 @@ public static class GlobalExceptionExtensions
 
     extension<T>(Result<T> self)
     {
-        public T UnwrapOrPlayerDidNotJoinGuildContextException()
-            => self.IsSuccess ? self.Value : throw new InteractionHandler.PlayerDidNotJoinGuildContextException();
+        public T UnwrapOrPlayerIsNotInGuildContextException()
+            => self.IsSuccess ? self.Value : throw new InteractionHandler.PlayerIsNotInGuildContextException();
 
         public T UnwrapOrCurrentPlayerDidNotJoinGuildContextException()
             => self.IsSuccess
