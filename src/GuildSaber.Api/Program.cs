@@ -41,6 +41,9 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
+if (builder.Environment.IsDevelopment())
+    builder.Logging.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Information);
+
 #region Configuration & Options
 
 var authSettings = builder.Configuration.GetSection(AuthSettings.AuthSettingsSectionKey);
@@ -87,6 +90,13 @@ builder.Services
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpUserAgentParser()
     .AddHttpUserAgentParserAccessor();
+
+builder.Services.AddCors(options => options
+    .AddDefaultPolicy(policy => policy
+        .AllowAnyOrigin()
+        .AllowAnyMethod()
+        .AllowAnyHeader())
+);
 
 #endregion
 
@@ -310,6 +320,8 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+
+app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
