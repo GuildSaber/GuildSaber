@@ -82,13 +82,12 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
     {
         var memberStat = await dbContext.MemberPointStats
             .AsTracking()
-            .Where(x =>
+            .FirstOrDefaultAsync(x =>
                 x.GuildId == guildId &&
                 x.ContextId == contextId &&
                 x.PlayerId == playerId &&
                 x.PointId == point.Id &&
-                x.CategoryId == categoryId)
-            .FirstOrDefaultAsync();
+                x.CategoryId == categoryId);
 
         if (memberStat is null)
         {

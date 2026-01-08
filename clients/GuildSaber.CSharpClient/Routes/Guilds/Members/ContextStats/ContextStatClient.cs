@@ -18,12 +18,12 @@ public sealed class ContextStatClient(
     /// <summary>
     /// Gets context stats for a specific player in a specific context.
     /// </summary>
-    /// <param name="contextId">The context identifier.</param>
     /// <param name="playerId">The player identifier.</param>
+    /// <param name="contextId">The context identifier.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing the member context stat if found, or null if not found.</returns>
     public async Task<Result<MemberContextStat?>> GetByPlayerIdAsync(
-        int contextId, int playerId, CancellationToken token = default)
+        int playerId, int contextId, CancellationToken token = default)
         => await httpClient.GetAsync($"contexts/{contextId}/members/{playerId}/context-stats", token)
                 .ConfigureAwait(false) switch
             {

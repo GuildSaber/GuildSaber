@@ -8,6 +8,7 @@ using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Mappers.BeatLeader;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 
 namespace GuildSaber.Api.Features.Scores;
 
@@ -41,15 +42,19 @@ public class BLScoreSyncWorker(
     ///     </item>
     ///     <item>Automatically reconnects after disconnection with a defined delay</item>
     /// </list>
-    /// The service ensures durability by automatically reconnecting when the connection is lost
-    /// and by using Hangfire to queue score processing, which provides persistence and retry capabilities.
+    /// It automatically attempts to reconnect when the connection is lost.
     /// </remarks>
     /// <returns>A task representing the asynchronous operation.</returns>
     protected override async Task ExecuteAsync(CancellationToken token)
     {
         await using var scope = serviceScopeFactory.CreateAsyncScope();
         await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
-        var scoreAddOrUpdatePipeline = new ScoreAddOrUpdatePipeline(dbContext, new MemberPointStatsPipeline(dbContext));
+        var cache = scope.ServiceProvider.GetRequiredService<HybridCache>();
+
+        var scoreAddOrUpdatePipeline = new ScoreAddOrUpdatePipeline(
+            dbContext,
+            new MemberPointStatsPipeline(dbContext), serviceScopeFactory, cache
+        );
         var memberPointStatsPipeline = new MemberPointStatsPipeline(dbContext);
         var memberLevelStatsPipeline = new MemberLevelStatsPipeline(dbContext);
 
@@ -72,9 +77,11 @@ public class BLScoreSyncWorker(
                 var dbScore = response switch
                 {
                     GeneralSocketMessage<UploadedScore>(var upload) => upload.Map(playerId, difficultyId),
-                    GeneralSocketMessage<AcceptedScore>(var accepted) => accepted.Map(playerId, difficultyId,
+                    GeneralSocketMessage<AcceptedScore>(var accepted) => accepted.Map<AcceptedScore>(playerId,
+                        difficultyId,
                         (await beatLeaderApi.GetScoreStatisticsAsync(accepted.Id)).GetValueOrDefault().Map()),
-                    GeneralSocketMessage<RejectedScore>(var rejected) => rejected.Map(playerId, difficultyId,
+                    GeneralSocketMessage<RejectedScore>(var rejected) => rejected.Map<RejectedScore>(playerId,
+                        difficultyId,
                         (await beatLeaderApi.GetScoreStatisticsAsync(rejected.Id)).GetValueOrDefault().Map()),
                     _ => throw new InvalidOperationException(
                         $"Unknown message type received from BeatLeader: {response.GetType().Name}")

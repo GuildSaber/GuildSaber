@@ -13,6 +13,8 @@ public class ContextMember
     public ContextId ContextId { get; init; }
     public PlayerId PlayerId { get; init; }
 
+    public Context Context { get; init; } = null!;
+    public Member Member { get; init; } = null!;
     public IList<MemberPointStat> PointStats { get; init; } = null!;
     public IList<MemberLevelStat> LevelStats { get; init; } = null!;
 }
@@ -27,9 +29,9 @@ public class ContextMemberConfiguration : IEntityTypeConfiguration<ContextMember
             .WithMany()
             .HasForeignKey(x => x.GuildId);
 
-        builder.HasOne<Context>()
+        builder.HasOne(x => x.Context)
             .WithMany(x => x.ContextMembers);
-        builder.HasOne<Member>()
+        builder.HasOne(x => x.Member)
             .WithMany(x => x.ContextMembers);
 
         builder.HasMany(x => x.PointStats)
