@@ -24,7 +24,6 @@ using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.OldGuildSaber;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.StrongTypes;
@@ -94,7 +93,9 @@ builder.Services.AddHttpUserAgentParser()
 #region Database
 
 builder.AddNpgsqlDbContext<ServerDbContext>(connectionName: Constants.ServerDbConnectionStringKey,
-    configureDbContextOptions: options => options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
+    configureDbContextOptions: options => options
+        .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+        .EnableSensitiveDataLogging(builder.Environment.IsDevelopment()));
 
 #endregion
 
