@@ -1,6 +1,10 @@
 using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
+var environment = builder.ExecutionContext.IsRunMode
+    ? builder.AddParameter("ASPNETCORE-ENVIRONMENT",
+        Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development")
+    : builder.AddParameter("ASPNETCORE-ENVIRONMENT");
 
 builder.AddDockerComposeEnvironment("guildsaber-env")
     .WithDashboard(dashboard => dashboard
@@ -20,13 +24,13 @@ var guildsaberDb = postgres.AddDatabase("server-db", "server-db");
 var discordbotDb = postgres.AddDatabase("discordbot-db", "discordbot-db");
 
 var migrator = builder.AddProject<GuildSaber_Migrator>("migrator", options => options.ExcludeLaunchProfile = true)
-    .WithEnvironment("ASPNETCORE_ENVIRONMENT", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", environment)
     .WithReference(guildsaberDb).WaitFor(guildsaberDb)
     .WithReference(discordbotDb).WaitFor(discordbotDb);
 
 var apiKey = builder.AddParameter("api-key", builder.Configuration["ApiKey"]!, secret: true);
 var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.ExcludeLaunchProfile = true)
-    .WithEnvironment("ASPNETCORE_ENVIRONMENT", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", environment)
     .WithEnvironment("AuthSettings:ApiKey:Key", apiKey)
     .WithReference(guildsaberDb).WaitForCompletion(migrator)
     .WithReference("beatleader-api", new Uri("https://api.beatleader.com/"))
@@ -38,7 +42,7 @@ var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.Ex
     .WithExternalHttpEndpoints();
 
 var discordBot = builder.AddProject<GuildSaber_DiscordBot>("discord-bot", option => option.ExcludeLaunchProfile = true)
-    .WithEnvironment("ASPNETCORE_ENVIRONMENT", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", environment)
     .WithEnvironment("AuthSettings:ApiKey", apiKey)
     .WithReference(discordbotDb).WaitFor(migrator)
     .WithReference(apiService).WaitFor(apiService)

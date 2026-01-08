@@ -18,12 +18,12 @@ public sealed class LevelStatClient(
     /// <summary>
     /// Gets level stats for a specific player in a specific context.
     /// </summary>
-    /// <param name="contextId">The context identifier.</param>
     /// <param name="playerId">The player identifier.</param>
+    /// <param name="contextId">The context identifier.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing an array of member level stats.</returns>
     public async Task<Result<MemberLevelStat[]>> GetByPlayerIdAsync(
-        int contextId, int playerId, CancellationToken token = default)
+        int playerId, int contextId, CancellationToken token = default)
         => await httpClient.GetAsync($"contexts/{contextId}/members/{playerId}/level-stats", token)
                 .ConfigureAwait(false) switch
             {

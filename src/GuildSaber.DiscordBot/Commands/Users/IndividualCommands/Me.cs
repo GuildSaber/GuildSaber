@@ -1,11 +1,15 @@
 ﻿using Discord;
 using Discord.Interactions;
+using GuildSaber.Api.Features.Guilds.Categories;
+using GuildSaber.Api.Features.Guilds.Members.ContextStats;
 using GuildSaber.Api.Features.Guilds.Members.LevelStats;
 using GuildSaber.Api.Features.Players;
 using GuildSaber.Common.Result;
 using GuildSaber.CSharpClient;
 using GuildSaber.DiscordBot.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Extensions;
+using GuildSaber.DiscordBot.Core.Handlers;
+using GuildSaber.DiscordBot.Settings;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
@@ -29,15 +33,35 @@ public partial class UserModuleSlash
 
         var guildIdTask = GetGuildIdAsync().AsTask();
         var playerTask = user is null
-            ? GetPlayerExtendedAtMeAsync().AsTask()
-            : GetPlayerExtendedAsync(user.DiscordId).AsTask();
-
+            ? GetPlayerAtMeAsync().AsTask()
+            : GetPlayerAsync(user.DiscordId).AsTask();
         await Task.WhenAll(guildIdTask, playerTask);
 
-        var (guildId, atMe) = (guildIdTask.Result, playerTask.Result);
-        var stream = await MeCommand.GeneratePlayerCardAsync(guildId, contextId, Client.Value, atMe.Player);
-        await FollowupWithFileAsync(stream, "PlayerCard.png",
-            $"[Profile Link](<https://beatleader.com/u/{atMe.Player.PlayerLinkedAccounts.BeatLeaderId}>)");
+        var (guildId, player, playerId) = (guildIdTask.Result, playerTask.Result, playerTask.Result.Id);
+        var client = Client.Value;
+
+        var (levelStatsTask, categoriesTask, contextStatsTask, resourcesTask) = (
+            client.LevelStats.GetByPlayerIdAsync(playerId, contextId),
+            client.Categories.GetAllByGuildIdAsync(guildId),
+            client.ContextStats.GetByPlayerIdAsync(playerId, contextId),
+            CardResources.LoadAsync(client, guildId, player, LinkSettings.Value));
+        await Task.WhenAll(levelStatsTask, categoriesTask, contextStatsTask, resourcesTask);
+
+        var cardResources = resourcesTask.Result;
+        var cardData = CardData.Build(
+            player,
+            categoriesTask.Result.Unwrap(),
+            levelStatsTask.Result.Unwrap(),
+            contextStatsTask.Result.Unwrap() ?? (user is null
+                ? throw new InteractionHandler.CurrentPlayerDidNotJoinGuildContextException()
+                : throw new InteractionHandler.PlayerIsNotInGuildContextException())
+        );
+
+        using var stream = new MemoryStream();
+        await stream.WritePlayerCardToStreamAsync(cardData, cardResources);
+        await FollowupWithFileAsync(stream,
+            fileName: "PlayerCard.png",
+            text: $"[Profile Link](<https://beatleader.com/u/{player.PlayerLinkedAccounts.BeatLeaderId}>)");
     }
 }
 
@@ -46,25 +70,27 @@ public partial class UserModuleSlash
 /// </summary>
 file static class MeCommand
 {
-    public static async Task<Stream> GeneratePlayerCardAsync(
-        GuildId guildId, int contextId, GuildSaberClient client, PlayerResponses.Player player)
+    public static FontCollection FontCollection => field ??= LoadFonts();
+
+    private static FontCollection LoadFonts()
     {
-        var resourcesTask = CardResources.LoadAsync(client, guildId, player);
-        var dataTask = CardData.BuildAsync(client, guildId, contextId);
+        var fontCollection = new FontCollection();
+        fontCollection.Add("Resources/Fonts/JetBrainsMonoNF/JetBrainsMonoNLNerdFont-Regular.ttf");
+        fontCollection.Add("Resources/Fonts/JetBrainsMonoNF/JetBrainsMonoNLNerdFont-Bold.ttf");
 
-        await Task.WhenAll(resourcesTask, dataTask);
+        return fontCollection;
+    }
 
-        var resources = resourcesTask.Result;
-        var data = dataTask.Result;
+    public static async Task WritePlayerCardToStreamAsync(
+        this MemoryStream stream, CardData data, CardResources resources)
+    {
         var dimensions = new CardDimensions(902, 340 + (int)Math.Ceiling(data.Categories.Length / 2.0) * 43);
-
         using var image = new Image<Rgba32>(dimensions.Width, dimensions.Height);
-        image.Mutate(ctx => ctx.RenderPlayerCard(resources, data, dimensions, player.PlayerInfo.Username));
 
-        var stream = new MemoryStream();
+        image.Mutate(ctx => ctx.RenderPlayerCard(resources, data, dimensions, data.Player.PlayerInfo.Username));
+
         await image.SaveAsPngAsync(stream);
         stream.Position = 0;
-        return stream;
     }
 
     internal static double StandardDeviation(IReadOnlyCollection<int> sequence)
@@ -115,7 +141,7 @@ file static class CardRenderingExtensions
 
         private IImageProcessingContext DrawPointStats(PointStatData[] stats, CardFonts fonts)
         {
-            var options = new RichTextOptions(fonts.Regular) { FallbackFontFamilies = [fonts.FontAwesome] };
+            var options = new RichTextOptions(fonts.Regular);
 
             switch (stats.Length)
             {
@@ -137,16 +163,15 @@ file static class CardRenderingExtensions
         }
 
         private void DrawPointStat(PointStatData stat, RichTextOptions options)
-            => ctx.DrawText(options, $"🏅 {stat.Points:0.##} {stat.Name} (#{stat.Rank})",
+            => ctx.DrawText(options, $" {stat.Points:0.##} {stat.Name} (#{stat.Rank})",
                 new SolidBrush(_goldColor), null);
 
         private IImageProcessingContext DrawPassStats(int passCount, int passRank, CardFonts fonts)
             => ctx.DrawText(new RichTextOptions(fonts.Regular)
                 {
-                    Origin = new PointF(256 + 325, 126),
-                    FallbackFontFamilies = [fonts.FontAwesome]
+                    Origin = new PointF(256 + 325, 126)
                 },
-                $"⭐ {passCount} passes (#{passRank})",
+                $" {passCount} passes (#{passRank})",
                 new SolidBrush(_goldColor), null);
 
         private IImageProcessingContext DrawGlobalLevel(string levelName, Color color, Font font, int width)
@@ -254,28 +279,28 @@ file static class CardRenderingExtensions
 }
 
 file record struct CardDimensions(int Width, int Height);
-file record struct CardFonts(Font Regular, Font Bold, Font Large, Font GlobalLevel, FontFamily FontAwesome);
+file record struct CardFonts(Font Regular, Font Bold, Font Large, Font GlobalLevel);
 file record struct PointStatData(float Points, string Name, int Rank);
 file record struct CategoryLevelData(string CategoryName, string LevelName, Color Color);
 
 file record struct CardResources(Image<Rgba32> Avatar, Image<Rgba32> GuildLogo, CardFonts Fonts)
 {
     public static async Task<CardResources> LoadAsync(
-        GuildSaberClient client, GuildId guildId, PlayerResponses.Player player)
+        GuildSaberClient client, GuildId guildId, PlayerResponses.Player player, LinkSettings linkSettings)
     {
+        var fontFamily = MeCommand.FontCollection.Get("JetBrainsMonoNL NF");
+        var fonts = new CardFonts(
+            fontFamily.CreateFont(26, FontStyle.Regular),
+            fontFamily.CreateFont(26, FontStyle.Bold),
+            fontFamily.CreateFont(64, FontStyle.Regular),
+            fontFamily.CreateFont(48, FontStyle.BoldItalic)
+        );
+
         var avatarTask = LoadAvatarAsync(client, player.PlayerInfo.AvatarUrl);
-        var guildLogoTask = LoadGuildLogoAsync(client, guildId);
+        var guildLogoTask = LoadGuildLogoAsync(client, guildId, fontFamily, linkSettings);
 
         await Task.WhenAll(avatarTask, guildLogoTask);
 
-        const string fontFamily = "JetBrainsMono NF";
-        var fonts = new CardFonts(
-            SystemFonts.CreateFont(fontFamily, 26, FontStyle.Regular),
-            SystemFonts.CreateFont(fontFamily, 26, FontStyle.Bold),
-            SystemFonts.CreateFont(fontFamily, 64, FontStyle.Regular),
-            SystemFonts.CreateFont(fontFamily + " ExtraBold", 48, FontStyle.BoldItalic),
-            SystemFonts.Get("Font Awesome 7 Free Solid")
-        );
 
         return new CardResources(avatarTask.Result, guildLogoTask.Result, fonts);
     }
@@ -288,12 +313,13 @@ file record struct CardResources(Image<Rgba32> Avatar, Image<Rgba32> GuildLogo, 
         return avatarImage;
     }
 
-    private static async Task<Image<Rgba32>> LoadGuildLogoAsync(GuildSaberClient client, GuildId guildId)
+    private static async Task<Image<Rgba32>> LoadGuildLogoAsync(
+        GuildSaberClient client, GuildId guildId, FontFamily fonts, LinkSettings linkSettings)
     {
         try
         {
             await using var guildLogoStream = await client.HttpClient
-                .GetStreamAsync($"https://cdn.guildsaber.com/Guild/{guildId}/Logo.jpg");
+                .GetStreamAsync($"{linkSettings.CdnBaseUri}guilds/{guildId}/logo.jpg");
             var guildLogoImage = Image.Load<Rgba32>(guildLogoStream);
             guildLogoImage.Mutate(a => a.Resize(80, 80));
             return guildLogoImage;
@@ -301,7 +327,7 @@ file record struct CardResources(Image<Rgba32> Avatar, Image<Rgba32> GuildLogo, 
         catch // Create a fallback image with "?"
         {
             var guildLogoImage = new Image<Rgba32>(80, 80);
-            var font = SystemFonts.CreateFont("JetBrainsMono NF", 48, FontStyle.Bold);
+            var font = fonts.CreateFont(48, FontStyle.Bold);
             guildLogoImage.Mutate(ctx => ctx
                 .Fill(Color.FromRgb(50, 50, 50))
                 .DrawText("?", font, Color.White, new PointF(25, 10)));
@@ -340,6 +366,7 @@ file record struct TrophiesData(int Plastic, int Silver, int Gold, int Diamond, 
 }
 
 file record struct CardData(
+    PlayerResponses.Player Player,
     Color PrimaryColor,
     Color SecondaryColor,
     PointStatData[] PointStats,
@@ -350,31 +377,21 @@ file record struct CardData(
     CategoryLevelData[] Categories,
     float EquilibriumPercentage)
 {
-    public static async Task<CardData> BuildAsync(GuildSaberClient client, GuildId guildId, int contextId)
+    public static CardData Build(
+        PlayerResponses.Player player,
+        CategoryResponses.Category[] categories,
+        LevelStatResponses.MemberLevelStat[] levelStats,
+        ContextStatResponses.MemberContextStat contextStats)
     {
-        var levelStatsTask = client.LevelStats.GetAtMeAsync(contextId);
-        var categoriesTask = client.Categories.GetAllByGuildIdAsync(guildId);
-        var contextStatsTask = client.ContextStats.GetAtMeAsync(contextId);
-
-        await Task.WhenAll(levelStatsTask, categoriesTask, contextStatsTask);
-
-        var levelStats = levelStatsTask.Result.Unwrap();
-        var categories = categoriesTask.Result.Unwrap();
-        var contextStats = contextStatsTask.Result.Unwrap();
-
-        if (!contextStats.HasValue)
-            throw new InvalidOperationException("Failed to retrieve context stats for player.");
-
         var currentLevel = levelStats.LastOrDefault(x => x is { IsCompleted: true, Level.CategoryId: null })
             as LevelStatResponses.MemberLevelStat?;
-
 
         var primaryColor = Color.FromRgb(26, 28, 30);
         var secondaryColor = currentLevel is not null
             ? Color.FromArgb(currentLevel.Value.Level.Info.Color)
             : Color.Black;
 
-        var pointStats = contextStats.Value.SimplePointsWithRank
+        var pointStats = contextStats.SimplePointsWithRank
             .Where(x => x.CategoryId is null)
             .Select(p => new PointStatData(p.Points, p.Name, p.Rank))
             .ToArray();
@@ -409,11 +426,12 @@ file record struct CardData(
             : 100f;
 
         return new CardData(
+            player,
             primaryColor,
             secondaryColor,
             pointStats,
-            contextStats.Value.PassCountWithRank.PassCount,
-            contextStats.Value.PassCountWithRank.Rank,
+            contextStats.PassCountWithRank.PassCount,
+            contextStats.PassCountWithRank.Rank,
             currentLevel?.Level.Info.Name ?? "",
             trophies,
             [.. categoryLevels],

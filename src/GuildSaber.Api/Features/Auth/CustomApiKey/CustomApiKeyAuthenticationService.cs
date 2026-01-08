@@ -3,7 +3,6 @@ using System.Security.Claims;
 using GuildSaber.Api.Features.Auth.CustomApiKey.Interfaces;
 using GuildSaber.Api.Features.Auth.CustomApiKey.ValidationTypes;
 using GuildSaber.Api.Features.Auth.Settings;
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +17,11 @@ public class CustomApiKeyAuthenticationService(
     HybridCache cache)
     : ICustomApiKeyAuthenticationService
 {
+    private static readonly HybridCacheEntryOptions _cacheEntryOptions = new()
+    {
+        Expiration = TimeSpan.FromMinutes(2)
+    };
+
     private static readonly Func<ServerDbContext, DiscordId, Task<PlayerIdWithManagerFlag>>
         _getPlayerIdWithManagerFlagByDiscordIdQueryAsync =
             EF.CompileAsyncQuery((ServerDbContext dbContext, DiscordId discordId) =>
@@ -58,9 +62,5 @@ public class CustomApiKeyAuthenticationService(
                 var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
 
                 return await _getPlayerIdWithManagerFlagByDiscordIdQueryAsync(dbContext, state.discordId);
-            },
-            new HybridCacheEntryOptions
-            {
-                Expiration = TimeSpan.FromMinutes(5)
-            });
+            }, _cacheEntryOptions);
 }
