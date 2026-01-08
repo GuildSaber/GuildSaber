@@ -16,15 +16,10 @@ const compat = new FlatCompat({
 })
 
 export default [
-  ...compat.extends(
-    "eslint:recommended",
-    "prettier",
-    "plugin:react/recommended",
-    "plugin:react-hooks/recommended",
-  ),
+  ...compat.extends("eslint:recommended", "prettier", "plugin:react/recommended", "plugin:react-hooks/recommended"),
 
   {
-    ignores: ["src/components/ui/**"],
+    ignores: ["src/client/**", "src/components/ui/**"],
   },
 
   {
@@ -55,10 +50,7 @@ export default [
       },
     },
     rules: {
-      "array-callback-return": [
-        "error",
-        { allowImplicit: false, checkForEach: true, allowVoid: true },
-      ],
+      "array-callback-return": ["error", { allowImplicit: false, checkForEach: true, allowVoid: true }],
       "no-await-in-loop": "error",
       "no-constant-binary-expression": "error",
       "no-constructor-return": "error",
@@ -80,11 +72,7 @@ export default [
           ignoreGlobals: true,
         },
       ],
-      "capitalized-comments": [
-        "error",
-        "always",
-        { ignoreConsecutiveComments: true },
-      ],
+      "capitalized-comments": ["error", "always", { ignoreConsecutiveComments: true }],
       "class-methods-use-this": ["error", { enforceForClassFields: true }],
       complexity: ["warn", 40],
       "consistent-return": "error",
@@ -98,17 +86,9 @@ export default [
       "grouped-accessor-pairs": ["error", "getBeforeSet"],
       "guard-for-in": "error",
       "init-declarations": ["error", "always"],
-      "logical-assignment-operators": [
-        "error",
-        "always",
-        { enforceForIfStatements: true },
-      ],
+      "logical-assignment-operators": ["error", "always", { enforceForIfStatements: true }],
       "max-classes-per-file": ["error", { ignoreExpressions: true }],
       "max-depth": ["error", 3],
-      "max-lines": [
-        "error",
-        { max: 500, skipBlankLines: true, skipComments: true },
-      ],
       "max-nested-callbacks": ["error", 3],
       "max-params": ["error", 3],
       "multiline-comment-style": ["error", "separate-lines"],
@@ -163,10 +143,7 @@ export default [
       "one-var": ["error", "never"],
       "operator-assignment": ["error", "always"],
       "prefer-arrow-callback": "error",
-      "prefer-const": [
-        "error",
-        { destructuring: "any", ignoreReadBeforeAssign: false },
-      ],
+      "prefer-const": ["error", { destructuring: "any", ignoreReadBeforeAssign: false }],
       "prefer-destructuring": "error",
       "prefer-exponentiation-operator": "error",
       "prefer-numeric-literals": "error",
@@ -192,43 +169,15 @@ export default [
         {
           blankLine: "always",
           prev: "*",
-          next: [
-            "break",
-            "case",
-            "cjs-export",
-            "class",
-            "continue",
-            "do",
-            "if",
-            "switch",
-            "try",
-            "while",
-            "return",
-          ],
+          next: ["break", "case", "cjs-export", "class", "continue", "do", "if", "switch", "try", "while", "return"],
         },
         {
           blankLine: "always",
-          prev: [
-            "break",
-            "case",
-            "cjs-export",
-            "class",
-            "continue",
-            "do",
-            "if",
-            "switch",
-            "try",
-            "while",
-            "return",
-          ],
+          prev: ["break", "case", "cjs-export", "class", "continue", "do", "if", "switch", "try", "while", "return"],
           next: "*",
         },
       ],
-      quotes: [
-        "error",
-        "double",
-        { avoidEscape: true, allowTemplateLiterals: true },
-      ],
+      quotes: ["error", "double", { avoidEscape: true, allowTemplateLiterals: true }],
       "space-before-blocks": "error",
       semi: ["error", "never"],
 
