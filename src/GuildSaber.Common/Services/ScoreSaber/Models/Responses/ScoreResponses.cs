@@ -41,7 +41,8 @@ public class Score
 public record LeaderboardInfo
 {
     public required SSLeaderboardId Id { get; init; }
-    public required SongHash SongHash { get; init; }
+    /// <remarks>Not using SongHash strong type because scoresaber sends "_ostFoo" as song hash for OSTs</remarks>
+    public required string SongHash { get; init; }
     public required string SongName { get; init; }
     public required string SongSubName { get; init; }
     public required string SongAuthorName { get; init; }
