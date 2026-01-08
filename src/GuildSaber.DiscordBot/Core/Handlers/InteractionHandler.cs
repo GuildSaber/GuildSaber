@@ -25,7 +25,7 @@ public class InteractionHandler(
     public class GuildMissingException() : Exception("This discord server hasn't been registered in guild yet.");
 
     public class PlayerNotFoundException() : Exception(
-        $"The specified player was not found, did they make an account and linked their discord? (here is the {WebsiteIdentifier})");
+        $"The specified player was not found, did they make an account and linked their discord on the {WebsiteIdentifier}?");
 
     public class CurrentPlayerNotRegisteredException() : Exception(
         $"Your discord account isn't linked on GuildSaber, please login and link it first on the {WebsiteIdentifier}.");
@@ -97,13 +97,13 @@ public class InteractionHandler(
             },
             GuildMissingException when interactionContext.Guild is null => new EmbedBuilder
             {
-                Title = "Guild Not Found",
+                Title = "Not allowed outside of a guild/server",
                 Description = "This command can only be used within a discord guild/server.",
                 Color = Color.Orange
             },
             GuildMissingException => new EmbedBuilder
             {
-                Title = "Guild Not Found",
+                Title = "No guild is associated with this discord server",
                 Description = message,
                 Color = Color.Orange
             },
