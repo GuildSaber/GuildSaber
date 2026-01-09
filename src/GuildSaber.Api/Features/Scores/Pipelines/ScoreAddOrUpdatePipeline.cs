@@ -23,6 +23,8 @@ public sealed class ScoreAddOrUpdatePipeline(
     IServiceScopeFactory scopeFactory,
     HybridCache cache)
 {
+    private const string ContextWithPointsForPlayerCacheKeyPrefix = "ContextWithPointsForPlayer_";
+
     private static readonly HybridCacheEntryOptions _cacheEntryOptions = new()
     {
         Expiration = TimeSpan.FromMinutes(5)
@@ -89,6 +91,9 @@ public sealed class ScoreAddOrUpdatePipeline(
     );
 
     public readonly record struct PipelineResult(Context[] ImpactedContextsWithPoints);
+
+    public ValueTask ClearPlayerCacheAsync(PlayerId playerId)
+        => cache.RemoveAsync($"{ContextWithPointsForPlayerCacheKeyPrefix}{playerId}");
 
     /// <remarks>
     /// There is codebase assumption that all scores going in are stored and updated by default, don't change this behavior.
@@ -227,7 +232,7 @@ public sealed class ScoreAddOrUpdatePipeline(
 
         // We grab all the scores that are related to the Ranked maps, not just the ranked map version.
         var scores = await dbContext.Scores
-            .Where(x => x.PlayerId == playerId && songDifficultyIds.Contains(songDifficultyId))
+            .Where(x => x.PlayerId == playerId && songDifficultyIds.Contains(x.SongDifficultyId))
             .ToArrayAsync();
 
         return new ScoreRankingContext(
@@ -353,7 +358,7 @@ public sealed class ScoreAddOrUpdatePipeline(
 
     private static ValueTask<Context[]> GetContextWithPointsForPlayerAsync(
         PlayerId playerId, HybridCache cache, IServiceScopeFactory scopeFactory)
-        => cache.GetOrCreateAsync($"ContextWithPointsForPlayer_{playerId}", (scopeFactory, playerId),
+        => cache.GetOrCreateAsync($"{ContextWithPointsForPlayerCacheKeyPrefix}{playerId}", (scopeFactory, playerId),
             async static (state, token) =>
             {
                 await using var scope = state.scopeFactory.CreateAsyncScope();
