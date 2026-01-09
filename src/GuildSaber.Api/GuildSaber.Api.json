@@ -1,0 +1,6556 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "GuildSaber.Api | v1",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/levels/{levelId}/playlist": {
+      "get": {
+        "tags": [
+          "PlaylistEndpoints"
+        ],
+        "summary": "Get the playlist for a ranked map list level.",
+        "description": "Get the playlist associated with a ranked map list level by its Id.",
+        "operationId": "GetLevelPlaylist",
+        "parameters": [
+          {
+            "name": "levelId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Playlist"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET levels/{levelId}/playlist",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/players/{playerId}/contexts/{contextId}/ranked-scores": {
+      "get": {
+        "tags": [
+          "Players.RankedScores"
+        ],
+        "summary": "Get all ranked scores of a player paginated",
+        "description": "Get all ranked scores of a specific player by their Id, with optional sorting.",
+        "operationId": "GetPlayerRankedScores",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ERankedScoreSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EOrder"
+            }
+          },
+          {
+            "name": "difficultyStarFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "accuracyStarFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "difficultyStarTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "accuracyStarTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfRankedScore"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/players/@me/contexts/{contextId}/ranked-scores": {
+      "get": {
+        "tags": [
+          "Players.RankedScores"
+        ],
+        "summary": "Get current player's ranked scores paginated",
+        "description": "Get the current player's ranked scores using their player id from claims, with optional sorting.",
+        "operationId": "GetPlayerAtMeRankedScores",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ERankedScoreSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EOrder"
+            }
+          },
+          {
+            "name": "difficultyStarFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "accuracyStarFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "difficultyStarTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "accuracyStarTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfRankedScore"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/players/{playerId}/contexts/{contextId}/ranked-scores-with-ranked-map": {
+      "get": {
+        "tags": [
+          "Players.RankedScores"
+        ],
+        "summary": "Get all ranked scores of a player with ranked map paginated",
+        "description": "Get all ranked scores of a specific player by their Id along with ranked map, with optional sorting.",
+        "operationId": "GetPlayerRankedScoresWithRankedMap",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ERankedScoreSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EOrder"
+            }
+          },
+          {
+            "name": "difficultyStarFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "accuracyStarFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "difficultyStarTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "accuracyStarTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfRankedScoreWithRankedMap"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/players/@me/contexts/{contextId}/ranked-scores-with-ranked-map": {
+      "get": {
+        "tags": [
+          "Players.RankedScores"
+        ],
+        "summary": "Get current player's ranked scores with ranked map paginated",
+        "description": "Get the current player's ranked scores along with ranked map using their player id from claims, with optional sorting.",
+        "operationId": "GetPlayerAtMeRankedScoresWithRankedMap",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ERankedScoreSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EOrder"
+            }
+          },
+          {
+            "name": "difficultyStarFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "accuracyStarFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "difficultyStarTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "accuracyStarTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfRankedScoreWithRankedMap"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/ranked-maps/{rankedMapId}": {
+      "get": {
+        "tags": [
+          "RankedMaps"
+        ],
+        "summary": "Get a ranked map.",
+        "description": "Get a ranked map in the server by its Id.",
+        "operationId": "GetRankedMap",
+        "parameters": [
+          {
+            "name": "rankedMapId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankedMap"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET ranked-maps/{rankedMapId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contexts/{contextId}/ranked-maps": {
+      "get": {
+        "tags": [
+          "Context.RankedMaps"
+        ],
+        "summary": "Get ranked maps for a context.",
+        "description": "Get ranked maps for a context by its Id, with optional search and sorting.",
+        "operationId": "GetRankedMaps",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ContextId"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ERankedMapSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfRankedMap"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Context.RankedMaps"
+        ],
+        "summary": "Create a ranked map for a context.",
+        "description": "    This endpoint:\n    * Returns 200 OK with ranked map details when created successfully.\n* Returns 401 Unauthorized when the guild has reached its maximum number of ranked maps.\n* Returns 400 Bad Request with validation details when validation fails.\n* Returns 404 Not Found when the map is not found on BeatSaver.\n* Returns 429 Too Many Requests when rate limited by BeatSaver API.\n* Returns 500 Internal Server Error when BeatSaver API fails.",
+        "operationId": "CreateRankedMap",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRankedMap"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankedMap"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.2",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/ranked-maps/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/ranked-maps/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/ranked-maps/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/ranked-maps/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/players": {
+      "get": {
+        "tags": [
+          "Players"
+        ],
+        "summary": "Get all players paginated",
+        "description": "Get all players in the server, with optional search and sorting.",
+        "operationId": "GetPlayers",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EPlayerSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfPlayer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/players/{playerId}": {
+      "get": {
+        "tags": [
+          "Players"
+        ],
+        "summary": "Get a player",
+        "description": "Get a specific player by their Id.",
+        "operationId": "GetPlayer",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Player"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET players/{playerId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Players"
+        ],
+        "summary": "Delete a player",
+        "description": "Delete a specific player by their Id.",
+        "operationId": "DeletePlayer",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "DELETE players/{playerId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/players/@me": {
+      "get": {
+        "tags": [
+          "Players"
+        ],
+        "summary": "Get current player",
+        "description": "Get the current player information.",
+        "operationId": "GetPlayerAtMe",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Player"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET players/@me",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/players/{playerId}/extended": {
+      "get": {
+        "tags": [
+          "Players"
+        ],
+        "summary": "Get a player with extended information",
+        "description": "Get a specific player with extended information by their Id. Which includes additional fields like guilds and permissions.",
+        "operationId": "GetPlayerExtended",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerExtended"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET players/{playerId}/extended",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/players/@me/extended": {
+      "get": {
+        "tags": [
+          "Players"
+        ],
+        "summary": "Get current player with extended information",
+        "description": "Get the current player information alongside their guilds and permissions.",
+        "operationId": "GetPlayerExtendedAtMe",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerExtended"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET players/@me/extended",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/players/lookup/discord/{discordId}": {
+      "get": {
+        "tags": [
+          "Players"
+        ],
+        "summary": "Lookup player ID by Discord ID",
+        "description": "Resolve a player's ID from their linked Discord account ID.",
+        "operationId": "LookupPlayerByDiscordId",
+        "parameters": [
+          {
+            "name": "discordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerId"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET players/lookup/discord/{discordId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contexts/{contextId}/points/{pointId}/ranked-maps/{rankedMapId}/leaderboard": {
+      "get": {
+        "tags": [
+          "Leaderboards"
+        ],
+        "summary": "Get the leaderboard for a ranked map within a context point, paginated.",
+        "description": "Get the leaderboard for a ranked map within a context point by its Id, paginated.",
+        "operationId": "GetContextPointRankedMapLeaderboard",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rankedMapId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ERankedMapLeaderboardSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfRankedScoreWithPlayer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contexts/{contextId}/points/{pointId}/leaderboard": {
+      "get": {
+        "tags": [
+          "Leaderboards"
+        ],
+        "summary": "Get the guild member's leaderboard for a point within a context, paginated.",
+        "description": "Get the guild member's leaderboard for a point within a context by its Id, paginated.",
+        "operationId": "GetMemberPointStatLeaderboard",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EMemberStatLeaderboardSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfMemberPointStat"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contexts/{contextId}/points/{pointId}/categories/{categoryId}/leaderboard": {
+      "get": {
+        "tags": [
+          "Leaderboards"
+        ],
+        "summary": "Get the guild member's leaderboard for a category point within a context, paginated.",
+        "description": "Get the guild member's leaderboard for a category point within a context by its Id, paginated.",
+        "operationId": "GetMemberCategoryPointStatLeaderboard",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EMemberStatLeaderboardSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfMemberPointStat"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/guilds": {
+      "get": {
+        "tags": [
+          "Guilds"
+        ],
+        "summary": "Get all guilds paginated",
+        "description": "Get all guilds in the server, with optional search and sorting.",
+        "operationId": "GetGuilds",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EGuildSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfGuild"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Guilds"
+        ],
+        "summary": "Create a guild as the current player",
+        "description": "Create a guild as the current player using their player id from claims.",
+        "operationId": "CreateGuild",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGuild"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Guild"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.2",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": null,
+                  "instance": "POST guilds/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST guilds/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/guilds/{guildId}": {
+      "get": {
+        "tags": [
+          "Guilds"
+        ],
+        "summary": "Get a guild",
+        "description": "Get a specific guild by its Id.",
+        "operationId": "GetGuild",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Guild"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET guilds/{guildId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Guilds"
+        ],
+        "summary": "Patch a guild",
+        "description": "Edit fields of a guild only by the given properties (json patch rfc6902).",
+        "operationId": "PatchGuild",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonPatchDocument"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Guild"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "PATCH guilds/{guildId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Guilds"
+        ],
+        "summary": "Delete a guild",
+        "description": "Delete a guild by its Id.",
+        "operationId": "DeleteGuild",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "DELETE guilds/{guildId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/guilds/{guildId}/extended": {
+      "get": {
+        "tags": [
+          "Guilds"
+        ],
+        "summary": "Get a guild with extended information",
+        "description": "Get a specific guild with extended information by its Id. Which includes additional fields like categories and points.",
+        "operationId": "GetGuildExtended",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuildExtended"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET guilds/{guildId}/extended",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/guilds/by-discord-id/{discordGuildId}": {
+      "get": {
+        "tags": [
+          "Guilds"
+        ],
+        "summary": "Get a guild by Discord guild ID",
+        "description": "Get a specific guild by its Discord guild ID.",
+        "operationId": "GetGuildByDiscordId",
+        "parameters": [
+          {
+            "name": "discordGuildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Guild"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET guilds/by-discord-id/{discordGuildId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/guilds/lookup/discord/{discordGuildId}": {
+      "get": {
+        "tags": [
+          "Guilds"
+        ],
+        "summary": "Lookup guild ID by Discord guild ID",
+        "description": "Resolve a guild's ID from its linked Discord guild ID.",
+        "operationId": "LookupGuildByDiscordGuildId",
+        "parameters": [
+          {
+            "name": "discordGuildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuildId"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET guilds/lookup/discord/{discordGuildId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/guilds/{guildId}/members": {
+      "get": {
+        "tags": [
+          "Guilds.Members"
+        ],
+        "summary": "Get all members of a guild.",
+        "description": "Get all members of a guild by guild id.",
+        "operationId": "GetMembers",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 0,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EMemberSorters"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfMember"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Guilds.Members"
+        ],
+        "summary": "Join a guild as the current player.",
+        "description": "Join a guild as the current player using their player id from claims.",
+        "operationId": "CurrentPlayerJoinGuild",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST guilds/{guildId}/members/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST guilds/{guildId}/members/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/guilds/{guildId}/members/{playerId}": {
+      "get": {
+        "tags": [
+          "Guilds.Members"
+        ],
+        "summary": "Get a member of a guild",
+        "description": "Get a member of a guild by player id.",
+        "operationId": "GetMember",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET guilds/{guildId}/members/{playerId}/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Guilds.Members"
+        ],
+        "summary": "Join a guild",
+        "description": "Join a guild by player id.",
+        "operationId": "JoinGuild",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST guilds/{guildId}/members/{playerId}/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST guilds/{guildId}/members/{playerId}/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/members/{playerId}/level-stats": {
+      "get": {
+        "tags": [
+          "Context.Members.LevelStats"
+        ],
+        "summary": "Get level stats for a guild member.",
+        "description": "Get level statistics for a specific player within a context.",
+        "operationId": "GetMemberLevelStats",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemberLevelStat"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contexts/{contextId}/members/@me/level-stats": {
+      "get": {
+        "tags": [
+          "Context.Members.LevelStats"
+        ],
+        "summary": "Get level stats for the current authenticated member.",
+        "description": "Get level statistics for the current authenticated player within a context.",
+        "operationId": "GetCurrentMemberLevelStats",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemberLevelStat"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/members/{playerId}/context-stats": {
+      "get": {
+        "tags": [
+          "Context.Members.ContextStats"
+        ],
+        "summary": "Get context stats for a guild member.",
+        "description": "Get context statistics for a specific player within a context.",
+        "operationId": "GetMemberContextStats",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberContextStat"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET contexts/{contextId}/members/{playerId}/context-stats",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contexts/{contextId}/members/@me/context-stats": {
+      "get": {
+        "tags": [
+          "Context.Members.ContextStats"
+        ],
+        "summary": "Get context stats for the current authenticated member.",
+        "description": "Get context statistics for the current authenticated player within a context.",
+        "operationId": "GetCurrentMemberContextStats",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberContextStat"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET contexts/{contextId}/members/@me/context-stats",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/context/{contextId}/levels": {
+      "get": {
+        "tags": [
+          "Context.Levels"
+        ],
+        "summary": "Get all levels in a context, optionally filtered by category.",
+        "description": "- No parameters: Returns all levels.\n- hasCategory=false: Returns levels with no category.\n- category=5: Returns levels in category 5.",
+        "operationId": "GetLevels",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "hasCategory",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Level"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/guilds/{guildId}/stats": {
+      "get": {
+        "tags": [
+          "Guilds.Stats"
+        ],
+        "summary": "Get the statistics of the guild by guild id.",
+        "description": "Get the statistics of the guild by guild id.",
+        "operationId": "GetGuildStats",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuildStatsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET guilds/{guildId}/stats/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Get all categories paginated.",
+        "description": "Get all categories in the server.",
+        "operationId": "GetCategoriesPaginated",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfCategory"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories/{categoryId}": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Get a category.",
+        "description": "Get a category in the server by its Id.",
+        "operationId": "GetCategory",
+        "parameters": [
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET categories/{categoryId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/guilds/{guildId}/categories": {
+      "get": {
+        "tags": [
+          "Guilds.Categories"
+        ],
+        "summary": "Get all categories of a guild.",
+        "description": "Get all categories of a guild by guild id.",
+        "operationId": "GetCategories",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Category"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Guilds.Categories"
+        ],
+        "summary": "Create a category for a guild.",
+        "description": "Create a category for a guild by its Id.",
+        "operationId": "CreateCategory",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategory"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST guilds/{guildId}/categories/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/guilds/{guildId}/categories/{categoryId}": {
+      "put": {
+        "tags": [
+          "Guilds.Categories"
+        ],
+        "summary": "Update a category of a guild.",
+        "description": "Update a category of a guild by its Id.",
+        "operationId": "UpdateCategory",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategory"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Guilds.Categories"
+        ],
+        "summary": "Delete a category of a guild.",
+        "description": "Delete a category of a guild by its Id.",
+        "operationId": "DeleteCategory",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "DELETE guilds/{guildId}/categories/{categoryId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/debug/import-old-gs-maps/{guildId}": {
+      "post": {
+        "tags": [
+          "Debug"
+        ],
+        "summary": "Import ranked maps from old GuildSaber",
+        "description": "Import ranked maps from old GuildSaber for a specific guild.",
+        "operationId": "ImportOldGuildSaberMapsBackground",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST debug/import-old-gs-maps/{guildId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/debug/import-beatleader-scores/{playerId}": {
+      "post": {
+        "tags": [
+          "Debug"
+        ],
+        "summary": "Enqueue BeatLeader player scores import.",
+        "description": "Queues a background task to import all scores for the specified player from BeatLeader.",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/debug/import-scoresaber-scores/{playerId}": {
+      "post": {
+        "tags": [
+          "Debug"
+        ],
+        "summary": "Enqueue ScoreSaber player scores import.",
+        "description": "Queues a background task to import all scores for the specified player from ScoreSaber.",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/debug/remove-all-scores": {
+      "post": {
+        "tags": [
+          "Debug"
+        ],
+        "summary": "Remove all scores from the database.",
+        "description": "Deletes all ranked scores from the database. USE WITH CAUTION!",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/debug/remove-all-ranked-scores": {
+      "post": {
+        "tags": [
+          "Debug"
+        ],
+        "summary": "Remove all ranked scores from the database.",
+        "description": "Deletes all ranked scores from the database. USE WITH CAUTION!",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/debug/remove-all-ranked-maps": {
+      "post": {
+        "tags": [
+          "Debug"
+        ],
+        "summary": "Remove all ranked maps from the database.",
+        "description": "Deletes all ranked maps from the database. USE WITH CAUTION!",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/debug/recalculate-member-points/{playerId}": {
+      "post": {
+        "tags": [
+          "Debug"
+        ],
+        "summary": "Recalculate member points for a player.",
+        "description": "Recalculates member points for all contexts the player is a member of.",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/debug/recalculate-member-levels/{playerId}": {
+      "post": {
+        "tags": [
+          "Debug"
+        ],
+        "summary": "Recalculate member levels for a player.",
+        "description": "Recalculates member levels for all contexts the player is a member of.",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/debug/recalculate-player-scores/{playerId}": {
+      "post": {
+        "tags": [
+          "Debug"
+        ],
+        "summary": "Recalculate player scores.",
+        "description": "Recalculates all player scores for the specified player.",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/debug/delete-member-point-stats/{playerId}": {
+      "post": {
+        "tags": [
+          "Debug"
+        ],
+        "summary": "Delete all member point stats for a player.",
+        "description": "Deletes all member point stats for the specified player. USE WITH CAUTION!",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/auth/login/beatleader": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Login with BeatLeader",
+        "description": "Initiate the BeatLeader authentication flow with optional callback path.",
+        "operationId": "BeatLeaderLogin",
+        "parameters": [
+          {
+            "name": "returnUrl",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/login/discord": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Login with Discord",
+        "description": "Initiate the Discord authentication flow with optional callback path.",
+        "operationId": "DiscordLogin",
+        "parameters": [
+          {
+            "name": "returnUrl",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/link/discord": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Initiate linking Discord from authentication flow.",
+        "description": "Initiate the Discord authentication flow to link Discord account to an existing authenticated user with optional callback path.",
+        "operationId": "DiscordLink",
+        "parameters": [
+          {
+            "name": "returnUrl",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/callback/link/discord": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Link Discord account to existing authenticated user.",
+        "description": "Handles the callback from Discord to link Discord account to existing authenticated user.",
+        "operationId": "DiscordLinkCallback",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedirectHttpResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.2",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "instance": "GET auth/callback/link/discord",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc4918#section-11.2",
+                  "title": "Unprocessable Entity",
+                  "status": 422,
+                  "detail": null,
+                  "instance": "GET auth/callback/link/discord",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/callback/link/discord/redirect": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Link Discord account to existing authenticated user with redirect.",
+        "description": "Handles the callback from Discord after authentication to link Discord account to an existing authenticated user and redirects to a specified path from the calling origin with ?type=discordLink&{error}&status as query params.",
+        "operationId": "DiscordLinkCallbackWithRedirect",
+        "parameters": [
+          {
+            "name": "returnUrl",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedirectHttpResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.2",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "instance": "GET auth/callback/link/discord/redirect",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc4918#section-11.2",
+                  "title": "Unprocessable Entity",
+                  "status": 422,
+                  "detail": null,
+                  "instance": "GET auth/callback/link/discord/redirect",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/callback/beatleader": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Get session token after authenticating with BeatLeader.",
+        "description": "Handles the callback from BeatLeader after authentication and returns a token.",
+        "operationId": "BeatLeaderCallback",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.2",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "instance": "GET auth/callback/beatleader",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc4918#section-11.2",
+                  "title": "Unprocessable Entity",
+                  "status": 422,
+                  "detail": null,
+                  "instance": "GET auth/callback/beatleader",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": null,
+                  "instance": "GET auth/callback/beatleader",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Locked",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Locked",
+                  "status": 423,
+                  "detail": null,
+                  "instance": "GET auth/callback/beatleader",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/callback/discord": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Get session token after authenticating with Discord.",
+        "description": "Handles the callback from Discord after authentication and returns a token.",
+        "operationId": "DiscordCallback",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.2",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "instance": "GET auth/callback/discord",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc4918#section-11.2",
+                  "title": "Unprocessable Entity",
+                  "status": 422,
+                  "detail": null,
+                  "instance": "GET auth/callback/discord",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": null,
+                  "instance": "GET auth/callback/discord",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Locked",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Locked",
+                  "status": 423,
+                  "detail": null,
+                  "instance": "GET auth/callback/discord",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/callback/discord/redirect": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Redirect with session token or error after Discord authentication.",
+        "description": "Handles the callback from Discord after authentication and redirects to a specified path from the calling origin with ?type=auth&{token/error}&status as query params.",
+        "operationId": "DiscordCallbackWithRedirect",
+        "parameters": [
+          {
+            "name": "returnUrl",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedirectHttpResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.2",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "instance": "GET auth/callback/discord/redirect",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc4918#section-11.2",
+                  "title": "Unprocessable Entity",
+                  "status": 422,
+                  "detail": null,
+                  "instance": "GET auth/callback/discord/redirect",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": null,
+                  "instance": "GET auth/callback/discord/redirect",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Locked",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Locked",
+                  "status": 423,
+                  "detail": null,
+                  "instance": "GET auth/callback/discord/redirect",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/callback/beatleader/redirect": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Redirect with session token or error after BeatLeader authentication.",
+        "description": "Handles the callback from BeatLeader after authentication and redirects to a specified path from the calling origin with ?type=auth&{token/error}&status as query params.",
+        "operationId": "BeatLeaderCallbackWithRedirect",
+        "parameters": [
+          {
+            "name": "returnUrl",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedirectHttpResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.2",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "instance": "GET auth/callback/beatleader/redirect",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc4918#section-11.2",
+                  "title": "Unprocessable Entity",
+                  "status": 422,
+                  "detail": null,
+                  "instance": "GET auth/callback/beatleader/redirect",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": null,
+                  "instance": "GET auth/callback/beatleader/redirect",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Locked",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Locked",
+                  "status": 423,
+                  "detail": null,
+                  "instance": "GET auth/callback/beatleader/redirect",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Log out the current user.",
+        "operationId": "Logout",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AddMapVersion": {
+        "required": [
+          "beatSaverKey"
+        ],
+        "type": "object",
+        "properties": {
+          "beatSaverKey": {
+            "$ref": "#/components/schemas/BeatSaverKey"
+          },
+          "characteristic": {
+            "type": "string",
+            "default": "Standard"
+          },
+          "difficulty": {
+            "$ref": "#/components/schemas/EDifficulty"
+          },
+          "playMode": {
+            "type": "string",
+            "default": "Standard"
+          },
+          "order": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint8",
+            "default": 0
+          }
+        }
+      },
+      "BeatLeaderScoreId": { },
+      "BeatSaverKey": {
+        "type": "string",
+        "example": "a3c3"
+      },
+      "BLLeaderboardId": {
+        "type": "string",
+        "example": "a3c391"
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "guildId": {
+            "$ref": "#/components/schemas/GuildId"
+          },
+          "info": {
+            "$ref": "#/components/schemas/CategoryInfo"
+          }
+        }
+      },
+      "CategoryInfo": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "ContextId": {
+        "type": "integer",
+        "format": "int32"
+      },
+      "CreateCategory": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateGuild": {
+        "required": [
+          "info",
+          "requirements"
+        ],
+        "type": "object",
+        "properties": {
+          "info": {
+            "$ref": "#/components/schemas/GuildInfo"
+          },
+          "requirements": {
+            "$ref": "#/components/schemas/GuildRequirements"
+          }
+        }
+      },
+      "CreateRankedMap": {
+        "required": [
+          "baseMapVersion",
+          "requirements",
+          "manualRating",
+          "categoryIds",
+          "levelIds"
+        ],
+        "type": "object",
+        "properties": {
+          "baseMapVersion": {
+            "description": "The map version that will be used as the base for the ranked map.",
+            "$ref": "#/components/schemas/AddMapVersion"
+          },
+          "requirements": {
+            "$ref": "#/components/schemas/RankedMapRequirements"
+          },
+          "manualRating": {
+            "description": "Used to force a specific difficulty and/or accuracy star rating for the map.\nIf null, the star ratings will be calculated automatically by BeatLeader's ExMachina.",
+            "$ref": "#/components/schemas/ManualRating"
+          },
+          "categoryIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            },
+            "description": "The categories to assign the ranked map to."
+          },
+          "levelIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            },
+            "description": "The levels to assign the ranked map to (in case of RankedMapList levels)."
+          }
+        }
+      },
+      "DiscordGuildId": {
+        "type": "string",
+        "example": "987654321098765432"
+      },
+      "EContextType": {
+        "enum": [
+          "Default",
+          "Tournament",
+          "Temporary"
+        ]
+      },
+      "EDifficulty": {
+        "enum": [
+          "Easy",
+          "Normal",
+          "Hard",
+          "Expert",
+          "ExpertPlus"
+        ],
+        "default": "ExpertPlus"
+      },
+      "EGuildSorter": {
+        "enum": [
+          "Id",
+          "Popularity",
+          "Name",
+          "CreationDate",
+          "MapCount",
+          "MemberCount"
+        ],
+        "default": "Popularity"
+      },
+      "EGuildStatus": {
+        "enum": [
+          "Unverified",
+          "Verified",
+          "Featured",
+          "Private"
+        ]
+      },
+      "EHMD": {
+        "enum": [
+          "Unknown",
+          "Rift",
+          "Vive",
+          "VivePro",
+          "WMR",
+          "RiftS",
+          "Quest",
+          "PicoNeo3",
+          "PicoNeo2",
+          "VivePro2",
+          "ViveElite",
+          "Miramar",
+          "Pimax8K",
+          "Pimax5K",
+          "PimaxArtisan",
+          "HpReverb",
+          "SamsungWMR",
+          "QiyuDream",
+          "Disco",
+          "LenovoExplorer",
+          "AcerWMR",
+          "ViveFocus",
+          "Arpara",
+          "DellVisor",
+          "E3",
+          "ViveDvt",
+          "Glasses20",
+          "Hedy",
+          "Vaporeon",
+          "Huaweivr",
+          "AsusWMR",
+          "CloudXR",
+          "Vridge",
+          "Medion",
+          "PicoNeo4",
+          "QuestPro",
+          "PimaxCrystal",
+          "E4",
+          "Index",
+          "Controllable",
+          "BigScreenBeyond",
+          "Nolosonic",
+          "Hypereal",
+          "Varjoaero",
+          "PSVR2",
+          "Megane1",
+          "VarjoXR3",
+          "ViveCosmos",
+          "Quest2",
+          "Quest3",
+          "Quest3S"
+        ]
+      },
+      "EJoinState": {
+        "enum": [
+          "None",
+          "Joined",
+          "Requested",
+          "Invited",
+          "Refused",
+          "Banned"
+        ]
+      },
+      "EMemberSorters": {
+        "enum": [
+          "PlayerId",
+          "JoinState",
+          "CreatedAt",
+          "EditedAt",
+          "Permissions"
+        ],
+        "default": "CreatedAt"
+      },
+      "EMemberStatLeaderboardSorter": {
+        "enum": [
+          "Points",
+          "PassCount"
+        ],
+        "default": "Points"
+      },
+      "EModifiers": {
+        "type": "string",
+        "example": "None"
+      },
+      "EOrder": {
+        "enum": [
+          "Desc",
+          "Asc"
+        ],
+        "description": "Represents the order in which values will be sorted.",
+        "default": "Desc"
+      },
+      "EPermission": {
+        "type": "string"
+      },
+      "EPlayerSorter": {
+        "enum": [
+          "Id",
+          "CreationDate"
+        ],
+        "default": "CreationDate"
+      },
+      "ERankedMapLeaderboardSorter": {
+        "enum": [
+          "Points",
+          "EffectiveScore"
+        ],
+        "default": "Points"
+      },
+      "ERankedMapSorter": {
+        "enum": [
+          "Id",
+          "EditTime",
+          "CreationTime",
+          "DifficultyStar",
+          "AccuracyStar",
+          "Name"
+        ],
+        "default": "DifficultyStar"
+      },
+      "ERankedScoreSorter": {
+        "enum": [
+          "Points",
+          "DifficultyStar",
+          "AccuracyStar",
+          "Score",
+          "Accuracy",
+          "ScoreTime"
+        ],
+        "default": "Points"
+      },
+      "EState": {
+        "type": "string"
+      },
+      "ESubscriptionTier": {
+        "enum": [
+          "None",
+          "Tier1",
+          "Tier2",
+          "Tier3"
+        ]
+      },
+      "Guild": {
+        "required": [
+          "id",
+          "info",
+          "requirements",
+          "status",
+          "discordInfo"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/GuildId"
+          },
+          "info": {
+            "$ref": "#/components/schemas/GuildInfo"
+          },
+          "requirements": {
+            "$ref": "#/components/schemas/GuildRequirements"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EGuildStatus"
+          },
+          "discordInfo": {
+            "$ref": "#/components/schemas/GuildDiscordInfo"
+          }
+        }
+      },
+      "GuildContext": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "type": {
+            "$ref": "#/components/schemas/EContextType"
+          },
+          "info": {
+            "$ref": "#/components/schemas/GuildContextInfo"
+          },
+          "pointIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        }
+      },
+      "GuildContextInfo": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "GuildDiscordInfo": {
+        "required": [
+          "mainDiscordGuildId",
+          "inviteCode"
+        ],
+        "type": "object",
+        "properties": {
+          "mainDiscordGuildId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DiscordGuildId"
+              }
+            ]
+          },
+          "inviteCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "GuildExtended": {
+        "required": [
+          "guild",
+          "contexts",
+          "pointsLite",
+          "categories"
+        ],
+        "type": "object",
+        "properties": {
+          "guild": {
+            "$ref": "#/components/schemas/Guild"
+          },
+          "contexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GuildContext"
+            }
+          },
+          "pointsLite": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PointLite"
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          }
+        }
+      },
+      "GuildId": {
+        "type": "integer",
+        "format": "int32"
+      },
+      "GuildInfo": {
+        "required": [
+          "name",
+          "smallName",
+          "description",
+          "color",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "smallName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "color": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GuildRequirements": {
+        "required": [
+          "requireSubmission",
+          "minRank",
+          "maxRank",
+          "minPP",
+          "maxPP",
+          "accountAgeUnix"
+        ],
+        "type": "object",
+        "properties": {
+          "requireSubmission": {
+            "type": "boolean"
+          },
+          "minRank": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxRank": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "minPP": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxPP": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "accountAgeUnix": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "GuildStatsResponse": {
+        "type": "object",
+        "properties": {
+          "guildId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "memberCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rankedScoreCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "HttpValidationProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "traceId": {
+            "type": "string"
+          }
+        }
+      },
+      "IResult": {
+        "type": "object"
+      },
+      "JsonPatchDocument": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "oneOf": [
+            {
+              "required": [
+                "op",
+                "path",
+                "value"
+              ],
+              "type": "object",
+              "properties": {
+                "op": {
+                  "enum": [
+                    "add",
+                    "replace",
+                    "test"
+                  ],
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "value": { }
+              },
+              "additionalProperties": false
+            },
+            {
+              "required": [
+                "op",
+                "path",
+                "from"
+              ],
+              "type": "object",
+              "properties": {
+                "op": {
+                  "enum": [
+                    "move",
+                    "copy"
+                  ],
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "from": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "required": [
+                "op",
+                "path"
+              ],
+              "type": "object",
+              "properties": {
+                "op": {
+                  "enum": [
+                    "remove"
+                  ],
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "Level": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/LevelRankedMapListLevel"
+          },
+          {
+            "$ref": "#/components/schemas/LevelDiffStarLevel"
+          },
+          {
+            "$ref": "#/components/schemas/LevelAccStarLevel"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "RankedMapList": "#/components/schemas/LevelRankedMapListLevel",
+            "DiffStar": "#/components/schemas/LevelDiffStarLevel",
+            "AccStar": "#/components/schemas/LevelAccStarLevel"
+          }
+        }
+      },
+      "LevelAccStarLevel": {
+        "required": [
+          "minStar",
+          "requiredPassCount",
+          "id",
+          "guildId",
+          "contextId",
+          "categoryId",
+          "info",
+          "order",
+          "isLocking"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "AccStar"
+            ],
+            "type": "string"
+          },
+          "minStar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "requiredPassCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
+          },
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "guildId": {
+            "$ref": "#/components/schemas/GuildId"
+          },
+          "contextId": {
+            "$ref": "#/components/schemas/ContextId"
+          },
+          "categoryId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "info": {
+            "$ref": "#/components/schemas/LevelInfo"
+          },
+          "order": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
+          },
+          "isLocking": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LevelDiffStarLevel": {
+        "required": [
+          "minStar",
+          "requiredPassCount",
+          "id",
+          "guildId",
+          "contextId",
+          "categoryId",
+          "info",
+          "order",
+          "isLocking"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "DiffStar"
+            ],
+            "type": "string"
+          },
+          "minStar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "requiredPassCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
+          },
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "guildId": {
+            "$ref": "#/components/schemas/GuildId"
+          },
+          "contextId": {
+            "$ref": "#/components/schemas/ContextId"
+          },
+          "categoryId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "info": {
+            "$ref": "#/components/schemas/LevelInfo"
+          },
+          "order": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
+          },
+          "isLocking": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LevelInfo": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "color": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "LevelRankedMapListLevel": {
+        "required": [
+          "requiredPassCount",
+          "totalCount",
+          "id",
+          "guildId",
+          "contextId",
+          "categoryId",
+          "info",
+          "order",
+          "isLocking"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "RankedMapList"
+            ],
+            "type": "string"
+          },
+          "requiredPassCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "guildId": {
+            "$ref": "#/components/schemas/GuildId"
+          },
+          "contextId": {
+            "$ref": "#/components/schemas/ContextId"
+          },
+          "categoryId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "info": {
+            "$ref": "#/components/schemas/LevelInfo"
+          },
+          "order": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
+          },
+          "isLocking": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ManualRating": {
+        "type": "object",
+        "properties": {
+          "difficultyStar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "When specified, the difficulty rating of the map won't be calculated by BeatLeader's ExMachina.",
+            "format": "float"
+          },
+          "accuracyStar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "When specified, the accuracy rating of the map won't be calculated by BeatLeader's ExMachina.",
+            "format": "float"
+          }
+        }
+      },
+      "MapVersion": {
+        "required": [
+          "addedAt",
+          "order",
+          "song",
+          "difficulty"
+        ],
+        "type": "object",
+        "properties": {
+          "addedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "order": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint8"
+          },
+          "song": {
+            "$ref": "#/components/schemas/Song"
+          },
+          "difficulty": {
+            "$ref": "#/components/schemas/SongDifficulty"
+          }
+        }
+      },
+      "Member": {
+        "type": "object",
+        "properties": {
+          "playerId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "guildId": {
+            "$ref": "#/components/schemas/GuildId"
+          },
+          "initializedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "editedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/EPermission"
+          },
+          "joinState": {
+            "$ref": "#/components/schemas/EJoinState"
+          },
+          "priority": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MemberContextStat": {
+        "type": "object",
+        "properties": {
+          "simplePointsWithRank": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimplePointWithRank"
+            }
+          },
+          "passCountWithRank": {
+            "$ref": "#/components/schemas/PassCountWithRank"
+          }
+        }
+      },
+      "MemberLevelStat": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "$ref": "#/components/schemas/Level"
+          },
+          "isCompleted": {
+            "type": "boolean"
+          },
+          "isLocked": {
+            "type": "boolean"
+          },
+          "passCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MemberPointStat": {
+        "type": "object",
+        "properties": {
+          "player": {
+            "$ref": "#/components/schemas/Player"
+          },
+          "points": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "passCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "PagedListOfCategory": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPages": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PagedListOfGuild": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Guild"
+            }
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPages": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PagedListOfMember": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Member"
+            }
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPages": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PagedListOfMemberPointStat": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemberPointStat"
+            }
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPages": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PagedListOfPlayer": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Player"
+            }
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPages": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PagedListOfRankedMap": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankedMap"
+            }
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPages": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PagedListOfRankedScore": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankedScore"
+            }
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPages": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PagedListOfRankedScoreWithPlayer": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankedScoreWithPlayer"
+            }
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPages": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PagedListOfRankedScoreWithRankedMap": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankedScoreWithRankedMap"
+            }
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPages": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PassCountWithRank": {
+        "type": "object",
+        "properties": {
+          "passCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rank": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "Player": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/PlayerId"
+          },
+          "playerHardwareInfo": {
+            "$ref": "#/components/schemas/PlayerHardwareInfo"
+          },
+          "playerInfo": {
+            "$ref": "#/components/schemas/PlayerInfo"
+          },
+          "playerLinkedAccounts": {
+            "$ref": "#/components/schemas/PlayerLinkedAccounts"
+          },
+          "playerSubscriptionInfo": {
+            "$ref": "#/components/schemas/PlayerSubscriptionInfo"
+          },
+          "isManager": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PlayerExtended": {
+        "type": "object",
+        "properties": {
+          "player": {
+            "$ref": "#/components/schemas/Player"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Member"
+            }
+          }
+        }
+      },
+      "PlayerHardwareInfo": {
+        "type": "object",
+        "properties": {
+          "hmd": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          }
+        }
+      },
+      "PlayerId": {
+        "type": "integer",
+        "format": "int32"
+      },
+      "PlayerInfo": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PlayerLinkedAccounts": {
+        "type": "object",
+        "properties": {
+          "beatLeaderId": {
+            "type": "string"
+          },
+          "scoreSaberId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "discordId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PlayerSubscriptionInfo": {
+        "type": "object",
+        "properties": {
+          "tier": {
+            "$ref": "#/components/schemas/ESubscriptionTier"
+          }
+        }
+      },
+      "Playlist": {
+        "type": "object",
+        "properties": {
+          "playlistTitle": {
+            "type": "string"
+          },
+          "playlistAuthor": {
+            "type": "string"
+          },
+          "playlistDescription": {
+            "type": "string"
+          },
+          "customData": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlaylistCustomData"
+              }
+            ]
+          },
+          "songs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaylistSong"
+            }
+          },
+          "image": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PlaylistCustomData": {
+        "type": "object",
+        "properties": {
+          "syncURL": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PlaylistDifficultyData": {
+        "type": "object",
+        "properties": {
+          "characteristic": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "PlaylistSong": {
+        "type": "object",
+        "properties": {
+          "hash": {
+            "type": "string"
+          },
+          "difficulties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaylistDifficultyData"
+            }
+          }
+        }
+      },
+      "PointLite": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "guildContextId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "traceId": {
+            "type": "string"
+          }
+        }
+      },
+      "RankedMap": {
+        "required": [
+          "id",
+          "guildId",
+          "contextId",
+          "info",
+          "requirements",
+          "rating",
+          "versions",
+          "categoryIds",
+          "levelIds"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "guildId": {
+            "$ref": "#/components/schemas/GuildId"
+          },
+          "contextId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "info": {
+            "$ref": "#/components/schemas/RankedMapInfo"
+          },
+          "requirements": {
+            "$ref": "#/components/schemas/RankedMapRequirements"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/RankedMapRating"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MapVersion"
+            }
+          },
+          "categoryIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "levelIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        }
+      },
+      "RankedMapInfo": {
+        "required": [
+          "createdAt",
+          "editedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "editedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RankedMapRating": {
+        "required": [
+          "accStar",
+          "diffStar"
+        ],
+        "type": "object",
+        "properties": {
+          "accStar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "diffStar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          }
+        }
+      },
+      "RankedMapRequirements": {
+        "type": "object",
+        "properties": {
+          "needConfirmation": {
+            "type": "boolean",
+            "default": false
+          },
+          "needFullCombo": {
+            "type": "boolean",
+            "default": false
+          },
+          "maxPauseDurationSec": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "prohibitedModifiers": {
+            "$ref": "#/components/schemas/EModifiers"
+          },
+          "mandatoryModifiers": {
+            "$ref": "#/components/schemas/EModifiers"
+          },
+          "minAccuracy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "float"
+          }
+        }
+      },
+      "RankedScore": {
+        "required": [
+          "id",
+          "rankedMapId",
+          "score",
+          "prevScore",
+          "state",
+          "rank",
+          "rawPoints",
+          "effectiveScore"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "rankedMapId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "score": {
+            "$ref": "#/components/schemas/Score"
+          },
+          "prevScore": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Score"
+              }
+            ]
+          },
+          "state": {
+            "$ref": "#/components/schemas/EState"
+          },
+          "rank": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rawPoints": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "effectiveScore": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "RankedScoreWithPlayer": {
+        "required": [
+          "rankedScore",
+          "player"
+        ],
+        "type": "object",
+        "properties": {
+          "rankedScore": {
+            "$ref": "#/components/schemas/RankedScore"
+          },
+          "player": {
+            "$ref": "#/components/schemas/Player"
+          }
+        }
+      },
+      "RankedScoreWithRankedMap": {
+        "required": [
+          "rankedScore",
+          "rankedMap"
+        ],
+        "type": "object",
+        "properties": {
+          "rankedScore": {
+            "$ref": "#/components/schemas/RankedScore"
+          },
+          "rankedMap": {
+            "$ref": "#/components/schemas/RankedMap"
+          }
+        }
+      },
+      "RedirectHttpResult": {
+        "type": "object",
+        "properties": {
+          "permanent": {
+            "type": "boolean"
+          },
+          "preserveMethod": {
+            "type": "boolean"
+          },
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "acceptLocalUrlOnly": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Score": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ScoreBeatLeaderScore"
+          },
+          {
+            "$ref": "#/components/schemas/ScoreScoreSaberScore"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "BeatLeader": "#/components/schemas/ScoreBeatLeaderScore",
+            "ScoreSaber": "#/components/schemas/ScoreScoreSaberScore"
+          }
+        }
+      },
+      "ScoreBeatLeaderScore": {
+        "required": [
+          "beatLeaderScoreId",
+          "id",
+          "baseScore",
+          "modifiers",
+          "setAt",
+          "maxCombo",
+          "isFullCombo",
+          "missedNotes",
+          "badCuts",
+          "hmd"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "BeatLeader"
+            ],
+            "type": "string"
+          },
+          "beatLeaderScoreId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BeatLeaderScoreId"
+              }
+            ]
+          },
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "baseScore": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiers": {
+            "$ref": "#/components/schemas/EModifiers"
+          },
+          "setAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "maxCombo": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "isFullCombo": {
+            "type": "boolean"
+          },
+          "missedNotes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "badCuts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hmd": {
+            "$ref": "#/components/schemas/EHMD"
+          }
+        }
+      },
+      "ScoreSaberScoreId": { },
+      "ScoreScoreSaberScore": {
+        "required": [
+          "scoreSaberScoreId",
+          "deviceHmd",
+          "deviceControllerLeft",
+          "deviceControllerRight",
+          "id",
+          "baseScore",
+          "modifiers",
+          "setAt",
+          "maxCombo",
+          "isFullCombo",
+          "missedNotes",
+          "badCuts",
+          "hmd"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "ScoreSaber"
+            ],
+            "type": "string"
+          },
+          "scoreSaberScoreId": {
+            "$ref": "#/components/schemas/ScoreSaberScoreId"
+          },
+          "deviceHmd": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "deviceControllerLeft": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "deviceControllerRight": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "baseScore": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "modifiers": {
+            "$ref": "#/components/schemas/EModifiers"
+          },
+          "setAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "maxCombo": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "isFullCombo": {
+            "type": "boolean"
+          },
+          "missedNotes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "badCuts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hmd": {
+            "$ref": "#/components/schemas/EHMD"
+          }
+        }
+      },
+      "SimplePointWithRank": {
+        "type": "object",
+        "properties": {
+          "pointId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "categoryId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "points": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rank": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "Song": {
+        "required": [
+          "id",
+          "hash",
+          "key",
+          "uploadedAt",
+          "info",
+          "stats"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hash": {
+            "$ref": "#/components/schemas/SongHash"
+          },
+          "key": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BeatSaverKey"
+              }
+            ]
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "info": {
+            "$ref": "#/components/schemas/SongInfo"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/SongStats"
+          }
+        }
+      },
+      "SongDifficulty": {
+        "required": [
+          "blLeaderboardId",
+          "ssLeaderboardId",
+          "difficulty",
+          "gameMode",
+          "stats"
+        ],
+        "type": "object",
+        "properties": {
+          "blLeaderboardId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BLLeaderboardId"
+              }
+            ]
+          },
+          "ssLeaderboardId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SSLeaderboardId"
+              }
+            ]
+          },
+          "difficulty": {
+            "$ref": "#/components/schemas/EDifficulty"
+          },
+          "gameMode": {
+            "type": "string"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/SongDifficultyStats"
+          }
+        }
+      },
+      "SongDifficultyStats": {
+        "required": [
+          "maxScore",
+          "njs",
+          "noteCount",
+          "bombCount",
+          "obstacleCount",
+          "notesPerSecond",
+          "duration"
+        ],
+        "type": "object",
+        "properties": {
+          "maxScore": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "njs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "noteCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "bombCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "obstacleCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "notesPerSecond": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "duration": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "SongHash": {
+        "type": "string",
+        "example": "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890"
+      },
+      "SongInfo": {
+        "required": [
+          "beatSaverName",
+          "name",
+          "subName",
+          "authorName",
+          "mapperName"
+        ],
+        "type": "object",
+        "properties": {
+          "beatSaverName": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "subName": {
+            "type": "string"
+          },
+          "authorName": {
+            "type": "string"
+          },
+          "mapperName": {
+            "type": "string"
+          }
+        }
+      },
+      "SongStats": {
+        "required": [
+          "bpm",
+          "durationSec",
+          "isAutoMapped"
+        ],
+        "type": "object",
+        "properties": {
+          "bpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "durationSec": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "isAutoMapped": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SSLeaderboardId": {
+        "type": "integer",
+        "format": "int32"
+      },
+      "TokenResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateCategory": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "Bearer authentication using a JWT.",
+        "scheme": "bearer",
+        "bearerFormat": "Json Web Token"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "PlaylistEndpoints"
+    },
+    {
+      "name": "Players.RankedScores",
+      "description": "Endpoints for managing players' ranked scores."
+    },
+    {
+      "name": "RankedMaps",
+      "description": "Endpoints for accessing ranked maps in the server."
+    },
+    {
+      "name": "Context.RankedMaps",
+      "description": "Endpoints for managing ranked maps within a context."
+    },
+    {
+      "name": "Players",
+      "description": "Endpoints for managing players' ranked scores."
+    },
+    {
+      "name": "Leaderboards",
+      "description": "Endpoints for accessing leaderboards in the server."
+    },
+    {
+      "name": "Guilds",
+      "description": "Endpoints for managing guilds in the server."
+    },
+    {
+      "name": "Guilds.Members",
+      "description": "Endpoints for managing guild members by guild id."
+    },
+    {
+      "name": "Context.Members.LevelStats",
+      "description": "Endpoints for accessing context member level statistics"
+    },
+    {
+      "name": "Context.Members.ContextStats",
+      "description": "Endpoints for accessing context member statistics"
+    },
+    {
+      "name": "Context.Levels",
+      "description": "Endpoints for managing levels within a context."
+    },
+    {
+      "name": "Guilds.Stats",
+      "description": "Endpoints for exploring guild statistics by guild id."
+    },
+    {
+      "name": "Categories",
+      "description": "Endpoints for accessing categories in the server."
+    },
+    {
+      "name": "Guilds.Categories",
+      "description": "Endpoints for managing guild categories by guild id."
+    },
+    {
+      "name": "Debug",
+      "description": "Endpoints for debugging and testing purposes"
+    },
+    {
+      "name": "Auth",
+      "description": "Authentication endpoints"
+    }
+  ]
+}

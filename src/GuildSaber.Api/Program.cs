@@ -240,8 +240,8 @@ builder.Services
 // Since they hold state, they should be transient.
 builder.Services.AddTransient<BeatLeaderGeneralSocketStream>(_ =>
 {
-    var uri = builder.Configuration.GetValue<Uri>("services:beatleader-socket:default:0");
-    ArgumentNullException.ThrowIfNull(uri, "BeatLeader socket URI is not configured in service discovery.");
+    var uri = builder.Configuration.GetValue<Uri>("services:beatleader-socket:default:0")
+              ?? new Uri("wss://sockets.api.beatleader.com/");
     return new BeatLeaderGeneralSocketStream(uri);
 });
 
@@ -284,6 +284,8 @@ OpenApiTypeTransformer.MapType<SSLeaderboardId>(new OpenApiSchema { Type = JsonS
 OpenApiTypeTransformer.MapType<BLLeaderboardId>(new OpenApiSchema { Type = JsonSchemaType.String, Example = "a3c391" });
 OpenApiTypeTransformer.MapType<RankedMapRequest.EModifiers>(new OpenApiSchema
     { Example = nameof(RankedMapRequest.EModifiers.None) });
+
+builder.Services.AddOutputCache(options => options.AddBasePolicy(policy => policy.Expire(TimeSpan.FromMinutes(10))));
 builder.Services.AddOpenApi(options =>
 {
     options.AddGlobalProblemDetails()
@@ -332,7 +334,7 @@ app.UseAuthorization();
 
 app.UseFileServer(new FileServerOptions { RequestPath = "/website" });
 
-app.MapOpenApi();
+app.MapOpenApi().CacheOutput();
 app.MapDefaultEndpoints()
     .MapEndpoints<Program>();
 
