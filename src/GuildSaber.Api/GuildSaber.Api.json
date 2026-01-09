@@ -222,7 +222,7 @@
         ],
         "summary": "Get current player's ranked scores paginated",
         "description": "Get the current player's ranked scores using their player id from claims, with optional sorting.",
-        "operationId": "GetPlayerAtMeRankedScores",
+        "operationId": "GetPlayerRankedScoresAtMe",
         "parameters": [
           {
             "name": "contextId",
@@ -531,7 +531,7 @@
         ],
         "summary": "Get current player's ranked scores with ranked map paginated",
         "description": "Get the current player's ranked scores along with ranked map using their player id from claims, with optional sorting.",
-        "operationId": "GetPlayerAtMeRankedScoresWithRankedMap",
+        "operationId": "GetPlayerRankedScoresWithRankedMapAtMe",
         "parameters": [
           {
             "name": "contextId",
@@ -2094,7 +2094,7 @@
         ],
         "summary": "Join a guild as the current player.",
         "description": "Join a guild as the current player using their player id from claims.",
-        "operationId": "CurrentPlayerJoinGuild",
+        "operationId": "JoinGuildAtMe",
         "parameters": [
           {
             "name": "guildId",
@@ -4924,15 +4924,19 @@
         }
       },
       "Member": {
+        "required": [
+          "playerId",
+          "guildId",
+          "initializedAt",
+          "editedAt",
+          "permissions",
+          "joinState",
+          "priority"
+        ],
         "type": "object",
         "properties": {
           "playerId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
+            "$ref": "#/components/schemas/PlayerId"
           },
           "guildId": {
             "$ref": "#/components/schemas/GuildId"
@@ -5485,16 +5489,24 @@
         }
       },
       "Player": {
+        "required": [
+          "id",
+          "playerInfo",
+          "playerHardwareInfo",
+          "playerLinkedAccounts",
+          "playerSubscriptionInfo",
+          "isManager"
+        ],
         "type": "object",
         "properties": {
           "id": {
             "$ref": "#/components/schemas/PlayerId"
           },
-          "playerHardwareInfo": {
-            "$ref": "#/components/schemas/PlayerHardwareInfo"
-          },
           "playerInfo": {
             "$ref": "#/components/schemas/PlayerInfo"
+          },
+          "playerHardwareInfo": {
+            "$ref": "#/components/schemas/PlayerHardwareInfo"
           },
           "playerLinkedAccounts": {
             "$ref": "#/components/schemas/PlayerLinkedAccounts"
@@ -5508,6 +5520,10 @@
         }
       },
       "PlayerExtended": {
+        "required": [
+          "player",
+          "members"
+        ],
         "type": "object",
         "properties": {
           "player": {

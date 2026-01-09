@@ -30,8 +30,8 @@ public class MemberEndpoints : IEndpoints
             .WithSummary("Get all members of a guild.")
             .WithDescription("Get all members of a guild by guild id.");
 
-        group.MapPost("/", CurrentPlayerJoinGuildAsync)
-            .WithName("CurrentPlayerJoinGuild")
+        group.MapPost("/", JoinGuildAtMeAsync)
+            .WithName("JoinGuildAtMe")
             .WithSummary("Join a guild as the current player.")
             .WithDescription("Join a guild as the current player using their player id from claims.")
             .Produces<Member>()
@@ -90,15 +90,11 @@ public class MemberEndpoints : IEndpoints
     /// Uses the player ID from the current authenticated user's claims.
     /// Returns 401 Unauthorized if no valid player ID is found in the claims.
     /// </remarks>
-    private static async Task<IResult> CurrentPlayerJoinGuildAsync(
+    private static async Task<IResult> JoinGuildAtMeAsync(
         GuildId guildId, ServerDbContext dbContext, MemberService memberService,
         LinkGenerator linkGenerator, HttpContext httpContext)
-    {
-        var playerId = httpContext.User.GetPlayerId();
-        if (playerId is null) return Results.Unauthorized();
-
-        return await JoinGuildAsync(guildId, playerId.Value, memberService, linkGenerator, httpContext);
-    }
+        => await JoinGuildAsync(guildId, httpContext.User.GetPlayerId()!.Value, memberService, linkGenerator,
+            httpContext);
 
     /// <inheritdoc cref="MemberService.JoinGuildAsync" />
     /// <remarks>

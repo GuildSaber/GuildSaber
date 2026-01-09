@@ -4,18 +4,13 @@ namespace GuildSaber.Api.Features.Players;
 
 public static class PlayerResponses
 {
-    public readonly record struct Player(
+    public record Player(
         PlayerId Id,
-        PlayerHardwareInfo PlayerHardwareInfo,
         PlayerInfo PlayerInfo,
+        PlayerHardwareInfo PlayerHardwareInfo,
         PlayerLinkedAccounts PlayerLinkedAccounts,
         PlayerSubscriptionInfo PlayerSubscriptionInfo,
         bool IsManager
-    );
-
-    public readonly record struct PlayerHardwareInfo(
-        string HMD,
-        string Platform
     );
 
     public readonly record struct PlayerInfo(
@@ -23,6 +18,11 @@ public static class PlayerResponses
         string AvatarUrl,
         string Country,
         DateTimeOffset CreatedAt
+    );
+
+    public readonly record struct PlayerHardwareInfo(
+        string HMD,
+        string Platform
     );
 
     public readonly record struct PlayerLinkedAccounts(
@@ -43,7 +43,7 @@ public static class PlayerResponses
         Tier3 = 3
     }
 
-    public readonly record struct PlayerExtended(
+    public record PlayerExtended(
         Player Player,
         MemberResponses.Member[] Members
     );

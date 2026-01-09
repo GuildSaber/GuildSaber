@@ -24,8 +24,8 @@ public class RankedScoreEndpoints : IEndpoints
             .WithSummary("Get all ranked scores of a player paginated")
             .WithDescription("Get all ranked scores of a specific player by their Id, with optional sorting.");
 
-        withPlayerGroup.MapGet("/@me/contexts/{contextId}/ranked-scores", GetPlayerAtMeRankedScoresAsync)
-            .WithName("GetPlayerAtMeRankedScores")
+        withPlayerGroup.MapGet("/@me/contexts/{contextId}/ranked-scores", GetPlayerRankedScoresAtMeAsync)
+            .WithName("GetPlayerRankedScoresAtMe")
             .WithSummary("Get current player's ranked scores paginated")
             .WithDescription(
                 "Get the current player's ranked scores using their player id from claims, with optional sorting.")
@@ -39,15 +39,15 @@ public class RankedScoreEndpoints : IEndpoints
                 "Get all ranked scores of a specific player by their Id along with ranked map, with optional sorting.");
 
         withPlayerGroup.MapGet("/@me/contexts/{contextId}/ranked-scores-with-ranked-map",
-                GetPlayerAtMeRankedScoresWithRankedMapAsync)
-            .WithName("GetPlayerAtMeRankedScoresWithRankedMap")
+                GetPlayerRankedScoresWithRankedMapAtMeAsync)
+            .WithName("GetPlayerRankedScoresWithRankedMapAtMe")
             .WithSummary("Get current player's ranked scores with ranked map paginated")
             .WithDescription(
                 "Get the current player's ranked scores along with ranked map using their player id from claims, with optional sorting.")
             .RequireAuthorization();
     }
 
-    public static Task<Ok<PagedList<RankedScore>>> GetPlayerAtMeRankedScoresAsync(
+    public static Task<Ok<PagedList<RankedScore>>> GetPlayerRankedScoresAtMeAsync(
         ClaimsPrincipal claimsPrincipal,
         ContextId contextId,
         ServerDbContext dbContext,
@@ -103,7 +103,7 @@ public class RankedScoreEndpoints : IEndpoints
             .ToPagedListAsync(page, pageSize));
     }
 
-    public static Task<Ok<PagedList<RankedScoreWithRankedMap>>> GetPlayerAtMeRankedScoresWithRankedMapAsync(
+    public static Task<Ok<PagedList<RankedScoreWithRankedMap>>> GetPlayerRankedScoresWithRankedMapAtMeAsync(
         ClaimsPrincipal claimsPrincipal,
         ContextId contextId,
         ServerDbContext dbContext,

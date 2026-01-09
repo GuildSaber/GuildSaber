@@ -9,75 +9,60 @@ namespace GuildSaber.Api.Features.Players;
 public static class PlayerMappers
 {
     public static Expression<Func<Player, PlayerResponses.Player>> MapPlayerExpression
-        => self => new PlayerResponses.Player
-        {
-            Id = self.Id,
-            PlayerInfo = new PlayerResponses.PlayerInfo
-            {
-                Username = self.Info.Username,
-                AvatarUrl = self.Info.AvatarUrl,
-                Country = self.Info.Country,
-                CreatedAt = self.Info.CreatedAt
-            },
-            PlayerHardwareInfo = new PlayerResponses.PlayerHardwareInfo
-            {
-                HMD = self.HardwareInfo.HMD.ToString(),
-                Platform = self.HardwareInfo.Platform.ToString()
-            },
-            PlayerLinkedAccounts = new PlayerResponses.PlayerLinkedAccounts
-            {
-                BeatLeaderId = self.LinkedAccounts.BeatLeaderId.ToString(),
-                DiscordId = self.LinkedAccounts.DiscordId.ToString(),
-                ScoreSaberId = self.LinkedAccounts.ScoreSaberId.ToString()
-            },
-            PlayerSubscriptionInfo = new PlayerResponses.PlayerSubscriptionInfo
-            {
-                Tier = self.SubscriptionInfo.Tier.Map()
-            },
-            IsManager = self.IsManager
-        };
+        => self => new PlayerResponses.Player(
+            self.Id,
+            new PlayerResponses.PlayerInfo(
+                self.Info.Username,
+                self.Info.AvatarUrl,
+                self.Info.Country,
+                self.Info.CreatedAt
+            ),
+            new PlayerResponses.PlayerHardwareInfo(
+                self.HardwareInfo.HMD.ToString(),
+                self.HardwareInfo.Platform.ToString()
+            ),
+            new PlayerResponses.PlayerLinkedAccounts(
+                self.LinkedAccounts.BeatLeaderId.ToString(),
+                self.LinkedAccounts.ScoreSaberId.ToString(),
+                self.LinkedAccounts.DiscordId.ToString()
+            ),
+            new PlayerResponses.PlayerSubscriptionInfo(
+                self.SubscriptionInfo.Tier.Map()
+            ),
+            self.IsManager
+        );
 
     public static Expression<Func<Player, PlayerResponses.PlayerExtended>> MapPlayerExtendedExpression
-        => self => new PlayerResponses.PlayerExtended
-        {
-            Player = new PlayerResponses.Player
-            {
-                Id = self.Id,
-                PlayerInfo = new PlayerResponses.PlayerInfo
-                {
-                    Username = self.Info.Username,
-                    AvatarUrl = self.Info.AvatarUrl,
-                    Country = self.Info.Country,
-                    CreatedAt = self.Info.CreatedAt
-                },
-                PlayerHardwareInfo = new PlayerResponses.PlayerHardwareInfo
-                {
-                    HMD = self.HardwareInfo.HMD.ToString(),
-                    Platform = self.HardwareInfo.Platform.ToString()
-                },
-                PlayerLinkedAccounts = new PlayerResponses.PlayerLinkedAccounts
-                {
-                    BeatLeaderId = self.LinkedAccounts.BeatLeaderId.ToString(),
-                    DiscordId = self.LinkedAccounts.DiscordId.ToString(),
-                    ScoreSaberId = self.LinkedAccounts.ScoreSaberId.ToString()
-                },
-                PlayerSubscriptionInfo = new PlayerResponses.PlayerSubscriptionInfo
-                {
-                    Tier = self.SubscriptionInfo.Tier.Map()
-                },
-                IsManager = self.IsManager
-            },
-            Members = self.Members.Select(x => new MemberResponses.Member
-            {
-                GuildId = x.GuildId,
-                PlayerId = x.PlayerId,
-                JoinState = x.JoinState.Map(),
-                Permissions = x.Permissions.Map(),
-                EditedAt = x.EditedAt,
-                InitializedAt = x.CreatedAt,
-                Priority = x.Priority
-            }).ToArray()
-        };
+        => self => new PlayerResponses.PlayerExtended(new PlayerResponses.Player(
+                self.Id,
+                new PlayerResponses.PlayerInfo(
+                    self.Info.Username,
+                    self.Info.AvatarUrl,
+                    self.Info.Country,
+                    self.Info.CreatedAt
+                ),
+                new PlayerResponses.PlayerHardwareInfo(
+                    self.HardwareInfo.HMD.ToString(),
+                    self.HardwareInfo.Platform.ToString()
+                ),
+                new PlayerResponses.PlayerLinkedAccounts(
+                    self.LinkedAccounts.BeatLeaderId.ToString(),
+                    self.LinkedAccounts.ScoreSaberId.ToString(),
+                    self.LinkedAccounts.DiscordId.ToString()
+                ),
+                new PlayerResponses.PlayerSubscriptionInfo(
+                    self.SubscriptionInfo.Tier.Map()
+                ),
+                self.IsManager),
+            self.Members.Select(x => new MemberResponses.Member(
+                x.PlayerId,
+                x.GuildId,
+                x.CreatedAt,
+                x.EditedAt,
+                x.Permissions.Map(),
+                x.JoinState.Map(),
+                x.Priority
+            )).ToArray());
 
     public static PlayerResponses.ESubscriptionTier Map(this PlayerSubscriptionInfo.ESubscriptionTier self) =>
         self switch

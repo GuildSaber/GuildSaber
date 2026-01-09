@@ -6,28 +6,26 @@ namespace GuildSaber.Api.Features.Guilds.Members;
 public static class MemberMappers
 {
     public static Expression<Func<Member, MemberResponses.Member>> MapMemberExpression
-        => self => new MemberResponses.Member
-        {
-            GuildId = self.GuildId,
-            PlayerId = self.PlayerId,
-            JoinState = self.JoinState.Map(),
-            Permissions = self.Permissions.Map(),
-            EditedAt = self.EditedAt,
-            InitializedAt = self.CreatedAt,
-            Priority = self.Priority
-        };
+        => self => new MemberResponses.Member(
+            self.PlayerId,
+            self.GuildId,
+            self.CreatedAt,
+            self.EditedAt,
+            self.Permissions.Map(),
+            self.JoinState.Map(),
+            self.Priority
+        );
 
     public static MemberResponses.Member Map(this Member self)
-        => new()
-        {
-            GuildId = self.GuildId,
-            PlayerId = self.PlayerId,
-            JoinState = self.JoinState.Map(),
-            Permissions = self.Permissions.Map(),
-            EditedAt = self.EditedAt,
-            InitializedAt = self.CreatedAt,
-            Priority = self.Priority
-        };
+        => new(
+            self.PlayerId,
+            self.GuildId,
+            self.CreatedAt,
+            self.EditedAt,
+            self.Permissions.Map(),
+            self.JoinState.Map(),
+            self.Priority
+        );
 
     public static MemberResponses.EJoinState Map(this Member.EJoinState self)
         => self switch
