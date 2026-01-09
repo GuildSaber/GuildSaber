@@ -5,6 +5,8 @@ using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Common.Result;
 using GuildSaber.DiscordBot.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Extensions;
+using GuildSaber.DiscordBot.Core.Handlers;
+using GuildSaber.DiscordBot.Settings;
 using static GuildSaber.Api.Features.Guilds.Members.LevelStats.LevelStatResponses;
 using static GuildSaber.Api.Features.Guilds.Categories.CategoryResponses;
 using static GuildSaber.Api.Features.Players.PlayerResponses;
@@ -26,19 +28,29 @@ public partial class UserModuleSlash
         var playerTask = user is null
             ? GetPlayerAtMeAsync().AsTask()
             : GetPlayerAsync(user.DiscordId).AsTask();
-        var statsTask = Client.Value.LevelStats.GetAtMeAsync(contextId);
+
         var categoryNameTask = categoryId is not null
             ? Cache.GetCategoryByIdAsync(categoryId.Value, Client.Value).AsTask()
             : Task.FromResult<Category?>(null);
 
-        await Task.WhenAll(guildTask, playerTask, statsTask, categoryNameTask);
+        await Task.WhenAll(guildTask, playerTask, categoryNameTask);
+
+        var stats = user is null
+            ? (await Client.Value.LevelStats.GetAtMeAsync(contextId)).Unwrap()
+            : (await Client.Value.LevelStats.GetByPlayerIdAsync(playerTask.Result.Id, contextId)).Unwrap();
+
+        if (stats.Length == 0)
+            throw user is null
+                ? new InteractionHandler.CurrentPlayerDidNotJoinGuildContextException()
+                : new InteractionHandler.PlayerIsNotInGuildContextException();
 
         var progressData = new ProgressCommand.ProgressData(
             Guild: guildTask.Result,
             Player: playerTask.Result,
-            Stats: statsTask.Result.Unwrap(),
+            Stats: stats,
             CategoryId: categoryId,
-            CategoryName: categoryId is not null ? categoryNameTask.Result!.Value.Info.Name : "map"
+            CategoryName: categoryId is not null ? categoryNameTask.Result!.Value.Info.Name : "map",
+            EmojiSettings.Value.Trophies
         );
 
         await FollowupAsync(embed: ProgressCommand.MakeProgress(progressData));
@@ -52,7 +64,8 @@ file static class ProgressCommand
         Player Player,
         MemberLevelStat[] Stats,
         int? CategoryId,
-        string CategoryName
+        string CategoryName,
+        TrophyEmojis TrophyEmojis
     );
 
     public static Embed MakeProgress(in ProgressData data)
@@ -65,10 +78,10 @@ file static class ProgressCommand
             Description = $"Here is your current progress through the ***{data.CategoryName}*** pools:"
         };
 
-        var categoryId = data.CategoryId;
+        var (categoryId, trophyEmojis) = (data.CategoryId, data.TrophyEmojis);
         var progressLines = data.Stats
             .Where(x => x.Level.CategoryId == categoryId)
-            .Select(memberLevelStat => $"{memberLevelStat.Level.Info.Name} {memberLevelStat.ToProgress()}")
+            .Select(memberLevelStat => $"{memberLevelStat.Level.Info.Name} {memberLevelStat.ToProgress(trophyEmojis)}")
             .ToList();
 
         var currentChunk = new StringBuilder();
@@ -89,16 +102,18 @@ file static class ProgressCommand
         return embedBuilder.Build();
     }
 
-    private static string ToProgress(this in MemberLevelStat memberLevelStat)
+    private static string ToProgress(this in MemberLevelStat memberLevelStat, TrophyEmojis trophyEmojis)
         => memberLevelStat.Level switch
         {
-            Level.RankedMapListLevel listLevel => GenerateProgressText(listLevel, memberLevelStat),
+            Level.RankedMapListLevel listLevel => GenerateProgressText(listLevel, memberLevelStat, trophyEmojis),
             _ => "[Currently unsupported Level Type]"
         };
 
-    private static string GenerateProgressText(in Level.RankedMapListLevel level, in MemberLevelStat stat)
+    private static string GenerateProgressText(
+        in Level.RankedMapListLevel level, in MemberLevelStat stat, TrophyEmojis trophyEmojis)
         => $"{MakeProgressBar(stat.PassCount!.Value, level.RankedMapCount, 10)} " +
            $"{Math.Round(stat.PassCount!.Value / (float)level.RankedMapCount * 100.0f)}% " +
+           $"{trophyEmojis.GetEmojiFromPercentage(stat.PassCount!.Value / (float)level.RankedMapCount * 100.0f)} " +
            $"({stat.PassCount}/{level.RankedMapCount})";
 
     private static string MakeProgressBar(int value, int maxValue, int size)
