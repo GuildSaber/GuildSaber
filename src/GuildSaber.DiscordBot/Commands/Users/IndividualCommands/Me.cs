@@ -301,7 +301,6 @@ file record struct CardResources(Image<Rgba32> Avatar, Image<Rgba32> GuildLogo, 
 
         await Task.WhenAll(avatarTask, guildLogoTask);
 
-
         return new CardResources(avatarTask.Result, guildLogoTask.Result, fonts);
     }
 
@@ -383,8 +382,9 @@ file record struct CardData(
         LevelStatResponses.MemberLevelStat[] levelStats,
         ContextStatResponses.MemberContextStat contextStats)
     {
-        var currentLevel = levelStats.LastOrDefault(x => x is { IsCompleted: true, Level.CategoryId: null })
-            as LevelStatResponses.MemberLevelStat?;
+        var currentLevel = levelStats
+            .Cast<LevelStatResponses.MemberLevelStat?>()
+            .LastOrDefault(x => x is { IsCompleted: true, Level.CategoryId: null });
 
         var primaryColor = Color.FromRgb(26, 28, 30);
         var secondaryColor = currentLevel is not null
