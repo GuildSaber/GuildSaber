@@ -7,9 +7,7 @@ var environment = builder.ExecutionContext.IsRunMode
     : builder.AddParameter("ASPNETCORE-ENVIRONMENT");
 
 builder.AddDockerComposeEnvironment("guildsaber-env")
-    .WithDashboard(dashboard => dashboard
-        .WithForwardedHeaders(enabled: true)
-        .WithExternalHttpEndpoints());
+    .WithDashboard(enabled: false);
 
 var postgres = builder.AddPostgres("postgres", port: 5432)
     .WithLifetime(ContainerLifetime.Persistent)

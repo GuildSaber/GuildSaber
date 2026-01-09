@@ -16,7 +16,6 @@ public class QueueProcessingService(IBackgroundTaskQueue taskQueue, ILogger<Queu
             try
             {
                 var workItem = await taskQueue.DequeueAsync(stoppingToken);
-
                 await workItem(stoppingToken);
             }
             catch (OperationCanceledException)

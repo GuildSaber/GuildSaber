@@ -1,15 +1,4 @@
 services:
-  guildsaber-env-dashboard:
-    image: "mcr.microsoft.com/dotnet/nightly/aspire-dashboard:latest"
-    environment:
-      ASPIRE_DASHBOARD_FORWARDEDHEADERS_ENABLED: "true"
-    ports:
-      - "18888"
-      - "18889"
-      - "18890"
-    networks:
-      - "aspire"
-    restart: "always"
   postgres:
     image: "docker.io/library/postgres:17.6"
     environment:
@@ -50,9 +39,6 @@ services:
       DISCORDBOT_DB_URI: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/discordbot-db"
       DISCORDBOT_DB_JDBCCONNECTIONSTRING: "jdbc:postgresql://postgres:5432/discordbot-db"
       DISCORDBOT_DB_DATABASENAME: "discordbot-db"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://guildsaber-env-dashboard:18889"
-      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
-      OTEL_SERVICE_NAME: "migrator"
     depends_on:
       postgres:
         condition: "service_started"
@@ -104,9 +90,6 @@ services:
       RankedMapSettings:BoostSettings:MapCountBoosts:Tier1: "${RANKEDMAPSETTINGS_BOOSTSETTINGS_MAPCOUNTBOOSTS_TIER1}"
       RankedMapSettings:BoostSettings:MapCountBoosts:Tier2: "${RANKEDMAPSETTINGS_BOOSTSETTINGS_MAPCOUNTBOOSTS_TIER2}"
       RankedMapSettings:BoostSettings:MapCountBoosts:Tier3: "${RANKEDMAPSETTINGS_BOOSTSETTINGS_MAPCOUNTBOOSTS_TIER3}"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://guildsaber-env-dashboard:18889"
-      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
-      OTEL_SERVICE_NAME: "api"
     ports:
       - "${API_PORT}"
     depends_on:
@@ -146,9 +129,6 @@ services:
       EmojiSettings:Trophies:Gold: "${EMOJISETTINGS_TROPHIES_GOLD}"
       EmojiSettings:Trophies:Diamond: "${EMOJISETTINGS_TROPHIES_DIAMOND}"
       EmojiSettings:Trophies:Ruby: "${EMOJISETTINGS_TROPHIES_RUBY}"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://guildsaber-env-dashboard:18889"
-      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
-      OTEL_SERVICE_NAME: "discord-bot"
     depends_on:
       migrator:
         condition: "service_started"

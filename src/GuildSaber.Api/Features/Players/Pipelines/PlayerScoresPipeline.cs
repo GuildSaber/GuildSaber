@@ -27,8 +27,11 @@ public sealed class PlayerScoresPipeline(
     public async Task RecalculatePlayerScoresAsync(PlayerId playerId, CancellationToken token)
     {
         logger.LogInformation("Recalculating scores for player {PlayerId}", playerId);
+        var count = 0;
         var contextsWithPoints = new Dictionary<ContextId, Context>();
 
+        // Caches might not reflect latest changes, so we clear them first.
+        await addOrUpdatePipeline.ClearPlayerCacheAsync(playerId);
         await foreach (var scoreChunk in dbContext.Scores
                            .Where(s => s.PlayerId == playerId)
                            .AsAsyncEnumerable()
@@ -38,6 +41,7 @@ public sealed class PlayerScoresPipeline(
         {
             var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(score);
 
+            count++;
             foreach (var context in pipelineResult.ImpactedContextsWithPoints)
                 contextsWithPoints.TryAdd(context.Id, context);
         }
@@ -49,7 +53,7 @@ public sealed class PlayerScoresPipeline(
                 tuple.Value.Points.FirstOrDefault()?.Id ?? default);
         }
 
-        logger.LogInformation("Completed recalculating scores for player {PlayerId}", playerId);
+        logger.LogInformation("Completed recalculating {count} scores for player {PlayerId}", count, playerId);
     }
 
     /// <remarks>
@@ -68,6 +72,7 @@ public sealed class PlayerScoresPipeline(
             Order = Order.Asc
         };
 
+        var count = 0;
         var contextsWithPoints = new Dictionary<ContextId, Context>();
 
         // Unwrap the result to kill the current Task if there's an error.
@@ -85,6 +90,7 @@ public sealed class PlayerScoresPipeline(
             var abstractScore = score.Map(playerId, difficultyId, scoreStats);
             var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(abstractScore);
 
+            count++;
             foreach (var context in pipelineResult.ImpactedContextsWithPoints)
                 contextsWithPoints.TryAdd(context.Id, context);
         }
@@ -96,7 +102,7 @@ public sealed class PlayerScoresPipeline(
                 tuple.Value.Points.FirstOrDefault()?.Id ?? default);
         }
 
-        logger.LogInformation("Completed importing BeatLeader scores for player {PlayerId}", playerId);
+        logger.LogInformation("Completed importing {count} BeatLeader scores for player {PlayerId}", count, playerId);
     }
 
     /// <remarks>
@@ -114,6 +120,7 @@ public sealed class PlayerScoresPipeline(
             SortBy = PlayerScoresSortBy.Recent
         };
 
+        var count = 0;
         var contextsWithPoints = new Dictionary<ContextId, Context>();
 
         // Unwrap the result to kill the current Task if there's an error.
@@ -127,6 +134,7 @@ public sealed class PlayerScoresPipeline(
             var abstractScore = playerScore.Score.Map(playerId, difficultyId);
             var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(abstractScore);
 
+            count++;
             foreach (var context in pipelineResult.ImpactedContextsWithPoints)
                 contextsWithPoints.TryAdd(context.Id, context);
         }
@@ -138,7 +146,7 @@ public sealed class PlayerScoresPipeline(
                 tuple.Value.Points.FirstOrDefault()?.Id ?? default);
         }
 
-        logger.LogInformation("Completed importing ScoreSaber scores for player {PlayerId}", playerId);
+        logger.LogInformation("Completed importing {count} ScoreSaber scores for player {PlayerId}", count, playerId);
     }
 
     public static async Task<Maybe<SongDifficultyId>> GetSongDifficultyIdAsync(

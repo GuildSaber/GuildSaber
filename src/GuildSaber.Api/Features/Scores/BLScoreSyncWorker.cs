@@ -8,6 +8,7 @@ using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Mappers.BeatLeader;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Caching.Hybrid;
 
 namespace GuildSaber.Api.Features.Scores;
@@ -48,15 +49,24 @@ public class BLScoreSyncWorker(
     protected override async Task ExecuteAsync(CancellationToken token)
     {
         await using var scope = serviceScopeFactory.CreateAsyncScope();
-        await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
+
+        var baseOptions = scope.ServiceProvider.GetRequiredService<DbContextOptions<ServerDbContext>>();
+        await using var dbContext = new ServerDbContext(new DbContextOptionsBuilder<ServerDbContext>(baseOptions)
+            .ConfigureWarnings(w => w.Ignore(
+                RelationalEventId.CommandExecuted,
+                RelationalEventId.CommandExecuting))
+            .Options);
+
         var cache = scope.ServiceProvider.GetRequiredService<HybridCache>();
+        var pointStatsLogger = scope.ServiceProvider.GetRequiredService<ILogger<MemberPointStatsPipeline>>();
+        var levelStatsLogger = scope.ServiceProvider.GetRequiredService<ILogger<MemberLevelStatsPipeline>>();
 
         var scoreAddOrUpdatePipeline = new ScoreAddOrUpdatePipeline(
             dbContext,
-            new MemberPointStatsPipeline(dbContext), serviceScopeFactory, cache
+            new MemberPointStatsPipeline(dbContext, pointStatsLogger), serviceScopeFactory, cache
         );
-        var memberPointStatsPipeline = new MemberPointStatsPipeline(dbContext);
-        var memberLevelStatsPipeline = new MemberLevelStatsPipeline(dbContext);
+        var memberPointStatsPipeline = new MemberPointStatsPipeline(dbContext, pointStatsLogger);
+        var memberLevelStatsPipeline = new MemberLevelStatsPipeline(dbContext, levelStatsLogger);
 
         do
         {

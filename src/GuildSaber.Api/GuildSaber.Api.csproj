@@ -14,6 +14,10 @@
         <InternalsVisibleTo Include="GuildSaber.AspireTests" />
     </ItemGroup>
 
+    <PropertyGroup>
+        <OpenApiDocumentsDirectory>.</OpenApiDocumentsDirectory>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="AspNet.Security.OAuth.Discord" />
         <PackageReference Include="CSharpFunctionalExtensions.HttpResults" />
@@ -21,6 +25,10 @@
         <PackageReference Include="Microsoft.AspNetCore.JsonPatch.SystemTextJson" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.ApiDescription.Server">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
