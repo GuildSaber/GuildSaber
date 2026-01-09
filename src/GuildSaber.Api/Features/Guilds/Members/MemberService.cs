@@ -51,8 +51,8 @@ public class MemberService(
     /// The method validates that the player meets all guild requirements before allowing them to join.
     /// If the guild has submission requirement flag enabled, the player's join request will need approval.
     /// </remarks>
-    public async Task<JoinResponse> JoinGuildAsync(GuildId guildId, PlayerId playerId)
-        => await GetMemberAsFailure(dbContext, guildId, playerId)
+    public Task<JoinResponse> JoinGuildAsync(GuildId guildId, PlayerId playerId)
+        => GetMemberAsFailure(dbContext, guildId, playerId)
             .MapError(JoinResponse (error) => new AlreadyMember(error))
             .Bind(() => ValidateRequirementsAndProfile(guildId, playerId))
             .Check(x => GetRequirementsErrorAsFailure(x.requirements, x.blProfile)

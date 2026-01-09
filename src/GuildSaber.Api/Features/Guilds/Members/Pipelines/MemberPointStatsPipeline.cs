@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GuildSaber.Api.Features.Guilds.Members.Pipelines;
 
-public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
+public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<MemberPointStatsPipeline> logger)
 {
     private static readonly string _calculatePointsFormattableString =
         $$"""
@@ -55,6 +55,8 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
     public async Task ExecuteAsync(PlayerId playerId, Context context)
     {
         ArgumentNullException.ThrowIfNull(context.Points);
+        logger.LogInformation("Calculating member point stats for player {PlayerId} in context {ContextId}",
+            playerId, context.Id);
 
         var categories = await dbContext.Categories
             .Where(c => c.GuildId == context.GuildId)
@@ -62,14 +64,14 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
 
         foreach (var point in context.Points)
         {
-            await GetOrCreateMemberStatAsync(
-                context.GuildId, context.Id, playerId, null, point);
+            await GetOrCreateMemberStatAsync(context.GuildId, context.Id, playerId, null, point);
 
             foreach (var category in categories)
-                await GetOrCreateMemberStatAsync(
-                    context.GuildId, context.Id, playerId, category.Id, point);
+                await GetOrCreateMemberStatAsync(context.GuildId, context.Id, playerId, category.Id, point);
         }
 
+        logger.LogInformation("Completed calculating member point stats for player {PlayerId} in context {ContextId}",
+            playerId, context.Id);
         await dbContext.SaveChangesAsync();
     }
 
@@ -119,6 +121,11 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext)
             : await validPassesQuery.SumAsync(x => x.RawPoints);
 
         memberStat.PassCount = validPassesQuery.Count();
+        logger.LogDebug(
+            "Calculated member point stat for player {PlayerId} in context {ContextId}, point {PointId}, category {CategoryId}: Points={Points}, PassCount={PassCount}",
+            playerId, contextId, point.Id, categoryId?.ToString() ?? "null",
+            memberStat.Points, memberStat.PassCount
+        );
     }
 
     public static Task<float> CalculateMemberPointsWithWeightQuery(

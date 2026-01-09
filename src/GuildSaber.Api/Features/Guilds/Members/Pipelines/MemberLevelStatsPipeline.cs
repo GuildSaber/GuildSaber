@@ -40,7 +40,7 @@ using RankedMapListPassCountQueryFunc = System.Func<
 
 namespace GuildSaber.Api.Features.Guilds.Members.Pipelines;
 
-public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext)
+public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext, ILogger<MemberLevelStatsPipeline> logger)
 {
     private static readonly AccStarQueryFunc _checkAccStarCompletionQuery = EF.CompileAsyncQuery((
         ServerDbContext db, GuildId guildId, ContextId contextId, PlayerId playerId,
@@ -95,6 +95,8 @@ public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext)
     /// </param>
     public async Task ExecuteAsync(PlayerId playerId, GuildId guildId, ContextId contextId, Point.PointId pointId)
     {
+        logger.LogInformation("Recalculating member level stats for player {PlayerId} in context {ContextId}",
+            playerId, contextId);
         var (levels, levelsStats) = (
             await dbContext.Levels
                 .Where(x => x.ContextId == contextId)
@@ -138,6 +140,8 @@ public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext)
         }
 
         await dbContext.SaveChangesAsync();
+        logger.LogInformation("Completed recalculating member level stats for player {PlayerId} in context {ContextId}",
+            playerId, contextId);
     }
 
     public ValueTask RecalculateMemberLevelStat(
