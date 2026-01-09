@@ -100,7 +100,7 @@ public static class HybridCacheExtensions
                     if (playerExtended is null)
                         return new DiscordPlayerPermissionGroup(DiscordGuildPermissions: [], IsManager: false);
 
-                    var (members, isManager) = (playerExtended.Value.Members, playerExtended.Value.Player.IsManager);
+                    var (members, isManager) = (playerExtended.Members, playerExtended.Player.IsManager);
                     var permissionsByGuild = new Dictionary<DiscordGuildId, MemberResponses.EPermission>();
                     foreach (var member in members)
                     {

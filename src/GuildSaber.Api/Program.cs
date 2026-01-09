@@ -41,9 +41,6 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
-if (builder.Environment.IsDevelopment())
-    builder.Logging.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Information);
-
 #region Configuration & Options
 
 var authSettings = builder.Configuration.GetSection(AuthSettings.AuthSettingsSectionKey);

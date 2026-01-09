@@ -2,8 +2,8 @@ namespace GuildSaber.Api.Features.Guilds.Members;
 
 public static class MemberResponses
 {
-    public readonly record struct Member(
-        int PlayerId,
+    public record Member(
+        PlayerId PlayerId,
         GuildId GuildId,
         DateTimeOffset InitializedAt,
         DateTimeOffset EditedAt,
