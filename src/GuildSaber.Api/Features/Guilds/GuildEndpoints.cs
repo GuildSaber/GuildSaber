@@ -4,7 +4,6 @@ using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Internal;
 using GuildSaber.Api.Transformers;
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -240,7 +239,7 @@ public class GuildEndpoints : IEndpoints
                 errors: new Dictionary<string, string[]> { { nameof(Guild.DiscordInfo), [discordInfoError] } });
 
         // Make sure no other guild has the same MainDiscordGuildId
-        if (discordInfo is { MainDiscordGuildId: var newDiscordGuildId })
+        if (discordInfo is { MainDiscordGuildId: { } newDiscordGuildId })
         {
             var otherGuild = await dbContext.Guilds
                 .Where(x => x.DiscordInfo.MainDiscordGuildId == newDiscordGuildId)
