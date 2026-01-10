@@ -17,7 +17,7 @@ public partial class UserModuleSlash
     public async Task Guilds(
         [Summary("search", "The search term to find guilds")] string? search = null,
         [Summary("page", "Page number for pagination")] int page = 1,
-        [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Secret
+        [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Visible
     ) => await RespondAsync(ephemeral: displayChoice.ToEphemeral(), components: (await SearchGuildsCommand
             .GetGuildsComponentAsync(search, page, Client.Value, LinkSettings.Value))
         .Build());

@@ -337,7 +337,7 @@ app.MapDefaultEndpoints()
 
 app.MapFallbackToFile("/website/{*path:nonfile}", "website/index.html", new StaticFileOptions
 {
-    RequestPath = "/website",
+    RequestPath = "/website"
 });
 
 app.MapScalarApiReference("/docs", options => options

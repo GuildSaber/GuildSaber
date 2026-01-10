@@ -1,10 +1,12 @@
-﻿using Discord;
+﻿using System.Diagnostics;
+using Discord;
 using Discord.Interactions;
 using GuildSaber.Api.Features.Guilds.Categories;
 using GuildSaber.Api.Features.Guilds.Members.ContextStats;
 using GuildSaber.Api.Features.Guilds.Members.LevelStats;
 using GuildSaber.Api.Features.Players;
 using GuildSaber.Common.Result;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using GuildSaber.DiscordBot.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Extensions;
@@ -350,14 +352,12 @@ file record struct TrophiesData(int Plastic, int Silver, int Gold, int Diamond, 
                 _ => 0f
             };
 
-            counts[completionPercent switch
-            {
-                <= 0.25f => 0, // Plastic
-                <= 0.5f => 1,  // Silver
-                <= 0.75f => 2, // Gold
-                < 1.0f => 3,   // Diamond
-                _ => 4         // Ruby
-            }]++;
+            Trace.Assert((int)Trophy.Ruby == 4, "Trophy enum values code assumption changed.");
+            var trophy = Trophy.GetFromPercentage(completionPercent);
+            if (trophy is null) continue;
+
+            // Use the int value of the trophy enum to index into the counts array
+            counts[(int)trophy]++;
         }
 
         return new TrophiesData(counts[0], counts[1], counts[2], counts[3], counts[4]);
@@ -383,12 +383,11 @@ file record struct CardData(
         ContextStatResponses.MemberContextStat contextStats)
     {
         var currentLevel = levelStats
-            .Cast<LevelStatResponses.MemberLevelStat?>()
             .LastOrDefault(x => x is { IsCompleted: true, Level.CategoryId: null });
 
         var primaryColor = Color.FromRgb(26, 28, 30);
         var secondaryColor = currentLevel is not null
-            ? Color.FromArgb(currentLevel.Value.Level.Info.Color)
+            ? Color.FromArgb(currentLevel.Level.Info.Color)
             : Color.Black;
 
         var pointStats = contextStats.SimplePointsWithRank
@@ -403,21 +402,16 @@ file record struct CardData(
 
         foreach (var category in categories)
         {
-            var categoryLevelStat = levelStats
-                .Where(x => x.Level.CategoryId == category.Id && x.IsCompleted)
-                .Cast<LevelStatResponses.MemberLevelStat?>()
-                .LastOrDefault();
-
-            if (!categoryLevelStat.HasValue)
+            var categoryLevelStat = levelStats.LastOrDefault(x => x.Level.CategoryId == category.Id && x.IsCompleted);
+            if (categoryLevelStat is null)
                 continue;
 
-            var stat = categoryLevelStat.Value;
             categoryLevels.Add(new CategoryLevelData(
                 category.Info.Name,
-                stat.Level.Info.Name,
-                Color.FromArgb(stat.Level.Info.Color)
+                categoryLevelStat.Level.Info.Name,
+                Color.FromArgb(categoryLevelStat.Level.Info.Color)
             ));
-            categoryLevelOrders.Add(stat.Level.Order);
+            categoryLevelOrders.Add(categoryLevelStat.Level.Order);
         }
 
         var equilibriumPercentage = categoryLevelOrders.Count > 1

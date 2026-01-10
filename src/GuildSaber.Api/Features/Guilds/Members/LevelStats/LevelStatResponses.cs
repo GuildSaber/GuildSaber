@@ -4,14 +4,14 @@ namespace GuildSaber.Api.Features.Guilds.Members.LevelStats;
 
 public static class LevelStatResponses
 {
-    public readonly record struct MemberLevelStat(
+    public record MemberLevelStat(
         Level Level,
         bool IsCompleted,
         bool IsLocked,
         int? PassCount
     );
 
-    public readonly record struct LevelInfo(
+    public record LevelInfo(
         string Name,
         int Color
     );

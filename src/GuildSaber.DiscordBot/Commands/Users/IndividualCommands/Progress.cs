@@ -53,7 +53,7 @@ public partial class UserModuleSlash
             EmojiSettings.Value.Trophies
         );
 
-        await FollowupAsync(embed: ProgressCommand.MakeProgress(progressData));
+        await FollowupAsync(components: ProgressCommand.MakeProgress(progressData));
     }
 }
 
@@ -68,41 +68,36 @@ file static class ProgressCommand
         TrophyEmojis TrophyEmojis
     );
 
-    public static Embed MakeProgress(in ProgressData data)
+    public static MessageComponent MakeProgress(in ProgressData data)
     {
-        var embedBuilder = new EmbedBuilder
-        {
-            Title = $"{data.Player.PlayerInfo.Username}'s Progress",
-            ThumbnailUrl = data.Player.PlayerInfo.AvatarUrl,
-            Color = Color.FromArgb(data.Guild.Info.Color),
-            Description = $"Here is your current progress through the ***{data.CategoryName}*** pools:"
-        };
-
+        var builder = new ComponentBuilderV2();
         var (categoryId, trophyEmojis) = (data.CategoryId, data.TrophyEmojis);
         var progressLines = data.Stats
             .Where(x => x.Level.CategoryId == categoryId)
-            .Select(memberLevelStat => $"{memberLevelStat.Level.Info.Name} {memberLevelStat.ToProgress(trophyEmojis)}")
-            .ToList();
+            .Aggregate(new StringBuilder(), (sb, memberLevelStat) => sb
+                .Append(memberLevelStat.Level.Info.Name)
+                .Append(' ')
+                .AppendLine(memberLevelStat.ToProgress(trophyEmojis)));
 
-        var currentChunk = new StringBuilder();
-        foreach (var lineWithNewline in progressLines.Select(line => line + "\n"))
-        {
-            if (currentChunk.Length + lineWithNewline.Length > EmbedBuilder.MaxFieldValueLength)
-            {
-                embedBuilder.AddField("\u200B", currentChunk.ToString());
-                currentChunk.Clear();
-            }
+        var (userName, categoryName, color, avatarUrl) = (
+            data.Player.PlayerInfo.Username,
+            data.CategoryName,
+            Color.FromArgb(data.Guild.Info.Color),
+            data.Player.PlayerInfo.AvatarUrl);
 
-            currentChunk.Append(lineWithNewline);
-        }
+        builder.WithContainer(content => content
+            .WithAccentColor(color)
+            .WithSection(section => section
+                .WithTextDisplay($"# {userName}'s progress\n" +
+                                 $"Here is the current progress through the ***{categoryName}*** pools:")
+                .WithAccessory(new ThumbnailBuilder()
+                    .WithMedia(avatarUrl)))
+            .WithTextDisplay(progressLines.ToString()));
 
-        if (currentChunk.Length > 0)
-            embedBuilder.AddField("\u200B", currentChunk.ToString());
-
-        return embedBuilder.Build();
+        return builder.Build();
     }
 
-    private static string ToProgress(this in MemberLevelStat memberLevelStat, TrophyEmojis trophyEmojis)
+    private static string ToProgress(this MemberLevelStat memberLevelStat, TrophyEmojis trophyEmojis)
         => memberLevelStat.Level switch
         {
             Level.RankedMapListLevel listLevel => GenerateProgressText(listLevel, memberLevelStat, trophyEmojis),
@@ -111,10 +106,12 @@ file static class ProgressCommand
 
     private static string GenerateProgressText(
         in Level.RankedMapListLevel level, in MemberLevelStat stat, TrophyEmojis trophyEmojis)
-        => $"{MakeProgressBar(stat.PassCount!.Value, level.RankedMapCount, 10)} " +
-           $"{Math.Round(stat.PassCount!.Value / (float)level.RankedMapCount * 100.0f)}% " +
-           $"{trophyEmojis.GetEmojiFromPercentage(stat.PassCount!.Value / (float)level.RankedMapCount * 100.0f)} " +
-           $"({stat.PassCount}/{level.RankedMapCount})";
+        => MakeProgressBar(stat.PassCount!.Value, level.RankedMapCount, 10) +
+           trophyEmojis.GetFromPercentage(stat.PassCount!.Value / (double)level.RankedMapCount) switch
+           {
+               null => string.Empty,
+               var (_, emoji) => $" {Math.Round(stat.PassCount!.Value / (float)level.RankedMapCount * 100.0f)}% {emoji}"
+           } + $" ({stat.PassCount}/{level.RankedMapCount})";
 
     private static string MakeProgressBar(int value, int maxValue, int size)
     {
