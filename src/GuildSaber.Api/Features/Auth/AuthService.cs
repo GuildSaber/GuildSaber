@@ -5,13 +5,14 @@ using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Mappers.BeatLeader;
 using GuildSaber.Database.Models.Server.Auth;
 using GuildSaber.Database.Models.Server.Players;
+using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Options;
 using MyCSharp.HttpUserAgentParser.AspNetCore;
 
@@ -25,7 +26,8 @@ public class AuthService(
     BeatLeaderApi beatLeaderApi,
     ScoreSaberApi scoreSaberApi,
     ServerDbContext dbContext,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    HybridCache cache)
 {
     public async Task<Maybe<PlayerId>> GetPlayerIdAsync(BeatLeaderId beatLeaderId)
         => await dbContext.Players
@@ -92,6 +94,35 @@ public class AuthService(
         _ = await dbContext.AddAndSaveAsync(session);
 
         return token.Token;
+    }
+
+    public async ValueTask<bool> InvalidateSessionAsync(UuidV7 sessionId)
+    {
+        if (!(await dbContext.Sessions
+                  .Where(s => s.SessionId == sessionId)
+                  .ExecuteUpdateAsync(session => session.SetProperty(x => x.IsValid, false))
+              > 0)) return false;
+
+        await SessionValidator.ClearSessionCache(sessionId, cache);
+        return true;
+    }
+
+    public async ValueTask<bool> InvalidateAllSessionsAsync(PlayerId playerId)
+    {
+        var sessionsToInvalidate = await dbContext.Sessions
+            .Where(s => s.PlayerId == playerId && s.IsValid)
+            .Select(s => s.SessionId)
+            .ToListAsync();
+
+        if (await dbContext.Sessions
+                .Where(s => s.PlayerId == playerId && s.IsValid)
+                .ExecuteUpdateAsync(session => session.SetProperty(x => x.IsValid, false))
+            == 0) return false;
+
+        foreach (var sessionId in sessionsToInvalidate)
+            await SessionValidator.ClearSessionCache(sessionId, cache);
+
+        return true;
     }
 
     public Task<Result<Player>> CreatePlayerAsync(BeatLeaderId beatleaderId)
