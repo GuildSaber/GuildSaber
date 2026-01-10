@@ -106,7 +106,7 @@ file static class ProgressCommand
 
     private static string GenerateProgressText(
         in Level.RankedMapListLevel level, in MemberLevelStat stat, TrophyEmojis trophyEmojis)
-        => MakeProgressBar(stat.PassCount!.Value, level.RankedMapCount, 10) +
+        => MakeProgressBar(stat.PassCount!.Value, level.RankedMapCount, 9) +
            trophyEmojis.GetFromPercentage(stat.PassCount!.Value / (double)level.RankedMapCount) switch
            {
                null => string.Empty,

@@ -11,7 +11,8 @@ builder.AddDockerComposeEnvironment("guildsaber-env")
 
 var postgres = builder.AddPostgres("postgres", port: 5432)
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithDataVolume(isReadOnly: false);
+    .WithDataVolume(isReadOnly: false)
+    .PublishAsDockerComposeService((_, service) => service.Restart = "unless-stopped");
 
 postgres.WithPgWeb(option => option
         .WithParentRelationship(postgres)
@@ -37,14 +38,16 @@ var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.Ex
     .WithReference("beatleader-socket", new Uri("wss://sockets.api.beatleader.com/"))
     .WithHttpEndpoint(port: builder.ExecutionContext.IsRunMode ? 5042 : null, isProxied: false)
     .WithHttpHealthCheck("/health")
-    .WithExternalHttpEndpoints();
+    .WithExternalHttpEndpoints()
+    .PublishAsDockerComposeService((_, service) => service.Restart = "unless-stopped");
 
 var discordBot = builder.AddProject<GuildSaber_DiscordBot>("discord-bot", option => option.ExcludeLaunchProfile = true)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", environment)
     .WithEnvironment("AuthSettings:ApiKey", apiKey)
     .WithReference(discordbotDb).WaitFor(migrator)
     .WithReference(apiService).WaitFor(apiService)
-    .WithParentRelationship(apiService);
+    .WithParentRelationship(apiService)
+    .PublishAsDockerComposeService((_, service) => service.Restart = "unless-stopped");
 
 var website = builder.AddViteApp("website", "../../src/GuildSaber.Website")
     .WithEndpoint("http", endpointAnnotation => endpointAnnotation.Port = 5044)

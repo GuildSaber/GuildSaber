@@ -15,6 +15,7 @@ services:
         read_only: false
     networks:
       - "aspire"
+    restart: "unless-stopped"
   migrator:
     image: "${MIGRATOR_IMAGE}"
     pull_policy: always
@@ -97,6 +98,7 @@ services:
         condition: "service_completed_successfully"
     networks:
       - "aspire"
+    restart: "unless-stopped"
   discord-bot:
     image: "${DISCORD_BOT_IMAGE}"
     pull_policy: always
@@ -136,6 +138,7 @@ services:
         condition: "service_started"
     networks:
       - "aspire"
+    restart: "unless-stopped"
 networks:
   aspire:
     driver: "bridge"
