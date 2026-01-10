@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Ebene_2" data-name="Ebene 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1515.7 1619.57">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#linear-gradient);
+      }
+
+      .cls-1, .cls-2 {
+        stroke-width: 0px;
+      }
+
+      .cls-2 {
+        fill: url(#linear-gradient-2);
+      }
+    </style>
+    <linearGradient id="linear-gradient" x1="110.11" y1="172.28" x2="1518.11" y2="1334.95" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#88f7f0"/>
+      <stop offset="1" stop-color="#048fff"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient-2" x1="206.85" y1="55.13" x2="1614.85" y2="1217.8" xlink:href="#linear-gradient"/>
+  </defs>
+  <g id="GuildSaber Logo by qlulezz">
+    <g>
+      <path class="cls-1" d="m755.01,1619.57c158.2,0,760.69-393.77,760.69-1215.41,0-61.2-37.1-116.55-93.15-139.82L816.27,11.69c-18.55-7.89-38.43-11.69-58.29-11.69s-39.6,6.61-58.23,14.51L93.5,267.15C37.04,290.42,0,345.74,0,404.16c0,815.64,598.39,1215.41,755.01,1215.41Zm2.84-1468.02l606.28,255.46c0,548.81-310.66,937.84-606.28,1060.99C449.97,1339.79,151.57,941.29,151.57,407l606.28-255.46Z"/>
+      <polygon class="cls-2" points="1155.68 461.85 1155.68 558.42 757.85 669.84 360.03 558.42 360.03 461.85 1155.68 461.85"/>
+    </g>
+  </g>
+</svg>

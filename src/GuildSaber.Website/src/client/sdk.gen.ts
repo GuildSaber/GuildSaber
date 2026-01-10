@@ -20,9 +20,6 @@ import type {
   CreateRankedMapData,
   CreateRankedMapErrors,
   CreateRankedMapResponses,
-  CurrentPlayerJoinGuildData,
-  CurrentPlayerJoinGuildErrors,
-  CurrentPlayerJoinGuildResponses,
   DeleteCategoryData,
   DeleteCategoryErrors,
   DeleteCategoryResponses,
@@ -97,10 +94,6 @@ import type {
   GetMembersResponses,
   GetPlayerAtMeData,
   GetPlayerAtMeErrors,
-  GetPlayerAtMeRankedScoresData,
-  GetPlayerAtMeRankedScoresResponses,
-  GetPlayerAtMeRankedScoresWithRankedMapData,
-  GetPlayerAtMeRankedScoresWithRankedMapResponses,
   GetPlayerAtMeResponses,
   GetPlayerData,
   GetPlayerErrors,
@@ -110,8 +103,12 @@ import type {
   GetPlayerExtendedData,
   GetPlayerExtendedErrors,
   GetPlayerExtendedResponses,
+  GetPlayerRankedScoresAtMeData,
+  GetPlayerRankedScoresAtMeResponses,
   GetPlayerRankedScoresData,
   GetPlayerRankedScoresResponses,
+  GetPlayerRankedScoresWithRankedMapAtMeData,
+  GetPlayerRankedScoresWithRankedMapAtMeResponses,
   GetPlayerRankedScoresWithRankedMapData,
   GetPlayerRankedScoresWithRankedMapResponses,
   GetPlayerResponses,
@@ -125,6 +122,9 @@ import type {
   ImportOldGuildSaberMapsBackgroundData,
   ImportOldGuildSaberMapsBackgroundErrors,
   ImportOldGuildSaberMapsBackgroundResponses,
+  JoinGuildAtMeData,
+  JoinGuildAtMeErrors,
+  JoinGuildAtMeResponses,
   JoinGuildData,
   JoinGuildErrors,
   JoinGuildResponses,
@@ -211,10 +211,10 @@ export const getPlayerRankedScores = <ThrowOnError extends boolean = false>(
  *
  * Get the current player's ranked scores using their player id from claims, with optional sorting.
  */
-export const getPlayerAtMeRankedScores = <ThrowOnError extends boolean = false>(
-  options: Options<GetPlayerAtMeRankedScoresData, ThrowOnError>,
+export const getPlayerRankedScoresAtMe = <ThrowOnError extends boolean = false>(
+  options: Options<GetPlayerRankedScoresAtMeData, ThrowOnError>,
 ) =>
-  (options.client ?? client).get<GetPlayerAtMeRankedScoresResponses, unknown, ThrowOnError>({
+  (options.client ?? client).get<GetPlayerRankedScoresAtMeResponses, unknown, ThrowOnError>({
     security: [{ scheme: "bearer", type: "http" }],
     url: "/players/@me/contexts/{contextId}/ranked-scores",
     ...options,
@@ -238,10 +238,10 @@ export const getPlayerRankedScoresWithRankedMap = <ThrowOnError extends boolean 
  *
  * Get the current player's ranked scores along with ranked map using their player id from claims, with optional sorting.
  */
-export const getPlayerAtMeRankedScoresWithRankedMap = <ThrowOnError extends boolean = false>(
-  options: Options<GetPlayerAtMeRankedScoresWithRankedMapData, ThrowOnError>,
+export const getPlayerRankedScoresWithRankedMapAtMe = <ThrowOnError extends boolean = false>(
+  options: Options<GetPlayerRankedScoresWithRankedMapAtMeData, ThrowOnError>,
 ) =>
-  (options.client ?? client).get<GetPlayerAtMeRankedScoresWithRankedMapResponses, unknown, ThrowOnError>({
+  (options.client ?? client).get<GetPlayerRankedScoresWithRankedMapAtMeResponses, unknown, ThrowOnError>({
     security: [{ scheme: "bearer", type: "http" }],
     url: "/players/@me/contexts/{contextId}/ranked-scores-with-ranked-map",
     ...options,
@@ -536,10 +536,10 @@ export const getMembers = <ThrowOnError extends boolean = false>(options: Option
  *
  * Join a guild as the current player using their player id from claims.
  */
-export const currentPlayerJoinGuild = <ThrowOnError extends boolean = false>(
-  options: Options<CurrentPlayerJoinGuildData, ThrowOnError>,
+export const joinGuildAtMe = <ThrowOnError extends boolean = false>(
+  options: Options<JoinGuildAtMeData, ThrowOnError>,
 ) =>
-  (options.client ?? client).post<CurrentPlayerJoinGuildResponses, CurrentPlayerJoinGuildErrors, ThrowOnError>({
+  (options.client ?? client).post<JoinGuildAtMeResponses, JoinGuildAtMeErrors, ThrowOnError>({
     security: [{ scheme: "bearer", type: "http" }],
     url: "/guilds/{guildId}/members",
     ...options,
