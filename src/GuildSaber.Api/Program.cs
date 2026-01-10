@@ -335,6 +335,12 @@ app.MapOpenApi().CacheOutput();
 app.MapDefaultEndpoints()
     .MapEndpoints<Program>();
 
+app.MapFallback("/website/{**path}", async context =>
+{
+    context.Response.ContentType = "text/html";
+    await context.Response.SendFileAsync(Path.Combine(app.Environment.WebRootPath, "index.html"));
+});
+
 app.MapScalarApiReference("/docs", options => options
     .WithTitle("GuildSaber's Api")
     .WithTheme(ScalarTheme.Purple)
