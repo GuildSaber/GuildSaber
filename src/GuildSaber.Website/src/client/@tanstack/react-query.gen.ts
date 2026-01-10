@@ -16,7 +16,6 @@ import {
   createCategory,
   createGuild,
   createRankedMap,
-  currentPlayerJoinGuild,
   deleteCategory,
   deleteGuild,
   deletePlayer,
@@ -47,17 +46,18 @@ import {
   getMembers,
   getPlayer,
   getPlayerAtMe,
-  getPlayerAtMeRankedScores,
-  getPlayerAtMeRankedScoresWithRankedMap,
   getPlayerExtended,
   getPlayerExtendedAtMe,
   getPlayerRankedScores,
+  getPlayerRankedScoresAtMe,
   getPlayerRankedScoresWithRankedMap,
+  getPlayerRankedScoresWithRankedMapAtMe,
   getPlayers,
   getRankedMap,
   getRankedMaps,
   importOldGuildSaberMapsBackground,
   joinGuild,
+  joinGuildAtMe,
   logout,
   lookupGuildByDiscordGuildId,
   lookupPlayerByDiscordId,
@@ -91,9 +91,6 @@ import type {
   CreateRankedMapData,
   CreateRankedMapError,
   CreateRankedMapResponse,
-  CurrentPlayerJoinGuildData,
-  CurrentPlayerJoinGuildError,
-  CurrentPlayerJoinGuildResponse,
   DeleteCategoryData,
   DeleteCategoryError,
   DeleteCategoryResponse,
@@ -166,10 +163,6 @@ import type {
   GetMembersResponse,
   GetPlayerAtMeData,
   GetPlayerAtMeError,
-  GetPlayerAtMeRankedScoresData,
-  GetPlayerAtMeRankedScoresResponse,
-  GetPlayerAtMeRankedScoresWithRankedMapData,
-  GetPlayerAtMeRankedScoresWithRankedMapResponse,
   GetPlayerAtMeResponse,
   GetPlayerData,
   GetPlayerError,
@@ -179,8 +172,12 @@ import type {
   GetPlayerExtendedData,
   GetPlayerExtendedError,
   GetPlayerExtendedResponse,
+  GetPlayerRankedScoresAtMeData,
+  GetPlayerRankedScoresAtMeResponse,
   GetPlayerRankedScoresData,
   GetPlayerRankedScoresResponse,
+  GetPlayerRankedScoresWithRankedMapAtMeData,
+  GetPlayerRankedScoresWithRankedMapAtMeResponse,
   GetPlayerRankedScoresWithRankedMapData,
   GetPlayerRankedScoresWithRankedMapResponse,
   GetPlayerResponse,
@@ -194,6 +191,9 @@ import type {
   ImportOldGuildSaberMapsBackgroundData,
   ImportOldGuildSaberMapsBackgroundError,
   ImportOldGuildSaberMapsBackgroundResponse,
+  JoinGuildAtMeData,
+  JoinGuildAtMeError,
+  JoinGuildAtMeResponse,
   JoinGuildData,
   JoinGuildError,
   JoinGuildResponse,
@@ -389,23 +389,23 @@ export const getPlayerRankedScoresInfiniteOptions = (options: Options<GetPlayerR
     },
   )
 
-export const getPlayerAtMeRankedScoresQueryKey = (options: Options<GetPlayerAtMeRankedScoresData>) =>
-  createQueryKey("getPlayerAtMeRankedScores", options)
+export const getPlayerRankedScoresAtMeQueryKey = (options: Options<GetPlayerRankedScoresAtMeData>) =>
+  createQueryKey("getPlayerRankedScoresAtMe", options)
 
 /**
  * Get current player's ranked scores paginated
  *
  * Get the current player's ranked scores using their player id from claims, with optional sorting.
  */
-export const getPlayerAtMeRankedScoresOptions = (options: Options<GetPlayerAtMeRankedScoresData>) =>
+export const getPlayerRankedScoresAtMeOptions = (options: Options<GetPlayerRankedScoresAtMeData>) =>
   queryOptions<
-    GetPlayerAtMeRankedScoresResponse,
+    GetPlayerRankedScoresAtMeResponse,
     DefaultError,
-    GetPlayerAtMeRankedScoresResponse,
-    ReturnType<typeof getPlayerAtMeRankedScoresQueryKey>
+    GetPlayerRankedScoresAtMeResponse,
+    ReturnType<typeof getPlayerRankedScoresAtMeQueryKey>
   >({
     queryFn: async ({ queryKey, signal }) => {
-      const { data } = await getPlayerAtMeRankedScores({
+      const { data } = await getPlayerRankedScoresAtMe({
         ...options,
         ...queryKey[0],
         signal,
@@ -413,31 +413,31 @@ export const getPlayerAtMeRankedScoresOptions = (options: Options<GetPlayerAtMeR
       })
       return data
     },
-    queryKey: getPlayerAtMeRankedScoresQueryKey(options),
+    queryKey: getPlayerRankedScoresAtMeQueryKey(options),
   })
 
-export const getPlayerAtMeRankedScoresInfiniteQueryKey = (
-  options: Options<GetPlayerAtMeRankedScoresData>,
-): QueryKey<Options<GetPlayerAtMeRankedScoresData>> => createQueryKey("getPlayerAtMeRankedScores", options, true)
+export const getPlayerRankedScoresAtMeInfiniteQueryKey = (
+  options: Options<GetPlayerRankedScoresAtMeData>,
+): QueryKey<Options<GetPlayerRankedScoresAtMeData>> => createQueryKey("getPlayerRankedScoresAtMe", options, true)
 
 /**
  * Get current player's ranked scores paginated
  *
  * Get the current player's ranked scores using their player id from claims, with optional sorting.
  */
-export const getPlayerAtMeRankedScoresInfiniteOptions = (options: Options<GetPlayerAtMeRankedScoresData>) =>
+export const getPlayerRankedScoresAtMeInfiniteOptions = (options: Options<GetPlayerRankedScoresAtMeData>) =>
   infiniteQueryOptions<
-    GetPlayerAtMeRankedScoresResponse,
+    GetPlayerRankedScoresAtMeResponse,
     DefaultError,
-    InfiniteData<GetPlayerAtMeRankedScoresResponse>,
-    QueryKey<Options<GetPlayerAtMeRankedScoresData>>,
-    number | string | Pick<QueryKey<Options<GetPlayerAtMeRankedScoresData>>[0], "body" | "headers" | "path" | "query">
+    InfiniteData<GetPlayerRankedScoresAtMeResponse>,
+    QueryKey<Options<GetPlayerRankedScoresAtMeData>>,
+    number | string | Pick<QueryKey<Options<GetPlayerRankedScoresAtMeData>>[0], "body" | "headers" | "path" | "query">
   >(
     // @ts-ignore
     {
       queryFn: async ({ pageParam, queryKey, signal }) => {
         // @ts-ignore
-        const page: Pick<QueryKey<Options<GetPlayerAtMeRankedScoresData>>[0], "body" | "headers" | "path" | "query"> =
+        const page: Pick<QueryKey<Options<GetPlayerRankedScoresAtMeData>>[0], "body" | "headers" | "path" | "query"> =
           typeof pageParam === "object"
             ? pageParam
             : {
@@ -446,7 +446,7 @@ export const getPlayerAtMeRankedScoresInfiniteOptions = (options: Options<GetPla
                 },
               }
         const params = createInfiniteParams(queryKey, page)
-        const { data } = await getPlayerAtMeRankedScores({
+        const { data } = await getPlayerRankedScoresAtMe({
           ...options,
           ...params,
           signal,
@@ -454,7 +454,7 @@ export const getPlayerAtMeRankedScoresInfiniteOptions = (options: Options<GetPla
         })
         return data
       },
-      queryKey: getPlayerAtMeRankedScoresInfiniteQueryKey(options),
+      queryKey: getPlayerRankedScoresAtMeInfiniteQueryKey(options),
     },
   )
 
@@ -535,26 +535,26 @@ export const getPlayerRankedScoresWithRankedMapInfiniteOptions = (
     },
   )
 
-export const getPlayerAtMeRankedScoresWithRankedMapQueryKey = (
-  options: Options<GetPlayerAtMeRankedScoresWithRankedMapData>,
-) => createQueryKey("getPlayerAtMeRankedScoresWithRankedMap", options)
+export const getPlayerRankedScoresWithRankedMapAtMeQueryKey = (
+  options: Options<GetPlayerRankedScoresWithRankedMapAtMeData>,
+) => createQueryKey("getPlayerRankedScoresWithRankedMapAtMe", options)
 
 /**
  * Get current player's ranked scores with ranked map paginated
  *
  * Get the current player's ranked scores along with ranked map using their player id from claims, with optional sorting.
  */
-export const getPlayerAtMeRankedScoresWithRankedMapOptions = (
-  options: Options<GetPlayerAtMeRankedScoresWithRankedMapData>,
+export const getPlayerRankedScoresWithRankedMapAtMeOptions = (
+  options: Options<GetPlayerRankedScoresWithRankedMapAtMeData>,
 ) =>
   queryOptions<
-    GetPlayerAtMeRankedScoresWithRankedMapResponse,
+    GetPlayerRankedScoresWithRankedMapAtMeResponse,
     DefaultError,
-    GetPlayerAtMeRankedScoresWithRankedMapResponse,
-    ReturnType<typeof getPlayerAtMeRankedScoresWithRankedMapQueryKey>
+    GetPlayerRankedScoresWithRankedMapAtMeResponse,
+    ReturnType<typeof getPlayerRankedScoresWithRankedMapAtMeQueryKey>
   >({
     queryFn: async ({ queryKey, signal }) => {
-      const { data } = await getPlayerAtMeRankedScoresWithRankedMap({
+      const { data } = await getPlayerRankedScoresWithRankedMapAtMe({
         ...options,
         ...queryKey[0],
         signal,
@@ -562,37 +562,37 @@ export const getPlayerAtMeRankedScoresWithRankedMapOptions = (
       })
       return data
     },
-    queryKey: getPlayerAtMeRankedScoresWithRankedMapQueryKey(options),
+    queryKey: getPlayerRankedScoresWithRankedMapAtMeQueryKey(options),
   })
 
-export const getPlayerAtMeRankedScoresWithRankedMapInfiniteQueryKey = (
-  options: Options<GetPlayerAtMeRankedScoresWithRankedMapData>,
-): QueryKey<Options<GetPlayerAtMeRankedScoresWithRankedMapData>> =>
-  createQueryKey("getPlayerAtMeRankedScoresWithRankedMap", options, true)
+export const getPlayerRankedScoresWithRankedMapAtMeInfiniteQueryKey = (
+  options: Options<GetPlayerRankedScoresWithRankedMapAtMeData>,
+): QueryKey<Options<GetPlayerRankedScoresWithRankedMapAtMeData>> =>
+  createQueryKey("getPlayerRankedScoresWithRankedMapAtMe", options, true)
 
 /**
  * Get current player's ranked scores with ranked map paginated
  *
  * Get the current player's ranked scores along with ranked map using their player id from claims, with optional sorting.
  */
-export const getPlayerAtMeRankedScoresWithRankedMapInfiniteOptions = (
-  options: Options<GetPlayerAtMeRankedScoresWithRankedMapData>,
+export const getPlayerRankedScoresWithRankedMapAtMeInfiniteOptions = (
+  options: Options<GetPlayerRankedScoresWithRankedMapAtMeData>,
 ) =>
   infiniteQueryOptions<
-    GetPlayerAtMeRankedScoresWithRankedMapResponse,
+    GetPlayerRankedScoresWithRankedMapAtMeResponse,
     DefaultError,
-    InfiniteData<GetPlayerAtMeRankedScoresWithRankedMapResponse>,
-    QueryKey<Options<GetPlayerAtMeRankedScoresWithRankedMapData>>,
+    InfiniteData<GetPlayerRankedScoresWithRankedMapAtMeResponse>,
+    QueryKey<Options<GetPlayerRankedScoresWithRankedMapAtMeData>>,
     | number
     | string
-    | Pick<QueryKey<Options<GetPlayerAtMeRankedScoresWithRankedMapData>>[0], "body" | "headers" | "path" | "query">
+    | Pick<QueryKey<Options<GetPlayerRankedScoresWithRankedMapAtMeData>>[0], "body" | "headers" | "path" | "query">
   >(
     // @ts-ignore
     {
       queryFn: async ({ pageParam, queryKey, signal }) => {
         // @ts-ignore
         const page: Pick<
-          QueryKey<Options<GetPlayerAtMeRankedScoresWithRankedMapData>>[0],
+          QueryKey<Options<GetPlayerRankedScoresWithRankedMapAtMeData>>[0],
           "body" | "headers" | "path" | "query"
         > =
           typeof pageParam === "object"
@@ -603,7 +603,7 @@ export const getPlayerAtMeRankedScoresWithRankedMapInfiniteOptions = (
                 },
               }
         const params = createInfiniteParams(queryKey, page)
-        const { data } = await getPlayerAtMeRankedScoresWithRankedMap({
+        const { data } = await getPlayerRankedScoresWithRankedMapAtMe({
           ...options,
           ...params,
           signal,
@@ -611,7 +611,7 @@ export const getPlayerAtMeRankedScoresWithRankedMapInfiniteOptions = (
         })
         return data
       },
-      queryKey: getPlayerAtMeRankedScoresWithRankedMapInfiniteQueryKey(options),
+      queryKey: getPlayerRankedScoresWithRankedMapAtMeInfiniteQueryKey(options),
     },
   )
 
@@ -1468,20 +1468,12 @@ export const getMembersInfiniteOptions = (options: Options<GetMembersData>) =>
  *
  * Join a guild as the current player using their player id from claims.
  */
-export const currentPlayerJoinGuildMutation = (
-  options?: Partial<Options<CurrentPlayerJoinGuildData>>,
-): UseMutationOptions<
-  CurrentPlayerJoinGuildResponse,
-  CurrentPlayerJoinGuildError,
-  Options<CurrentPlayerJoinGuildData>
-> => {
-  const mutationOptions: UseMutationOptions<
-    CurrentPlayerJoinGuildResponse,
-    CurrentPlayerJoinGuildError,
-    Options<CurrentPlayerJoinGuildData>
-  > = {
+export const joinGuildAtMeMutation = (
+  options?: Partial<Options<JoinGuildAtMeData>>,
+): UseMutationOptions<JoinGuildAtMeResponse, JoinGuildAtMeError, Options<JoinGuildAtMeData>> => {
+  const mutationOptions: UseMutationOptions<JoinGuildAtMeResponse, JoinGuildAtMeError, Options<JoinGuildAtMeData>> = {
     mutationFn: async (fnOptions) => {
-      const { data } = await currentPlayerJoinGuild({
+      const { data } = await joinGuildAtMe({
         ...options,
         ...fnOptions,
         throwOnError: true,

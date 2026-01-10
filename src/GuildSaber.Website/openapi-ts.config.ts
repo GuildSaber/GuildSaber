@@ -1,9 +1,9 @@
 import { defineConfig } from "@hey-api/openapi-ts"
 import "dotenv/config"
-import { env } from "process"
+import path from "node:path"
 
 export default defineConfig({
-  input: `${env.VITE_API_URL}/openapi/v1.json`,
+  input: path.resolve(__dirname, "../GuildSaber.Api/GuildSaber.Api.json"),
   output: {
     path: "src/client",
     format: "prettier",

@@ -1,9 +1,9 @@
-import { getPlayerAtMeOptions } from "@/client/@tanstack/react-query.gen"
+import { getPlayerExtendedAtMeOptions } from "@/client/@tanstack/react-query.gen"
 import { useQuery } from "@tanstack/react-query"
 
 export const useSession = () =>
   useQuery({
-    ...getPlayerAtMeOptions(),
+    ...getPlayerExtendedAtMeOptions(),
     staleTime: 60 * 1_000,
     retry: 0,
   })

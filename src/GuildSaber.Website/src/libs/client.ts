@@ -1,7 +1,8 @@
 import { client } from "@/client/client.gen"
+import { getApiUrl } from "@/utils/url"
 
 client.setConfig({
-  baseUrl: import.meta.env.VITE_API_URL,
+  baseUrl: getApiUrl(),
   headers: {
     Authorization: `Bearer ${localStorage.getItem("token")}`,
   },
