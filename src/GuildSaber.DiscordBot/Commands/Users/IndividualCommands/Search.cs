@@ -23,7 +23,7 @@ public partial class UserModuleSlash
         [Autocomplete<ContextAutocompleteHandler>] int contextId,
         [Summary("search", "The search term to find ranked maps")] string search,
         [Summary("page", "Page number for pagination")] int page = 1,
-        [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Secret
+        [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Visible
     ) => await RespondAsync(ephemeral: displayChoice.ToEphemeral(), components: (await SearchCommand
             .GetRankedMapsComponentAsync(
                 await GetGuildIdAsync(), contextId, search, page, Client.Value, Cache, EmojiSettings))
