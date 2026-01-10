@@ -329,16 +329,15 @@ app.UseAuthorization();
 
 #region Endpoints & UI
 
-app.UseFileServer(new FileServerOptions { RequestPath = "/website" });
+app.UseFileServer("/website");
 
 app.MapOpenApi().CacheOutput();
 app.MapDefaultEndpoints()
     .MapEndpoints<Program>();
 
-app.MapFallback("/website/{**path}", async context =>
+app.MapFallbackToFile("/website/{*path:nonfile}", "website/index.html", new StaticFileOptions
 {
-    context.Response.ContentType = "text/html";
-    await context.Response.SendFileAsync(Path.Combine(app.Environment.WebRootPath, "index.html"));
+    RequestPath = "/website",
 });
 
 app.MapScalarApiReference("/docs", options => options
