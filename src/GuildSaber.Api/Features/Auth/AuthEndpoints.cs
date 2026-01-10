@@ -4,18 +4,17 @@ using AspNet.Security.OAuth.BeatLeader;
 using AspNet.Security.OAuth.Discord;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Extensions;
+using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Transformers;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
-using GuildSaber.Common.StrongTypes;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using static GuildSaber.Api.Features.Auth.AuthResponse;
-using IResult = Microsoft.AspNetCore.Http.IResult;
 
 namespace GuildSaber.Api.Features.Auth;
 
@@ -113,7 +112,23 @@ public class AuthEndpoints : IEndpoints
 
         group.MapPost("/logout", HandleLogoutAsync)
             .WithName("Logout")
-            .WithSummary("Log out the current user.")
+            .WithSummary("Log out the current user by invalidating their session.")
+            .RequireAuthorization();
+
+        group.MapPost("/logout-all", HandleLogoutAllAsync)
+            .WithName("LogoutAll")
+            .WithSummary("Log out the current user from all sessions by invalidating all their sessions.")
+            .RequireAuthorization();
+
+        group.MapGet("/logout/redirect", HandleLogoutWithRedirectAsync)
+            .WithName("LogoutWithRedirect")
+            .WithSummary("Log out the current user by invalidating their session and redirecting.")
+            .RequireAuthorization();
+
+        group.MapGet("/logout-all/redirect", HandleLogoutAllWithRedirectAsync)
+            .WithName("LogoutAllWithRedirect")
+            .WithSummary(
+                "Log out the current user from all sessions by invalidating all their sessions and redirecting.")
             .RequireAuthorization();
     }
 
@@ -411,5 +426,51 @@ public class AuthEndpoints : IEndpoints
             .Any(origin => string.Equals(origin, returnOrigin, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static IResult HandleLogoutAsync(HttpContext httpContext) => throw new NotImplementedException();
+    private static async Task<Results<NoContent, InternalServerError>> HandleLogoutAsync(
+        ClaimsPrincipal claimsPrincipal, AuthService authService)
+        => await authService.InvalidateSessionAsync(claimsPrincipal.GetSessionId()!.Value) switch
+        {
+            true => TypedResults.NoContent(),
+            false => TypedResults.InternalServerError()
+        };
+
+    private static async Task<Results<NoContent, InternalServerError>> HandleLogoutAllAsync(
+        ClaimsPrincipal claimsPrincipal, AuthService authService)
+        => await authService.InvalidateAllSessionsAsync(claimsPrincipal.GetPlayerId()!.Value) switch
+        {
+            true => TypedResults.NoContent(),
+            false => TypedResults.InternalServerError()
+        };
+
+    private static async Task<Results<RedirectHttpResult, ProblemHttpResult>> HandleLogoutWithRedirectAsync(
+        ClaimsPrincipal claimsPrincipal, AuthService authService, IOptionsSnapshot<RedirectSettings> redirectSettings,
+        [FromQuery] string returnUrl)
+    {
+        if (!IsValidRedirectUrl(returnUrl, redirectSettings.Value))
+            return TypedResults.Problem("Invalid return URL. Please ensure the URL is allowed.",
+                statusCode: StatusCodes.Status400BadRequest);
+
+        var invalidateResult = await authService.InvalidateSessionAsync(claimsPrincipal.GetSessionId()!.Value);
+        if (!invalidateResult)
+            return TypedResults.Problem("Failed to log out the user.",
+                statusCode: StatusCodes.Status500InternalServerError);
+
+        return TypedResults.Redirect(returnUrl);
+    }
+
+    private static async Task<Results<RedirectHttpResult, ProblemHttpResult>> HandleLogoutAllWithRedirectAsync(
+        ClaimsPrincipal claimsPrincipal, AuthService authService, IOptionsSnapshot<RedirectSettings> redirectSettings,
+        [FromQuery] string returnUrl)
+    {
+        if (!IsValidRedirectUrl(returnUrl, redirectSettings.Value))
+            return TypedResults.Problem("Invalid return URL. Please ensure the URL is allowed.",
+                statusCode: StatusCodes.Status400BadRequest);
+
+        var invalidateResult = await authService.InvalidateAllSessionsAsync(claimsPrincipal.GetPlayerId()!.Value);
+        if (!invalidateResult)
+            return TypedResults.Problem("Failed to log out the user from all sessions.",
+                statusCode: StatusCodes.Status500InternalServerError);
+
+        return TypedResults.Redirect(returnUrl);
+    }
 }

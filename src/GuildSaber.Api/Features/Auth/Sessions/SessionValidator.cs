@@ -9,10 +9,15 @@ namespace GuildSaber.Api.Features.Auth.Sessions;
 
 public class SessionValidator(IServiceScopeFactory scopeFactory, HybridCache cache)
 {
+    private const string SessionCacheKeyPrefix = "Session_";
+
     private static readonly HybridCacheEntryOptions _cacheEntryOptions = new()
     {
         Expiration = TimeSpan.FromMinutes(2)
     };
+
+    public static ValueTask ClearSessionCache(UuidV7 sessionId, HybridCache cache)
+        => cache.RemoveAsync($"{SessionCacheKeyPrefix}{sessionId}");
 
     private static readonly Func<ServerDbContext, UuidV7, Task<SessionLightDto>> _getSessionByIdQuery
         = EF.CompileAsyncQuery((ServerDbContext dbContext, UuidV7 sessionId) =>
@@ -24,7 +29,7 @@ public class SessionValidator(IServiceScopeFactory scopeFactory, HybridCache cac
     private readonly record struct SessionLightDto(UuidV7 SessionId, PlayerId PlayerId, bool IsValid);
 
     private ValueTask<SessionLightDto> GetSessionByIdAsync(UuidV7 sessionId)
-        => cache.GetOrCreateAsync($"Session_{sessionId}", (scopeFactory, sessionId),
+        => cache.GetOrCreateAsync($"{SessionCacheKeyPrefix}{sessionId}", (scopeFactory, sessionId),
             async static (state, _) =>
             {
                 await using var scope = state.scopeFactory.CreateAsyncScope();

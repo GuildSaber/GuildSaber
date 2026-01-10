@@ -3879,8 +3879,119 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Log out the current user.",
+        "summary": "Log out the current user by invalidating their session.",
         "operationId": "Logout",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "500": {
+            "description": "An error occurred while processing your request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.6.1",
+                  "title": "An error occurred while processing your request.",
+                  "status": 500,
+                  "instance": "POST auth/logout",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/logout-all": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Log out the current user from all sessions by invalidating all their sessions.",
+        "operationId": "LogoutAll",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "500": {
+            "description": "An error occurred while processing your request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.6.1",
+                  "title": "An error occurred while processing your request.",
+                  "status": 500,
+                  "instance": "POST auth/logout-all",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/logout/redirect": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Log out the current user by invalidating their session and redirecting.",
+        "operationId": "LogoutWithRedirect",
+        "parameters": [
+          {
+            "name": "returnUrl",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/logout-all/redirect": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Log out the current user from all sessions by invalidating all their sessions and redirecting.",
+        "operationId": "LogoutAllWithRedirect",
+        "parameters": [
+          {
+            "name": "returnUrl",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"

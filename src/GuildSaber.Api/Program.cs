@@ -1,4 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -26,7 +25,6 @@ using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Database;
 using GuildSaber.Database.Contexts.Server;
-using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -163,22 +161,16 @@ builder.Services.AddAuthentication(options => options.DefaultScheme = JwtBearerD
             OnTokenValidated = async context =>
             {
                 var sessionValidator = context.HttpContext.RequestServices.GetRequiredService<SessionValidator>();
-                var sessionId = context.Principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                var sessionId = context.Principal?.GetSessionId();
                 if (sessionId is null)
                 {
                     context.Fail("Session ID not found in token.");
                     return;
                 }
 
-                var parseResult = UuidV7.TryParse(sessionId);
-                if (!parseResult.TryGetValue(out var sessionUuId))
-                {
-                    context.Fail($"Invalid session ID format: {parseResult.Error}");
-                    return;
-                }
-
                 // Validate session from the database + enrich principal with PlayerId claim.
-                var sessionResult = await sessionValidator.ValidateAndApplySessionAsync(sessionUuId, context.Principal);
+                var sessionResult =
+                    await sessionValidator.ValidateAndApplySessionAsync(sessionId.Value, context.Principal);
                 if (sessionResult.TryGetError(out var error))
                     context.Fail(error);
             }
