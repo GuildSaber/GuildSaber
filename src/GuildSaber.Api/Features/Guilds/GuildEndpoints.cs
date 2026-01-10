@@ -242,7 +242,7 @@ public class GuildEndpoints : IEndpoints
         if (discordInfo is { MainDiscordGuildId: { } newDiscordGuildId })
         {
             var otherGuild = await dbContext.Guilds
-                .Where(x => x.DiscordInfo.MainDiscordGuildId == newDiscordGuildId)
+                .Where(x => x.Id != guildId && x.DiscordInfo.MainDiscordGuildId == newDiscordGuildId)
                 .FirstOrDefaultAsync();
 
             if (otherGuild is not null)
