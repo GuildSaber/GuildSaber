@@ -1,18 +1,18 @@
 export const getApiUrl = (): string => {
-  const currentUrl = window.location.origin
-  const lowerUrl = currentUrl.toLowerCase()
+  const { protocol, hostname } = window.location
 
-  if (lowerUrl.startsWith("http://localhost")) {
-    return "http://localhost:5042"
+  // Local
+  if (hostname === "localhost") {
+    return `${protocol}//localhost:5042`
   }
 
-  if (lowerUrl.startsWith("http://dev.")) {
-    return `http://api-dev.${new URL(currentUrl).host.substring(4)}`
+  // Developpement
+  if (hostname.startsWith("dev.")) {
+    const domain = hostname.substring(4)
+
+    return `${protocol}//api-dev.${domain}`
   }
 
-  if (lowerUrl.startsWith("http://")) {
-    return `http://api.${new URL(currentUrl).host}`
-  }
-
-  return currentUrl
+  // Production
+  return `${protocol}//api.${hostname}`
 }
