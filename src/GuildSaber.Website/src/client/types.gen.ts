@@ -331,10 +331,10 @@ export type MemberContextStat = {
 }
 
 export type MemberLevelStat = {
-  level?: Level
-  isCompleted?: boolean
-  isLocked?: boolean
-  passCount?: null | number | string
+  level: Level
+  isCompleted: boolean
+  isLocked: boolean
+  passCount: null | number | string
 }
 
 export type MemberPointStat = {
@@ -2264,7 +2264,75 @@ export type LogoutData = {
   url: "/auth/logout"
 }
 
+export type LogoutErrors = {
+  /**
+   * An error occurred while processing your request.
+   */
+  500: ProblemDetails
+}
+
+export type LogoutError = LogoutErrors[keyof LogoutErrors]
+
 export type LogoutResponses = {
+  /**
+   * No Content
+   */
+  204: void
+}
+
+export type LogoutResponse = LogoutResponses[keyof LogoutResponses]
+
+export type LogoutAllData = {
+  body?: never
+  path?: never
+  query?: never
+  url: "/auth/logout-all"
+}
+
+export type LogoutAllErrors = {
+  /**
+   * An error occurred while processing your request.
+   */
+  500: ProblemDetails
+}
+
+export type LogoutAllError = LogoutAllErrors[keyof LogoutAllErrors]
+
+export type LogoutAllResponses = {
+  /**
+   * No Content
+   */
+  204: void
+}
+
+export type LogoutAllResponse = LogoutAllResponses[keyof LogoutAllResponses]
+
+export type LogoutWithRedirectData = {
+  body?: never
+  path?: never
+  query: {
+    returnUrl: string
+  }
+  url: "/auth/logout/redirect"
+}
+
+export type LogoutWithRedirectResponses = {
+  /**
+   * OK
+   */
+  200: unknown
+}
+
+export type LogoutAllWithRedirectData = {
+  body?: never
+  path?: never
+  query: {
+    returnUrl: string
+  }
+  url: "/auth/logout-all/redirect"
+}
+
+export type LogoutAllWithRedirectResponses = {
   /**
    * OK
    */

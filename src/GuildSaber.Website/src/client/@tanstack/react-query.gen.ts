@@ -59,6 +59,9 @@ import {
   joinGuild,
   joinGuildAtMe,
   logout,
+  logoutAll,
+  logoutAllWithRedirect,
+  logoutWithRedirect,
   lookupGuildByDiscordGuildId,
   lookupPlayerByDiscordId,
   type Options,
@@ -197,7 +200,14 @@ import type {
   JoinGuildData,
   JoinGuildError,
   JoinGuildResponse,
+  LogoutAllData,
+  LogoutAllError,
+  LogoutAllResponse,
+  LogoutAllWithRedirectData,
   LogoutData,
+  LogoutError,
+  LogoutResponse,
+  LogoutWithRedirectData,
   LookupGuildByDiscordGuildIdData,
   LookupGuildByDiscordGuildIdError,
   LookupGuildByDiscordGuildIdResponse,
@@ -2342,12 +2352,12 @@ export const beatLeaderCallbackWithRedirectOptions = (options: Options<BeatLeade
   })
 
 /**
- * Log out the current user.
+ * Log out the current user by invalidating their session.
  */
 export const logoutMutation = (
   options?: Partial<Options<LogoutData>>,
-): UseMutationOptions<unknown, DefaultError, Options<LogoutData>> => {
-  const mutationOptions: UseMutationOptions<unknown, DefaultError, Options<LogoutData>> = {
+): UseMutationOptions<LogoutResponse, LogoutError, Options<LogoutData>> => {
+  const mutationOptions: UseMutationOptions<LogoutResponse, LogoutError, Options<LogoutData>> = {
     mutationFn: async (fnOptions) => {
       const { data } = await logout({
         ...options,
@@ -2359,3 +2369,62 @@ export const logoutMutation = (
   }
   return mutationOptions
 }
+
+/**
+ * Log out the current user from all sessions by invalidating all their sessions.
+ */
+export const logoutAllMutation = (
+  options?: Partial<Options<LogoutAllData>>,
+): UseMutationOptions<LogoutAllResponse, LogoutAllError, Options<LogoutAllData>> => {
+  const mutationOptions: UseMutationOptions<LogoutAllResponse, LogoutAllError, Options<LogoutAllData>> = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await logoutAll({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+export const logoutWithRedirectQueryKey = (options: Options<LogoutWithRedirectData>) =>
+  createQueryKey("logoutWithRedirect", options)
+
+/**
+ * Log out the current user by invalidating their session and redirecting.
+ */
+export const logoutWithRedirectOptions = (options: Options<LogoutWithRedirectData>) =>
+  queryOptions<unknown, DefaultError, unknown, ReturnType<typeof logoutWithRedirectQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await logoutWithRedirect({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: logoutWithRedirectQueryKey(options),
+  })
+
+export const logoutAllWithRedirectQueryKey = (options: Options<LogoutAllWithRedirectData>) =>
+  createQueryKey("logoutAllWithRedirect", options)
+
+/**
+ * Log out the current user from all sessions by invalidating all their sessions and redirecting.
+ */
+export const logoutAllWithRedirectOptions = (options: Options<LogoutAllWithRedirectData>) =>
+  queryOptions<unknown, DefaultError, unknown, ReturnType<typeof logoutAllWithRedirectQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await logoutAllWithRedirect({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: logoutAllWithRedirectQueryKey(options),
+  })

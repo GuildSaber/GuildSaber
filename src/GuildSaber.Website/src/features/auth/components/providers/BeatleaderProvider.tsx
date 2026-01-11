@@ -1,4 +1,5 @@
 import BeatLeader from "@/components/icons/Beatleader"
+import { Button } from "@/components/ui/button"
 import { generateAuthUrl } from "@/features/auth/utils"
 
 const BeatleaderProvider = () => {
@@ -7,13 +8,10 @@ const BeatleaderProvider = () => {
   }
 
   return (
-    <button
-      onClick={handleSignin}
-      className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-md bg-[#c001c0] p-2 text-white transition hover:opacity-80"
-    >
+    <Button onClick={handleSignin} className="bg-[#c001c0] hover:bg-[#c001c0]/80">
       <BeatLeader className="h-5 w-5" />
-      <p>Signin with Beatleader</p>
-    </button>
+      Signin with Beatleader
+    </Button>
   )
 }
 
