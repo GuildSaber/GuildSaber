@@ -8,7 +8,15 @@ namespace GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 [JsonConverter(typeof(BeatSaverKeyJsonConverter))]
 public readonly record struct BeatSaverKey
 {
+    /// <summary>
+    /// The projected maximum length of a BeatSaver key.
+    /// </summary>
     public const int MaxLength = 6;
+
+    /// <summary>
+    /// The length of the "!bsr " prefix.
+    /// </summary>
+    public const int BsrPrefixLength = 5;
 
     private readonly string _value;
 
@@ -29,6 +37,8 @@ public readonly record struct BeatSaverKey
     [return: NotNullIfNotNull(nameof(value))]
     public static BeatSaverKey? CreateUnsafe(string? value)
         => value is null ? null : new BeatSaverKey(value!);
+
+    public string ToBsrKey() => $"!bsr {_value}";
 
     public override string ToString()
         => _value;
