@@ -1,6 +1,5 @@
 import { logout } from "@/client"
 import { getPlayerExtendedAtMeQueryKey } from "@/client/@tanstack/react-query.gen"
-import { client } from "@/client/client.gen"
 import Flag from "@/components/Flag"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,12 +21,6 @@ const Auth = () => {
     await logout()
     localStorage.removeItem("token")
 
-    client.setConfig({
-      headers: {
-        Authorization: null,
-      },
-    })
-
     queryClient.setQueryData(getPlayerExtendedAtMeQueryKey(), null)
   }
 
@@ -36,12 +29,6 @@ const Auth = () => {
   useEffect(() => {
     if (token) {
       localStorage.setItem("token", token)
-
-      client.setConfig({
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
 
       setToken(null)
 
