@@ -36,13 +36,14 @@ const Auth = () => {
   useEffect(() => {
     if (token) {
       localStorage.setItem("token", token)
-      setToken(null)
 
       client.setConfig({
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
+
+      setToken(null)
 
       queryClient.invalidateQueries({ queryKey: getPlayerExtendedAtMeQueryKey() })
     }
