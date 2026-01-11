@@ -128,8 +128,16 @@ import type {
   JoinGuildData,
   JoinGuildErrors,
   JoinGuildResponses,
+  LogoutAllData,
+  LogoutAllErrors,
+  LogoutAllResponses,
+  LogoutAllWithRedirectData,
+  LogoutAllWithRedirectResponses,
   LogoutData,
+  LogoutErrors,
   LogoutResponses,
+  LogoutWithRedirectData,
+  LogoutWithRedirectResponses,
   LookupGuildByDiscordGuildIdData,
   LookupGuildByDiscordGuildIdErrors,
   LookupGuildByDiscordGuildIdResponses,
@@ -1006,11 +1014,45 @@ export const beatLeaderCallbackWithRedirect = <ThrowOnError extends boolean = fa
   >({ url: "/auth/callback/beatleader/redirect", ...options })
 
 /**
- * Log out the current user.
+ * Log out the current user by invalidating their session.
  */
 export const logout = <ThrowOnError extends boolean = false>(options?: Options<LogoutData, ThrowOnError>) =>
-  (options?.client ?? client).post<LogoutResponses, unknown, ThrowOnError>({
+  (options?.client ?? client).post<LogoutResponses, LogoutErrors, ThrowOnError>({
     security: [{ scheme: "bearer", type: "http" }],
     url: "/auth/logout",
+    ...options,
+  })
+
+/**
+ * Log out the current user from all sessions by invalidating all their sessions.
+ */
+export const logoutAll = <ThrowOnError extends boolean = false>(options?: Options<LogoutAllData, ThrowOnError>) =>
+  (options?.client ?? client).post<LogoutAllResponses, LogoutAllErrors, ThrowOnError>({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/auth/logout-all",
+    ...options,
+  })
+
+/**
+ * Log out the current user by invalidating their session and redirecting.
+ */
+export const logoutWithRedirect = <ThrowOnError extends boolean = false>(
+  options: Options<LogoutWithRedirectData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<LogoutWithRedirectResponses, unknown, ThrowOnError>({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/auth/logout/redirect",
+    ...options,
+  })
+
+/**
+ * Log out the current user from all sessions by invalidating all their sessions and redirecting.
+ */
+export const logoutAllWithRedirect = <ThrowOnError extends boolean = false>(
+  options: Options<LogoutAllWithRedirectData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<LogoutAllWithRedirectResponses, unknown, ThrowOnError>({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/auth/logout-all/redirect",
     ...options,
   })

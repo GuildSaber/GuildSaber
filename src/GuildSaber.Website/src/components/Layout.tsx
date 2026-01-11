@@ -1,7 +1,7 @@
 import { Outlet } from "react-router"
 
 const Layout = () => (
-  <main className="flex min-h-screen flex-1 flex-col bg-slate-900 text-white">
+  <main className="xl mx-auto flex min-h-screen w-full max-w-360 flex-1 flex-col text-white">
     <Outlet />
   </main>
 )
