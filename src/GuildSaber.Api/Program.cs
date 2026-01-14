@@ -23,6 +23,7 @@ using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.OldGuildSaber;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
+using GuildSaber.Common.Settings;
 using GuildSaber.Database;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.AspNetCore.Authentication;
@@ -74,9 +75,13 @@ builder.Services
 builder.Services
     .AddOptionsWithValidateOnStart<GuildCreationSettings>()
     .Bind(guildSettings.GetSection(nameof(GuildSettings.Creation))).ValidateDataAnnotations();
+
 builder.Services
     .AddOptionsWithValidateOnStart<RankedMapSettings>()
     .Bind(builder.Configuration.GetSection(RankedMapSettings.RankedMapSettingsSectionKey)).ValidateDataAnnotations();
+builder.Services
+    .AddOptionsWithValidateOnStart<LinkSettings>()
+    .Bind(builder.Configuration.GetSection(LinkSettings.LinkSettingsSectionsKey)).ValidateDataAnnotations();
 
 #endregion
 

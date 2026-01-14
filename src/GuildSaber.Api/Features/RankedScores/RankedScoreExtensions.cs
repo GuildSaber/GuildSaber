@@ -12,6 +12,10 @@ public static class RankedScoreExtensions
         x => x.State.HasFlag(RankedScore.EState.Selected)
              && ((int)x.State & (int)RankedScore.EState.NonPointGiving) == 0;
 
+    public static Expression<Func<RankedScore, bool>> IsValidOrPendingExpression =>
+        x => x.State.HasFlag(RankedScore.EState.Selected)
+             && ((int)x.State & (int)RankedScore.EState.NonPointGiving & ~(int)RankedScore.EState.Pending) == 0;
+
     public static IQueryable<RankedScore> ApplySortOrder(
         this IQueryable<RankedScore> query, ERankedScoreSorter sortBy, EOrder order) => sortBy switch
     {

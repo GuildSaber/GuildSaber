@@ -16,9 +16,6 @@ public class SessionValidator(IServiceScopeFactory scopeFactory, HybridCache cac
         Expiration = TimeSpan.FromMinutes(2)
     };
 
-    public static ValueTask ClearSessionCache(UuidV7 sessionId, HybridCache cache)
-        => cache.RemoveAsync($"{SessionCacheKeyPrefix}{sessionId}");
-
     private static readonly Func<ServerDbContext, UuidV7, Task<SessionLightDto>> _getSessionByIdQuery
         = EF.CompileAsyncQuery((ServerDbContext dbContext, UuidV7 sessionId) =>
             dbContext.Sessions
@@ -27,6 +24,9 @@ public class SessionValidator(IServiceScopeFactory scopeFactory, HybridCache cac
                 .FirstOrDefault());
 
     private readonly record struct SessionLightDto(UuidV7 SessionId, PlayerId PlayerId, bool IsValid);
+
+    public static ValueTask ClearSessionCache(UuidV7 sessionId, HybridCache cache)
+        => cache.RemoveAsync($"{SessionCacheKeyPrefix}{sessionId}");
 
     private ValueTask<SessionLightDto> GetSessionByIdAsync(UuidV7 sessionId)
         => cache.GetOrCreateAsync($"{SessionCacheKeyPrefix}{sessionId}", (scopeFactory, sessionId),

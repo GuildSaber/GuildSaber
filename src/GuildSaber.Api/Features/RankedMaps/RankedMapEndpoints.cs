@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Internal;
 using GuildSaber.Api.Transformers;
+using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -105,54 +107,59 @@ public class RankedMapEndpoints : IEndpoints
         string? search = null,
         RankedMapRequest.ERankedMapSorter sortBy = RankedMapRequest.ERankedMapSorter.DifficultyStar,
         EOrder order = EOrder.Asc)
-    {
-        var query = dbContext.RankedMaps.AsSplitQuery().Where(x => x.ContextId == contextId);
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            if (search.Length is < 10 and >= 5 && search.StartsWith("!bsr"))
-            {
-                search = search[5..];
-                query = query.Where(x => x.MapVersions.Any(version => version.Song.BeatSaverKey == search));
-            }
-            else
-            {
-                query = query.Where(x => x.MapVersions.Any(version =>
-                    EF.Functions.ILike(version.Song.Info.SongName, $"%{search}%") ||
-                    EF.Functions.ILike(version.Song.Info.SongAuthorName, $"%{search}%") ||
-                    EF.Functions.ILike(version.Song.Info.MapperName, $"%{search}%") ||
-                    search.Length < 5 && version.Song.BeatSaverKey != null
-                                      && EF.Functions.ILike(version.Song.BeatSaverKey, $"%{search}%") ||
-                    search.Length > 36 && search.Length < 43 &&
-                    EF.Functions.ILike(version.Song.Hash, $"%{search}%")));
-            }
-        }
-
-        return TypedResults.Ok(await query
+        => TypedResults.Ok(await dbContext.RankedMaps.AsSplitQuery().Where(x => x.ContextId == contextId)
+            .ApplyMapSearch(search)
             .ApplySortOrder(sortBy, order)
             .Select(RankedMapMappers.MapRankedMapExpression)
             .ToPagedListAsync(page, pageSize));
-    }
 }
 
 public static class RankedMapExtensions
 {
-    public static IQueryable<ServerRankedMap> ApplySortOrder(
-        this IQueryable<ServerRankedMap> query, RankedMapRequest.ERankedMapSorter sortBy, EOrder order) => sortBy switch
+    extension(IQueryable<ServerRankedMap> query)
     {
-        RankedMapRequest.ERankedMapSorter.Id => query.OrderBy(order, x => x.Id),
-        RankedMapRequest.ERankedMapSorter.CreationTime => query.OrderBy(order, x => x.Info.CreatedAt)
-            .ThenBy(order, x => x.Id),
-        RankedMapRequest.ERankedMapSorter.EditTime => query.OrderBy(order, x => x.Info.EditedAt)
-            .ThenBy(order, guild => guild.Id),
-        RankedMapRequest.ERankedMapSorter.DifficultyStar => query.OrderBy(order, x => x.Rating.DiffStar)
-            .ThenBy(order, x => x.Id),
-        RankedMapRequest.ERankedMapSorter.AccuracyStar => query.OrderBy(order, x => x.Rating.AccStar)
-            .ThenBy(order, x => x.Id),
-        RankedMapRequest.ERankedMapSorter.Name => query.OrderBy(order, x => x.MapVersions
-                .Select(v => v.Song.Info.SongName)
-                .FirstOrDefault())
-            .ThenBy(order, x => x.Id),
-        _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
-    };
+        [SuppressMessage("ReSharper", "InvertIf")]
+        public IQueryable<ServerRankedMap> ApplyMapSearch(string? search)
+        {
+            if (string.IsNullOrWhiteSpace(search))
+                return query;
+
+            if (search.Length is >= BeatSaverKey.BsrPrefixLength and
+                                 <= BeatSaverKey.BsrPrefixLength + BeatSaverKey.MaxLength
+                && search.StartsWith("!bsr "))
+            {
+                search = search[5..];
+                return query.Where(x => x.MapVersions.Any(version => version.Song.BeatSaverKey == search));
+            }
+
+            return query.Where(x => x.MapVersions.Any(version =>
+                EF.Functions.ILike(version.Song.Info.SongName, $"%{search}%") ||
+                EF.Functions.ILike(version.Song.Info.SongAuthorName, $"%{search}%") ||
+                EF.Functions.ILike(version.Song.Info.MapperName, $"%{search}%") ||
+                search.Length <= BeatSaverKey.MaxLength && version.Song.BeatSaverKey != null
+                                                        && EF.Functions.ILike(version.Song.BeatSaverKey,
+                                                            $"%{search}%") ||
+                search.Length == SongHash.ExactLength &&
+                EF.Functions.ILike(version.Song.Hash, $"%{search}%")));
+        }
+
+        public IQueryable<ServerRankedMap> ApplySortOrder(RankedMapRequest.ERankedMapSorter sortBy, EOrder order)
+            => sortBy switch
+            {
+                RankedMapRequest.ERankedMapSorter.Id => query.OrderBy(order, x => x.Id),
+                RankedMapRequest.ERankedMapSorter.CreationTime => query.OrderBy(order, x => x.Info.CreatedAt)
+                    .ThenBy(order, x => x.Id),
+                RankedMapRequest.ERankedMapSorter.EditTime => query.OrderBy(order, x => x.Info.EditedAt)
+                    .ThenBy(order, guild => guild.Id),
+                RankedMapRequest.ERankedMapSorter.DifficultyStar => query.OrderBy(order, x => x.Rating.DiffStar)
+                    .ThenBy(order, x => x.Id),
+                RankedMapRequest.ERankedMapSorter.AccuracyStar => query.OrderBy(order, x => x.Rating.AccStar)
+                    .ThenBy(order, x => x.Id),
+                RankedMapRequest.ERankedMapSorter.Name => query.OrderBy(order, x => x.MapVersions
+                        .Select(v => v.Song.Info.SongName)
+                        .FirstOrDefault())
+                    .ThenBy(order, x => x.Id),
+                _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
+            };
+    }
 }

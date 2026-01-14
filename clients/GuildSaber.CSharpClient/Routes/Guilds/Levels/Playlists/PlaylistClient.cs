@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
+using static GuildSaber.Api.Features.Guilds.Levels.Playlists.PlaylistRequests;
 using static GuildSaber.Api.Features.Guilds.Levels.Playlists.PlaylistResponses;
 
 namespace GuildSaber.CSharpClient.Routes.Guilds.Levels.Playlists;
@@ -17,10 +18,16 @@ public sealed class PlaylistClient(
     /// Gets the playlist for a ranked map list level by its ID.
     /// </summary>
     /// <param name="levelId">The ID of the level to retrieve the playlist for.</param>
+    /// <param name="filter">The filter to apply to the playlist.</param>
+    /// <param name="playerId">Optional player ID for personalized playlist data.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A result containing the playlist if found, or null if not found.</returns>
-    public async Task<Result<Playlist?>> GetByLevelIdAsync(int levelId, CancellationToken cancellationToken = default)
-        => await httpClient.GetAsync($"levels/{levelId}/playlist", cancellationToken)
+    public async Task<Result<Playlist?>> GetByLevelIdAsync(
+        int levelId, PlaylistFilter filter, PlayerId? playerId, CancellationToken cancellationToken = default)
+        => await httpClient
+                .GetAsync(
+                    $"levels/{levelId}/playlist?filter={filter}{(playerId is null ? "" : $"&playerId={playerId}")}",
+                    cancellationToken)
                 .ConfigureAwait(false) switch
             {
                 { StatusCode: HttpStatusCode.NotFound } => Success<Playlist?>(null),

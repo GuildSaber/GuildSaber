@@ -4,10 +4,10 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Internal;
+using GuildSaber.Common.Settings;
 using GuildSaber.CSharpClient;
 using GuildSaber.CSharpClient.Routes.Internal;
 using GuildSaber.DiscordBot.Core.Extensions;
-using GuildSaber.DiscordBot.Settings;
 
 namespace GuildSaber.DiscordBot.Commands.Users;
 

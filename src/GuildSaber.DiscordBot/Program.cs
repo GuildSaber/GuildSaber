@@ -1,4 +1,5 @@
-﻿using GuildSaber.Database;
+﻿using GuildSaber.Common.Settings;
+using GuildSaber.Database;
 using GuildSaber.Database.Contexts.DiscordBot;
 using GuildSaber.DiscordBot.Core.Host;
 using GuildSaber.DiscordBot.Settings;

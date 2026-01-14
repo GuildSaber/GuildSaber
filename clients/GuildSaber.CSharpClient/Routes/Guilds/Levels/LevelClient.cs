@@ -41,13 +41,13 @@ public sealed class LevelClient(
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A result containing an array of levels.</returns>
     public async Task<Result<Level[]>> GetByContextIdAsync(
-        int contextId, int? categoryId = null, bool? hasCategory = null, CancellationToken cancellationToken = default)
+        int contextId, int? categoryId, bool hasCategory, CancellationToken cancellationToken = default)
     {
         var url = $"context/{contextId}/levels";
         if (categoryId.HasValue)
             url += $"?categoryId={categoryId.Value}";
-        else if (hasCategory.HasValue)
-            url += $"?hasCategory={hasCategory.Value}";
+
+        url += $"?hasCategory={hasCategory}";
 
         return await httpClient.GetAsync(url, cancellationToken)
                 .ConfigureAwait(false) switch

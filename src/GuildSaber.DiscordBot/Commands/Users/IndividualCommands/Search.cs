@@ -148,7 +148,7 @@ file static class SearchCommand
             var sb = new StringBuilder()
                 .Append("**[").Append(song.Info.BeatSaverName).Append("](https://beatsaver.com/maps/")
                 .Append(song.Key).Append(")**")
-                .Append(" (key-").Append(song.Key).Append(")\n")
+                .Append(" (").Append(song.Key is { } key ? key.ToBsrKey() : "no !bsr").Append(")\n")
                 .Append("Mapper(s): ").AppendLine(song.Info.MapperName)
                 .Append("Difficulty: ").AppendLine(version.Difficulty.Difficulty.ToString())
                 .AppendLine();

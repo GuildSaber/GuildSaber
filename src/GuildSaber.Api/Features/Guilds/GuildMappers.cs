@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Guilds.Categories;
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Models.Server.Guilds;
 
 namespace GuildSaber.Api.Features.Guilds;

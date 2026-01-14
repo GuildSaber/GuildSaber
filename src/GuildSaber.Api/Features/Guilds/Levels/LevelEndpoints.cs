@@ -19,8 +19,8 @@ public class LevelEndpoints : IEndpoints
             .WithSummary("Get all levels in a context, optionally filtered by category.")
             .WithDescription("""
                              - No parameters: Returns all levels.
-                             - hasCategory=false: Returns levels with no category.
-                             - category=5: Returns levels in category 5.
+                             - hasCategory=false: Only return levels with no category.
+                             - category=5: Returns levels with category 5.
                              """);
     }
 
@@ -28,13 +28,13 @@ public class LevelEndpoints : IEndpoints
         ContextId contextId,
         ServerDbContext dbContext,
         int? categoryId = null,
-        bool? hasCategory = null)
+        bool hasCategory = true)
     {
         var query = dbContext.Levels.Where(x => x.ContextId == contextId);
 
         if (categoryId.HasValue)
             query = query.Where(x => x.CategoryId == categoryId.Value);
-        else if (hasCategory == false)
+        else if (!hasCategory)
             query = query.Where(x => x.CategoryId == null);
 
         return TypedResults.Ok(await query
