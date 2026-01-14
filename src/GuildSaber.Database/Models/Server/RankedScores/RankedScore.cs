@@ -175,12 +175,10 @@ public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
         builder.Property(x => x.Id)
             .HasGenericConversion<RankedScore.RankedScoreId, long>()
             .ValueGeneratedOnAdd();
-        builder.HasIndex(x => new
-        {
-            x.ContextId,
-            x.PointId,
-            x.RankedMapId
-        });
+
+        builder.HasIndex(x => new { x.ContextId, x.PointId, x.RankedMapId });
+        builder.HasIndex(x => new { x.PlayerId, x.State });
+        builder.HasIndex(x => x.State);
 
         builder.Property(x => x.EffectiveScore)
             .HasConversion<int>(from => from, to => EffectiveScore.CreateUnsafe(to).Value);
@@ -196,7 +194,7 @@ public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(x => x.RankedMap)
-            .WithMany().HasForeignKey(x => x.RankedMapId)
+            .WithMany(x => x.RankedScores).HasForeignKey(x => x.RankedMapId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(x => x.SongDifficulty)

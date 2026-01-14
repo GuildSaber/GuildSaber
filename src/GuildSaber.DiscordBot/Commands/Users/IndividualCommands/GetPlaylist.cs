@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Discord;
 using Discord.Interactions;
+using GuildSaber.Api.Features.Guilds.Levels.Playlists;
 using GuildSaber.CSharpClient;
 using GuildSaber.DiscordBot.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Extensions;
@@ -17,20 +18,29 @@ public partial class UserModuleSlash
     [SlashCommand("playlist", "Get a playlist of maps for a level or all levels")]
     public async Task Playlist(
         [Summary("Context")] [Autocomplete(typeof(ContextAutocompleteHandler))] int contextId,
+        [Summary("Type")] PlaylistRequests.PlaylistFilter filter = PlaylistRequests.PlaylistFilter.None,
         [Summary("Category")] [Autocomplete(typeof(CategoryAutocompleteHandler))] int? categoryId = null,
         [Summary("Level", "The level number (order) to get the playlist for")] uint? levelOrder = null,
+        [Summary("User", "The user to get the playlists for (you if empty)")] IUser? user = null,
         [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Visible)
     {
         await DeferAsync(ephemeral: displayChoice.ToEphemeral());
 
+        var playerTask = user is null
+            ? GetPlayerAtMeAsync().AsTask()
+            : GetPlayerAsync(user.DiscordId).AsTask();
         var guildExtendedTask = GetGuildExtendedAsync().AsTask();
-        var levelsTask = Client.Value.Levels.GetByContextIdAsync(contextId, categoryId);
+        var levelsTask = Client.Value.Levels.GetByContextIdAsync(contextId, categoryId,
+            hasCategory: categoryId is not null);
         var categoriesTask = Cache.GetGuildCategoriesAsync(await GetGuildIdAsync(), Client.Value).AsTask();
 
-        await Task.WhenAll(guildExtendedTask, levelsTask, categoriesTask);
+        await Task.WhenAll(playerTask, guildExtendedTask, levelsTask, categoriesTask);
 
-        var guildExtended = guildExtendedTask.Result;
-        var categories = categoriesTask.Result;
+        var (playerId, guildExtended, categories) = (
+            playerTask.Result.Id,
+            guildExtendedTask.Result,
+            categoriesTask.Result
+        );
 
         if (!levelsTask.Result.TryGetValue(out var levels, out var levelError))
         {
@@ -56,16 +66,10 @@ public partial class UserModuleSlash
                 return;
             }
 
-            var playlistResult = await Client.Value.Playlists.GetByLevelIdAsync(level.Id);
+            var playlistResult = await Client.Value.Playlists.GetByLevelIdAsync(level.Id, filter, playerId);
             if (!playlistResult.TryGetValue(out var playlist, out var playlistError))
             {
                 await FollowupAsync(embed: GetPlaylistCommand.BuildErrorEmbed(playlistError));
-                return;
-            }
-
-            if (playlist is not { Songs.Length: > 0 })
-            {
-                await FollowupAsync(embed: GetPlaylistCommand.BuildErrorEmbed("Playlist is empty for this level."));
                 return;
             }
 
@@ -81,6 +85,7 @@ public partial class UserModuleSlash
 
         // All levels requested
         await using var zipStream = await GetPlaylistCommand.BuildPlaylistZipAsync(Client.Value, levels,
+            filter, playerId,
             guildSmallName: guildExtended.Guild.Info.SmallName,
             contextName: guildExtended.Contexts.First(x => x.Id == contextId).Info.Name,
             categories: categories
@@ -110,12 +115,13 @@ file static class GetPlaylistCommand
     };
 
     public static async Task<MemoryStream?> BuildPlaylistZipAsync(
-        GuildSaberClient client, Level[] levels, string guildSmallName, string contextName, Category[] categories)
+        GuildSaberClient client, Level[] levels, PlaylistRequests.PlaylistFilter filter, PlayerId playerId,
+        string guildSmallName, string contextName, Category[] categories)
     {
         var playlistTasks = levels
             .Select(async level =>
             {
-                var result = await client.Playlists.GetByLevelIdAsync(level.Id);
+                var result = await client.Playlists.GetByLevelIdAsync(level.Id, filter, playerId);
                 return (Level: level, Playlist: result.IsSuccess ? result.Value : null);
             })
             .ToArray();

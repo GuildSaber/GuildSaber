@@ -4,6 +4,7 @@ using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Guilds.Members;
 using GuildSaber.Api.Features.Players;
 using GuildSaber.Common.Result;
+using GuildSaber.Common.Settings;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using GuildSaber.Database.Contexts.DiscordBot;

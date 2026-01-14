@@ -3,6 +3,7 @@ using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
+using GuildSaber.Database.Models.Server.RankedScores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -22,6 +23,7 @@ public class RankedMap
     public IList<MapVersion> MapVersions { get; init; } = null!;
     public IList<Category> Categories { get; init; } = null!;
     public IList<RankedMapListLevel> Levels { get; init; } = null!;
+    public IList<RankedScore> RankedScores { get; init; } = null!;
 
     public readonly record struct RankedMapId(long Value) : IEFStrongTypedId<RankedMapId, long>
     {
@@ -68,5 +70,13 @@ public class RankedMapConfiguration : IEntityTypeConfiguration<RankedMap>
 
         builder.HasMany(x => x.Categories).WithMany();
         builder.HasMany(x => x.Levels).WithMany(x => x.RankedMaps);
+
+        builder.HasMany(x => x.MapVersions).WithOne()
+            .HasForeignKey(x => x.RankedMapId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(x => x.RankedScores).WithOne()
+            .HasForeignKey(x => x.RankedMapId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

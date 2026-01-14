@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.JsonPatch.SystemTextJson;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ServerGuild = GuildSaber.Database.Models.Server.Guilds.Guild;
+using static GuildSaber.Api.Features.Guilds.GuildRequests;
 using static GuildSaber.Api.Features.Guilds.GuildResponses;
 using GuildDiscordInfo = GuildSaber.Database.Models.Server.Guilds.GuildDiscordInfo;
 
@@ -92,7 +93,7 @@ public class GuildEndpoints : IEndpoints
         [Range(1, int.MaxValue)] int page = 1,
         [Range(1, 100)] int pageSize = 10,
         string? search = null,
-        GuildRequests.EGuildSorter sortBy = GuildRequests.EGuildSorter.Popularity,
+        EGuildSorter sortBy = EGuildSorter.Popularity,
         EOrder order = EOrder.Desc)
     {
         var query = dbContext.Guilds.AsQueryable();
@@ -118,7 +119,7 @@ public class GuildEndpoints : IEndpoints
     /// </list>
     /// </remarks>
     private static async Task<IResult> CreateGuildAsync(
-        GuildRequests.CreateGuild request, ClaimsPrincipal principal, GuildService service)
+        CreateGuild request, ClaimsPrincipal principal, GuildService service)
         => principal.GetPlayerId() switch
         {
             null => TypedResults.Unauthorized(),
@@ -274,19 +275,19 @@ public class GuildEndpoints : IEndpoints
 public static class GuildExtensions
 {
     public static IQueryable<ServerGuild> ApplySortOrder(
-        this IQueryable<ServerGuild> query, GuildRequests.EGuildSorter sortBy, EOrder order) => sortBy switch
+        this IQueryable<ServerGuild> query, EGuildSorter sortBy, EOrder order) => sortBy switch
     {
-        GuildRequests.EGuildSorter.Id => query.OrderBy(order, guild => guild.Id),
-        GuildRequests.EGuildSorter.Name => query.OrderBy(order, guild => guild.Info.Name)
+        EGuildSorter.Id => query.OrderBy(order, guild => guild.Id),
+        EGuildSorter.Name => query.OrderBy(order, guild => guild.Info.Name)
             .ThenBy(order, guild => guild.Id),
-        GuildRequests.EGuildSorter.Popularity => query.OrderBy(order, x => x.Status)
+        EGuildSorter.Popularity => query.OrderBy(order, x => x.Status)
             .ThenBy(order, guild => guild.RankedScores.Count / Math.Max(1, guild.Members.Count))
             .ThenBy(order, guild => guild.Id),
-        GuildRequests.EGuildSorter.CreationDate => query.OrderBy(order, guild => guild.Info.CreatedAt)
+        EGuildSorter.CreationDate => query.OrderBy(order, guild => guild.Info.CreatedAt)
             .ThenBy(order, guild => guild.Id),
-        GuildRequests.EGuildSorter.MemberCount => query.OrderBy(order, guild => guild.Members.Count)
+        EGuildSorter.MemberCount => query.OrderBy(order, guild => guild.Members.Count)
             .ThenBy(order, guild => guild.Id),
-        GuildRequests.EGuildSorter.MapCount => query.OrderBy(order, guild => guild.RankedMaps.Count)
+        EGuildSorter.MapCount => query.OrderBy(order, guild => guild.RankedMaps.Count)
             .ThenBy(order, guild => guild.Id),
         _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
     };

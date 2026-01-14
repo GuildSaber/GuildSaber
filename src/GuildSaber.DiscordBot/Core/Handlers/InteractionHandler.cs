@@ -2,8 +2,8 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using GuildSaber.Common.Settings;
 using GuildSaber.DiscordBot.Core.TypeConverters;
-using GuildSaber.DiscordBot.Settings;
 using Microsoft.Extensions.Options;
 
 namespace GuildSaber.DiscordBot.Core.Handlers;

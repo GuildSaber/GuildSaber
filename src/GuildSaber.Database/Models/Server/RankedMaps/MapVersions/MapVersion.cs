@@ -38,6 +38,10 @@ public class MapVersionConfiguration : IEntityTypeConfiguration<MapVersion>
         builder.HasOne<SongDifficulty>().WithMany().HasForeignKey(x => x.SongDifficultyId);
         builder.HasOne<PlayMode>().WithMany().HasForeignKey(x => x.PlayModeId);
 
+        builder.HasOne<RankedMap>()
+            .WithMany(x => x.MapVersions).HasForeignKey(x => x.RankedMapId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasOne(x => x.Song)
             .WithMany().HasForeignKey(x => x.SongId)
             .OnDelete(DeleteBehavior.Cascade);
