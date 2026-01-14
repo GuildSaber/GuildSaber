@@ -16,3 +16,15 @@ export const getApiUrl = (): string => {
   // Production
   return `${protocol}//api.${hostname}`
 }
+
+export const getCdnUrl = (path: string): string => {
+  const { protocol, hostname } = window.location
+
+  // Developpement
+  if (hostname === "localhost" || hostname.startsWith("dev.")) {
+    return `${protocol}//cdn-dev.guildsaber.com/${path}`
+  }
+
+  // Production
+  return `${protocol}//cdn.${hostname}/${path}`
+}

@@ -38,10 +38,6 @@ const Auth = () => {
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center">
-      <div className="mb-5 flex items-center gap-3">
-        <img src="/gsLogo.svg" alt="GuildSaber" className="h-10 w-10" />
-        <h1 className="text-foreground text-4xl font-bold">GuildSaber</h1>
-      </div>
       <Card className="w-full max-w-md">
         {session ? (
           <CardHeader className="flex items-center justify-between border-b">
