@@ -45,6 +45,8 @@ public class LevelStatEndpoints : IEndpoints
                 x.ContextId == contextId &&
                 x.PlayerId == playerId)
             .OrderBy(x => x.Level.Order)
+            .ThenBy(x => x.Level.CategoryId)
+            .ThenBy(x => x.Id)
             .Select(LevelStatMappers.MapMemberLevelStatExpression(dbContext))
             .ToListAsync()
         );
