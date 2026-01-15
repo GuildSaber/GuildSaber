@@ -383,7 +383,9 @@ file record struct CardData(
         ContextStatResponses.MemberContextStat contextStats)
     {
         var currentLevel = levelStats
-            .LastOrDefault(x => x is { IsCompleted: true, Level.CategoryId: null });
+            .Where(x => x.Level.CategoryId is null)
+            .TakeWhile(x => !x.IsLocked || x.IsCompleted)
+            .LastOrDefault(x => x.IsCompleted);
 
         var primaryColor = Color.FromRgb(26, 28, 30);
         var secondaryColor = currentLevel is not null
@@ -396,13 +398,15 @@ file record struct CardData(
             .ToArray();
 
         var trophies = TrophiesData.Calculate(levelStats);
-
         var categoryLevels = new List<CategoryLevelData>();
         var categoryLevelOrders = new List<int>();
 
         foreach (var category in categories)
         {
-            var categoryLevelStat = levelStats.LastOrDefault(x => x.Level.CategoryId == category.Id && x.IsCompleted);
+            var categoryLevelStat = levelStats
+                .Where(x => x.Level.CategoryId == category.Id)
+                .TakeWhile(x => !x.IsLocked || x.IsCompleted)
+                .LastOrDefault(x => x.IsCompleted);
             if (categoryLevelStat is null)
                 continue;
 
@@ -415,8 +419,8 @@ file record struct CardData(
         }
 
         var equilibriumPercentage = categoryLevelOrders.Count > 1
-            ? Math.Max(0f,
-                100f - MeCommand.StandardDeviation(categoryLevelOrders) * 100f / categoryLevelOrders.Average())
+            ? Math.Max(0f, 100f - MeCommand
+                .StandardDeviation(categoryLevelOrders) * 100f / categoryLevelOrders.Average())
             : 100f;
 
         return new CardData(
