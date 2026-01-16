@@ -29,12 +29,12 @@ public class LevelStatEndpoints : IEndpoints
             .RequireAuthorization();
     }
 
-    public static Task<Ok<List<MemberLevelStat>>>
+    public static async Task<Ok<List<MemberLevelStat>>>
         GetCurrentMemberLevelStatsAsync(
             ContextId contextId,
             ServerDbContext dbContext,
             ClaimsPrincipal claimsPrincipal)
-        => GetMemberLevelStatsAsync(contextId, claimsPrincipal.GetPlayerId()!.Value, dbContext);
+        => await GetMemberLevelStatsAsync(contextId, claimsPrincipal.GetPlayerId()!.Value, dbContext);
 
     public static async Task<Ok<List<MemberLevelStat>>> GetMemberLevelStatsAsync(
         ContextId contextId,

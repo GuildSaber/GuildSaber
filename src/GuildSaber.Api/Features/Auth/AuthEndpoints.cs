@@ -306,9 +306,9 @@ public class AuthEndpoints : IEndpoints
         return TypedResults.Redirect(uriBuilder.ToString());
     }
 
-    private static Task<Result<Ok<TokenResponse>, ProblemHttpResult>> DiscordCallBackPipeline(
+    private static async Task<Result<Ok<TokenResponse>, ProblemHttpResult>> DiscordCallBackPipeline(
         HttpContext httpContext, AuthService authService, ClaimsPrincipal discordClaims, ClaimsPrincipal? blClaims)
-        => DiscordId.TryParse(discordClaims.FindFirstValue(ClaimTypes.NameIdentifier))
+        => await DiscordId.TryParse(discordClaims.FindFirstValue(ClaimTypes.NameIdentifier))
             .MapError(_ => TypedResults.Problem("Failed to parse Discord ID from authentication claims.",
                 statusCode: StatusCodes.Status400BadRequest))
             .Bind(discordId => authService
@@ -334,9 +334,9 @@ public class AuthEndpoints : IEndpoints
                 .MapError(MapSessionCreationErrorResponse))
             .Map(token => TypedResults.Ok(new TokenResponse(token)));
 
-    private static Task<UnitResult<ProblemHttpResult>> DiscordLinkPipeline(
+    private static async Task<UnitResult<ProblemHttpResult>> DiscordLinkPipeline(
         AuthService authService, ClaimsPrincipal discordClaims, ClaimsPrincipal blClaims)
-        => DiscordId.TryParse(discordClaims.FindFirstValue(ClaimTypes.NameIdentifier))
+        => await DiscordId.TryParse(discordClaims.FindFirstValue(ClaimTypes.NameIdentifier))
             .MapError(_ => TypedResults.Problem("Failed to parse Discord ID from authentication claims.",
                 statusCode: StatusCodes.Status400BadRequest))
             .Bind(discordId => BeatLeaderId
@@ -355,10 +355,10 @@ public class AuthEndpoints : IEndpoints
                         "Failed to link Discord account to player.",
                         statusCode: StatusCodes.Status500InternalServerError))));
 
-    private static Task<Result<Ok<TokenResponse>, ProblemHttpResult>> BeatLeaderCallBackPipeline(
+    private static async Task<Result<Ok<TokenResponse>, ProblemHttpResult>> BeatLeaderCallBackPipeline(
         HttpContext httpContext, AuthService authService, ClaimsPrincipal claimsPrincipal,
         IBackgroundTaskQueue taskQueue, IServiceScopeFactory scopeFactory)
-        => BeatLeaderId.TryParseUnsafe(claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier))
+        => await BeatLeaderId.TryParseUnsafe(claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier))
             .MapError(_ => TypedResults.Problem("Failed to parse BeatLeaderId from authentication claims.",
                 statusCode: StatusCodes.Status400BadRequest))
             .Bind(beatleaderId => authService

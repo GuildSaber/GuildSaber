@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Claims;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Internal;
@@ -38,6 +39,19 @@ public class RankedMapEndpoints : IEndpoints
             .WithName("GetRankedMaps")
             .WithSummary("Get ranked maps for a context.")
             .WithDescription("Get ranked maps for a context by its Id, with optional search and sorting.");
+
+        group.MapGet("/with-score/{playerId}", GetRankedMapsWithScoreAsync)
+            .WithName("GetRankedMapsWithScore")
+            .WithSummary("Get ranked maps for a context with a player score.")
+            .WithDescription("Get ranked maps for a context by its Id, with optional search and sorting, including " +
+                             "the player's best score on each map.");
+
+        group.MapGet("/with-score/@me", GetRankedMapsWithScoreAtMeAsync)
+            .WithName("GetRankedMapsWithScoreAtMe")
+            .WithSummary("Get ranked maps for a context with the current player's score.")
+            .WithDescription("Get ranked maps for a context by its Id, with optional search and sorting, including " +
+                             "the current player's best score on each map.")
+            .RequireAuthorization();
 
         group.MapPost("/", CreateRankedMapAsync)
             .WithName("CreateRankedMap")
@@ -102,15 +116,62 @@ public class RankedMapEndpoints : IEndpoints
     private static async Task<Ok<PagedList<RankedMap>>> GetRankedMapsAsync(
         [FromRoute] ContextId contextId,
         ServerDbContext dbContext,
+        [FromQuery(Name = "difficulty-from")] float? difficultyFrom = null,
+        [FromQuery(Name = "difficulty-to")] float? difficultyTo = null,
+        [FromQuery(Name = "duration-from")] float? durationFrom = null,
+        [FromQuery(Name = "duration-to")] float? durationTo = null,
+        [FromQuery(Name = "bpm-from")] float? bpmFrom = null,
+        [FromQuery(Name = "bpm-to")] float? bpmTo = null,
         [Range(1, int.MaxValue)] int page = 1,
         [Range(1, 100)] int pageSize = 10,
         string? search = null,
         RankedMapRequest.ERankedMapSorter sortBy = RankedMapRequest.ERankedMapSorter.DifficultyStar,
         EOrder order = EOrder.Asc)
         => TypedResults.Ok(await dbContext.RankedMaps.AsSplitQuery().Where(x => x.ContextId == contextId)
+            .ApplyFilters(difficultyFrom, difficultyTo, durationFrom, durationTo, bpmFrom, bpmTo)
             .ApplyMapSearch(search)
             .ApplySortOrder(sortBy, order)
             .Select(RankedMapMappers.MapRankedMapExpression)
+            .ToPagedListAsync(page, pageSize));
+
+    private static async Task<Ok<PagedList<RankedMapWithScore>>> GetRankedMapsWithScoreAtMeAsync(
+        [FromRoute] ContextId contextId,
+        ServerDbContext dbContext,
+        ClaimsPrincipal claimsPrincipal,
+        [FromQuery(Name = "difficulty-from")] float? difficultyFrom = null,
+        [FromQuery(Name = "difficulty-to")] float? difficultyTo = null,
+        [FromQuery(Name = "duration-from")] float? durationFrom = null,
+        [FromQuery(Name = "duration-to")] float? durationTo = null,
+        [FromQuery(Name = "bpm-from")] float? bpmFrom = null,
+        [FromQuery(Name = "bpm-to")] float? bpmTo = null,
+        [Range(1, int.MaxValue)] int page = 1,
+        [Range(1, 100)] int pageSize = 10,
+        string? search = null,
+        RankedMapRequest.ERankedMapSorter sortBy = RankedMapRequest.ERankedMapSorter.DifficultyStar,
+        EOrder order = EOrder.Asc)
+        => await GetRankedMapsWithScoreAsync(contextId, claimsPrincipal.GetPlayerId()!.Value, dbContext, difficultyFrom,
+            difficultyTo, durationFrom, durationTo, bpmFrom, bpmTo, page, pageSize, search, sortBy, order);
+
+    private static async Task<Ok<PagedList<RankedMapWithScore>>> GetRankedMapsWithScoreAsync(
+        [FromRoute] ContextId contextId,
+        [FromRoute] PlayerId playerId,
+        ServerDbContext dbContext,
+        [FromQuery(Name = "difficulty-from")] float? difficultyFrom = null,
+        [FromQuery(Name = "difficulty-to")] float? difficultyTo = null,
+        [FromQuery(Name = "duration-from")] float? durationFrom = null,
+        [FromQuery(Name = "duration-to")] float? durationTo = null,
+        [FromQuery(Name = "bpm-from")] float? bpmFrom = null,
+        [FromQuery(Name = "bpm-to")] float? bpmTo = null,
+        [Range(1, int.MaxValue)] int page = 1,
+        [Range(1, 100)] int pageSize = 10,
+        string? search = null,
+        RankedMapRequest.ERankedMapSorter sortBy = RankedMapRequest.ERankedMapSorter.DifficultyStar,
+        EOrder order = EOrder.Asc)
+        => TypedResults.Ok(await dbContext.RankedMaps.AsSplitQuery().Where(x => x.ContextId == contextId)
+            .ApplyFilters(difficultyFrom, difficultyTo, durationFrom, durationTo, bpmFrom, bpmTo)
+            .ApplyMapSearch(search)
+            .ApplySortOrder(sortBy, order)
+            .Select(RankedMapMappers.MapRankedMapWithScoreExpression(playerId, dbContext))
             .ToPagedListAsync(page, pageSize));
 }
 
@@ -118,6 +179,26 @@ public static class RankedMapExtensions
 {
     extension(IQueryable<ServerRankedMap> query)
     {
+        public IQueryable<ServerRankedMap> ApplyFilters(
+            float? difficultyFrom, float? difficultyTo, float? durationFrom,
+            float? durationTo, float? bpmFrom, float? bpmTo)
+        {
+            if (difficultyFrom.HasValue)
+                query = query.Where(x => x.Rating.DiffStar >= difficultyFrom.Value);
+            if (difficultyTo.HasValue)
+                query = query.Where(x => x.Rating.DiffStar <= difficultyTo.Value);
+            if (durationFrom.HasValue)
+                query = query.Where(x => x.MapVersions.Any(v => v.Song.Stats.DurationSec >= durationFrom.Value));
+            if (durationTo.HasValue)
+                query = query.Where(x => x.MapVersions.Any(v => v.Song.Stats.DurationSec <= durationTo.Value));
+            if (bpmFrom.HasValue)
+                query = query.Where(x => x.MapVersions.Any(v => v.Song.Stats.BPM >= bpmFrom.Value));
+            if (bpmTo.HasValue)
+                query = query.Where(x => x.MapVersions.Any(v => v.Song.Stats.BPM <= bpmTo.Value));
+
+            return query;
+        }
+
         [SuppressMessage("ReSharper", "InvertIf")]
         public IQueryable<ServerRankedMap> ApplyMapSearch(string? search)
         {

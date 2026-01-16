@@ -28,12 +28,12 @@ public class ContextStatEndpoints : IEndpoints
             .RequireAuthorization();
     }
 
-    public static Task<Results<Ok<ContextStatResponses.MemberContextStat>, NotFound>>
+    public static async Task<Results<Ok<ContextStatResponses.MemberContextStat>, NotFound>>
         GetCurrentMemberContextStatsAsync(
             ContextId contextId,
             ServerDbContext dbContext,
             ClaimsPrincipal claimsPrincipal)
-        => GetMemberContextStatsAsync(contextId, claimsPrincipal.GetPlayerId()!.Value, dbContext);
+        => await GetMemberContextStatsAsync(contextId, claimsPrincipal.GetPlayerId()!.Value, dbContext);
 
     public static async Task<Results<Ok<ContextStatResponses.MemberContextStat>, NotFound>> GetMemberContextStatsAsync(
         ContextId contextId, PlayerId playerId, ServerDbContext dbContext)

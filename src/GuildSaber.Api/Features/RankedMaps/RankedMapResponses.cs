@@ -1,4 +1,5 @@
-﻿using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
+﻿using GuildSaber.Api.Features.RankedScores;
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 
@@ -77,5 +78,10 @@ public static class RankedMapResponses
         MapVersion[] Versions,
         int[] CategoryIds,
         int[] LevelIds
+    );
+
+    public record RankedMapWithScore(
+        RankedMap RankedMap,
+        RankedScoreResponses.RankedScore? Score
     );
 }
