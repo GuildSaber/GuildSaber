@@ -63,32 +63,30 @@ public class PlayerEndpoints : IEndpoints
         PlayerId playerId, ServerDbContext dbContext)
         => await dbContext.Players.Where(x => x.Id == playerId)
                 .Select(PlayerMappers.MapPlayerExpression)
-                .Cast<Player?>()
                 .FirstOrDefaultAsync() switch
             {
                 null => TypedResults.NotFound(),
                 { } player => TypedResults.Ok(player)
             };
 
-    private static Task<Results<Ok<Player>, NotFound>> GetPlayerAtMeAsync(
+    private static async Task<Results<Ok<Player>, NotFound>> GetPlayerAtMeAsync(
         ClaimsPrincipal principal, ServerDbContext dbContext)
-        => GetPlayerAsync(principal.GetPlayerId()!.Value, dbContext);
+        => await GetPlayerAsync(principal.GetPlayerId()!.Value, dbContext);
 
     private static async Task<Results<Ok<PlayerExtended>, NotFound>> GetPlayerExtendedAsync(
         PlayerId playerId, ServerDbContext dbContext)
         => await dbContext.Players
                 .Where(x => x.Id == playerId)
                 .Select(PlayerMappers.MapPlayerExtendedExpression)
-                .Cast<PlayerExtended?>()
                 .FirstOrDefaultAsync() switch
             {
                 null => TypedResults.NotFound(),
                 { } playerExtended => TypedResults.Ok(playerExtended)
             };
 
-    private static Task<Results<Ok<PlayerExtended>, NotFound>> GetPlayerExtendedAtMeAsync(
+    private static async Task<Results<Ok<PlayerExtended>, NotFound>> GetPlayerExtendedAtMeAsync(
         ClaimsPrincipal claimsPrincipal, ServerDbContext dbContext)
-        => GetPlayerExtendedAsync(claimsPrincipal.GetPlayerId()!.Value, dbContext);
+        => await GetPlayerExtendedAsync(claimsPrincipal.GetPlayerId()!.Value, dbContext);
 
     private static async Task<Ok<PagedList<Player>>> GetPlayersAsync(
         ServerDbContext dbContext,

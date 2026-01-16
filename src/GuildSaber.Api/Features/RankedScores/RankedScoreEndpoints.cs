@@ -47,7 +47,7 @@ public class RankedScoreEndpoints : IEndpoints
             .RequireAuthorization();
     }
 
-    public static Task<Ok<PagedList<RankedScore>>> GetPlayerRankedScoresAtMeAsync(
+    public static async Task<Ok<PagedList<RankedScore>>> GetPlayerRankedScoresAtMeAsync(
         ClaimsPrincipal claimsPrincipal,
         ContextId contextId,
         ServerDbContext dbContext,
@@ -61,7 +61,7 @@ public class RankedScoreEndpoints : IEndpoints
         float? accuracyStarTo = null,
         float? bpmFrom = null,
         float? bpmTo = null
-    ) => GetPlayerRankedScoresAsync(claimsPrincipal.GetPlayerId()!.Value, contextId, dbContext, page, pageSize,
+    ) => await GetPlayerRankedScoresAsync(claimsPrincipal.GetPlayerId()!.Value, contextId, dbContext, page, pageSize,
         sortBy, order, difficultyStarFrom, accuracyStarFrom, difficultyStarTo, accuracyStarTo, bpmFrom, bpmTo);
 
     public static async Task<Ok<PagedList<RankedScore>>> GetPlayerRankedScoresAsync(
@@ -103,7 +103,7 @@ public class RankedScoreEndpoints : IEndpoints
             .ToPagedListAsync(page, pageSize));
     }
 
-    public static Task<Ok<PagedList<RankedScoreWithRankedMap>>> GetPlayerRankedScoresWithRankedMapAtMeAsync(
+    public static async Task<Ok<PagedList<RankedScoreWithRankedMap>>> GetPlayerRankedScoresWithRankedMapAtMeAsync(
         ClaimsPrincipal claimsPrincipal,
         ContextId contextId,
         ServerDbContext dbContext,
@@ -117,7 +117,7 @@ public class RankedScoreEndpoints : IEndpoints
         float? accuracyStarTo = null,
         float? bpmFrom = null,
         float? bpmTo = null
-    ) => GetPlayerRankedScoresWithRankedMapAsync(claimsPrincipal.GetPlayerId()!.Value, contextId, dbContext, page,
+    ) => await GetPlayerRankedScoresWithRankedMapAsync(claimsPrincipal.GetPlayerId()!.Value, contextId, dbContext, page,
         pageSize,
         sortBy, order, difficultyStarFrom, accuracyStarFrom, difficultyStarTo, accuracyStarTo, bpmFrom, bpmTo);
 
