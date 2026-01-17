@@ -5,7 +5,6 @@ using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Internal;
 using GuildSaber.Api.Features.Players;
-using GuildSaber.CSharpClient.Routes.Internal;
 using static GuildSaber.Api.Features.Players.PlayerResponses;
 
 namespace GuildSaber.CSharpClient.Routes.Players;

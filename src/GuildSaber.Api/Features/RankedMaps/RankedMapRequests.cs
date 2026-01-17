@@ -2,8 +2,45 @@ using GuildSaber.Api.Features.RankedMaps.MapVersions;
 
 namespace GuildSaber.Api.Features.RankedMaps;
 
-public class RankedMapRequest
+public class RankedMapRequests
 {
+    /// <summary>
+    /// Filters for querying ranked maps.
+    /// </summary>
+    /// <param name="Search">
+    /// A search term to filter the returned ranked maps. The search is applied on the 'Song.Name',
+    /// 'Song.MapperName', 'Song.SongAuthorName', 'Song.BeatSaverKey', and 'Song.Hash' fields.
+    /// </param>
+    /// <param name="CategoryIds">
+    /// An array of category IDs to filter the returned ranked maps. Only maps with at least one of the provided categories
+    /// will be returned.
+    /// </param>
+    /// <param name="MatchAnyCategory">
+    /// If true, returns maps matching any of the provided categories. If false, returns only maps matching all provided
+    /// categories.
+    /// </param>
+    /// <param name="DifficultyStarFrom">The minimum difficulty star rating to filter maps.</param>
+    /// <param name="DifficultyStarTo">The maximum difficulty star rating to filter maps.</param>
+    /// <param name="AccuracyStarFrom">The minimum accuracy star rating to filter maps.</param>
+    /// <param name="AccuracyStarTo">The maximum accuracy star rating to filter maps.</param>
+    /// <param name="DurationSecFrom">The minimum duration (in seconds) to filter maps.</param>
+    /// <param name="DurationSecTo">The maximum duration (in seconds) to filter maps.</param>
+    /// <param name="BpmFrom">The minimum BPM to filter maps.</param>
+    /// <param name="BpmTo">The maximum BPM to filter maps.</param>
+    public record struct Filters(
+        [FromQuery(Name = "search")] string? Search = null,
+        [FromQuery(Name = "categoryIds")] int[]? CategoryIds = null,
+        [FromQuery(Name = "matchAnyCategory")] bool MatchAnyCategory = true,
+        [FromQuery(Name = "difficultyStarFrom")] float? DifficultyStarFrom = null,
+        [FromQuery(Name = "difficultyStarTo")] float? DifficultyStarTo = null,
+        [FromQuery(Name = "accuracyStarFrom")] float? AccuracyStarFrom = null,
+        [FromQuery(Name = "accuracyStarTo")] float? AccuracyStarTo = null,
+        [FromQuery(Name = "durationSecFrom")] float? DurationSecFrom = null,
+        [FromQuery(Name = "durationSecTo")] float? DurationSecTo = null,
+        [FromQuery(Name = "bpmFrom")] float? BpmFrom = null,
+        [FromQuery(Name = "bpmTo")] float? BpmTo = null
+    );
+
     [Flags]
     public enum EModifiers
     {

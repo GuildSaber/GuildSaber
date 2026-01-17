@@ -6,7 +6,6 @@ using Discord.WebSocket;
 using GuildSaber.Api.Features.Internal;
 using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.CSharpClient;
-using GuildSaber.CSharpClient.Routes.Internal;
 using GuildSaber.DiscordBot.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Extensions;
 using GuildSaber.DiscordBot.Settings;
@@ -26,14 +25,16 @@ public partial class UserModuleSlash
         [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Visible
     ) => await RespondAsync(ephemeral: displayChoice.ToEphemeral(), components: (await SearchCommand
             .GetRankedMapsComponentAsync(
-                await GetGuildIdAsync(), contextId, search, page, Client.Value, Cache, EmojiSettings))
+                await GetGuildIdAsync(), contextId, new RankedMapRequests.Filters(Search: search),
+                page, Client.Value, Cache, EmojiSettings))
         .Build());
 
     [ComponentInteraction("search_prev_*_*_*")]
     public async Task SearchPreviousPage(int contextId, string search, int page)
     {
         var component = (await SearchCommand.GetRankedMapsComponentAsync
-                (await GetGuildIdAsync(), contextId, search, page, Client.Value, Cache, EmojiSettings))
+            (await GetGuildIdAsync(), contextId, new RankedMapRequests.Filters(Search: search),
+                page, Client.Value, Cache, EmojiSettings))
             .Build();
 
         await ((SocketMessageComponent)Context.Interaction).UpdateAsync(msg => msg.Components = component);
@@ -43,7 +44,8 @@ public partial class UserModuleSlash
     public async Task SearchNextPage(int contextId, string search, int page)
     {
         var component = (await SearchCommand.GetRankedMapsComponentAsync
-                (await GetGuildIdAsync(), contextId, search, page, Client.Value, Cache, EmojiSettings))
+            (await GetGuildIdAsync(), contextId, new RankedMapRequests.Filters(Search: search),
+                page, Client.Value, Cache, EmojiSettings))
             .Build();
 
         await ((SocketMessageComponent)Context.Interaction).UpdateAsync(msg => msg.Components = component);
@@ -53,34 +55,35 @@ public partial class UserModuleSlash
 file static class SearchCommand
 {
     public static async Task<ComponentBuilderV2> GetRankedMapsComponentAsync(
-        GuildId guildId, int contextId, string search, int page, GuildSaberClient client, HybridCache cache,
+        GuildId guildId, int contextId, RankedMapRequests.Filters requestFilters,
+        int page, GuildSaberClient client, HybridCache cache,
         IOptions<EmojiSettings> emojiSettings)
     {
-        var pageOption = new PaginatedRequestOptions<RankedMapRequest.ERankedMapSorter>
+        var pageOption = new PaginatedRequestOptions<RankedMapRequests.ERankedMapSorter>
         {
             Page = page,
             PageSize = 3,
             MaxPage = 3,
             Order = EOrder.Desc,
-            SortBy = RankedMapRequest.ERankedMapSorter.Name
+            SortBy = RankedMapRequests.ERankedMapSorter.Name
         };
 
         var categoriesTask = cache.GetGuildCategoriesAsync(guildId, client).AsTask();
-        var rankedMapsTask = client.RankedMaps.GetAsync(contextId, search, pageOption);
+        var rankedMapsTask = client.RankedMaps.GetAsync(contextId, requestFilters, pageOption);
 
         await Task.WhenAll(categoriesTask, rankedMapsTask);
         var (categories, rankedMaps) = (categoriesTask.Result, rankedMapsTask.Result);
 
         return !rankedMaps.TryGetValue(out var pagedRankedMaps, out var error)
             ? new ComponentBuilderV2().WithTextDisplay($"Error fetching ranked maps: {error}")
-            : BuildSearchComponent(pagedRankedMaps, categories, contextId, search, page, emojiSettings);
+            : BuildSearchComponent(pagedRankedMaps, categories, contextId, requestFilters, page, emojiSettings);
     }
 
     private static ComponentBuilderV2 BuildSearchComponent(
         in PagedList<RankedMapResponses.RankedMap> pagedRankedMaps,
         Category[] categories,
         int contextId,
-        string search,
+        RankedMapRequests.Filters requestFilters,
         int page,
         IOptions<EmojiSettings> emojiSettings)
     {
@@ -88,9 +91,9 @@ file static class SearchCommand
 
         if (pagedRankedMaps.Data.Length == 0)
             return builder.WithTextDisplay(pagedRankedMaps.Page != 1
-                ? $"(Page {pagedRankedMaps.Page}), No ranked maps found for the search term: {search}.\n" +
+                ? $"(Page {pagedRankedMaps.Page}), No ranked maps found for the search term: {requestFilters.Search}.\n" +
                   "You might want to go back to page 1."
-                : $"No ranked maps found for the search term: {search}.\n***Tips:*** " +
+                : $"No ranked maps found for the search term: {requestFilters.Search}.\n***Tips:*** " +
                   "You can also write the __bsr key__, the __mapper name__, the __map hash__, and so on..");
 
         foreach (var rankedMap in pagedRankedMaps.Data)
@@ -98,13 +101,13 @@ file static class SearchCommand
 
         if (pagedRankedMaps.TotalCount == pagedRankedMaps.Data.Length)
             return builder.WithTextDisplay($"Found **{pagedRankedMaps.TotalCount}** ranked maps" +
-                                           $" for the search term: '{search}'.");
+                                           $" for the search term: '{requestFilters.Search}'.");
 
         builder.WithTextDisplay($"(Page: **{pagedRankedMaps.Page}**/{pagedRankedMaps.TotalPages}) " +
-                                $"Found **{pagedRankedMaps.TotalCount}** ranked maps for the search term: '{search}'.");
+                                $"Found **{pagedRankedMaps.TotalCount}** ranked maps for the search term: '{requestFilters.Search}'.");
 
         builder.WithActionRow(new ActionRowBuilder()
-            .WithButton($"search_prev_{contextId}_{search}_{page - 1}" switch
+            .WithButton($"search_prev_{contextId}_{requestFilters.Search}_{page - 1}" switch
             {
                 { Length: > 100 } => new ButtonBuilder()
                     .WithLabel("Previous Page (search term too long!)")
@@ -116,7 +119,7 @@ file static class SearchCommand
                     .WithCustomId(id)
                     .WithDisabled(pagedRankedMaps.Page <= 1)
             })
-            .WithButton($"search_next_{contextId}_{search}_{page + 1}" switch
+            .WithButton($"search_next_{contextId}_{requestFilters.Search}_{page + 1}" switch
             {
                 { Length: > 100 } => new ButtonBuilder()
                     .WithLabel("Next Page (search term too long!)")
@@ -182,15 +185,15 @@ file static class SearchCommand
                 .Append("BPM: ").Append(version.Song.Stats.BPM.ToString("0.##"))
                 .AppendLine();
 
-            if (rankedMap.Requirements.ProhibitedModifiers != RankedMapRequest.EModifiers.ProhibitedDefaults)
+            if (rankedMap.Requirements.ProhibitedModifiers != RankedMapRequests.EModifiers.ProhibitedDefaults)
                 sb.AppendLine()
                     .Append("Prohibited Modifiers: ")
                     .Append(rankedMap.Requirements.ProhibitedModifiers);
 
-            if (rankedMap.Requirements.MandatoryModifiers != RankedMapRequest.EModifiers.None)
+            if (rankedMap.Requirements.MandatoryModifiers != RankedMapRequests.EModifiers.None)
                 sb.AppendLine()
                     .Append("Mandatory Modifiers: ")
-                    .Append(rankedMap.Requirements.MandatoryModifiers | RankedMapRequest.EModifiers.FasterSong);
+                    .Append(rankedMap.Requirements.MandatoryModifiers | RankedMapRequests.EModifiers.FasterSong);
 
             if (rankedMap.Requirements.NeedConfirmation
                 || rankedMap.Requirements.MaxPauseDurationSec is not null

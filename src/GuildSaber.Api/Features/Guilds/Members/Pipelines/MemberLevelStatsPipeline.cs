@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using GuildSaber.Api.Features.RankedScores;
 using GuildSaber.Database.Contexts.Server;
@@ -93,6 +94,7 @@ public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext, ILogger<
     /// <param name="pointId">
     /// The point is simply used for more efficient querying (since the passes are the same on multiple context points.
     /// </param>
+    [SuppressMessage("ReSharper", "InvertIf")]
     public async Task ExecuteAsync(PlayerId playerId, GuildId guildId, ContextId contextId, Point.PointId pointId)
     {
         logger.LogInformation("Recalculating member level stats for player {PlayerId} in context {ContextId}",
@@ -136,7 +138,10 @@ public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext, ILogger<
                 levelStat.IsLocked = true;
 
             if (level.IsLocking && !levelStat.IsCompleted)
+            {
+                levelStat.IsLocked = true;
                 isLocked[level.CategoryId ?? default] = true;
+            }
         }
 
         await dbContext.SaveChangesAsync();

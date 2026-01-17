@@ -3,8 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Internal;
-using GuildSaber.Api.Features.RankedMaps;
-using GuildSaber.CSharpClient.Routes.Internal;
+using static GuildSaber.Api.Features.RankedMaps.RankedMapRequests;
 using static GuildSaber.Api.Features.RankedMaps.RankedMapResponses;
 
 namespace GuildSaber.CSharpClient.Routes.RankedMaps;
@@ -15,10 +14,36 @@ namespace GuildSaber.CSharpClient.Routes.RankedMaps;
 public class RankedMapClient(HttpClient httpClient, JsonSerializerOptions jsonOptions)
 {
     private Uri GetRankedMapUrl(
-        int contextId, string? search, PaginatedRequestOptions<RankedMapRequest.ERankedMapSorter> requestOptions)
+        int contextId, Filters requestFilters,
+        PaginatedRequestOptions<ERankedMapSorter> requestOptions)
         => new(
-            $"contexts/{contextId}/ranked-maps?{(search is null ? "" : $"search={search}&")}page={requestOptions.Page}" +
-            $"&pageSize={requestOptions.PageSize}&order={requestOptions.Order}&sortBy={requestOptions.SortBy}",
+            $"contexts/{contextId}/ranked-maps?{(requestFilters.Search is null ? "" : $"search={requestFilters.Search}&")}page={requestOptions.Page}" +
+            $"&pageSize={requestOptions.PageSize}&order={requestOptions.Order}&sortBy={requestOptions.SortBy}" +
+            $"{(requestFilters.DifficultyStarFrom is null ? "" : $"&difficultyStarFrom={requestFilters.DifficultyStarFrom}")}" +
+            $"{(requestFilters.AccuracyStarFrom is null ? "" : $"&accuracyStarFrom={requestFilters.AccuracyStarFrom}")}" +
+            $"{(requestFilters.DifficultyStarTo is null ? "" : $"&difficultyStarTo={requestFilters.DifficultyStarTo}")}" +
+            $"{(requestFilters.AccuracyStarTo is null ? "" : $"&accuracyStarTo={requestFilters.AccuracyStarTo}")}" +
+            $"{(requestFilters.DurationSecFrom is null ? "" : $"&durationSecFrom={requestFilters.DurationSecFrom}")}" +
+            $"{(requestFilters.DurationSecTo is null ? "" : $"&durationSecTo={requestFilters.DurationSecTo}")}" +
+            $"{(requestFilters.BpmFrom is null ? "" : $"&bpmFrom={requestFilters.BpmFrom}")}" +
+            $"{(requestFilters.BpmTo is null ? "" : $"&bpmTo={requestFilters.BpmTo}")}",
+            UriKind.Relative
+        );
+
+    private Uri GetRankedMapWithScoreUrl(
+        int contextId, PlayerId? playerId, Filters requestFilters,
+        PaginatedRequestOptions<ERankedMapSorter> requestOptions)
+        => new(
+            $"contexts/{contextId}/ranked-maps/with-scores/{(playerId is null ? "@me" : playerId)}?{(requestFilters.Search is null ? "" : $"search={requestFilters.Search}&")}page={requestOptions.Page}" +
+            $"&pageSize={requestOptions.PageSize}&order={requestOptions.Order}&sortBy={requestOptions.SortBy}" +
+            $"{(requestFilters.DifficultyStarFrom is null ? "" : $"&difficultyStarFrom={requestFilters.DifficultyStarFrom}")}" +
+            $"{(requestFilters.AccuracyStarFrom is null ? "" : $"&accuracyStarFrom={requestFilters.AccuracyStarFrom}")}" +
+            $"{(requestFilters.DifficultyStarTo is null ? "" : $"&difficultyStarTo={requestFilters.DifficultyStarTo}")}" +
+            $"{(requestFilters.AccuracyStarTo is null ? "" : $"&accuracyStarTo={requestFilters.AccuracyStarTo}")}" +
+            $"{(requestFilters.DurationSecFrom is null ? "" : $"&durationSecFrom={requestFilters.DurationSecFrom}")}" +
+            $"{(requestFilters.DurationSecTo is null ? "" : $"&durationSecTo={requestFilters.DurationSecTo}")}" +
+            $"{(requestFilters.BpmFrom is null ? "" : $"&bpmFrom={requestFilters.BpmFrom}")}" +
+            $"{(requestFilters.BpmTo is null ? "" : $"&bpmTo={requestFilters.BpmTo}")}",
             UriKind.Relative
         );
 
@@ -45,16 +70,16 @@ public class RankedMapClient(HttpClient httpClient, JsonSerializerOptions jsonOp
     /// Gets a paginated list of ranked maps for a specific context with optional search filtering.
     /// </summary>
     /// <param name="contextId">The context identifier.</param>
-    /// <param name="search">Optional search term to filter ranked maps.</param>
+    /// <param name="requestFilters">Filters to apply to the ranked map request.</param>
     /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing a paginated list of ranked maps.</returns>
     public async Task<Result<PagedList<RankedMap>>> GetAsync(
         int contextId,
-        string? search,
-        PaginatedRequestOptions<RankedMapRequest.ERankedMapSorter> requestOptions,
+        Filters requestFilters,
+        PaginatedRequestOptions<ERankedMapSorter> requestOptions,
         CancellationToken token = default)
-        => await httpClient.GetAsync(GetRankedMapUrl(contextId, search, requestOptions), token)
+        => await httpClient.GetAsync(GetRankedMapUrl(contextId, requestFilters, requestOptions), token)
                 .ConfigureAwait(false) switch
             {
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
@@ -66,11 +91,62 @@ public class RankedMapClient(HttpClient httpClient, JsonSerializerOptions jsonOp
             };
 
     /// <summary>
+    /// Gets a paginated list of ranked maps with score for a specific player.
+    /// </summary>
+    /// <param name="contextId">The context identifier.</param>
+    /// <param name="playerId">The player identifier.</param>
+    /// <param name="requestFilters">Filters to apply to the ranked map request.</param>
+    /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing a paginated list of ranked maps with score.</returns>
+    public async Task<Result<PagedList<RankedMapWithScores>>> GetWithScoreAsync(
+        int contextId,
+        PlayerId playerId,
+        Filters requestFilters,
+        PaginatedRequestOptions<ERankedMapSorter> requestOptions,
+        CancellationToken token = default)
+        => await httpClient.GetAsync(GetRankedMapWithScoreUrl(contextId, playerId, requestFilters, requestOptions),
+                    token)
+                .ConfigureAwait(false) switch
+            {
+                { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                    => Failure<PagedList<RankedMapWithScores>>(
+                        $"Failed to retrieve ranked maps with score for context ID {contextId} and player {playerId}, status code: {(int)statusCode} ({reasonPhrase})"),
+                var response => await Try(() => response.Content
+                        .ReadFromJsonAsync<PagedList<RankedMapWithScores>>(jsonOptions, cancellationToken: token))
+                    .ConfigureAwait(false)
+            };
+
+    /// <summary>
+    /// Gets a paginated list of ranked maps with score for the current user (@me).
+    /// </summary>
+    /// <param name="contextId">The context identifier.</param>
+    /// <param name="requestFilters">Filters to apply to the ranked map request.</param>
+    /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing a paginated list of ranked maps with score for @me.</returns>
+    public async Task<Result<PagedList<RankedMapWithScores>>> GetWithScoreAtMeAsync(
+        int contextId,
+        Filters requestFilters,
+        PaginatedRequestOptions<ERankedMapSorter> requestOptions,
+        CancellationToken token = default)
+        => await httpClient.GetAsync(GetRankedMapWithScoreUrl(contextId, null, requestFilters, requestOptions), token)
+                .ConfigureAwait(false) switch
+            {
+                { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                    => Failure<PagedList<RankedMapWithScores>>(
+                        $"Failed to retrieve ranked maps with score for context ID {contextId} (@me), status code: {(int)statusCode} ({reasonPhrase})"),
+                var response => await Try(() => response.Content
+                        .ReadFromJsonAsync<PagedList<RankedMapWithScores>>(jsonOptions, cancellationToken: token))
+                    .ConfigureAwait(false)
+            };
+
+    /// <summary>
     /// Asynchronously retrieves ranked maps with automatic pagination.
     /// </summary>
     /// <param name="contextId">The context identifier.</param>
-    /// <param name="search">Optional search term to filter ranked maps.</param>
-    /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <param name="requestFilters">Filters to apply to the ranked map request.</param>
+    /// <param name="pageOptions">Pagination, sorting, and ordering settings for the request.</param>
     /// <returns>
     /// An async enumerable sequence of <see cref="Result{T}" /> containing arrays of <see cref="RankedMap" />.
     /// </returns>
@@ -82,25 +158,101 @@ public class RankedMapClient(HttpClient httpClient, JsonSerializerOptions jsonOp
     /// </remarks>
     public async IAsyncEnumerable<Result<RankedMap[]>> GetAsyncEnumerable(
         int contextId,
-        string? search,
-        PaginatedRequestOptions<RankedMapRequest.ERankedMapSorter> requestOptions)
+        Filters requestFilters,
+        PaginatedRequestOptions<ERankedMapSorter> pageOptions)
     {
-        while (requestOptions.Page <= requestOptions.MaxPage)
+        while (pageOptions.Page <= pageOptions.MaxPage)
         {
-            var url = GetRankedMapUrl(contextId, search, requestOptions);
+            var url = GetRankedMapUrl(contextId, requestFilters, pageOptions);
             var response = await httpClient.GetAsync(url).ConfigureAwait(false);
-            requestOptions.Page++;
+            pageOptions.Page++;
 
             Result<RankedMap[]> result;
             yield return result = response switch
             {
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<RankedMap[]>(
-                        $"Failed to retrieve ranked maps for context ID {contextId} at page {requestOptions.Page}" +
+                        $"Failed to retrieve ranked maps for context ID {contextId} at page {pageOptions.Page}" +
                         $": {(int)statusCode} ({reasonPhrase})"),
                 _ => await Try(() => response.Content
                         .ReadFromJsonAsync<PagedList<RankedMap>>(jsonOptions))
                     .Map(RankedMap[] (parsed) => parsed.Data)
+                    .ConfigureAwait(false)
+            };
+
+            if (result is { IsFailure: true } or { Value: null or [] })
+                yield break;
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously retrieves ranked maps with score for a specific player, with automatic pagination.
+    /// </summary>
+    /// <param name="contextId">The context identifier.</param>
+    /// <param name="playerId">The player identifier.</param>
+    /// <param name="requestFilters">Filters to apply to the ranked map request.</param>
+    /// <param name="pageOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <returns>
+    /// An async enumerable sequence of <see cref="Result{T}" /> containing arrays of <see cref="RankedMapWithScores" />.
+    /// </returns>
+    public async IAsyncEnumerable<Result<RankedMapWithScores[]>> GetAsyncWithScoreEnumerable(
+        int contextId,
+        PlayerId playerId,
+        Filters requestFilters,
+        PaginatedRequestOptions<ERankedMapSorter> pageOptions)
+    {
+        while (pageOptions.Page <= pageOptions.MaxPage)
+        {
+            var url = GetRankedMapWithScoreUrl(contextId, playerId, requestFilters, pageOptions);
+            var response = await httpClient.GetAsync(url).ConfigureAwait(false);
+            pageOptions.Page++;
+
+            Result<RankedMapWithScores[]> result;
+            yield return result = response switch
+            {
+                { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                    => Failure<RankedMapWithScores[]>(
+                        $"Failed to retrieve ranked maps with score for context ID {contextId} and player {playerId} at page {pageOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
+                _ => await Try(() => response.Content
+                        .ReadFromJsonAsync<PagedList<RankedMapWithScores>>(jsonOptions))
+                    .Map(RankedMapWithScores[] (parsed) => parsed.Data)
+                    .ConfigureAwait(false)
+            };
+
+            if (result is { IsFailure: true } or { Value: null or [] })
+                yield break;
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously retrieves ranked maps with score for the current user (@me), with automatic pagination.
+    /// </summary>
+    /// <param name="contextId">The context identifier.</param>
+    /// <param name="requestFilters">Filters to apply to the ranked map request.</param>
+    /// <param name="pageOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <returns>
+    /// An async enumerable sequence of <see cref="Result{T}" /> containing arrays of <see cref="RankedMapWithScores" />.
+    /// </returns>
+    public async IAsyncEnumerable<Result<RankedMapWithScores[]>> GetAsyncWithScoreAtMeEnumerable(
+        int contextId,
+        Filters requestFilters,
+        PaginatedRequestOptions<ERankedMapSorter> pageOptions)
+    {
+        while (pageOptions.Page <= pageOptions.MaxPage)
+        {
+            var url = GetRankedMapWithScoreUrl(contextId, null, requestFilters, pageOptions);
+            var response = await httpClient.GetAsync(url).ConfigureAwait(false);
+            pageOptions.Page++;
+
+            Result<RankedMapWithScores[]> result;
+            yield return result = response switch
+            {
+                { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                    => Failure<RankedMapWithScores[]>(
+                        $"Failed to retrieve ranked maps with score for context ID {contextId} (@me) at page {pageOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
+                _ => await Try(() => response.Content
+                        .ReadFromJsonAsync<PagedList<RankedMapWithScores>>(jsonOptions))
+                    .Map(RankedMapWithScores[] (parsed) => parsed.Data)
                     .ConfigureAwait(false)
             };
 

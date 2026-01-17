@@ -383,8 +383,7 @@ file record struct CardData(
         ContextStatResponses.MemberContextStat contextStats)
     {
         var currentLevel = levelStats
-            .Where(x => x.Level.CategoryId is null)
-            .TakeWhile(x => !x.IsLocked || x.IsCompleted)
+            .Where(x => x.Level.CategoryId is null && !x.IsLocked)
             .LastOrDefault(x => x.IsCompleted);
 
         var primaryColor = Color.FromRgb(26, 28, 30);
@@ -404,8 +403,7 @@ file record struct CardData(
         foreach (var category in categories)
         {
             var categoryLevelStat = levelStats
-                .Where(x => x.Level.CategoryId == category.Id)
-                .TakeWhile(x => !x.IsLocked || x.IsCompleted)
+                .Where(x => x.Level.CategoryId == category.Id && !x.IsLocked)
                 .LastOrDefault(x => x.IsCompleted);
             if (categoryLevelStat is null)
                 continue;

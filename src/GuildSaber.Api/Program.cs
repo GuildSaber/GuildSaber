@@ -276,8 +276,8 @@ OpenApiTypeTransformer.MapType<SongHash>(new OpenApiSchema
     { Type = JsonSchemaType.String, Example = "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890" });
 OpenApiTypeTransformer.MapType<SSLeaderboardId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
 OpenApiTypeTransformer.MapType<BLLeaderboardId>(new OpenApiSchema { Type = JsonSchemaType.String, Example = "a3c391" });
-OpenApiTypeTransformer.MapType<RankedMapRequest.EModifiers>(new OpenApiSchema
-    { Example = nameof(RankedMapRequest.EModifiers.None) });
+OpenApiTypeTransformer.MapType<RankedMapRequests.EModifiers>(new OpenApiSchema
+    { Example = nameof(RankedMapRequests.EModifiers.None) });
 
 builder.Services.AddOutputCache(options => options.AddBasePolicy(policy => policy.Expire(TimeSpan.FromMinutes(10))));
 builder.Services.AddOpenApi(options =>

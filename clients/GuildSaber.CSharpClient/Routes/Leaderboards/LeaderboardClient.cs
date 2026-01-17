@@ -3,7 +3,6 @@ using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Internal;
 using GuildSaber.Api.Features.Leaderboards;
-using GuildSaber.CSharpClient.Routes.Internal;
 using static GuildSaber.Api.Features.Leaderboards.LeaderboardResponses;
 using static GuildSaber.Api.Features.RankedScores.RankedScoreResponses;
 

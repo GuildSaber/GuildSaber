@@ -1,6 +1,4 @@
-using GuildSaber.Api.Features.Internal;
-
-namespace GuildSaber.CSharpClient.Routes.Internal;
+namespace GuildSaber.Api.Features.Internal;
 
 /// <summary>
 /// Generic options for paginated requests with sorting and ordering capabilities.

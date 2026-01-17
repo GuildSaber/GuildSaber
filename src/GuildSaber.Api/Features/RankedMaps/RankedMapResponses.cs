@@ -13,8 +13,8 @@ public static class RankedMapResponses
         bool NeedConfirmation,
         bool NeedFullCombo,
         float? MaxPauseDurationSec,
-        RankedMapRequest.EModifiers ProhibitedModifiers,
-        RankedMapRequest.EModifiers MandatoryModifiers,
+        RankedMapRequests.EModifiers ProhibitedModifiers,
+        RankedMapRequests.EModifiers MandatoryModifiers,
         float? MinAccuracy
     );
 
@@ -80,8 +80,8 @@ public static class RankedMapResponses
         int[] LevelIds
     );
 
-    public record RankedMapWithScore(
+    public record RankedMapWithScores(
         RankedMap RankedMap,
-        RankedScoreResponses.RankedScore? Score
+        RankedScoreResponses.RankedScore[] Scores
     );
 }

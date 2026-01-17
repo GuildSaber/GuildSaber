@@ -71,7 +71,7 @@ public class RankedMapService(
 
     public readonly record struct RankedMapBoostsCount(int Tier1, int Tier2, int Tier3);
 
-    public async Task<CreateResponse> CreateRankedMap(ContextId contextId, RankedMapRequest.CreateRankedMap request)
+    public async Task<CreateResponse> CreateRankedMap(ContextId contextId, RankedMapRequests.CreateRankedMap request)
         => await GetParentGuildAsync(contextId) switch
         {
             null => new ValidationFailure("ContextId", $"Guild context with ID '{contextId}' does not exist."),
@@ -79,7 +79,7 @@ public class RankedMapService(
         };
 
     private async Task<CreateResponse> CreateRankedMap(
-        GuildId guildId, ContextId contextId, RankedMapRequest.CreateRankedMap request)
+        GuildId guildId, ContextId contextId, RankedMapRequests.CreateRankedMap request)
         => await Success<int, CreateResponse>(await GetCurrentGuildRankedMapCount(guildId))
             .Check(async count => ValidateRankedMapCreationLimit(count, await GetBoostsCountsAsync(guildId))
                 .MapError(CreateResponse (x) => new TooManyRankedMaps(x.current, x.max)))
@@ -231,7 +231,7 @@ public class RankedMapService(
         Song.SongId songId,
         SongDifficultyId songDifficultyId,
         PlayMode.PlayModeId playmodeId,
-        RankedMapRequest.CreateRankedMap request)
+        RankedMapRequests.CreateRankedMap request)
     {
         var errors = new List<KeyValuePair<string, string[]>>();
 

@@ -8,7 +8,6 @@ using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.JsonPatch.SystemTextJson;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ServerGuild = GuildSaber.Database.Models.Server.Guilds.Guild;
 using static GuildSaber.Api.Features.Guilds.GuildRequests;

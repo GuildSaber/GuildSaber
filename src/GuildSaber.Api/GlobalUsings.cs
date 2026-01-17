@@ -2,6 +2,12 @@
 global using static CSharpFunctionalExtensions.Result;
 global using static CSharpFunctionalExtensions.UnitResult;
 global using static GuildSaber.Common.Result.RustExtensions;
+global using FromQueryAttribute = Microsoft.AspNetCore.Mvc.FromQueryAttribute;
+global using FromRouteAttribute = Microsoft.AspNetCore.Mvc.FromRouteAttribute;
+global using FromFormAttribute = Microsoft.AspNetCore.Mvc.FromFormAttribute;
+global using FromBodyAttribute = Microsoft.AspNetCore.Mvc.FromBodyAttribute;
+global using FromHeaderAttribute = Microsoft.AspNetCore.Mvc.FromHeaderAttribute;
+global using FromServicesAttribute = Microsoft.AspNetCore.Mvc.FromServicesAttribute;
 global using EPermission = GuildSaber.Database.Models.Server.Guilds.Members.Member.EPermission;
 global using GuildId = GuildSaber.Common.StrongTypes.GuildId;
 global using ContextId = GuildSaber.Common.StrongTypes.ContextId;

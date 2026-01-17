@@ -5,7 +5,6 @@ using GuildSaber.Api.Features.Internal;
 using GuildSaber.AspireTests.DataClasses;
 using GuildSaber.AspireTests.Utils;
 using GuildSaber.Common.StrongTypes;
-using GuildSaber.CSharpClient.Routes.Internal;
 using static GuildSaber.Api.Features.Guilds.GuildResponses;
 
 namespace GuildSaber.AspireTests.Route.Guilds;

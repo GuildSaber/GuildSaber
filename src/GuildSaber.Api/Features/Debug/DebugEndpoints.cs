@@ -19,7 +19,6 @@ using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace GuildSaber.Api.Features.Debug;
@@ -413,12 +412,12 @@ public class DebugEndpoints : IEndpoints
                     continue;
 
                 var (level, levelNumber) = levelDict[(difficulty.LevelId, difficulty.GuildCategoryId ?? 0)];
-                var createRankedMap = new RankedMapRequest.CreateRankedMap
+                var createRankedMap = new RankedMapRequests.CreateRankedMap
                 (
-                    ManualRating: new RankedMapRequest.ManualRating(
+                    ManualRating: new RankedMapRequests.ManualRating(
                         DifficultyStar: levelNumber,
                         AccuracyStar: null),
-                    Requirements: new RankedMapRequest.RankedMapRequirements(
+                    Requirements: new RankedMapRequests.RankedMapRequirements(
                         NeedConfirmation: difficulty.Requirements.HasFlag(ERequirements.NeedAdminConfirmation),
                         NeedFullCombo: difficulty.Requirements.HasFlag(ERequirements.FullCombo),
                         MaxPauseDurationSec: difficulty.Requirements.HasFlag(ERequirements.MaxPauses)

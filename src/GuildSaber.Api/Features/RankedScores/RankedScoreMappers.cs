@@ -42,6 +42,7 @@ public static class RankedScoreMappers
         ServerDbContext dbContext)
         => rankedScore => new RankedScoreResponses.RankedScore(
             rankedScore.Id,
+            rankedScore.PointId,
             rankedScore.RankedMapId,
             dbContext.Scores.Where(s => s.Id == rankedScore.ScoreId)
                 .Select(MapScoreExpression)
@@ -60,6 +61,7 @@ public static class RankedScoreMappers
         => rankedScore => new RankedScoreResponses.RankedScoreWithPlayer(
             new RankedScoreResponses.RankedScore(
                 rankedScore.Id,
+                rankedScore.PointId,
                 rankedScore.RankedMapId,
                 dbContext.Scores.Where(s => s.Id == rankedScore.ScoreId)
                     .Select(MapScoreExpression)
@@ -82,6 +84,7 @@ public static class RankedScoreMappers
         => rankedScore => new RankedScoreResponses.RankedScoreWithRankedMap(
             new RankedScoreResponses.RankedScore(
                 rankedScore.Id,
+                rankedScore.PointId,
                 rankedScore.RankedMapId,
                 dbContext.Scores.Where(s => s.Id == rankedScore.ScoreId)
                     .Select(MapScoreExpression)

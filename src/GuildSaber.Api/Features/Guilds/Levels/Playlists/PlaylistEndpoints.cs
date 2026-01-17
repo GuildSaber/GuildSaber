@@ -23,7 +23,7 @@ public class PlaylistEndpoints : IEndpoints
         .WithSummary("Get the playlist for a ranked map list level.")
         .WithDescription("Get the playlist associated with a ranked map list level by its Id.");
 
-    public static async Task<Results<Ok<Playlist>, NotFound, BadRequest<string>>> GetLevelPlaylistAsync(
+    public static async Task<Results<Ok<Playlist>, NotFound, ProblemHttpResult>> GetLevelPlaylistAsync(
         int levelId, PlaylistFilter filter, PlayerId? playerId,
         IOptions<LinkSettings> linkSettings, ServerDbContext dbContext, LinkGenerator linkGenerator,
         IHttpClientFactory httpClientFactory)
@@ -42,8 +42,8 @@ public class PlaylistEndpoints : IEndpoints
                         null => TypedResults.NotFound(),
                         var playlist => TypedResults.Ok(playlist.Value)
                     },
-                error => Task.FromResult((Results<Ok<Playlist>, NotFound, BadRequest<string>>)
-                    TypedResults.BadRequest(error))
+                error => Task.FromResult((Results<Ok<Playlist>, NotFound, ProblemHttpResult>)
+                    TypedResults.Problem(error, statusCode: StatusCodes.Status400BadRequest))
             );
 
     private static async Task<string?> GetImageDataFromCdnAsync(

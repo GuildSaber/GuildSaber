@@ -6,7 +6,6 @@ using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Internal;
 using GuildSaber.Common.Settings;
 using GuildSaber.CSharpClient;
-using GuildSaber.CSharpClient.Routes.Internal;
 using GuildSaber.DiscordBot.Core.Extensions;
 
 namespace GuildSaber.DiscordBot.Commands.Users;

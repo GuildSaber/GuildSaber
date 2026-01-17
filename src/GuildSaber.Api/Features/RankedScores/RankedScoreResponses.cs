@@ -14,7 +14,7 @@ public static class RankedScoreResponses
     public abstract record Score(
         long Id,
         int BaseScore,
-        RankedMapRequest.EModifiers Modifiers,
+        RankedMapRequests.EModifiers Modifiers,
         DateTimeOffset SetAt,
         int? MaxCombo,
         bool IsFullCombo,
@@ -25,7 +25,7 @@ public static class RankedScoreResponses
         public sealed record BeatLeaderScore(
             long Id,
             int BaseScore,
-            RankedMapRequest.EModifiers Modifiers,
+            RankedMapRequests.EModifiers Modifiers,
             DateTimeOffset SetAt,
             int? MaxCombo,
             bool IsFullCombo,
@@ -39,7 +39,7 @@ public static class RankedScoreResponses
         public sealed record ScoreSaberScore(
             long Id,
             int BaseScore,
-            RankedMapRequest.EModifiers Modifiers,
+            RankedMapRequests.EModifiers Modifiers,
             DateTimeOffset SetAt,
             int? MaxCombo,
             bool IsFullCombo,
@@ -55,6 +55,7 @@ public static class RankedScoreResponses
 
     public sealed record RankedScore(
         long Id,
+        int PointId,
         long RankedMapId,
         Score Score,
         Score? PrevScore,

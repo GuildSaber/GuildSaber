@@ -12,7 +12,6 @@ using GuildSaber.Api.Transformers;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using static GuildSaber.Api.Features.Auth.AuthResponse;
 

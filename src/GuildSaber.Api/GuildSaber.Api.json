@@ -70,16 +70,6 @@
                 }
               }
             }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
           }
         }
       }
@@ -777,7 +767,37 @@
             }
           },
           {
-            "name": "difficulty-from",
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryIds",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "pattern": "^-?(?:0|[1-9]\\d*)$",
+                "type": [
+                  "integer",
+                  "string"
+                ],
+                "format": "int32"
+              }
+            }
+          },
+          {
+            "name": "matchAnyCategory",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          {
+            "name": "difficultyStarFrom",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -789,7 +809,7 @@
             }
           },
           {
-            "name": "difficulty-to",
+            "name": "difficultyStarTo",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -801,7 +821,7 @@
             }
           },
           {
-            "name": "duration-from",
+            "name": "accuracyStarFrom",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -813,7 +833,7 @@
             }
           },
           {
-            "name": "duration-to",
+            "name": "accuracyStarTo",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -825,7 +845,7 @@
             }
           },
           {
-            "name": "bpm-from",
+            "name": "durationSecFrom",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -837,7 +857,31 @@
             }
           },
           {
-            "name": "bpm-to",
+            "name": "durationSecTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmTo",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -876,13 +920,6 @@
               ],
               "format": "int32",
               "default": 10
-            }
-          },
-          {
-            "name": "search",
-            "in": "query",
-            "schema": {
-              "type": "string"
             }
           },
           {
@@ -1037,14 +1074,14 @@
         ]
       }
     },
-    "/contexts/{contextId}/ranked-maps/with-score/{playerId}": {
+    "/contexts/{contextId}/ranked-maps/with-scores/{playerId}": {
       "get": {
         "tags": [
           "Context.RankedMaps"
         ],
         "summary": "Get ranked maps for a context with a player score.",
-        "description": "Get ranked maps for a context by its Id, with optional search and sorting, including the player's best score on each map.",
-        "operationId": "GetRankedMapsWithScore",
+        "description": "Get ranked maps for a context by its Id, with optional search and sorting, including the player's best point scores on each map.",
+        "operationId": "GetRankedMapsWithScores",
         "parameters": [
           {
             "name": "contextId",
@@ -1063,7 +1100,37 @@
             }
           },
           {
-            "name": "difficulty-from",
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryIds",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "pattern": "^-?(?:0|[1-9]\\d*)$",
+                "type": [
+                  "integer",
+                  "string"
+                ],
+                "format": "int32"
+              }
+            }
+          },
+          {
+            "name": "matchAnyCategory",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          {
+            "name": "difficultyStarFrom",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -1075,7 +1142,7 @@
             }
           },
           {
-            "name": "difficulty-to",
+            "name": "difficultyStarTo",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -1087,7 +1154,7 @@
             }
           },
           {
-            "name": "duration-from",
+            "name": "accuracyStarFrom",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -1099,7 +1166,7 @@
             }
           },
           {
-            "name": "duration-to",
+            "name": "accuracyStarTo",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -1111,7 +1178,7 @@
             }
           },
           {
-            "name": "bpm-from",
+            "name": "durationSecFrom",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -1123,7 +1190,31 @@
             }
           },
           {
-            "name": "bpm-to",
+            "name": "durationSecTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmTo",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -1165,13 +1256,6 @@
             }
           },
           {
-            "name": "search",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "sortBy",
             "in": "query",
             "schema": {
@@ -1194,7 +1278,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PagedListOfRankedMapWithScore"
+                  "$ref": "#/components/schemas/PagedListOfRankedMapWithScores"
                 }
               }
             }
@@ -1202,14 +1286,14 @@
         }
       }
     },
-    "/contexts/{contextId}/ranked-maps/with-score/@me": {
+    "/contexts/{contextId}/ranked-maps/with-scores/@me": {
       "get": {
         "tags": [
           "Context.RankedMaps"
         ],
         "summary": "Get ranked maps for a context with the current player's score.",
-        "description": "Get ranked maps for a context by its Id, with optional search and sorting, including the current player's best score on each map.",
-        "operationId": "GetRankedMapsWithScoreAtMe",
+        "description": "Get ranked maps for a context by its Id, with optional search and sorting, including the current player's best point scores on each map.",
+        "operationId": "GetRankedMapsWithScoresAtMe",
         "parameters": [
           {
             "name": "contextId",
@@ -1220,7 +1304,37 @@
             }
           },
           {
-            "name": "difficulty-from",
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryIds",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "pattern": "^-?(?:0|[1-9]\\d*)$",
+                "type": [
+                  "integer",
+                  "string"
+                ],
+                "format": "int32"
+              }
+            }
+          },
+          {
+            "name": "matchAnyCategory",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          {
+            "name": "difficultyStarFrom",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -1232,7 +1346,7 @@
             }
           },
           {
-            "name": "difficulty-to",
+            "name": "difficultyStarTo",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -1244,7 +1358,7 @@
             }
           },
           {
-            "name": "duration-from",
+            "name": "accuracyStarFrom",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -1256,7 +1370,7 @@
             }
           },
           {
-            "name": "duration-to",
+            "name": "accuracyStarTo",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -1268,7 +1382,7 @@
             }
           },
           {
-            "name": "bpm-from",
+            "name": "durationSecFrom",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -1280,7 +1394,31 @@
             }
           },
           {
-            "name": "bpm-to",
+            "name": "durationSecTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmTo",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -1322,13 +1460,6 @@
             }
           },
           {
-            "name": "search",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "sortBy",
             "in": "query",
             "schema": {
@@ -1351,7 +1482,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PagedListOfRankedMapWithScore"
+                  "$ref": "#/components/schemas/PagedListOfRankedMapWithScores"
                 }
               }
             }
@@ -5857,13 +5988,13 @@
           }
         }
       },
-      "PagedListOfRankedMapWithScore": {
+      "PagedListOfRankedMapWithScores": {
         "type": "object",
         "properties": {
           "data": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/RankedMapWithScore"
+              "$ref": "#/components/schemas/RankedMapWithScores"
             }
           },
           "page": {
@@ -6485,31 +6616,28 @@
           }
         }
       },
-      "RankedMapWithScore": {
+      "RankedMapWithScores": {
         "required": [
           "rankedMap",
-          "score"
+          "scores"
         ],
         "type": "object",
         "properties": {
           "rankedMap": {
             "$ref": "#/components/schemas/RankedMap"
           },
-          "score": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/RankedScore"
-              }
-            ]
+          "scores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankedScore"
+            }
           }
         }
       },
       "RankedScore": {
         "required": [
           "id",
+          "pointId",
           "rankedMapId",
           "score",
           "prevScore",
@@ -6527,6 +6655,14 @@
               "string"
             ],
             "format": "int64"
+          },
+          "pointId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "rankedMapId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
