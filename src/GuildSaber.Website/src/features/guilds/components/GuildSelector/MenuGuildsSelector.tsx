@@ -2,9 +2,9 @@ import { Button } from "@/components/ui/button"
 import { PopoverContent } from "@/components/ui/popover"
 import { Separator } from "@/components/ui/separator"
 import { useSession } from "@/features/auth/hooks/useSession"
+import { useGuildsStore } from "@/features/guilds/stores/guildsStore"
 import { getCdnUrl } from "@/utils/url"
 import { Plus } from "lucide-react"
-import { useGuildsStore } from "../../stores/guildsStore"
 
 const MenuGuildsSelector = () => {
   const { data: session } = useSession()

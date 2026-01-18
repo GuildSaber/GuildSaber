@@ -255,11 +255,9 @@ export type Level =
 
 export type LevelAccStarLevel = {
   type?: "AccStar"
-  minStar: number | string
+  minAccStar: null | number | string
   requiredPassCount: number | string
   id: number | string
-  guildId: GuildId
-  contextId: ContextId
   categoryId: null | number | string
   info: LevelInfo
   order: number | string
@@ -268,11 +266,9 @@ export type LevelAccStarLevel = {
 
 export type LevelDiffStarLevel = {
   type?: "DiffStar"
-  minStar: number | string
+  minDiffStar: null | number | string
   requiredPassCount: number | string
   id: number | string
-  guildId: GuildId
-  contextId: ContextId
   categoryId: null | number | string
   info: LevelInfo
   order: number | string
@@ -280,17 +276,15 @@ export type LevelDiffStarLevel = {
 }
 
 export type LevelInfo = {
-  name?: string
-  color?: number | string
+  name: string
+  color: number | string
 }
 
 export type LevelRankedMapListLevel = {
   type?: "RankedMapList"
   requiredPassCount: number | string
-  totalCount: number | string
+  rankedMapCount: number | string
   id: number | string
-  guildId: GuildId
-  contextId: ContextId
   categoryId: null | number | string
   info: LevelInfo
   order: number | string
@@ -403,6 +397,16 @@ export type PagedListOfRankedMap = {
   hasNextPage?: boolean
 }
 
+export type PagedListOfRankedMapWithScores = {
+  data?: Array<RankedMapWithScores>
+  page?: number | string
+  pageSize?: number | string
+  totalCount?: number | string
+  totalPages?: number | string
+  hasPreviousPage?: boolean
+  hasNextPage?: boolean
+}
+
 export type PagedListOfRankedScore = {
   data?: Array<RankedScore>
   page?: number | string
@@ -494,6 +498,8 @@ export type PlaylistDifficultyData = {
   name?: string
 }
 
+export type PlaylistFilter = "None" | "NoneWithPassedScores" | "NoneWithPassedOrPendingScores"
+
 export type PlaylistSong = {
   hash?: string
   difficulties?: Array<PlaylistDifficultyData>
@@ -537,16 +543,22 @@ export type RankedMapRating = {
 }
 
 export type RankedMapRequirements = {
-  needConfirmation?: boolean
-  needFullCombo?: boolean
-  maxPauseDurationSec?: null | number | string
-  prohibitedModifiers?: EModifiers
-  mandatoryModifiers?: EModifiers
-  minAccuracy?: null | number | string
+  needConfirmation: boolean
+  needFullCombo: boolean
+  maxPauseDurationSec: null | number | string
+  prohibitedModifiers: EModifiers
+  mandatoryModifiers: EModifiers
+  minAccuracy: null | number | string
+}
+
+export type RankedMapWithScores = {
+  rankedMap: RankedMap
+  scores: Array<RankedScore>
 }
 
 export type RankedScore = {
   id: number | string
+  pointId: number | string
   rankedMapId: number | string
   score: Score
   prevScore: null | Score
@@ -681,7 +693,10 @@ export type GetLevelPlaylistData = {
   path: {
     levelId: number | string
   }
-  query?: never
+  query: {
+    filter: PlaylistFilter
+    playerId?: string
+  }
   url: "/levels/{levelId}/playlist"
 }
 
@@ -857,9 +872,19 @@ export type GetRankedMapsData = {
     contextId: ContextId
   }
   query?: {
+    search?: string
+    categoryIds?: Array<number | string>
+    matchAnyCategory?: boolean
+    difficultyStarFrom?: number | string
+    difficultyStarTo?: number | string
+    accuracyStarFrom?: number | string
+    accuracyStarTo?: number | string
+    durationSecFrom?: number | string
+    durationSecTo?: number | string
+    bpmFrom?: number | string
+    bpmTo?: number | string
     page?: number | string
     pageSize?: number | string
-    search?: string
     sortBy?: ERankedMapSorter
     order?: EOrder
   }
@@ -913,6 +938,76 @@ export type CreateRankedMapResponses = {
 }
 
 export type CreateRankedMapResponse = CreateRankedMapResponses[keyof CreateRankedMapResponses]
+
+export type GetRankedMapsWithScoresData = {
+  body?: never
+  path: {
+    contextId: ContextId
+    playerId: PlayerId
+  }
+  query?: {
+    search?: string
+    categoryIds?: Array<number | string>
+    matchAnyCategory?: boolean
+    difficultyStarFrom?: number | string
+    difficultyStarTo?: number | string
+    accuracyStarFrom?: number | string
+    accuracyStarTo?: number | string
+    durationSecFrom?: number | string
+    durationSecTo?: number | string
+    bpmFrom?: number | string
+    bpmTo?: number | string
+    page?: number | string
+    pageSize?: number | string
+    sortBy?: ERankedMapSorter
+    order?: EOrder
+  }
+  url: "/contexts/{contextId}/ranked-maps/with-scores/{playerId}"
+}
+
+export type GetRankedMapsWithScoresResponses = {
+  /**
+   * OK
+   */
+  200: PagedListOfRankedMapWithScores
+}
+
+export type GetRankedMapsWithScoresResponse = GetRankedMapsWithScoresResponses[keyof GetRankedMapsWithScoresResponses]
+
+export type GetRankedMapsWithScoresAtMeData = {
+  body?: never
+  path: {
+    contextId: ContextId
+  }
+  query?: {
+    search?: string
+    categoryIds?: Array<number | string>
+    matchAnyCategory?: boolean
+    difficultyStarFrom?: number | string
+    difficultyStarTo?: number | string
+    accuracyStarFrom?: number | string
+    accuracyStarTo?: number | string
+    durationSecFrom?: number | string
+    durationSecTo?: number | string
+    bpmFrom?: number | string
+    bpmTo?: number | string
+    page?: number | string
+    pageSize?: number | string
+    sortBy?: ERankedMapSorter
+    order?: EOrder
+  }
+  url: "/contexts/{contextId}/ranked-maps/with-scores/@me"
+}
+
+export type GetRankedMapsWithScoresAtMeResponses = {
+  /**
+   * OK
+   */
+  200: PagedListOfRankedMapWithScores
+}
+
+export type GetRankedMapsWithScoresAtMeResponse =
+  GetRankedMapsWithScoresAtMeResponses[keyof GetRankedMapsWithScoresAtMeResponses]
 
 export type GetPlayersData = {
   body?: never

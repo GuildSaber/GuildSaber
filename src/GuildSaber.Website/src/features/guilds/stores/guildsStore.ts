@@ -8,9 +8,15 @@ type GuildsStore = {
 
 export const useGuildsStore = create<GuildsStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       selectedGuild: null,
-      setSelectedGuild: (guildId) => set({ selectedGuild: guildId }),
+      setSelectedGuild: (guildId) => {
+        if (guildId === get().selectedGuild) {
+          return
+        }
+
+        set({ selectedGuild: guildId })
+      },
     }),
     {
       name: "guilds",

@@ -29,7 +29,7 @@ const GuildsSelector = () => {
 
   return (
     <ButtonGroup>
-      <div className="bg-background dark:bg-input/30 flex h-9 items-center gap-2 rounded-md border px-2 py-1 shadow-xs">
+      <div className="bg-background dark:bg-input/30 dark:border-input flex h-9 items-center gap-2 rounded-md border px-2 py-1 shadow-xs">
         {session?.members.length > 2 && selectedGuild && (
           <>
             <img className="size-7 rounded-lg" src={getCdnUrl(`guilds/${selectedGuild}/logo.jpg`)} />

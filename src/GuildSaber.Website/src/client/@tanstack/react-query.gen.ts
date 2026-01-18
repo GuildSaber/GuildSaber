@@ -55,6 +55,8 @@ import {
   getPlayers,
   getRankedMap,
   getRankedMaps,
+  getRankedMapsWithScores,
+  getRankedMapsWithScoresAtMe,
   importOldGuildSaberMapsBackground,
   joinGuild,
   joinGuildAtMe,
@@ -191,6 +193,10 @@ import type {
   GetRankedMapResponse,
   GetRankedMapsData,
   GetRankedMapsResponse,
+  GetRankedMapsWithScoresAtMeData,
+  GetRankedMapsWithScoresAtMeResponse,
+  GetRankedMapsWithScoresData,
+  GetRankedMapsWithScoresResponse,
   ImportOldGuildSaberMapsBackgroundData,
   ImportOldGuildSaberMapsBackgroundError,
   ImportOldGuildSaberMapsBackgroundResponse,
@@ -272,7 +278,7 @@ const createQueryKey = <TOptions extends Options>(
 }
 
 export const getLevelPlaylistQueryKey = (options: Options<GetLevelPlaylistData>) =>
-  createQueryKey("getLevelPlaylist", options)
+  createQueryKey("getLevelPlaylist", options, false, ["PlaylistEndpoints"])
 
 /**
  * Get the playlist for a ranked map list level.
@@ -299,7 +305,7 @@ export const getLevelPlaylistOptions = (options: Options<GetLevelPlaylistData>) 
   })
 
 export const getPlayerRankedScoresQueryKey = (options: Options<GetPlayerRankedScoresData>) =>
-  createQueryKey("getPlayerRankedScores", options)
+  createQueryKey("getPlayerRankedScores", options, false, ["Players.RankedScores"])
 
 /**
  * Get all ranked scores of a player paginated
@@ -400,7 +406,7 @@ export const getPlayerRankedScoresInfiniteOptions = (options: Options<GetPlayerR
   )
 
 export const getPlayerRankedScoresAtMeQueryKey = (options: Options<GetPlayerRankedScoresAtMeData>) =>
-  createQueryKey("getPlayerRankedScoresAtMe", options)
+  createQueryKey("getPlayerRankedScoresAtMe", options, false, ["Players.RankedScores"])
 
 /**
  * Get current player's ranked scores paginated
@@ -469,7 +475,7 @@ export const getPlayerRankedScoresAtMeInfiniteOptions = (options: Options<GetPla
   )
 
 export const getPlayerRankedScoresWithRankedMapQueryKey = (options: Options<GetPlayerRankedScoresWithRankedMapData>) =>
-  createQueryKey("getPlayerRankedScoresWithRankedMap", options)
+  createQueryKey("getPlayerRankedScoresWithRankedMap", options, false, ["Players.RankedScores"])
 
 /**
  * Get all ranked scores of a player with ranked map paginated
@@ -547,7 +553,7 @@ export const getPlayerRankedScoresWithRankedMapInfiniteOptions = (
 
 export const getPlayerRankedScoresWithRankedMapAtMeQueryKey = (
   options: Options<GetPlayerRankedScoresWithRankedMapAtMeData>,
-) => createQueryKey("getPlayerRankedScoresWithRankedMapAtMe", options)
+) => createQueryKey("getPlayerRankedScoresWithRankedMapAtMe", options, false, ["Players.RankedScores"])
 
 /**
  * Get current player's ranked scores with ranked map paginated
@@ -625,7 +631,8 @@ export const getPlayerRankedScoresWithRankedMapAtMeInfiniteOptions = (
     },
   )
 
-export const getRankedMapQueryKey = (options: Options<GetRankedMapData>) => createQueryKey("getRankedMap", options)
+export const getRankedMapQueryKey = (options: Options<GetRankedMapData>) =>
+  createQueryKey("getRankedMap", options, false, ["RankedMaps"])
 
 /**
  * Get a ranked map.
@@ -646,7 +653,8 @@ export const getRankedMapOptions = (options: Options<GetRankedMapData>) =>
     queryKey: getRankedMapQueryKey(options),
   })
 
-export const getRankedMapsQueryKey = (options: Options<GetRankedMapsData>) => createQueryKey("getRankedMaps", options)
+export const getRankedMapsQueryKey = (options: Options<GetRankedMapsData>) =>
+  createQueryKey("getRankedMaps", options, false, ["Context.RankedMaps"])
 
 /**
  * Get ranked maps for a context.
@@ -740,7 +748,146 @@ export const createRankedMapMutation = (
   return mutationOptions
 }
 
-export const getPlayersQueryKey = (options?: Options<GetPlayersData>) => createQueryKey("getPlayers", options)
+export const getRankedMapsWithScoresQueryKey = (options: Options<GetRankedMapsWithScoresData>) =>
+  createQueryKey("getRankedMapsWithScores", options, false, ["Context.RankedMaps"])
+
+/**
+ * Get ranked maps for a context with a player score.
+ *
+ * Get ranked maps for a context by its Id, with optional search and sorting, including the player's best point scores on each map.
+ */
+export const getRankedMapsWithScoresOptions = (options: Options<GetRankedMapsWithScoresData>) =>
+  queryOptions<
+    GetRankedMapsWithScoresResponse,
+    DefaultError,
+    GetRankedMapsWithScoresResponse,
+    ReturnType<typeof getRankedMapsWithScoresQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getRankedMapsWithScores({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getRankedMapsWithScoresQueryKey(options),
+  })
+
+export const getRankedMapsWithScoresInfiniteQueryKey = (
+  options: Options<GetRankedMapsWithScoresData>,
+): QueryKey<Options<GetRankedMapsWithScoresData>> => createQueryKey("getRankedMapsWithScores", options, true)
+
+/**
+ * Get ranked maps for a context with a player score.
+ *
+ * Get ranked maps for a context by its Id, with optional search and sorting, including the player's best point scores on each map.
+ */
+export const getRankedMapsWithScoresInfiniteOptions = (options: Options<GetRankedMapsWithScoresData>) =>
+  infiniteQueryOptions<
+    GetRankedMapsWithScoresResponse,
+    DefaultError,
+    InfiniteData<GetRankedMapsWithScoresResponse>,
+    QueryKey<Options<GetRankedMapsWithScoresData>>,
+    number | string | Pick<QueryKey<Options<GetRankedMapsWithScoresData>>[0], "body" | "headers" | "path" | "query">
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<QueryKey<Options<GetRankedMapsWithScoresData>>[0], "body" | "headers" | "path" | "query"> =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  page: pageParam,
+                },
+              }
+        const params = createInfiniteParams(queryKey, page)
+        const { data } = await getRankedMapsWithScores({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        })
+        return data
+      },
+      queryKey: getRankedMapsWithScoresInfiniteQueryKey(options),
+    },
+  )
+
+export const getRankedMapsWithScoresAtMeQueryKey = (options: Options<GetRankedMapsWithScoresAtMeData>) =>
+  createQueryKey("getRankedMapsWithScoresAtMe", options, false, ["Context.RankedMaps"])
+
+/**
+ * Get ranked maps for a context with the current player's score.
+ *
+ * Get ranked maps for a context by its Id, with optional search and sorting, including the current player's best point scores on each map.
+ */
+export const getRankedMapsWithScoresAtMeOptions = (options: Options<GetRankedMapsWithScoresAtMeData>) =>
+  queryOptions<
+    GetRankedMapsWithScoresAtMeResponse,
+    DefaultError,
+    GetRankedMapsWithScoresAtMeResponse,
+    ReturnType<typeof getRankedMapsWithScoresAtMeQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getRankedMapsWithScoresAtMe({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getRankedMapsWithScoresAtMeQueryKey(options),
+  })
+
+export const getRankedMapsWithScoresAtMeInfiniteQueryKey = (
+  options: Options<GetRankedMapsWithScoresAtMeData>,
+): QueryKey<Options<GetRankedMapsWithScoresAtMeData>> => createQueryKey("getRankedMapsWithScoresAtMe", options, true)
+
+/**
+ * Get ranked maps for a context with the current player's score.
+ *
+ * Get ranked maps for a context by its Id, with optional search and sorting, including the current player's best point scores on each map.
+ */
+export const getRankedMapsWithScoresAtMeInfiniteOptions = (options: Options<GetRankedMapsWithScoresAtMeData>) =>
+  infiniteQueryOptions<
+    GetRankedMapsWithScoresAtMeResponse,
+    DefaultError,
+    InfiniteData<GetRankedMapsWithScoresAtMeResponse>,
+    QueryKey<Options<GetRankedMapsWithScoresAtMeData>>,
+    number | string | Pick<QueryKey<Options<GetRankedMapsWithScoresAtMeData>>[0], "body" | "headers" | "path" | "query">
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<QueryKey<Options<GetRankedMapsWithScoresAtMeData>>[0], "body" | "headers" | "path" | "query"> =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  page: pageParam,
+                },
+              }
+        const params = createInfiniteParams(queryKey, page)
+        const { data } = await getRankedMapsWithScoresAtMe({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        })
+        return data
+      },
+      queryKey: getRankedMapsWithScoresAtMeInfiniteQueryKey(options),
+    },
+  )
+
+export const getPlayersQueryKey = (options?: Options<GetPlayersData>) =>
+  createQueryKey("getPlayers", options, false, ["Players"])
 
 /**
  * Get all players paginated
@@ -823,7 +970,8 @@ export const deletePlayerMutation = (
   return mutationOptions
 }
 
-export const getPlayerQueryKey = (options: Options<GetPlayerData>) => createQueryKey("getPlayer", options)
+export const getPlayerQueryKey = (options: Options<GetPlayerData>) =>
+  createQueryKey("getPlayer", options, false, ["Players"])
 
 /**
  * Get a player
@@ -844,7 +992,8 @@ export const getPlayerOptions = (options: Options<GetPlayerData>) =>
     queryKey: getPlayerQueryKey(options),
   })
 
-export const getPlayerAtMeQueryKey = (options?: Options<GetPlayerAtMeData>) => createQueryKey("getPlayerAtMe", options)
+export const getPlayerAtMeQueryKey = (options?: Options<GetPlayerAtMeData>) =>
+  createQueryKey("getPlayerAtMe", options, false, ["Players"])
 
 /**
  * Get current player
@@ -871,7 +1020,7 @@ export const getPlayerAtMeOptions = (options?: Options<GetPlayerAtMeData>) =>
   })
 
 export const getPlayerExtendedQueryKey = (options: Options<GetPlayerExtendedData>) =>
-  createQueryKey("getPlayerExtended", options)
+  createQueryKey("getPlayerExtended", options, false, ["Players"])
 
 /**
  * Get a player with extended information
@@ -898,7 +1047,7 @@ export const getPlayerExtendedOptions = (options: Options<GetPlayerExtendedData>
   })
 
 export const getPlayerExtendedAtMeQueryKey = (options?: Options<GetPlayerExtendedAtMeData>) =>
-  createQueryKey("getPlayerExtendedAtMe", options)
+  createQueryKey("getPlayerExtendedAtMe", options, false, ["Players"])
 
 /**
  * Get current player with extended information
@@ -925,7 +1074,7 @@ export const getPlayerExtendedAtMeOptions = (options?: Options<GetPlayerExtended
   })
 
 export const lookupPlayerByDiscordIdQueryKey = (options: Options<LookupPlayerByDiscordIdData>) =>
-  createQueryKey("lookupPlayerByDiscordId", options)
+  createQueryKey("lookupPlayerByDiscordId", options, false, ["Players"])
 
 /**
  * Lookup player ID by Discord ID
@@ -953,7 +1102,7 @@ export const lookupPlayerByDiscordIdOptions = (options: Options<LookupPlayerByDi
 
 export const getContextPointRankedMapLeaderboardQueryKey = (
   options: Options<GetContextPointRankedMapLeaderboardData>,
-) => createQueryKey("getContextPointRankedMapLeaderboard", options)
+) => createQueryKey("getContextPointRankedMapLeaderboard", options, false, ["Leaderboards"])
 
 /**
  * Get the leaderboard for a ranked map within a context point, paginated.
@@ -1030,7 +1179,7 @@ export const getContextPointRankedMapLeaderboardInfiniteOptions = (
   )
 
 export const getMemberPointStatLeaderboardQueryKey = (options: Options<GetMemberPointStatLeaderboardData>) =>
-  createQueryKey("getMemberPointStatLeaderboard", options)
+  createQueryKey("getMemberPointStatLeaderboard", options, false, ["Leaderboards"])
 
 /**
  * Get the guild member's leaderboard for a point within a context, paginated.
@@ -1106,7 +1255,7 @@ export const getMemberPointStatLeaderboardInfiniteOptions = (options: Options<Ge
 
 export const getMemberCategoryPointStatLeaderboardQueryKey = (
   options: Options<GetMemberCategoryPointStatLeaderboardData>,
-) => createQueryKey("getMemberCategoryPointStatLeaderboard", options)
+) => createQueryKey("getMemberCategoryPointStatLeaderboard", options, false, ["Leaderboards"])
 
 /**
  * Get the guild member's leaderboard for a category point within a context, paginated.
@@ -1184,7 +1333,8 @@ export const getMemberCategoryPointStatLeaderboardInfiniteOptions = (
     },
   )
 
-export const getGuildsQueryKey = (options?: Options<GetGuildsData>) => createQueryKey("getGuilds", options)
+export const getGuildsQueryKey = (options?: Options<GetGuildsData>) =>
+  createQueryKey("getGuilds", options, false, ["Guilds"])
 
 /**
  * Get all guilds paginated
@@ -1288,7 +1438,8 @@ export const deleteGuildMutation = (
   return mutationOptions
 }
 
-export const getGuildQueryKey = (options: Options<GetGuildData>) => createQueryKey("getGuild", options)
+export const getGuildQueryKey = (options: Options<GetGuildData>) =>
+  createQueryKey("getGuild", options, false, ["Guilds"])
 
 /**
  * Get a guild
@@ -1331,7 +1482,7 @@ export const patchGuildMutation = (
 }
 
 export const getGuildExtendedQueryKey = (options: Options<GetGuildExtendedData>) =>
-  createQueryKey("getGuildExtended", options)
+  createQueryKey("getGuildExtended", options, false, ["Guilds"])
 
 /**
  * Get a guild with extended information
@@ -1358,7 +1509,7 @@ export const getGuildExtendedOptions = (options: Options<GetGuildExtendedData>) 
   })
 
 export const getGuildByDiscordIdQueryKey = (options: Options<GetGuildByDiscordIdData>) =>
-  createQueryKey("getGuildByDiscordId", options)
+  createQueryKey("getGuildByDiscordId", options, false, ["Guilds"])
 
 /**
  * Get a guild by Discord guild ID
@@ -1385,7 +1536,7 @@ export const getGuildByDiscordIdOptions = (options: Options<GetGuildByDiscordIdD
   })
 
 export const lookupGuildByDiscordGuildIdQueryKey = (options: Options<LookupGuildByDiscordGuildIdData>) =>
-  createQueryKey("lookupGuildByDiscordGuildId", options)
+  createQueryKey("lookupGuildByDiscordGuildId", options, false, ["Guilds"])
 
 /**
  * Lookup guild ID by Discord guild ID
@@ -1411,7 +1562,8 @@ export const lookupGuildByDiscordGuildIdOptions = (options: Options<LookupGuildB
     queryKey: lookupGuildByDiscordGuildIdQueryKey(options),
   })
 
-export const getMembersQueryKey = (options: Options<GetMembersData>) => createQueryKey("getMembers", options)
+export const getMembersQueryKey = (options: Options<GetMembersData>) =>
+  createQueryKey("getMembers", options, false, ["Guilds.Members"])
 
 /**
  * Get all members of a guild.
@@ -1494,7 +1646,8 @@ export const joinGuildAtMeMutation = (
   return mutationOptions
 }
 
-export const getMemberQueryKey = (options: Options<GetMemberData>) => createQueryKey("getMember", options)
+export const getMemberQueryKey = (options: Options<GetMemberData>) =>
+  createQueryKey("getMember", options, false, ["Guilds.Members"])
 
 /**
  * Get a member of a guild
@@ -1537,7 +1690,7 @@ export const joinGuildMutation = (
 }
 
 export const getMemberLevelStatsQueryKey = (options: Options<GetMemberLevelStatsData>) =>
-  createQueryKey("getMemberLevelStats", options)
+  createQueryKey("getMemberLevelStats", options, false, ["Context.Members.LevelStats"])
 
 /**
  * Get level stats for a guild member.
@@ -1564,7 +1717,7 @@ export const getMemberLevelStatsOptions = (options: Options<GetMemberLevelStatsD
   })
 
 export const getCurrentMemberLevelStatsQueryKey = (options: Options<GetCurrentMemberLevelStatsData>) =>
-  createQueryKey("getCurrentMemberLevelStats", options)
+  createQueryKey("getCurrentMemberLevelStats", options, false, ["Context.Members.LevelStats"])
 
 /**
  * Get level stats for the current authenticated member.
@@ -1591,7 +1744,7 @@ export const getCurrentMemberLevelStatsOptions = (options: Options<GetCurrentMem
   })
 
 export const getMemberContextStatsQueryKey = (options: Options<GetMemberContextStatsData>) =>
-  createQueryKey("getMemberContextStats", options)
+  createQueryKey("getMemberContextStats", options, false, ["Context.Members.ContextStats"])
 
 /**
  * Get context stats for a guild member.
@@ -1618,7 +1771,7 @@ export const getMemberContextStatsOptions = (options: Options<GetMemberContextSt
   })
 
 export const getCurrentMemberContextStatsQueryKey = (options: Options<GetCurrentMemberContextStatsData>) =>
-  createQueryKey("getCurrentMemberContextStats", options)
+  createQueryKey("getCurrentMemberContextStats", options, false, ["Context.Members.ContextStats"])
 
 /**
  * Get context stats for the current authenticated member.
@@ -1644,14 +1797,15 @@ export const getCurrentMemberContextStatsOptions = (options: Options<GetCurrentM
     queryKey: getCurrentMemberContextStatsQueryKey(options),
   })
 
-export const getLevelsQueryKey = (options: Options<GetLevelsData>) => createQueryKey("getLevels", options)
+export const getLevelsQueryKey = (options: Options<GetLevelsData>) =>
+  createQueryKey("getLevels", options, false, ["Context.Levels"])
 
 /**
  * Get all levels in a context, optionally filtered by category.
  *
  * - No parameters: Returns all levels.
- * - hasCategory=false: Returns levels with no category.
- * - category=5: Returns levels in category 5.
+ * - hasCategory=false: Only return levels with no category.
+ * - category=5: Returns levels with category 5.
  */
 export const getLevelsOptions = (options: Options<GetLevelsData>) =>
   queryOptions<GetLevelsResponse, DefaultError, GetLevelsResponse, ReturnType<typeof getLevelsQueryKey>>({
@@ -1667,7 +1821,8 @@ export const getLevelsOptions = (options: Options<GetLevelsData>) =>
     queryKey: getLevelsQueryKey(options),
   })
 
-export const getGuildStatsQueryKey = (options: Options<GetGuildStatsData>) => createQueryKey("getGuildStats", options)
+export const getGuildStatsQueryKey = (options: Options<GetGuildStatsData>) =>
+  createQueryKey("getGuildStats", options, false, ["Guilds.Stats"])
 
 /**
  * Get the statistics of the guild by guild id.
@@ -1694,7 +1849,7 @@ export const getGuildStatsOptions = (options: Options<GetGuildStatsData>) =>
   })
 
 export const getCategoriesPaginatedQueryKey = (options?: Options<GetCategoriesPaginatedData>) =>
-  createQueryKey("getCategoriesPaginated", options)
+  createQueryKey("getCategoriesPaginated", options, false, ["Categories"])
 
 /**
  * Get all categories paginated.
@@ -1762,7 +1917,8 @@ export const getCategoriesPaginatedInfiniteOptions = (options?: Options<GetCateg
     },
   )
 
-export const getCategoryQueryKey = (options: Options<GetCategoryData>) => createQueryKey("getCategory", options)
+export const getCategoryQueryKey = (options: Options<GetCategoryData>) =>
+  createQueryKey("getCategory", options, false, ["Categories"])
 
 /**
  * Get a category.
@@ -1783,7 +1939,8 @@ export const getCategoryOptions = (options: Options<GetCategoryData>) =>
     queryKey: getCategoryQueryKey(options),
   })
 
-export const getCategoriesQueryKey = (options: Options<GetCategoriesData>) => createQueryKey("getCategories", options)
+export const getCategoriesQueryKey = (options: Options<GetCategoriesData>) =>
+  createQueryKey("getCategories", options, false, ["Guilds.Categories"])
 
 /**
  * Get all categories of a guild.
@@ -2126,7 +2283,7 @@ export const postDebugDeleteMemberPointStatsByPlayerIdMutation = (
 }
 
 export const beatLeaderLoginQueryKey = (options?: Options<BeatLeaderLoginData>) =>
-  createQueryKey("beatLeaderLogin", options)
+  createQueryKey("beatLeaderLogin", options, false, ["Auth"])
 
 /**
  * Login with BeatLeader
@@ -2147,7 +2304,8 @@ export const beatLeaderLoginOptions = (options?: Options<BeatLeaderLoginData>) =
     queryKey: beatLeaderLoginQueryKey(options),
   })
 
-export const discordLoginQueryKey = (options?: Options<DiscordLoginData>) => createQueryKey("discordLogin", options)
+export const discordLoginQueryKey = (options?: Options<DiscordLoginData>) =>
+  createQueryKey("discordLogin", options, false, ["Auth"])
 
 /**
  * Login with Discord
@@ -2168,7 +2326,8 @@ export const discordLoginOptions = (options?: Options<DiscordLoginData>) =>
     queryKey: discordLoginQueryKey(options),
   })
 
-export const discordLinkQueryKey = (options?: Options<DiscordLinkData>) => createQueryKey("discordLink", options)
+export const discordLinkQueryKey = (options?: Options<DiscordLinkData>) =>
+  createQueryKey("discordLink", options, false, ["Auth"])
 
 /**
  * Initiate linking Discord from authentication flow.
@@ -2190,7 +2349,7 @@ export const discordLinkOptions = (options?: Options<DiscordLinkData>) =>
   })
 
 export const discordLinkCallbackQueryKey = (options?: Options<DiscordLinkCallbackData>) =>
-  createQueryKey("discordLinkCallback", options)
+  createQueryKey("discordLinkCallback", options, false, ["Auth"])
 
 /**
  * Link Discord account to existing authenticated user.
@@ -2217,7 +2376,7 @@ export const discordLinkCallbackOptions = (options?: Options<DiscordLinkCallback
   })
 
 export const discordLinkCallbackWithRedirectQueryKey = (options: Options<DiscordLinkCallbackWithRedirectData>) =>
-  createQueryKey("discordLinkCallbackWithRedirect", options)
+  createQueryKey("discordLinkCallbackWithRedirect", options, false, ["Auth"])
 
 /**
  * Link Discord account to existing authenticated user with redirect.
@@ -2244,7 +2403,7 @@ export const discordLinkCallbackWithRedirectOptions = (options: Options<DiscordL
   })
 
 export const beatLeaderCallbackQueryKey = (options?: Options<BeatLeaderCallbackData>) =>
-  createQueryKey("beatLeaderCallback", options)
+  createQueryKey("beatLeaderCallback", options, false, ["Auth"])
 
 /**
  * Get session token after authenticating with BeatLeader.
@@ -2271,7 +2430,7 @@ export const beatLeaderCallbackOptions = (options?: Options<BeatLeaderCallbackDa
   })
 
 export const discordCallbackQueryKey = (options?: Options<DiscordCallbackData>) =>
-  createQueryKey("discordCallback", options)
+  createQueryKey("discordCallback", options, false, ["Auth"])
 
 /**
  * Get session token after authenticating with Discord.
@@ -2298,7 +2457,7 @@ export const discordCallbackOptions = (options?: Options<DiscordCallbackData>) =
   })
 
 export const discordCallbackWithRedirectQueryKey = (options: Options<DiscordCallbackWithRedirectData>) =>
-  createQueryKey("discordCallbackWithRedirect", options)
+  createQueryKey("discordCallbackWithRedirect", options, false, ["Auth"])
 
 /**
  * Redirect with session token or error after Discord authentication.
@@ -2325,7 +2484,7 @@ export const discordCallbackWithRedirectOptions = (options: Options<DiscordCallb
   })
 
 export const beatLeaderCallbackWithRedirectQueryKey = (options: Options<BeatLeaderCallbackWithRedirectData>) =>
-  createQueryKey("beatLeaderCallbackWithRedirect", options)
+  createQueryKey("beatLeaderCallbackWithRedirect", options, false, ["Auth"])
 
 /**
  * Redirect with session token or error after BeatLeader authentication.
@@ -2390,7 +2549,7 @@ export const logoutAllMutation = (
 }
 
 export const logoutWithRedirectQueryKey = (options: Options<LogoutWithRedirectData>) =>
-  createQueryKey("logoutWithRedirect", options)
+  createQueryKey("logoutWithRedirect", options, false, ["Auth"])
 
 /**
  * Log out the current user by invalidating their session and redirecting.
@@ -2410,7 +2569,7 @@ export const logoutWithRedirectOptions = (options: Options<LogoutWithRedirectDat
   })
 
 export const logoutAllWithRedirectQueryKey = (options: Options<LogoutAllWithRedirectData>) =>
-  createQueryKey("logoutAllWithRedirect", options)
+  createQueryKey("logoutAllWithRedirect", options, false, ["Auth"])
 
 /**
  * Log out the current user from all sessions by invalidating all their sessions and redirecting.

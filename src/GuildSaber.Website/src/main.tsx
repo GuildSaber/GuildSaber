@@ -1,4 +1,6 @@
 import { ThemeProvider } from "@/components/Theme"
+import { Toaster } from "@/components/ui/sonner"
+import DialogArcViewer from "@/features/maps/components/DialogArcViewer"
 import "@/index.css"
 import "@/lib/client.ts"
 import queryClient from "@/lib/queryClient.ts"
@@ -19,6 +21,8 @@ if (rootElement) {
         <NuqsAdapter>
           <QueryClientProvider client={queryClient}>
             <Router />
+            <DialogArcViewer />
+            <Toaster />
           </QueryClientProvider>
         </NuqsAdapter>
       </ThemeProvider>
