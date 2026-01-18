@@ -119,6 +119,10 @@ import type {
   GetRankedMapResponses,
   GetRankedMapsData,
   GetRankedMapsResponses,
+  GetRankedMapsWithScoresAtMeData,
+  GetRankedMapsWithScoresAtMeResponses,
+  GetRankedMapsWithScoresData,
+  GetRankedMapsWithScoresResponses,
   ImportOldGuildSaberMapsBackgroundData,
   ImportOldGuildSaberMapsBackgroundErrors,
   ImportOldGuildSaberMapsBackgroundResponses,
@@ -301,6 +305,33 @@ export const createRankedMap = <ThrowOnError extends boolean = false>(
       "Content-Type": "application/json",
       ...options.headers,
     },
+  })
+
+/**
+ * Get ranked maps for a context with a player score.
+ *
+ * Get ranked maps for a context by its Id, with optional search and sorting, including the player's best point scores on each map.
+ */
+export const getRankedMapsWithScores = <ThrowOnError extends boolean = false>(
+  options: Options<GetRankedMapsWithScoresData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<GetRankedMapsWithScoresResponses, unknown, ThrowOnError>({
+    url: "/contexts/{contextId}/ranked-maps/with-scores/{playerId}",
+    ...options,
+  })
+
+/**
+ * Get ranked maps for a context with the current player's score.
+ *
+ * Get ranked maps for a context by its Id, with optional search and sorting, including the current player's best point scores on each map.
+ */
+export const getRankedMapsWithScoresAtMe = <ThrowOnError extends boolean = false>(
+  options: Options<GetRankedMapsWithScoresAtMeData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<GetRankedMapsWithScoresAtMeResponses, unknown, ThrowOnError>({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/contexts/{contextId}/ranked-maps/with-scores/@me",
+    ...options,
   })
 
 /**
@@ -638,8 +669,8 @@ export const getCurrentMemberContextStats = <ThrowOnError extends boolean = fals
  * Get all levels in a context, optionally filtered by category.
  *
  * - No parameters: Returns all levels.
- * - hasCategory=false: Returns levels with no category.
- * - category=5: Returns levels in category 5.
+ * - hasCategory=false: Only return levels with no category.
+ * - category=5: Returns levels with category 5.
  */
 export const getLevels = <ThrowOnError extends boolean = false>(options: Options<GetLevelsData, ThrowOnError>) =>
   (options.client ?? client).get<GetLevelsResponses, unknown, ThrowOnError>({

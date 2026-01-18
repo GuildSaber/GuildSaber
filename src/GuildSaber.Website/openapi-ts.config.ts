@@ -9,5 +9,13 @@ export default defineConfig({
     format: "prettier",
     lint: "eslint",
   },
-  plugins: ["@hey-api/client-ky", "@tanstack/react-query"],
+  plugins: [
+    "@hey-api/client-ky",
+    {
+      name: "@tanstack/react-query",
+      queryKeys: {
+        tags: true,
+      },
+    },
+  ],
 })
