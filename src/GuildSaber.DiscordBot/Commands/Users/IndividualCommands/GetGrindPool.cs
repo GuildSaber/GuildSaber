@@ -306,7 +306,7 @@ file static class SearchCommand
                 sb.Clear()
                     .Append(rankedScore.State switch
                     {
-                        _ when rankedScore.State.HasAnyFlag(EState.NonPointGiving) => ":x: ",
+                        _ when rankedScore.State.HasAnyFlag(EState.NonPointGiving & ~EState.Pending) => ":x: ",
                         _ when rankedScore.State.HasAnyFlag(EState.Pending) => ":hourglass: ",
                         _ when rankedScore.State.HasAnyFlag(EState.Selected) => ":white_check_mark: ",
                         _ => string.Empty
