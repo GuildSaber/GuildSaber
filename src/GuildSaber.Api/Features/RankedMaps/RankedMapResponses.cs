@@ -82,6 +82,6 @@ public static class RankedMapResponses
 
     public record RankedMapWithScores(
         RankedMap RankedMap,
-        RankedScoreResponses.RankedScore[] Scores
+        RankedScoreResponses.RankedScore[] RankedScores
     );
 }

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
@@ -11,7 +12,10 @@ namespace GuildSaber.CSharpClient.Routes.RankedMaps;
 /// <summary>
 /// Client for interacting with ranked map endpoints.
 /// </summary>
-public class RankedMapClient(HttpClient httpClient, JsonSerializerOptions jsonOptions)
+public class RankedMapClient(
+    HttpClient httpClient,
+    AuthenticationHeaderValue? authenticationHeader,
+    JsonSerializerOptions jsonOptions)
 {
     private Uri GetRankedMapUrl(
         int contextId, Filters requestFilters,
@@ -19,6 +23,9 @@ public class RankedMapClient(HttpClient httpClient, JsonSerializerOptions jsonOp
         => new(
             $"contexts/{contextId}/ranked-maps?{(requestFilters.Search is null ? "" : $"search={requestFilters.Search}&")}page={requestOptions.Page}" +
             $"&pageSize={requestOptions.PageSize}&order={requestOptions.Order}&sortBy={requestOptions.SortBy}" +
+            $"{(requestFilters.AnyRankedScoreStates is null ? "" : $"&anyRankedScoreStates={requestFilters.AnyRankedScoreStates}")}" +
+            $"{(requestFilters.AllRankedScoreStates is null ? "" : $"&allRankedScoreStates={requestFilters.AllRankedScoreStates}")}" +
+            $"{(requestFilters.ExcludeRankedScoreStates is null ? "" : $"&excludeRankedScoreStates={requestFilters.ExcludeRankedScoreStates}")}" +
             $"{(requestFilters.DifficultyStarFrom is null ? "" : $"&difficultyStarFrom={requestFilters.DifficultyStarFrom}")}" +
             $"{(requestFilters.AccuracyStarFrom is null ? "" : $"&accuracyStarFrom={requestFilters.AccuracyStarFrom}")}" +
             $"{(requestFilters.DifficultyStarTo is null ? "" : $"&difficultyStarTo={requestFilters.DifficultyStarTo}")}" +
@@ -26,7 +33,9 @@ public class RankedMapClient(HttpClient httpClient, JsonSerializerOptions jsonOp
             $"{(requestFilters.DurationSecFrom is null ? "" : $"&durationSecFrom={requestFilters.DurationSecFrom}")}" +
             $"{(requestFilters.DurationSecTo is null ? "" : $"&durationSecTo={requestFilters.DurationSecTo}")}" +
             $"{(requestFilters.BpmFrom is null ? "" : $"&bpmFrom={requestFilters.BpmFrom}")}" +
-            $"{(requestFilters.BpmTo is null ? "" : $"&bpmTo={requestFilters.BpmTo}")}",
+            $"{(requestFilters.BpmTo is null ? "" : $"&bpmTo={requestFilters.BpmTo}")}" +
+            $"{(requestFilters.CategoryIds is null ? "" : $"&categoryIds={string.Join(",", requestFilters.CategoryIds)}")}" +
+            $"&matchAnyCategory={requestFilters.MatchAnyCategory}",
             UriKind.Relative
         );
 
@@ -36,6 +45,9 @@ public class RankedMapClient(HttpClient httpClient, JsonSerializerOptions jsonOp
         => new(
             $"contexts/{contextId}/ranked-maps/with-scores/{(playerId is null ? "@me" : playerId)}?{(requestFilters.Search is null ? "" : $"search={requestFilters.Search}&")}page={requestOptions.Page}" +
             $"&pageSize={requestOptions.PageSize}&order={requestOptions.Order}&sortBy={requestOptions.SortBy}" +
+            $"{(requestFilters.AnyRankedScoreStates is null ? "" : $"&anyRankedScoreStates={requestFilters.AnyRankedScoreStates}")}" +
+            $"{(requestFilters.AllRankedScoreStates is null ? "" : $"&allRankedScoreStates={requestFilters.AllRankedScoreStates}")}" +
+            $"{(requestFilters.ExcludeRankedScoreStates is null ? "" : $"&excludeRankedScoreStates={requestFilters.ExcludeRankedScoreStates}")}" +
             $"{(requestFilters.DifficultyStarFrom is null ? "" : $"&difficultyStarFrom={requestFilters.DifficultyStarFrom}")}" +
             $"{(requestFilters.AccuracyStarFrom is null ? "" : $"&accuracyStarFrom={requestFilters.AccuracyStarFrom}")}" +
             $"{(requestFilters.DifficultyStarTo is null ? "" : $"&difficultyStarTo={requestFilters.DifficultyStarTo}")}" +
@@ -43,7 +55,9 @@ public class RankedMapClient(HttpClient httpClient, JsonSerializerOptions jsonOp
             $"{(requestFilters.DurationSecFrom is null ? "" : $"&durationSecFrom={requestFilters.DurationSecFrom}")}" +
             $"{(requestFilters.DurationSecTo is null ? "" : $"&durationSecTo={requestFilters.DurationSecTo}")}" +
             $"{(requestFilters.BpmFrom is null ? "" : $"&bpmFrom={requestFilters.BpmFrom}")}" +
-            $"{(requestFilters.BpmTo is null ? "" : $"&bpmTo={requestFilters.BpmTo}")}",
+            $"{(requestFilters.BpmTo is null ? "" : $"&bpmTo={requestFilters.BpmTo}")}" +
+            $"{(requestFilters.CategoryIds is null ? "" : $"&categoryIds={string.Join(",", requestFilters.CategoryIds)}")}" +
+            $"&matchAnyCategory={requestFilters.MatchAnyCategory}",
             UriKind.Relative
         );
 
@@ -130,8 +144,11 @@ public class RankedMapClient(HttpClient httpClient, JsonSerializerOptions jsonOp
         Filters requestFilters,
         PaginatedRequestOptions<ERankedMapSorter> requestOptions,
         CancellationToken token = default)
-        => await httpClient.GetAsync(GetRankedMapWithScoreUrl(contextId, null, requestFilters, requestOptions), token)
-                .ConfigureAwait(false) switch
+        => await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get,
+                GetRankedMapWithScoreUrl(contextId, null, requestFilters, requestOptions))
+            {
+                Headers = { Authorization = authenticationHeader }
+            }, token).ConfigureAwait(false) switch
             {
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<PagedList<RankedMapWithScores>>(
@@ -241,7 +258,10 @@ public class RankedMapClient(HttpClient httpClient, JsonSerializerOptions jsonOp
         while (pageOptions.Page <= pageOptions.MaxPage)
         {
             var url = GetRankedMapWithScoreUrl(contextId, null, requestFilters, pageOptions);
-            var response = await httpClient.GetAsync(url).ConfigureAwait(false);
+            var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, url)
+            {
+                Headers = { Authorization = authenticationHeader }
+            }).ConfigureAwait(false);
             pageOptions.Page++;
 
             Result<RankedMapWithScores[]> result;

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Extensions;
+using GuildSaber.Api.Transformers;
 using GuildSaber.Common.Settings;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -18,7 +19,9 @@ public class PlaylistEndpoints : IEndpoints
     public const string GetLevelPlaylistName = "GetLevelPlaylist";
 
     public static void MapEndpoints(IEndpointRouteBuilder endpoints) => endpoints
-        .MapGet("levels/{levelId}/playlist", GetLevelPlaylistAsync)
+        .MapGroup("levels/{levelId}/playlist").WithTag("Levels.Playlists",
+            description: "Endpoints for accessing playlists associated with RankingLevelList levels.")
+        .MapGet("/", GetLevelPlaylistAsync)
         .WithName(GetLevelPlaylistName)
         .WithSummary("Get the playlist for a ranked map list level.")
         .WithDescription("Get the playlist associated with a ranked map list level by its Id.");
