@@ -5,75 +5,6 @@
     "version": "1.0.0"
   },
   "paths": {
-    "/levels/{levelId}/playlist": {
-      "get": {
-        "tags": [
-          "PlaylistEndpoints"
-        ],
-        "summary": "Get the playlist for a ranked map list level.",
-        "description": "Get the playlist associated with a ranked map list level by its Id.",
-        "operationId": "GetLevelPlaylist",
-        "parameters": [
-          {
-            "name": "levelId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
-            }
-          },
-          {
-            "name": "filter",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/PlaylistFilter"
-            }
-          },
-          {
-            "name": "playerId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Playlist"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-                  "title": "Not Found",
-                  "status": 404,
-                  "instance": "GET levels/{levelId}/playlist",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/players/{playerId}/contexts/{contextId}/ranked-scores": {
       "get": {
         "tags": [
@@ -3228,6 +3159,75 @@
                   "items": {
                     "$ref": "#/components/schemas/Level"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/levels/{levelId}/playlist": {
+      "get": {
+        "tags": [
+          "Levels.Playlists"
+        ],
+        "summary": "Get the playlist for a ranked map list level.",
+        "description": "Get the playlist associated with a ranked map list level by its Id.",
+        "operationId": "GetLevelPlaylist",
+        "parameters": [
+          {
+            "name": "levelId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PlaylistFilter"
+            }
+          },
+          {
+            "name": "playerId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Playlist"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET levels/{levelId}/playlist/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
                 }
               }
             }
@@ -7327,9 +7327,6 @@
   },
   "tags": [
     {
-      "name": "PlaylistEndpoints"
-    },
-    {
       "name": "Players.RankedScores",
       "description": "Endpoints for managing players' ranked scores."
     },
@@ -7368,6 +7365,10 @@
     {
       "name": "Context.Levels",
       "description": "Endpoints for managing levels within a context."
+    },
+    {
+      "name": "Levels.Playlists",
+      "description": "Endpoints for accessing playlists associated with RankingLevelList levels."
     },
     {
       "name": "Guilds.Stats",

@@ -44,10 +44,8 @@ public sealed class LevelClient(
         int contextId, int? categoryId, bool hasCategory, CancellationToken cancellationToken = default)
     {
         var url = $"context/{contextId}/levels";
-        if (categoryId.HasValue)
-            url += $"?categoryId={categoryId.Value}";
-
-        url += $"?hasCategory={hasCategory}";
+        if (categoryId.HasValue) url += $"?categoryId={categoryId.Value}&hasCategory={hasCategory}";
+        else url += $"?hasCategory={hasCategory}";
 
         return await httpClient.GetAsync(url, cancellationToken)
                 .ConfigureAwait(false) switch
