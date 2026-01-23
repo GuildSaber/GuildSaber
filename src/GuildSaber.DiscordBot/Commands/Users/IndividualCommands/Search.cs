@@ -20,31 +20,26 @@ public partial class UserModuleSlash
     [SlashCommand("search", "Search ranked maps on the context by a query")]
     public async Task Search(
         [Autocomplete<ContextAutocompleteHandler>] int contextId,
-        [Summary("search", "The search term to find ranked maps")] string search,
-        [Summary("page", "Page number for pagination")] int page = 1,
+        [Summary("Search", "The search term to find ranked maps")] string search,
+        [Summary("Category", "The category to filter by"), Autocomplete<CategoryAutocompleteHandler>] int? categoryId =
+            null,
+        [Summary("Page", "Page number for pagination")] int page = 1,
         [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Visible
     ) => await RespondAsync(ephemeral: displayChoice.ToEphemeral(), components: (await SearchCommand
             .GetRankedMapsComponentAsync(
-                await GetGuildIdAsync(), contextId, new RankedMapRequests.Filters(Search: search),
+                await GetGuildIdAsync(), contextId, new RankedMapRequests.Filters(Search: search.Trim(),
+                    CategoryIds: categoryId is null ? null : [categoryId.Value],
+                    MatchAnyCategory: true),
                 page, Client.Value, Cache, EmojiSettings))
         .Build());
 
-    [ComponentInteraction("search_prev_*_*_*")]
-    public async Task SearchPreviousPage(int contextId, string search, int page)
+    [ComponentInteraction("search_*_*_*_*")]
+    public async Task Search(int contextId, int categoryId, int page, string search)
     {
         var component = (await SearchCommand.GetRankedMapsComponentAsync
-            (await GetGuildIdAsync(), contextId, new RankedMapRequests.Filters(Search: search),
-                page, Client.Value, Cache, EmojiSettings))
-            .Build();
-
-        await ((SocketMessageComponent)Context.Interaction).UpdateAsync(msg => msg.Components = component);
-    }
-
-    [ComponentInteraction("search_next_*_*_*")]
-    public async Task SearchNextPage(int contextId, string search, int page)
-    {
-        var component = (await SearchCommand.GetRankedMapsComponentAsync
-            (await GetGuildIdAsync(), contextId, new RankedMapRequests.Filters(Search: search),
+            (await GetGuildIdAsync(), contextId, new RankedMapRequests.Filters(Search: search,
+                    CategoryIds: categoryId is 0 ? null : [categoryId],
+                    MatchAnyCategory: true),
                 page, Client.Value, Cache, EmojiSettings))
             .Build();
 
@@ -61,9 +56,9 @@ file static class SearchCommand
     {
         var pageOption = new PaginatedRequestOptions<RankedMapRequests.ERankedMapSorter>
         {
-            Page = page,
-            PageSize = 3,
-            MaxPage = 3,
+            Page = Math.Max(1, page),
+            PageSize = 4,
+            MaxPage = int.MaxValue,
             Order = EOrder.Desc,
             SortBy = RankedMapRequests.ERankedMapSorter.Name
         };
@@ -76,7 +71,7 @@ file static class SearchCommand
 
         return !rankedMaps.TryGetValue(out var pagedRankedMaps, out var error)
             ? new ComponentBuilderV2().WithTextDisplay($"Error fetching ranked maps: {error}")
-            : BuildSearchComponent(pagedRankedMaps, categories, contextId, requestFilters, page, emojiSettings);
+            : BuildSearchComponent(pagedRankedMaps, categories, contextId, requestFilters, emojiSettings);
     }
 
     private static ComponentBuilderV2 BuildSearchComponent(
@@ -84,15 +79,16 @@ file static class SearchCommand
         Category[] categories,
         int contextId,
         RankedMapRequests.Filters requestFilters,
-        int page,
         IOptions<EmojiSettings> emojiSettings)
     {
         var builder = new ComponentBuilderV2();
 
         if (pagedRankedMaps.Data.Length == 0)
             return builder.WithTextDisplay(pagedRankedMaps.Page != 1
-                ? $"(Page {pagedRankedMaps.Page}), No ranked maps found for the search term: {requestFilters.Search}.\n" +
-                  "You might want to go back to page 1."
+                ? $"(Page {pagedRankedMaps.Page}), No ranked maps found for the search term: {requestFilters.Search}{
+                    (requestFilters.CategoryIds?.FirstOrDefault() is not (null or 0)
+                        ? " in **" + categories.First(c => c.Id == requestFilters.CategoryIds[0]).Info.Name + "**"
+                        : string.Empty)}.\n" + "You might want to go back to page 1."
                 : $"No ranked maps found for the search term: {requestFilters.Search}.\n***Tips:*** " +
                   "You can also write the __bsr key__, the __mapper name__, the __map hash__, and so on..");
 
@@ -101,36 +97,46 @@ file static class SearchCommand
 
         if (pagedRankedMaps.TotalCount == pagedRankedMaps.Data.Length)
             return builder.WithTextDisplay($"Found **{pagedRankedMaps.TotalCount}** ranked maps" +
-                                           $" for the search term: '{requestFilters.Search}'.");
+                                           $" for the search term: '{requestFilters.Search}'{
+                                               (requestFilters.CategoryIds?.FirstOrDefault() is not (null or 0)
+                                                   ? " in **" + categories.First(c => c.Id == requestFilters.CategoryIds[0]).Info.Name + "**"
+                                                   : string.Empty)}.");
 
         builder.WithTextDisplay($"(Page: **{pagedRankedMaps.Page}**/{pagedRankedMaps.TotalPages}) " +
-                                $"Found **{pagedRankedMaps.TotalCount}** ranked maps for the search term: '{requestFilters.Search}'.");
+                                $"Found **{pagedRankedMaps.TotalCount}** ranked maps for the search term: '{requestFilters.Search}'{
+                                    (requestFilters.CategoryIds?.FirstOrDefault() is not (null or 0)
+                                        ? " in **" + categories.First(c => c.Id == requestFilters.CategoryIds[0]).Info.Name + "**"
+                                        : string.Empty)}.");
 
         builder.WithActionRow(new ActionRowBuilder()
-            .WithButton($"search_prev_{contextId}_{requestFilters.Search}_{page - 1}" switch
-            {
-                { Length: > 100 } => new ButtonBuilder()
-                    .WithLabel("Previous Page (search term too long!)")
-                    .WithStyle(ButtonStyle.Danger)
-                    .WithDisabled(true),
-                var id => new ButtonBuilder()
-                    .WithLabel("Previous Page")
-                    .WithStyle(ButtonStyle.Primary)
-                    .WithCustomId(id)
-                    .WithDisabled(pagedRankedMaps.Page <= 1)
-            })
-            .WithButton($"search_next_{contextId}_{requestFilters.Search}_{page + 1}" switch
-            {
-                { Length: > 100 } => new ButtonBuilder()
-                    .WithLabel("Next Page (search term too long!)")
-                    .WithStyle(ButtonStyle.Danger)
-                    .WithDisabled(true),
-                var id => new ButtonBuilder()
-                    .WithLabel("Next Page")
-                    .WithStyle(ButtonStyle.Primary)
-                    .WithCustomId(id)
-                    .WithDisabled(pagedRankedMaps.Page >= pagedRankedMaps.TotalPages)
-            }));
+            .WithButton(
+                $"search_{contextId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{pagedRankedMaps.Page - 1}_{requestFilters.Search}"
+                    switch
+                    {
+                        { Length: > 100 } => new ButtonBuilder()
+                            .WithLabel("Previous Page (search term too long!)")
+                            .WithStyle(ButtonStyle.Danger)
+                            .WithDisabled(true),
+                        var id => new ButtonBuilder()
+                            .WithLabel("Previous Page")
+                            .WithStyle(ButtonStyle.Primary)
+                            .WithCustomId(id)
+                            .WithDisabled(pagedRankedMaps.Page <= 1)
+                    })
+            .WithButton(
+                $"search_{contextId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{pagedRankedMaps.Page + 1}_{requestFilters.Search}"
+                    switch
+                    {
+                        { Length: > 100 } => new ButtonBuilder()
+                            .WithLabel("Next Page (search term too long!)")
+                            .WithStyle(ButtonStyle.Danger)
+                            .WithDisabled(true),
+                        var id => new ButtonBuilder()
+                            .WithLabel("Next Page")
+                            .WithStyle(ButtonStyle.Primary)
+                            .WithCustomId(id)
+                            .WithDisabled(pagedRankedMaps.Page >= pagedRankedMaps.TotalPages)
+                    }));
 
         return builder;
     }
@@ -146,7 +152,8 @@ file static class SearchCommand
         foreach (var (i, version) in rankedMap.Versions.Index())
         {
             var song = version.Song;
-            if (i > 0) sectionBuilder.WithSeparator();
+            if (i > 0) mapContainerBuilder.WithSeparator();
+            else mapContainerBuilder.WithAccentColor(Color.FromDifficulty(version.Difficulty.Difficulty));
 
             var sb = new StringBuilder()
                 .Append("**[").Append(song.Info.BeatSaverName).Append("](https://beatsaver.com/maps/")
@@ -160,7 +167,7 @@ file static class SearchCommand
             sb.Append("✨: ").Append(rankedMap.Rating.AccStar.ToString("0.00"));
 
             if (rankedMap.Requirements.MinAccuracy is { } minAcc)
-                sb.Append(" (Acc < ").Append(minAcc.ToString("0.##")).Append("%)");
+                sb.Append(" (Acc > ").Append(minAcc.ToString("0.##")).Append("%)");
 
             sb.AppendLine();
 
@@ -215,12 +222,14 @@ file static class SearchCommand
                 sb.Length -= 2;
             }
 
-            sectionBuilder.WithTextDisplay(sb.ToString());
-            mapContainerBuilder.WithAccentColor(Color.FromDifficulty(version.Difficulty.Difficulty));
+            if (i > 0)
+                mapContainerBuilder.WithTextDisplay(sb.ToString());
+            else
+                mapContainerBuilder.WithSection(sectionBuilder
+                    .WithTextDisplay(sb.ToString())
+                    .WithAccessory(new ThumbnailBuilder()
+                        .WithMedia($"https://cdn.beatsaver.com/{rankedMap.Versions[0].Song.Hash}.jpg")));
         }
-
-        mapContainerBuilder.WithSection(sectionBuilder.WithAccessory(new ThumbnailBuilder().WithMedia(
-            $"https://cdn.beatsaver.com/{rankedMap.Versions[0].Song.Hash}.jpg")));
 
         return mapContainerBuilder;
     }
