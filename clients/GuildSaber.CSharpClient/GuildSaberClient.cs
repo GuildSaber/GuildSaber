@@ -143,7 +143,7 @@ public class GuildSaberClient : IDisposable
     /// Gets the ranked map client for interacting with ranked map endpoints.
     /// </summary>
     public RankedMapClient RankedMaps
-        => field ??= new RankedMapClient(HttpClient, _jsonOptions);
+        => field ??= new RankedMapClient(HttpClient, _authenticationHeader, _jsonOptions);
 
     /// <summary>
     /// Gets the playlist client for interacting with playlist endpoints.

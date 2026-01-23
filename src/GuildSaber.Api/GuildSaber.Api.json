@@ -797,6 +797,27 @@
             }
           },
           {
+            "name": "anyRankedScoreStates",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EState"
+            }
+          },
+          {
+            "name": "allRankedScoreStates",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EState"
+            }
+          },
+          {
+            "name": "excludeRankedScoreStates",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EState"
+            }
+          },
+          {
             "name": "difficultyStarFrom",
             "in": "query",
             "schema": {
@@ -1130,6 +1151,27 @@
             }
           },
           {
+            "name": "anyRankedScoreStates",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EState"
+            }
+          },
+          {
+            "name": "allRankedScoreStates",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EState"
+            }
+          },
+          {
+            "name": "excludeRankedScoreStates",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EState"
+            }
+          },
+          {
             "name": "difficultyStarFrom",
             "in": "query",
             "schema": {
@@ -1331,6 +1373,27 @@
             "schema": {
               "type": "boolean",
               "default": true
+            }
+          },
+          {
+            "name": "anyRankedScoreStates",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EState"
+            }
+          },
+          {
+            "name": "allRankedScoreStates",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EState"
+            }
+          },
+          {
+            "name": "excludeRankedScoreStates",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EState"
             }
           },
           {
@@ -4883,7 +4946,8 @@
           "CreationTime",
           "DifficultyStar",
           "AccuracyStar",
-          "Name"
+          "Name",
+          "RankedScoreTime"
         ]
       },
       "ERankedScoreSorter": {
@@ -6619,14 +6683,14 @@
       "RankedMapWithScores": {
         "required": [
           "rankedMap",
-          "scores"
+          "rankedScores"
         ],
         "type": "object",
         "properties": {
           "rankedMap": {
             "$ref": "#/components/schemas/RankedMap"
           },
-          "scores": {
+          "rankedScores": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/RankedScore"

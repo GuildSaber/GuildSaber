@@ -4,14 +4,17 @@ using System.Security.Claims;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Internal;
+using GuildSaber.Api.Features.RankedScores;
 using GuildSaber.Api.Transformers;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using ServerRankedMap = GuildSaber.Database.Models.Server.RankedMaps.RankedMap;
+using ServerRankedScore = GuildSaber.Database.Models.Server.RankedScores.RankedScore;
 using RankedMapId = GuildSaber.Database.Models.Server.RankedMaps.RankedMap.RankedMapId;
 using static GuildSaber.Api.Features.RankedMaps.RankedMapService;
+using static GuildSaber.Api.Features.RankedMaps.RankedMapRequests;
 using static GuildSaber.Api.Features.RankedMaps.RankedMapResponses;
 
 namespace GuildSaber.Api.Features.RankedMaps;
@@ -77,7 +80,7 @@ public class RankedMapEndpoints : IEndpoints
     /// </list>
     /// </remarks>
     public static async Task<IResult> CreateRankedMapAsync(
-        ContextId contextId, RankedMapRequests.CreateRankedMap create, RankedMapService rankedMapService)
+        ContextId contextId, CreateRankedMap create, RankedMapService rankedMapService)
         => await rankedMapService.CreateRankedMap(contextId, create) switch
         {
             CreateResponse.Success(var rankedMap, var song, var songDifficulty, var gameMode) => TypedResults
@@ -115,14 +118,14 @@ public class RankedMapEndpoints : IEndpoints
     private static async Task<Ok<PagedList<RankedMap>>> GetRankedMapsAsync(
         [FromRoute] ContextId contextId,
         ServerDbContext dbContext,
-        [AsParameters] RankedMapRequests.Filters filters,
+        [AsParameters] Filters filters,
         [Range(1, int.MaxValue)] int page = 1,
         [Range(1, 100)] int pageSize = 10,
-        RankedMapRequests.ERankedMapSorter sortBy = RankedMapRequests.ERankedMapSorter.DifficultyStar,
+        ERankedMapSorter sortBy = ERankedMapSorter.DifficultyStar,
         EOrder order = EOrder.Asc)
         => TypedResults.Ok(await dbContext.RankedMaps.AsSplitQuery().Where(x => x.ContextId == contextId)
-            .ApplyFilters(filters)
-            .ApplySortOrder(sortBy, order)
+            .ApplyFilters(filters, null)
+            .ApplySortOrder(sortBy, order, null)
             .Select(RankedMapMappers.MapRankedMapExpression)
             .ToPagedListAsync(page, pageSize));
 
@@ -130,10 +133,10 @@ public class RankedMapEndpoints : IEndpoints
         [FromRoute] ContextId contextId,
         ServerDbContext dbContext,
         ClaimsPrincipal claimsPrincipal,
-        [AsParameters] RankedMapRequests.Filters filters,
+        [AsParameters] Filters filters,
         [Range(1, int.MaxValue)] int page = 1,
         [Range(1, 100)] int pageSize = 10,
-        RankedMapRequests.ERankedMapSorter sortBy = RankedMapRequests.ERankedMapSorter.DifficultyStar,
+        ERankedMapSorter sortBy = ERankedMapSorter.DifficultyStar,
         EOrder order = EOrder.Asc)
         => await GetRankedMapsWithScoreAsync(contextId, claimsPrincipal.GetPlayerId()!.Value, dbContext, filters,
             page, pageSize, sortBy, order);
@@ -142,14 +145,14 @@ public class RankedMapEndpoints : IEndpoints
         [FromRoute] ContextId contextId,
         [FromRoute] PlayerId playerId,
         ServerDbContext dbContext,
-        [AsParameters] RankedMapRequests.Filters filters,
+        [AsParameters] Filters filters,
         [Range(1, int.MaxValue)] int page = 1,
         [Range(1, 100)] int pageSize = 10,
-        RankedMapRequests.ERankedMapSorter sortBy = RankedMapRequests.ERankedMapSorter.DifficultyStar,
+        ERankedMapSorter sortBy = ERankedMapSorter.DifficultyStar,
         EOrder order = EOrder.Asc)
         => TypedResults.Ok(await dbContext.RankedMaps.AsSplitQuery().Where(x => x.ContextId == contextId)
-            .ApplyFilters(filters)
-            .ApplySortOrder(sortBy, order)
+            .ApplyFilters(filters, playerId)
+            .ApplySortOrder(sortBy, order, playerId)
             .Select(RankedMapMappers.MapRankedMapWithScoreExpression(playerId, dbContext))
             .ToPagedListAsync(page, pageSize));
 }
@@ -158,12 +161,44 @@ public static class RankedMapExtensions
 {
     extension(IQueryable<ServerRankedMap> query)
     {
-        public IQueryable<ServerRankedMap> ApplyFilters(RankedMapRequests.Filters filters)
+        public IQueryable<ServerRankedMap> ApplyFilters(Filters filters, PlayerId? playerId)
         {
             if (filters.CategoryIds is { Length: > 0 } categoryIds)
                 query = filters.MatchAnyCategory
                     ? query.Where(x => x.Categories.Any(c => ((IEnumerable<int>)categoryIds).Contains(c.Id)))
                     : query.Where(x => categoryIds.All(id => x.Categories.Any(c => c.Id == id)));
+
+            if (playerId is not null)
+            {
+                if (filters.AnyRankedScoreStates is { } anyRankedScoreStates)
+                {
+                    if (anyRankedScoreStates.HasFlag(RankedScoreResponses.EState.Selected))
+                        query = query.Where(x => x.RankedScores
+                            .Any(rs => rs.PlayerId == playerId && rs.State.HasFlag(ServerRankedScore.EState.Selected)));
+
+                    var stateValue = (ServerRankedScore.EState)anyRankedScoreStates;
+                    query = query.Where(x => x.RankedScores
+                        .Where(rs => rs.PlayerId == playerId && rs.State.HasFlag(ServerRankedScore.EState.Selected))
+                        .All(rs => (rs.State & stateValue) != 0));
+                }
+
+                if (filters.AllRankedScoreStates is { } allRankedScoreStates)
+                {
+                    var stateValue = (ServerRankedScore.EState)allRankedScoreStates;
+                    query = query.Where(x => x.RankedScores.Any(rs =>
+                        rs.PlayerId == playerId
+                        && rs.State.HasFlag(ServerRankedScore.EState.Selected)
+                        && rs.State.HasFlag(stateValue)));
+                }
+
+                if (filters.ExcludeRankedScoreStates is { } excludeRankedScoreStates)
+                {
+                    var stateValue = (ServerRankedScore.EState)excludeRankedScoreStates;
+                    query = query.Where(x => x.RankedScores
+                        .Where(rs => rs.PlayerId == playerId && rs.State.HasFlag(ServerRankedScore.EState.Selected))
+                        .All(rs => (rs.State & stateValue) == 0));
+                }
+            }
 
             if (filters.DifficultyStarFrom is { } difficultyStarFrom)
                 query = query.Where(x => x.Rating.DiffStar >= difficultyStarFrom);
@@ -217,20 +252,25 @@ public static class RankedMapExtensions
                 EF.Functions.ILike(version.Song.Hash, $"%{search}%")));
         }
 
-        public IQueryable<ServerRankedMap> ApplySortOrder(RankedMapRequests.ERankedMapSorter sortBy, EOrder order)
+        public IQueryable<ServerRankedMap> ApplySortOrder(ERankedMapSorter sortBy, EOrder order, PlayerId? playerId)
             => sortBy switch
             {
-                RankedMapRequests.ERankedMapSorter.Id => query.OrderBy(order, x => x.Id),
-                RankedMapRequests.ERankedMapSorter.CreationTime => query.OrderBy(order, x => x.Info.CreatedAt)
+                ERankedMapSorter.Id => query.OrderBy(order, x => x.Id),
+                ERankedMapSorter.CreationTime => query.OrderBy(order, x => x.Info.CreatedAt)
                     .ThenBy(order, x => x.Id),
-                RankedMapRequests.ERankedMapSorter.EditTime => query.OrderBy(order, x => x.Info.EditedAt)
+                ERankedMapSorter.EditTime => query.OrderBy(order, x => x.Info.EditedAt)
                     .ThenBy(order, guild => guild.Id),
-                RankedMapRequests.ERankedMapSorter.DifficultyStar => query.OrderBy(order, x => x.Rating.DiffStar)
+                ERankedMapSorter.DifficultyStar => query.OrderBy(order, x => x.Rating.DiffStar)
                     .ThenBy(order, x => x.Id),
-                RankedMapRequests.ERankedMapSorter.AccuracyStar => query.OrderBy(order, x => x.Rating.AccStar)
+                ERankedMapSorter.AccuracyStar => query.OrderBy(order, x => x.Rating.AccStar)
                     .ThenBy(order, x => x.Id),
-                RankedMapRequests.ERankedMapSorter.Name => query.OrderBy(order, x => x.MapVersions
+                ERankedMapSorter.Name => query.OrderBy(order, x => x.MapVersions
                         .Select(v => v.Song.Info.SongName)
+                        .FirstOrDefault())
+                    .ThenBy(order, x => x.Id),
+                ERankedMapSorter.RankedScoreTime => query.OrderBy(order, x => x.RankedScores
+                        .Where(rs => rs.PlayerId == playerId && rs.State.HasFlag(ServerRankedScore.EState.Selected))
+                        .Select(rs => rs.Score.SetAt)
                         .FirstOrDefault())
                     .ThenBy(order, x => x.Id),
                 _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)

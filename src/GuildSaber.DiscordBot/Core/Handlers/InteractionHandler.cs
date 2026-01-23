@@ -2,6 +2,7 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using GuildSaber.Api.Features.RankedScores;
 using GuildSaber.Common.Settings;
 using GuildSaber.DiscordBot.Core.TypeConverters;
 using Microsoft.Extensions.Options;
@@ -41,6 +42,8 @@ public class InteractionHandler(
     public async Task InitializeAsync()
     {
         commands.AddTypeConverter<GuildId>(new GuildIdTypeConverter());
+        commands.AddTypeConverter<RankedScoreResponses.EState>(new EStateTypeConverter());
+        commands.AddTypeReader<PlayerId>(new PlayerIdTypeReader());
         await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
 
         client.InteractionCreated += HandleInteraction;
