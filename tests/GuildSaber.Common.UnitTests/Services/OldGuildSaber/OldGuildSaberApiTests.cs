@@ -1,6 +1,8 @@
 using AwesomeAssertions;
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.OldGuildSaber;
 using GuildSaber.Common.Services.OldGuildSaber.Models;
+using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 
 namespace GuildSaber.Common.UnitTests.Services.OldGuildSaber;
 
@@ -73,5 +75,25 @@ public class OldGuildSaberApiTests
 
         rankingLevels!.Should()
             .HaveCountGreaterThanOrEqualTo(3, "because guild 1 should have at least 3 ranking categories");
+    }
+
+    [Test]
+    public async Task GetRankedScoreStateAsync_ShouldReturnAllowedState_WhenScoreIsValid()
+    {
+        var beatLeaderId = BeatLeaderId.CreateUnsafe(76561198126131670).Value;
+        var scoreSaberId = ScoreSaberId.CreateUnsafe(76561198126131670).Value;
+        var ssid = 287616;
+        var blid = "d8d091";
+        var unmodifiedScore = 1319764;
+
+        // Act
+        var result = await _oldGuildSaberApi.GetRankedScoreStateAsync(
+            beatLeaderId, scoreSaberId, blid, ssid, unmodifiedScore);
+
+        // Assert
+        if (!result.TryGetValue(out var state, out var error))
+            Assert.Fail(error);
+
+        state.Should().Be(EState.Allowed, "because the score should be valid and allowed");
     }
 }

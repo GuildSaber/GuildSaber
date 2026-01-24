@@ -2,9 +2,11 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.OldGuildSaber.Models;
 using GuildSaber.Common.Services.OldGuildSaber.Models.Responses;
+using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 
 namespace GuildSaber.Common.Services.OldGuildSaber;
 
@@ -156,5 +158,22 @@ public class OldGuildSaberApi(HttpClient httpClient)
                 var response => await Try(() => response.Content
                         .ReadFromJsonAsync<RankingCategory[]>(_jsonOptions))
                     .Map(categories => categories ?? [])
+            };
+
+    public async Task<Result<EState>> GetRankedScoreStateAsync(
+        BeatLeaderId beatLeaderId, ScoreSaberId? scoreSaberId, string? blId, int? ssId, int unmodifiedScore)
+        => await httpClient.GetAsync(
+                new Uri(
+                    $"{ApiLink}rankeddifficultyscores/state/by-identifiable-fields/{beatLeaderId}/{(string.IsNullOrEmpty(blId) ? "0" : blId)}/{unmodifiedScore}" +
+                    $"{(scoreSaberId.HasValue ? $"?scoresaberid={scoreSaberId.Value}" : string.Empty)}" +
+                    $"{(ssId.HasValue ? $"{(scoreSaberId.HasValue ? "&" : "?")}ssid={ssId.Value}" : string.Empty)}",
+                    UriKind.Absolute))
+            switch
+            {
+                { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                    => Failure<EState>(
+                        $"Failed to retrieve ranked score state for BeatLeaderId {beatLeaderId}, BLId {blId}, SSID {ssId}, UnmodifiedScore {unmodifiedScore}: {statusCode} {reasonPhrase}"
+                    ),
+                var response => await Try(() => response.Content.ReadFromJsonAsync<EState>(_jsonOptions))
             };
 }
