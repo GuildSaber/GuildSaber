@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using System.Security.Claims;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Guilds.Members.Pipelines;
@@ -9,17 +10,22 @@ using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Api.Features.RankedMaps.MapVersions;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Transformers;
+using GuildSaber.Common.Helpers;
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.OldGuildSaber;
 using GuildSaber.Common.Services.OldGuildSaber.Models;
+using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Mappers;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.RankedMaps;
+using GuildSaber.Database.Models.Server.RankedScores;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using Point = GuildSaber.Database.Models.Server.Guilds.Points.Point;
 
 namespace GuildSaber.Api.Features.Debug;
 
@@ -90,7 +96,7 @@ public class DebugEndpoints : IEndpoints
             .WithDescription("Recalculates all player scores for the specified player.")
             .RequireManager();
 
-        group.MapPost("delete-member-point-stats/{playerId}", async (PlayerId playerId, ServerDbContext dbContext) =>
+        group.MapPost("/delete-member-point-stats/{playerId}", async (PlayerId playerId, ServerDbContext dbContext) =>
             {
                 await dbContext.MemberPointStats
                     .Where(x => x.PlayerId == playerId)
@@ -99,6 +105,95 @@ public class DebugEndpoints : IEndpoints
             }).WithSummary("Delete all member point stats for a player.")
             .WithDescription("Deletes all member point stats for the specified player. USE WITH CAUTION!")
             .RequireManager();
+
+        group.MapPost("/import-admin-conf-states", ImportAdminConfStatesAtMe)
+            .WithSummary("Import admin confirmation states for the current player from legacy GuildSaber.")
+            .WithDescription("Imports admin confirmation states for all pending ranked scores of the current player" +
+                             " from the legacy GuildSaber system.")
+            .RequireAuthorization();
+    }
+
+    private static async Task<Ok> ImportAdminConfStatesAtMe(
+        ClaimsPrincipal principal,
+        IBackgroundTaskQueue taskQueue,
+        ServerDbContext efContext,
+        IServiceScopeFactory serviceScopeFactory)
+    {
+        var playerId = principal.GetPlayerId()!.Value;
+        var (beatleaderId, scoreSaberId) = await efContext.Players
+            .Where(x => x.Id == playerId)
+            .Select(x => new Tuple<BeatLeaderId, ScoreSaberId?>(
+                x.LinkedAccounts.BeatLeaderId,
+                x.LinkedAccounts.ScoreSaberId))
+            .FirstAsync();
+
+        await taskQueue.QueueBackgroundWorkItemAsync(async token =>
+        {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+            await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
+            var oldGuildSaberApi = scope.ServiceProvider.GetRequiredService<OldGuildSaberApi>();
+
+            var impactedContextPoints = new HashSet<(ContextId, Point.PointId)>();
+            await foreach (var data in dbContext.RankedScores
+                               .Where(x => x.PlayerId == playerId && x.State.HasFlag(RankedScore.EState.Pending))
+                               .Select(x => new
+                               {
+                                   x.Id,
+                                   x.ContextId,
+                                   x.PointId,
+                                   x.Score.BaseScore,
+                                   x.SongDifficulty.BLLeaderboardId,
+                                   x.SongDifficulty.SSLeaderboardId
+                               })
+                               .AsAsyncEnumerable()
+                               .WithCancellation(token))
+            {
+                var result = await oldGuildSaberApi.GetRankedScoreStateAsync(
+                    beatleaderId,
+                    scoreSaberId,
+                    blId: data.BLLeaderboardId,
+                    ssId: data.SSLeaderboardId,
+                    unmodifiedScore: data.BaseScore);
+
+                if (!result.TryGetValue(out var state) || state.HasFlag(EState.NeedConfirmation))
+                    continue;
+
+                if (state.HasAnyFlag(EState.ScoringTeamConfirmed | EState.Allowed))
+                    await dbContext.RankedScores
+                        .Where(x => x.Id == data.Id)
+                        .ExecuteUpdateAsync(x => x.SetProperty(y => y.State,
+                                y => y.State & ~RankedScore.EState.Pending | RankedScore.EState.Confirmed),
+                            cancellationToken: token
+                        );
+                else if (state.HasAnyFlag(EState.ScoringTeamDenied | EState.Denied))
+                    await dbContext.RankedScores
+                        .Where(x => x.Id == data.Id)
+                        .ExecuteUpdateAsync(x => x.SetProperty(y => y.State,
+                                y => y.State & ~RankedScore.EState.Pending | RankedScore.EState.Refused),
+                            cancellationToken: token
+                        );
+                else continue;
+
+                impactedContextPoints.Add((data.ContextId, data.PointId));
+            }
+
+            if (!impactedContextPoints.Any())
+                return;
+
+            var memberPointStatsPipeline = scope.ServiceProvider.GetRequiredService<MemberPointStatsPipeline>();
+            var memberLevelStatsPipeline = scope.ServiceProvider.GetRequiredService<MemberLevelStatsPipeline>();
+
+            foreach (var tuple in impactedContextPoints)
+            {
+                var context = await dbContext.Contexts
+                    .Include(x => x.Points)
+                    .FirstAsync(x => x.Id == tuple.Item1, token);
+
+                await memberPointStatsPipeline.ExecuteAsync(playerId, context);
+                await memberLevelStatsPipeline.ExecuteAsync(playerId, context.GuildId, tuple.Item1, tuple.Item2);
+            }
+        });
+        return TypedResults.Ok();
     }
 
     private static async Task<Ok> RecalculatePlayerScores(

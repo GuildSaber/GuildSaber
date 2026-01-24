@@ -27,17 +27,16 @@ public sealed class PlayerScoresPipeline(
     public async Task RecalculatePlayerScoresAsync(PlayerId playerId, CancellationToken token)
     {
         logger.LogInformation("Recalculating scores for player {PlayerId}", playerId);
-        var count = 0;
-        var contextsWithPoints = new Dictionary<ContextId, Context>();
 
         // Caches might not reflect latest changes, so we clear them first.
         await addOrUpdatePipeline.ClearPlayerCacheAsync(playerId);
-        await foreach (var scoreChunk in dbContext.Scores
+
+        var count = 0;
+        var contextsWithPoints = new Dictionary<ContextId, Context>();
+        await foreach (var score in dbContext.Scores
                            .Where(s => s.PlayerId == playerId)
                            .AsAsyncEnumerable()
-                           .Chunk(100)
                            .WithCancellation(token))
-        foreach (var score in scoreChunk)
         {
             var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(score);
 
