@@ -69,6 +69,7 @@ import {
   type Options,
   patchGuild,
   postDebugDeleteMemberPointStatsByPlayerId,
+  postDebugImportAdminConfStates,
   postDebugImportBeatleaderScoresByPlayerId,
   postDebugImportScoresaberScoresByPlayerId,
   postDebugRecalculateMemberLevelsByPlayerId,
@@ -224,6 +225,7 @@ import type {
   PatchGuildError,
   PatchGuildResponse,
   PostDebugDeleteMemberPointStatsByPlayerIdData,
+  PostDebugImportAdminConfStatesData,
   PostDebugImportBeatleaderScoresByPlayerIdData,
   PostDebugImportBeatleaderScoresByPlayerIdError,
   PostDebugImportScoresaberScoresByPlayerIdData,
@@ -276,33 +278,6 @@ const createQueryKey = <TOptions extends Options>(
   }
   return [params]
 }
-
-export const getLevelPlaylistQueryKey = (options: Options<GetLevelPlaylistData>) =>
-  createQueryKey("getLevelPlaylist", options, false, ["PlaylistEndpoints"])
-
-/**
- * Get the playlist for a ranked map list level.
- *
- * Get the playlist associated with a ranked map list level by its Id.
- */
-export const getLevelPlaylistOptions = (options: Options<GetLevelPlaylistData>) =>
-  queryOptions<
-    GetLevelPlaylistResponse,
-    GetLevelPlaylistError,
-    GetLevelPlaylistResponse,
-    ReturnType<typeof getLevelPlaylistQueryKey>
-  >({
-    queryFn: async ({ queryKey, signal }) => {
-      const { data } = await getLevelPlaylist({
-        ...options,
-        ...queryKey[0],
-        signal,
-        throwOnError: true,
-      })
-      return data
-    },
-    queryKey: getLevelPlaylistQueryKey(options),
-  })
 
 export const getPlayerRankedScoresQueryKey = (options: Options<GetPlayerRankedScoresData>) =>
   createQueryKey("getPlayerRankedScores", options, false, ["Players.RankedScores"])
@@ -1821,6 +1796,33 @@ export const getLevelsOptions = (options: Options<GetLevelsData>) =>
     queryKey: getLevelsQueryKey(options),
   })
 
+export const getLevelPlaylistQueryKey = (options: Options<GetLevelPlaylistData>) =>
+  createQueryKey("getLevelPlaylist", options, false, ["Levels.Playlists"])
+
+/**
+ * Get the playlist for a ranked map list level.
+ *
+ * Get the playlist associated with a ranked map list level by its Id.
+ */
+export const getLevelPlaylistOptions = (options: Options<GetLevelPlaylistData>) =>
+  queryOptions<
+    GetLevelPlaylistResponse,
+    GetLevelPlaylistError,
+    GetLevelPlaylistResponse,
+    ReturnType<typeof getLevelPlaylistQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getLevelPlaylist({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getLevelPlaylistQueryKey(options),
+  })
+
 export const getGuildStatsQueryKey = (options: Options<GetGuildStatsData>) =>
   createQueryKey("getGuildStats", options, false, ["Guilds.Stats"])
 
@@ -2272,6 +2274,27 @@ export const postDebugDeleteMemberPointStatsByPlayerIdMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await postDebugDeleteMemberPointStatsByPlayerId({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Import admin confirmation states for the current player from legacy GuildSaber.
+ *
+ * Imports admin confirmation states for all pending ranked scores of the current player from the legacy GuildSaber system.
+ */
+export const postDebugImportAdminConfStatesMutation = (
+  options?: Partial<Options<PostDebugImportAdminConfStatesData>>,
+): UseMutationOptions<unknown, DefaultError, Options<PostDebugImportAdminConfStatesData>> => {
+  const mutationOptions: UseMutationOptions<unknown, DefaultError, Options<PostDebugImportAdminConfStatesData>> = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await postDebugImportAdminConfStates({
         ...options,
         ...fnOptions,
         throwOnError: true,

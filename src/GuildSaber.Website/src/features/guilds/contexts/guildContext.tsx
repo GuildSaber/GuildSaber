@@ -1,5 +1,5 @@
 import type { GuildExtended } from "@/client"
-import React, { createContext, useContext, type ReactNode } from "react"
+import { createContext, FC, useContext, type ReactNode } from "react"
 
 const GuildContext = createContext<GuildExtended | undefined>(undefined)
 
@@ -8,7 +8,7 @@ interface GuildContextProviderProps {
   children: ReactNode
 }
 
-export const GuildContextProvider: React.FC<GuildContextProviderProps> = ({ guild, children }) => (
+export const GuildContextProvider: FC<GuildContextProviderProps> = ({ guild, children }) => (
   <GuildContext.Provider value={guild}>{children}</GuildContext.Provider>
 )
 

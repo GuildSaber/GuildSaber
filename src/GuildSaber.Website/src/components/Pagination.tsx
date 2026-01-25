@@ -9,6 +9,8 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { cn } from "@/lib/utils"
+import { Loader2 } from "lucide-react"
 import { parseAsInteger, useQueryState } from "nuqs"
 
 type Props = {
@@ -16,28 +18,40 @@ type Props = {
   pageSize?: number
   showEllipsis?: boolean
   maxVisiblePages?: number
+  isLoading?: boolean
 }
 
-const Pagination = ({ totalPages, showEllipsis = true, maxVisiblePages = 5 }: Props) => {
+const Pagination = ({ totalPages, showEllipsis = true, maxVisiblePages = 5, isLoading }: Props) => {
   const [currentPage, setCurrentPage] = useQueryState("page", parseAsInteger.withDefault(1))
+
+  if (totalPages <= 1) {
+    return null
+  }
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page)
+      window.scrollTo({ top: 0, behavior: "smooth" })
     }
   }
 
   const getVisiblePages = () => {
-    if (totalPages <= maxVisiblePages) {
+    const adjustedMax = showEllipsis ? maxVisiblePages + 2 : maxVisiblePages
+
+    if (totalPages <= adjustedMax) {
       return Array.from({ length: totalPages }, (_, i) => i + 1)
     }
 
     const halfVisible = Math.floor(maxVisiblePages / 2)
     let start = Math.max(currentPage - halfVisible, 1)
-    const end = Math.min(start + maxVisiblePages - 1, totalPages)
+    let end = Math.min(start + maxVisiblePages - 1, totalPages)
 
-    if (end - start < maxVisiblePages - 1) {
-      start = Math.max(end - maxVisiblePages + 1, 1)
+    if (start <= 2) {
+      start = 1
+      end = Math.min(adjustedMax, totalPages)
+    } else if (end >= totalPages - 1) {
+      end = totalPages
+      start = Math.max(totalPages - adjustedMax + 1, 1)
     }
 
     return Array.from({ length: end - start + 1 }, (_, i) => start + i)
@@ -48,17 +62,16 @@ const Pagination = ({ totalPages, showEllipsis = true, maxVisiblePages = 5 }: Pr
   const showEndEllipsis = showEllipsis && visiblePages[visiblePages.length - 1] < totalPages
 
   return (
-    <PaginationComponent>
-      <PaginationContent>
+    <PaginationComponent className="sticky bottom-6 md:bottom-3">
+      <PaginationContent className="bg-background rounded-lg border p-[0.2rem]">
         <PaginationItem>
           <PaginationPrevious
-            href="#"
-            onClick={(e) => {
-              e.preventDefault()
+            onClick={() => {
               handlePageChange(currentPage - 1)
             }}
-            aria-disabled={currentPage === 1}
-            className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+            className={cn({
+              "pointer-events-none opacity-50": currentPage === 1 || isLoading,
+            })}
           />
         </PaginationItem>
 
@@ -66,11 +79,13 @@ const Pagination = ({ totalPages, showEllipsis = true, maxVisiblePages = 5 }: Pr
           <>
             <PaginationItem>
               <PaginationLink
-                href="#"
                 onClick={(e) => {
                   e.preventDefault()
                   handlePageChange(1)
                 }}
+                className={cn({
+                  "pointer-events-none": isLoading,
+                })}
               >
                 1
               </PaginationLink>
@@ -84,14 +99,15 @@ const Pagination = ({ totalPages, showEllipsis = true, maxVisiblePages = 5 }: Pr
         {visiblePages.map((page) => (
           <PaginationItem key={page}>
             <PaginationLink
-              href="#"
-              onClick={(e) => {
-                e.preventDefault()
+              onClick={() => {
                 handlePageChange(page)
               }}
               isActive={currentPage === page}
+              className={cn({
+                "pointer-events-none": currentPage === totalPages || isLoading,
+              })}
             >
-              {page}
+              {isLoading && currentPage === page ? <Loader2 className="animate-spin" /> : page}
             </PaginationLink>
           </PaginationItem>
         ))}
@@ -103,11 +119,12 @@ const Pagination = ({ totalPages, showEllipsis = true, maxVisiblePages = 5 }: Pr
             </PaginationItem>
             <PaginationItem>
               <PaginationLink
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault()
+                onClick={() => {
                   handlePageChange(totalPages)
                 }}
+                className={cn({
+                  "pointer-events-none": isLoading,
+                })}
               >
                 {totalPages}
               </PaginationLink>
@@ -117,13 +134,13 @@ const Pagination = ({ totalPages, showEllipsis = true, maxVisiblePages = 5 }: Pr
 
         <PaginationItem>
           <PaginationNext
-            href="#"
-            onClick={(e) => {
-              e.preventDefault()
+            onClick={() => {
               handlePageChange(currentPage + 1)
             }}
             aria-disabled={currentPage === totalPages}
-            className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+            className={cn({
+              "pointer-events-none opacity-50": currentPage === totalPages || isLoading,
+            })}
           />
         </PaginationItem>
       </PaginationContent>

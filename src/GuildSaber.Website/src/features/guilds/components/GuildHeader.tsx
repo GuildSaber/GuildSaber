@@ -7,7 +7,6 @@ import { useSession } from "@/features/auth/hooks/useSession"
 import { decimalToHex, getTextColor } from "@/utils/color"
 import { getCdnUrl } from "@/utils/url"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { colord } from "colord"
 import { toast } from "sonner"
 import { useGuildContext } from "../contexts/guildContext"
 
@@ -47,8 +46,7 @@ const GuildHeader = () => {
   const guildColor = decimalToHex(guild?.guild.info.color)
   const colors = {
     text: getTextColor(guildColor),
-    bg: colord(guildColor).alpha(0.2).toHex(),
-    border: guildColor,
+    bg: guildColor,
   }
 
   return (
@@ -75,11 +73,8 @@ const GuildHeader = () => {
         </div>
 
         <div className="flex items-end justify-between text-right md:flex-col md:justify-start">
-          <div
-            className="rounded p-0.5 px-1 outline"
-            style={{ backgroundColor: colors.bg, outlineColor: colors.border }}
-          >
-            <p className="text-muted-foreground text-lg font-extrabold" style={{ color: getTextColor(guildColor) }}>
+          <div className="rounded p-0.5 px-1" style={{ backgroundColor: colors.bg }}>
+            <p className="text-muted-foreground text-lg font-extrabold" style={{ color: colors.text }}>
               {guild?.guild.info.smallName}
             </p>
           </div>

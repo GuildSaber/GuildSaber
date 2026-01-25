@@ -144,7 +144,14 @@ export type EPlayerSorter = "Id" | "CreationDate"
 
 export type ERankedMapLeaderboardSorter = "Points" | "EffectiveScore"
 
-export type ERankedMapSorter = "Id" | "EditTime" | "CreationTime" | "DifficultyStar" | "AccuracyStar" | "Name"
+export type ERankedMapSorter =
+  | "Id"
+  | "EditTime"
+  | "CreationTime"
+  | "DifficultyStar"
+  | "AccuracyStar"
+  | "Name"
+  | "RankedScoreTime"
 
 export type ERankedScoreSorter = "Points" | "DifficultyStar" | "AccuracyStar" | "Score" | "Accuracy" | "ScoreTime"
 
@@ -553,7 +560,7 @@ export type RankedMapRequirements = {
 
 export type RankedMapWithScores = {
   rankedMap: RankedMap
-  scores: Array<RankedScore>
+  rankedScores: Array<RankedScore>
 }
 
 export type RankedScore = {
@@ -687,36 +694,6 @@ export type UpdateCategory = {
   name?: string
   description?: string
 }
-
-export type GetLevelPlaylistData = {
-  body?: never
-  path: {
-    levelId: number | string
-  }
-  query: {
-    filter: PlaylistFilter
-    playerId?: string
-  }
-  url: "/levels/{levelId}/playlist"
-}
-
-export type GetLevelPlaylistErrors = {
-  /**
-   * Not Found
-   */
-  404: ProblemDetails
-}
-
-export type GetLevelPlaylistError = GetLevelPlaylistErrors[keyof GetLevelPlaylistErrors]
-
-export type GetLevelPlaylistResponses = {
-  /**
-   * OK
-   */
-  200: Playlist
-}
-
-export type GetLevelPlaylistResponse = GetLevelPlaylistResponses[keyof GetLevelPlaylistResponses]
 
 export type GetPlayerRankedScoresData = {
   body?: never
@@ -875,6 +852,9 @@ export type GetRankedMapsData = {
     search?: string
     categoryIds?: Array<number | string>
     matchAnyCategory?: boolean
+    anyRankedScoreStates?: EState
+    allRankedScoreStates?: EState
+    excludeRankedScoreStates?: EState
     difficultyStarFrom?: number | string
     difficultyStarTo?: number | string
     accuracyStarFrom?: number | string
@@ -949,6 +929,9 @@ export type GetRankedMapsWithScoresData = {
     search?: string
     categoryIds?: Array<number | string>
     matchAnyCategory?: boolean
+    anyRankedScoreStates?: EState
+    allRankedScoreStates?: EState
+    excludeRankedScoreStates?: EState
     difficultyStarFrom?: number | string
     difficultyStarTo?: number | string
     accuracyStarFrom?: number | string
@@ -983,6 +966,9 @@ export type GetRankedMapsWithScoresAtMeData = {
     search?: string
     categoryIds?: Array<number | string>
     matchAnyCategory?: boolean
+    anyRankedScoreStates?: EState
+    allRankedScoreStates?: EState
+    excludeRankedScoreStates?: EState
     difficultyStarFrom?: number | string
     difficultyStarTo?: number | string
     accuracyStarFrom?: number | string
@@ -1727,6 +1713,36 @@ export type GetLevelsResponses = {
 
 export type GetLevelsResponse = GetLevelsResponses[keyof GetLevelsResponses]
 
+export type GetLevelPlaylistData = {
+  body?: never
+  path: {
+    levelId: number | string
+  }
+  query: {
+    filter: PlaylistFilter
+    playerId?: string
+  }
+  url: "/levels/{levelId}/playlist"
+}
+
+export type GetLevelPlaylistErrors = {
+  /**
+   * Not Found
+   */
+  404: ProblemDetails
+}
+
+export type GetLevelPlaylistError = GetLevelPlaylistErrors[keyof GetLevelPlaylistErrors]
+
+export type GetLevelPlaylistResponses = {
+  /**
+   * OK
+   */
+  200: Playlist
+}
+
+export type GetLevelPlaylistResponse = GetLevelPlaylistResponses[keyof GetLevelPlaylistResponses]
+
 export type GetGuildStatsData = {
   body?: never
   path: {
@@ -2080,6 +2096,20 @@ export type PostDebugDeleteMemberPointStatsByPlayerIdData = {
 }
 
 export type PostDebugDeleteMemberPointStatsByPlayerIdResponses = {
+  /**
+   * OK
+   */
+  200: unknown
+}
+
+export type PostDebugImportAdminConfStatesData = {
+  body?: never
+  path?: never
+  query?: never
+  url: "/debug/import-admin-conf-states"
+}
+
+export type PostDebugImportAdminConfStatesResponses = {
   /**
    * OK
    */

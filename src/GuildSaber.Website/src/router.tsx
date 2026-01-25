@@ -1,21 +1,32 @@
+import ErrorBoundary from "@/components/ErrorBoundary"
 import Layout from "@/components/Layout"
 import Auth from "@/pages/Auth"
+import NotFound from "@/pages/NotFound"
 import HomeGuild from "@/pages/guilds/Index"
-import { BrowserRouter, Route, Routes } from "react-router"
+import { createBrowserRouter, Outlet, RouterProvider } from "react-router"
 
-const Router = () => (
-  <BrowserRouter>
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Auth />} />
-        <Route path="auth" element={<Auth />} />
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Layout />,
+    children: [
+      {
+        errorElement: <ErrorBoundary />,
+        element: <Outlet />,
+        children: [
+          { index: true, element: <Auth /> },
+          { path: "auth", element: <Auth /> },
+          {
+            path: "guilds",
+            children: [{ path: ":guildId", element: <HomeGuild /> }],
+          },
+          { path: "*", element: <NotFound /> },
+        ],
+      },
+    ],
+  },
+])
 
-        <Route path="/guilds">
-          <Route path=":guildId" element={<HomeGuild />} />
-        </Route>
-      </Route>
-    </Routes>
-  </BrowserRouter>
-)
+const Router = () => <RouterProvider router={router} />
 
 export default Router
