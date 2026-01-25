@@ -1,4 +1,4 @@
-import type { Category } from "@/client"
+import type { Category, EOrder, ERankedMapSorter } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field"
@@ -38,11 +38,11 @@ const GuildMapsFilters = ({ categories }: Props) => {
 
   const debouncedSearch = useDebounceCallback(handleSearchChange, 300)
 
-  const handleOrderChange = (v: string) => {
+  const handleOrderChange = (v: EOrder) => {
     updateFilters({ order: v })
   }
 
-  const handleSortChange = (v: string) => {
+  const handleSortChange = (v: ERankedMapSorter) => {
     updateFilters({ sort: v })
   }
 
@@ -54,7 +54,7 @@ const GuildMapsFilters = ({ categories }: Props) => {
     updateFilters({ bpm: v })
   }
 
-  const handleCategoriesSelect = (categoryId: string) => () => {
+  const handleCategoriesSelect = (categoryId: number) => () => {
     const { categories } = filters
 
     if (categories.includes(categoryId)) {
@@ -150,27 +150,25 @@ const GuildMapsFilters = ({ categories }: Props) => {
 
       <Field>
         <FieldLabel className="flex items-center justify-between">Categories</FieldLabel>
-        <FieldDescription>
-          Only show maps from the following categories
-          <div className="mt-1 flex items-center gap-2">
-            <Checkbox
-              id="matchAnyCategory"
-              checked={filters.matchAnyCategory}
-              onCheckedChange={handleMatchAnyCategoryChange}
-            />
-            <Label htmlFor="matchAnyCategory" className="text-foreground">
-              Match any
-            </Label>
-          </div>
-        </FieldDescription>
+        <FieldDescription>Only show maps from the following categories</FieldDescription>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="matchAnyCategory"
+            checked={filters.matchAnyCategory}
+            onCheckedChange={handleMatchAnyCategoryChange}
+          />
+          <Label htmlFor="matchAnyCategory" className="text-foreground">
+            Match any
+          </Label>
+        </div>
 
         <div className="flex flex-wrap gap-2">
           {categories?.map((category) => {
-            const isSelected = filters.categories.includes(category.id as string)
+            const isSelected = filters.categories.includes(category.id as number)
 
             return (
               <Button
-                onClick={handleCategoriesSelect(category.id as string)}
+                onClick={handleCategoriesSelect(category.id as number)}
                 key={category.id}
                 variant={isSelected ? "default" : "outline"}
                 size="sm"

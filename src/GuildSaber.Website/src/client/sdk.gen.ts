@@ -153,6 +153,8 @@ import type {
   PatchGuildResponses,
   PostDebugDeleteMemberPointStatsByPlayerIdData,
   PostDebugDeleteMemberPointStatsByPlayerIdResponses,
+  PostDebugImportAdminConfStatesData,
+  PostDebugImportAdminConfStatesResponses,
   PostDebugImportBeatleaderScoresByPlayerIdData,
   PostDebugImportBeatleaderScoresByPlayerIdErrors,
   PostDebugImportBeatleaderScoresByPlayerIdResponses,
@@ -191,19 +193,6 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
    */
   meta?: Record<string, unknown>
 }
-
-/**
- * Get the playlist for a ranked map list level.
- *
- * Get the playlist associated with a ranked map list level by its Id.
- */
-export const getLevelPlaylist = <ThrowOnError extends boolean = false>(
-  options: Options<GetLevelPlaylistData, ThrowOnError>,
-) =>
-  (options.client ?? client).get<GetLevelPlaylistResponses, GetLevelPlaylistErrors, ThrowOnError>({
-    url: "/levels/{levelId}/playlist",
-    ...options,
-  })
 
 /**
  * Get all ranked scores of a player paginated
@@ -679,6 +668,19 @@ export const getLevels = <ThrowOnError extends boolean = false>(options: Options
   })
 
 /**
+ * Get the playlist for a ranked map list level.
+ *
+ * Get the playlist associated with a ranked map list level by its Id.
+ */
+export const getLevelPlaylist = <ThrowOnError extends boolean = false>(
+  options: Options<GetLevelPlaylistData, ThrowOnError>,
+) =>
+  (options.client ?? client).get<GetLevelPlaylistResponses, GetLevelPlaylistErrors, ThrowOnError>({
+    url: "/levels/{levelId}/playlist",
+    ...options,
+  })
+
+/**
  * Get the statistics of the guild by guild id.
  *
  * Get the statistics of the guild by guild id.
@@ -927,6 +929,20 @@ export const postDebugDeleteMemberPointStatsByPlayerId = <ThrowOnError extends b
   (options.client ?? client).post<PostDebugDeleteMemberPointStatsByPlayerIdResponses, unknown, ThrowOnError>({
     security: [{ scheme: "bearer", type: "http" }],
     url: "/debug/delete-member-point-stats/{playerId}",
+    ...options,
+  })
+
+/**
+ * Import admin confirmation states for the current player from legacy GuildSaber.
+ *
+ * Imports admin confirmation states for all pending ranked scores of the current player from the legacy GuildSaber system.
+ */
+export const postDebugImportAdminConfStates = <ThrowOnError extends boolean = false>(
+  options?: Options<PostDebugImportAdminConfStatesData, ThrowOnError>,
+) =>
+  (options?.client ?? client).post<PostDebugImportAdminConfStatesResponses, unknown, ThrowOnError>({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/debug/import-admin-conf-states",
     ...options,
   })
 

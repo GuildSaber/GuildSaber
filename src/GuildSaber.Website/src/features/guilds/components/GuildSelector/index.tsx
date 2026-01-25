@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui/button"
-import { ButtonGroup } from "@/components/ui/button-group"
 import { Popover, PopoverTrigger } from "@/components/ui/popover"
 import { Separator } from "@/components/ui/separator"
 import { useSession } from "@/features/auth/hooks/useSession"
@@ -7,20 +5,17 @@ import MenuGuildsSelector from "@/features/guilds/components/GuildSelector/MenuG
 import { useGuildsStore } from "@/features/guilds/stores/guildsStore"
 import { getCdnUrl } from "@/utils/url"
 import { ChevronDown } from "lucide-react"
+import { useNavigate } from "react-router"
 
 const GuildsSelector = () => {
   const { data: session } = useSession()
+  const router = useNavigate()
   const { selectedGuild, setSelectedGuild } = useGuildsStore()
   const displayGuilds = session?.members.slice(0, 2)
 
   const handleSelectGuild = (guildId: number) => () => {
-    if (guildId === selectedGuild) {
-      setSelectedGuild(null)
-
-      return
-    }
-
     setSelectedGuild(guildId)
+    router(`/guilds/${guildId}`)
   }
 
   if (!session) {
@@ -28,12 +23,12 @@ const GuildsSelector = () => {
   }
 
   return (
-    <ButtonGroup>
-      <div className="bg-background dark:bg-input/30 dark:border-input flex h-9 items-center gap-2 rounded-md border px-2 py-1 shadow-xs">
+    <div className="bg-background dark:bg-input/30 flex h-9 items-center rounded-lg border shadow-xs">
+      <div className="flex h-full items-center gap-2 px-1 py-1">
         {session?.members.length > 2 && selectedGuild && (
           <>
             <img className="size-7 rounded-lg" src={getCdnUrl(`guilds/${selectedGuild}/logo.jpg`)} />
-            <Separator orientation="vertical" />
+            <Separator orientation="vertical" className="bg-input" />
           </>
         )}
         {displayGuilds?.map((guild) => (
@@ -46,14 +41,14 @@ const GuildsSelector = () => {
         ))}
       </div>
       <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline" className="px-2!">
-            <ChevronDown />
-          </Button>
+        <PopoverTrigger className="group" asChild>
+          <button className="flex items-center gap-2 px-1 py-1">
+            <ChevronDown className="text-muted-foreground size-5 transition group-data-[state=open]:rotate-180" />
+          </button>
         </PopoverTrigger>
         <MenuGuildsSelector />
       </Popover>
-    </ButtonGroup>
+    </div>
   )
 }
 

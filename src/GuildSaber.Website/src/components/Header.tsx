@@ -4,9 +4,11 @@ import GuildsSelector from "@/features/guilds/components/GuildSelector"
 import { useIsScrolled } from "@/hooks/useIsScrolled"
 import { cn } from "@/lib/utils"
 import { Link } from "react-router"
+import { useMediaQuery } from "usehooks-ts"
 
 const Header = () => {
   const isScrolled = useIsScrolled()
+  const isDesktop = useMediaQuery("(min-width: 28rem)")
   const { data: session } = useSession()
 
   return (
@@ -23,8 +25,10 @@ const Header = () => {
           </div>
         </Link>
 
+        {!isDesktop && <GuildsSelector />}
+
         <section className="flex items-center gap-3">
-          <GuildsSelector />
+          {isDesktop && <GuildsSelector />}
           <Link to="/auth">
             {session ? (
               <img className="size-9 rounded-lg" src={session.player.playerInfo.avatarUrl} />

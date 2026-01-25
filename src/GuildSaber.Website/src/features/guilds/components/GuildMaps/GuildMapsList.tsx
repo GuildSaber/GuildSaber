@@ -1,15 +1,15 @@
-import type { EOrder, ERankedMapSorter } from "@/client"
 import { getRankedMapsOptions } from "@/client/@tanstack/react-query.gen"
 import Pagination from "@/components/Pagination"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import GuildMapRow from "@/features/guilds/components/GuildMaps/GuildMapRow"
+import { Skeleton } from "@/components/ui/skeleton"
+import GuildMapRow, { GuildMapRowSkeleton } from "@/features/guilds/components/GuildMaps/GuildMapRow/index"
 import GuildMapsFilters from "@/features/guilds/components/GuildMaps/GuildMapsFilters"
 import { useGuildContext } from "@/features/guilds/contexts/guildContext"
 import { useGuildMapFilters } from "@/features/guilds/hooks/useGuildMapFilters"
 import { useQuery } from "@tanstack/react-query"
-import { Filter, XCircle } from "lucide-react"
+import { Filter } from "lucide-react"
 import { useMediaQuery } from "usehooks-ts"
 
 const GuildMapsList = () => {
@@ -17,39 +17,32 @@ const GuildMapsList = () => {
   const [filters] = useGuildMapFilters()
   const isDesktop = useMediaQuery("(min-width: 64rem)")
 
-  const { data: maps, isLoading } = useQuery({
+  const {
+    data: maps,
+    isLoading,
+    isFetching,
+  } = useQuery({
     ...getRankedMapsOptions({
       path: {
         contextId: guild?.contexts[0].id as number,
       },
       query: {
-        search: filters.search as string,
-        order: filters.order as EOrder,
-        sortBy: filters.sort as ERankedMapSorter,
-        difficultyStarFrom: filters.stars[0] as number,
-        difficultyStarTo: filters.stars[1] as number,
-        bpmFrom: filters.bpm[0] as number,
-        bpmTo: filters.bpm[1] as number,
-        page: filters.page as number,
-        categoryIds: filters.categories as string[],
-        matchAnyCategory: filters.matchAnyCategory as boolean,
+        search: filters.search,
+        order: filters.order,
+        sortBy: filters.sort,
+        difficultyStarFrom: filters.stars[0],
+        difficultyStarTo: filters.stars[1],
+        bpmFrom: filters.bpm[0],
+        bpmTo: filters.bpm[1],
+        page: filters.page,
+        categoryIds: filters.categories,
+        matchAnyCategory: filters.matchAnyCategory,
       },
     }),
   })
 
-  if (!maps && !isLoading) {
-    return (
-      <Card>
-        <CardContent>
-          <CardTitle>Ranked Maps</CardTitle>
-
-          <div className="my-8 flex flex-col items-center">
-            <XCircle className="text-muted-foreground size-15" />
-            <p className="text-foreground mt-2 text-lg">No maps found</p>
-          </div>
-        </CardContent>
-      </Card>
-    )
+  if (isLoading) {
+    return <LoadingSkeleton />
   }
 
   return (
@@ -86,9 +79,28 @@ const GuildMapsList = () => {
         </div>
       </CardContent>
 
-      <Pagination totalPages={maps?.totalPages as number} />
+      <Pagination maxVisiblePages={isDesktop ? 5 : 1} totalPages={maps?.totalPages as number} isLoading={isFetching} />
     </Card>
   )
 }
+
+const LoadingSkeleton = () => (
+  <Card>
+    <CardContent>
+      <CardTitle>Ranked Maps</CardTitle>
+      <CardDescription className="flex items-center gap-2">
+        <Skeleton className="mt-1 h-3 w-18 rounded-sm" />
+      </CardDescription>
+
+      <div className="divide-y">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i}>
+            <GuildMapRowSkeleton />
+          </div>
+        ))}
+      </div>
+    </CardContent>
+  </Card>
+)
 
 export default GuildMapsList

@@ -5,23 +5,20 @@ import { useSession } from "@/features/auth/hooks/useSession"
 import { useGuildsStore } from "@/features/guilds/stores/guildsStore"
 import { getCdnUrl } from "@/utils/url"
 import { Plus } from "lucide-react"
+import { useNavigate } from "react-router"
 
 const MenuGuildsSelector = () => {
   const { data: session } = useSession()
-  const { selectedGuild, setSelectedGuild } = useGuildsStore()
+  const router = useNavigate()
+  const { setSelectedGuild } = useGuildsStore()
 
   const handleSelectGuild = (guildId: number) => () => {
-    if (guildId === selectedGuild) {
-      setSelectedGuild(null)
-
-      return
-    }
-
     setSelectedGuild(guildId)
+    router(`/guilds/${guildId}`)
   }
 
   return (
-    <PopoverContent align="end" className="w-auto min-w-30 p-0">
+    <PopoverContent sideOffset={10} align="end" className="w-auto min-w-30 p-0">
       {session?.members.map((guild) => (
         <Button
           key={guild.guildId}

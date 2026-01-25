@@ -29,7 +29,7 @@ export const getTextColor = (baseColor: AnyColor) => {
   const hsl = color.toHsl()
 
   if (color.isDark()) {
-    return colord({ h: hsl.h, s: hsl.s * 0.3, l: 90 }).toHex()
+    return colord({ h: hsl.h, s: hsl.s * 0.3, l: 100 }).toHex()
   }
 
   return colord({ h: hsl.h, s: hsl.s * 0.5, l: 20 }).toHex()
