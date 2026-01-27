@@ -1,6 +1,7 @@
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Configurations;
 using GuildSaber.Mod.Extensions;
+using SiraUtil.Logging;
 using Zenject;
 
 namespace GuildSaber.Mod.Installers;
@@ -14,7 +15,13 @@ internal class AppInstaller(PluginConfig config) : Installer
     }
 }
 
-internal class GuildSaberClientFactory(PluginConfig config) : IFactory<GuildSaberClient>
+internal class GuildSaberClientFactory(PluginConfig config, SiraLog logger) : IFactory<GuildSaberClient>
 {
-    public GuildSaberClient Create() => new(config.ApiEnv.ToApiUri, null);
+    public GuildSaberClient Create()
+    {
+        var apiUri = config.ApiEnv.ToApiUri;
+        logger.Debug($"Creating GuildSaberClient for: {apiUri}");
+
+        return new GuildSaberClient(apiUri, authentication: null);
+    }
 }

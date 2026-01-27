@@ -18,7 +18,8 @@ public class Plugin
         var pluginConfig = config.Generated<PluginConfig>();
 
         zenjector.Install<AppInstaller>(Location.App, pluginConfig);
-        zenjector.Install<PlayerCardInstaller>(Location.Menu | Location.Singleplayer);
+        zenjector.Install<ResourcesInstaller>(Location.App, logger);
+        zenjector.Install<PlayerCardInstaller>(Location.Menu);
     }
 
     [OnEnable]

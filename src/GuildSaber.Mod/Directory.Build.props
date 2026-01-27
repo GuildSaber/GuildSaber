@@ -32,4 +32,10 @@
         <DisableZipRelease>true</DisableZipRelease>
     </PropertyGroup>
 
+    <ItemGroup>
+        <OutputCopy Include="$(OutputPath)\*.dll" Exclude="$(OutputPath)\$(TargetFileName)" OutputPath="Libs\%(Filename)%(Extension)" />
+        <OutputCopy Include="$(OutputPath)\$(TargetFileName)" OutputPath="Plugins\$(TargetFileName)" />
+        <OutputCopy Include="$(OutputPath)\$(TargetName).pdb" OutputPath="Plugins\$(TargetName).pdb" />
+    </ItemGroup>
+
 </Project>
