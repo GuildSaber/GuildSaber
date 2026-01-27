@@ -10,7 +10,7 @@ internal class PluginConfig
 {
     public bool Enabled { get; init; } = true;
     public ApiEnv ApiEnv { get; init; } = ApiEnv.Dev;
-    public CardConfig Card { get; init; } = new();
+    public CardConfig PlayerCard { get; init; } = new();
 
     /// <remarks>Useful when you need to find the original value of a parameter</remarks>
     public PluginConfig Default() => new();

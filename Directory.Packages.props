@@ -13,7 +13,7 @@
         <PackageVersion Include="AspNet.Security.OAuth.Discord" Version="10.0.0" />
         <PackageVersion Include="Bogus" Version="35.6.5" />
         <PackageVersion Include="BeatSaberModdingTools.Tasks" Version="2.0.0-beta7" />
-        <PackageVersion Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" />
+        <PackageVersion Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3" />
         <PackageVersion Include="Microsoft.AspNetCore.JsonPatch.SystemTextJson" Version="10.0.2" />
         <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
         <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.2" />
@@ -44,6 +44,7 @@
         <PackageVersion Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
         <PackageVersion Include="System.Net.Http.Json" Version="10.0.2" />
         <PackageVersion Include="System.Text.Json" Version="10.0.2" />
+        <PackageVersion Include="System.ValueTuple" Version="4.6.1" />
         <PackageVersion Include="TUnit" Version="1.11.51" />
         <PackageVersion Include="AwesomeAssertions" Version="9.3.0" />
         <PackageVersion Include="CSharpFunctionalExtensions.AwesomeAssertions" Version="9.3.0" />

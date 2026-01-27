@@ -65,8 +65,8 @@ public sealed class GuildClient(
     /// <param name="discordGuildId">The Discord guild ID to search for.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing the guild if found, or null if not found.</returns>
-    public async Task<Result<Guild?>> GetByDiscordIdAsync(DiscordGuildId discordGuildId,
-                                                          CancellationToken token = default)
+    public async Task<Result<Guild?>> GetByDiscordIdAsync(
+        DiscordGuildId discordGuildId, CancellationToken token = default)
         => await httpClient.GetAsync($"guilds/by-discord-id/{discordGuildId}", token).ConfigureAwait(false) switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<Guild?>(null),
