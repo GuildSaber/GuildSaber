@@ -20,6 +20,8 @@
     <!-- Plugin Dependencies -->
     <ItemGroup>
         <DependsOn Include="BSIPA" Version="^4.2.0" />
+        <DependsOn Include="BS Utils" Version="^1.14.2" />
+        <DependsOs Include="BeatLeader" Version="^0.9.33" />
         <DependsOn Include="ChatPlexSDK_BS" Version="^6.0.0" />
     </ItemGroup>
 

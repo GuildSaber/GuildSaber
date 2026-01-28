@@ -1,5 +1,6 @@
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Configurations;
+using GuildSaber.Mod.Core;
 using GuildSaber.Mod.Extensions;
 using SiraUtil.Logging;
 using Zenject;
@@ -12,6 +13,7 @@ internal class AppInstaller(PluginConfig config) : Installer
     {
         Container.BindInstance(config);
         Container.Bind<GuildSaberClient>().FromFactory<GuildSaberClientFactory>().AsSingle();
+        Container.BindInterfacesAndSelfTo<GuildSaberManager>().AsSingle();
     }
 }
 
