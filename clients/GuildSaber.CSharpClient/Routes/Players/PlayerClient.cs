@@ -48,8 +48,8 @@ public sealed class PlayerClient(
     /// <param name="playerId">The ID of the player to retrieve.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing the extended player info if found, or null if not found.</returns>
-    public async Task<Result<PlayerExtended?>> GetExtendedByIdAsync(PlayerId playerId,
-                                                                    CancellationToken token = default)
+    public async Task<Result<PlayerExtended?>> GetExtendedByIdAsync(
+        PlayerId playerId, CancellationToken token = default)
         => await httpClient.GetAsync($"players/{playerId}/extended", token).ConfigureAwait(false) switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<PlayerExtended?>(null),

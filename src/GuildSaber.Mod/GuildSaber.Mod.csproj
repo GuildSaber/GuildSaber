@@ -69,6 +69,11 @@
             <Private>False</Private>
             <SpecificVersion>False</SpecificVersion>
         </Reference>
+        <Reference Include="BS_Utils">
+            <HintPath>$(BeatSaberDir)\Plugins\BS_Utils.dll</HintPath>
+            <Private>False</Private>
+            <SpecificVersion>False</SpecificVersion>
+        </Reference>
         <Reference Include="ChatPlexSDK_BS">
             <HintPath>$(BeatSaberDir)\Plugins\ChatPlexSDK_BS.dll</HintPath>
             <Private>False</Private>
@@ -104,6 +109,11 @@
         <Reference Include="netstandard">
             <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\netstandard.dll</HintPath>
             <Private>false</Private>
+        </Reference>
+        <Reference Include="PlatformUserModel">
+            <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\PlatformUserModel.dll</HintPath>
+            <Private>False</Private>
+            <SpecificVersion>False</SpecificVersion>
         </Reference>
         <Reference Include="System.Net.Http" />
         <Reference Include="SiraUtil">
@@ -171,6 +181,10 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\clients\GuildSaber.CSharpClient\GuildSaber.CSharpClient.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Core\Common\UI\" />
     </ItemGroup>
 
 </Project>

@@ -1,6 +1,6 @@
 using HMUI;
 
-namespace GuildSaber.Mod.PlayerCard.UI.Settings;
+namespace GuildSaber.Mod.Core.PlayerCard;
 
 public class PlayerCardSettingsCoordinator : FlowCoordinator
 {

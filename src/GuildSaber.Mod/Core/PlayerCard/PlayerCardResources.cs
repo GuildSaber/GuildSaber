@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GuildSaber.Mod.PlayerCard;
+namespace GuildSaber.Mod.Core.PlayerCard;
 
 public record PlayerCardResources(
     Sprite BorderSprite,

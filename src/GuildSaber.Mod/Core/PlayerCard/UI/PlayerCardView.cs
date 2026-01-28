@@ -5,7 +5,7 @@ using SiraUtil.Logging;
 using UnityEngine.UI;
 using Zenject;
 
-namespace GuildSaber.Mod.PlayerCard.UI;
+namespace GuildSaber.Mod.Core.PlayerCard.UI;
 
 internal class PlayerCardView : ViewController<PlayerCardView>
 {
@@ -14,8 +14,7 @@ internal class PlayerCardView : ViewController<PlayerCardView>
 
     protected override void OnViewCreation()
     {
-        _logger.Info(
-            $"Down arrow texture size: {_resources.DownArrowTexture.width}x{_resources.DownArrowTexture.height}");
+        _logger.Info("Creating PlayerCardView UI...");
         XUIVLayout.Make()
             .SetBackground(true)
             .OnReady(x =>
