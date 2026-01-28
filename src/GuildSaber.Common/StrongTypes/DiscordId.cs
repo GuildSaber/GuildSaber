@@ -5,6 +5,7 @@ using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Common.StrongTypes;
 
+[JsonConverter(typeof(DiscordIdJsonConverter))]
 public readonly record struct DiscordId
 {
     private readonly ulong _value;

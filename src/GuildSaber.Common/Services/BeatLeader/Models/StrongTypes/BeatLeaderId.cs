@@ -38,6 +38,18 @@ public readonly record struct BeatLeaderId
     [return: NotNullIfNotNull(nameof(value))]
     public static BeatLeaderId? CreateUnsafe(ulong? value)
         => value is null ? null : new BeatLeaderId(value.Value);
+
+    public static bool TryParse(string? from, out BeatLeaderId value)
+    {
+        if (ulong.TryParse(from, out var id))
+        {
+            value = new BeatLeaderId(id);
+            return true;
+        }
+
+        value = default;
+        return false;
+    }
 }
 
 public class BeatLeaderIdJsonConverter : JsonConverter<BeatLeaderId>

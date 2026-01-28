@@ -57,6 +57,11 @@ public class PlayerEndpoints : IEndpoints
             .WithName("LookupPlayerByDiscordId")
             .WithSummary("Lookup player ID by Discord ID")
             .WithDescription("Resolve a player's ID from their linked Discord account ID.");
+
+        group.MapGet("/lookup/beatleader/{beatleaderId}", LookupPlayerIdByBeatLeaderIdAsync)
+            .WithName("LookupPlayerByBeatLeaderId")
+            .WithSummary("Lookup player ID by BeatLeader ID")
+            .WithDescription("Resolve a player's ID from their linked BeatLeader account ID.");
     }
 
     private static async Task<Results<Ok<Player>, NotFound>> GetPlayerAsync(
@@ -122,6 +127,17 @@ public class PlayerEndpoints : IEndpoints
         DiscordId discordId, ServerDbContext dbContext)
         => await dbContext.Players
                 .Where(x => x.LinkedAccounts.DiscordId == discordId)
+                .Select(x => (PlayerId?)x.Id)
+                .FirstOrDefaultAsync() switch
+            {
+                null => TypedResults.NotFound(),
+                { } playerId => TypedResults.Ok(playerId)
+            };
+
+    private static async Task<Results<Ok<PlayerId>, NotFound>> LookupPlayerIdByBeatLeaderIdAsync(
+        BeatLeaderId beatleaderId, ServerDbContext dbContext)
+        => await dbContext.Players
+                .Where(x => x.LinkedAccounts.BeatLeaderId == beatleaderId)
                 .Select(x => (PlayerId?)x.Id)
                 .FirstOrDefaultAsync() switch
             {

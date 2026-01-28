@@ -5,6 +5,7 @@ using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Internal;
 using GuildSaber.Api.Features.Players;
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using static GuildSaber.Api.Features.Players.PlayerResponses;
 
 namespace GuildSaber.CSharpClient.Routes.Players;
@@ -113,6 +114,24 @@ public sealed class PlayerClient(
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<PlayerId?>(
                     $"Failed to lookup player by Discord ID {discordId}, status code: {(int)statusCode} ({reasonPhrase})"),
+            var response => await Try(() => response.Content
+                .ReadFromJsonAsync<PlayerId?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+        };
+
+    /// <summary>
+    /// Looks up a player's ID by their linked BeatLeader account ID.
+    /// </summary>
+    /// <param name="beatleaderId">The BeatLeader ID to look up.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the player ID if found, or null if not found.</returns>
+    public async Task<Result<PlayerId?>> LookupPlayerIdByBeatLeaderIdAsync(
+        BeatLeaderId beatleaderId, CancellationToken token = default)
+        => await httpClient.GetAsync($"players/lookup/beatleader/{beatleaderId}", token).ConfigureAwait(false) switch
+        {
+            { StatusCode: HttpStatusCode.NotFound } => Success<PlayerId?>(null),
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<PlayerId?>(
+                    $"Failed to lookup player by BeatLeader ID {beatleaderId}, status code: {(int)statusCode} ({reasonPhrase})"),
             var response => await Try(() => response.Content
                 .ReadFromJsonAsync<PlayerId?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
         };

@@ -1846,6 +1846,55 @@
         }
       }
     },
+    "/players/lookup/beatleader/{beatleaderId}": {
+      "get": {
+        "tags": [
+          "Players"
+        ],
+        "summary": "Lookup player ID by BeatLeader ID",
+        "description": "Resolve a player's ID from their linked BeatLeader account ID.",
+        "operationId": "LookupPlayerByBeatLeaderId",
+        "parameters": [
+          {
+            "name": "beatleaderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerId"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET players/lookup/beatleader/{beatleaderId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/contexts/{contextId}/points/{pointId}/ranked-maps/{rankedMapId}/leaderboard": {
       "get": {
         "tags": [

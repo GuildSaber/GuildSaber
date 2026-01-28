@@ -268,7 +268,9 @@ OpenApiTypeTransformer.MapType<GuildId>(new OpenApiSchema { Type = JsonSchemaTyp
 OpenApiTypeTransformer.MapType<ContextId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
 OpenApiTypeTransformer.MapType<PlayerId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
 OpenApiTypeTransformer.MapType<DiscordId>(new OpenApiSchema
-    { Type = JsonSchemaType.String, Example = "123456789012345678" });
+    { Type = JsonSchemaType.String, Example = "123456789012345678", Format = "int64" });
+OpenApiTypeTransformer.MapType<BeatLeaderId>(new OpenApiSchema
+    { Type = JsonSchemaType.String, Format = "int64", Example = "123456789012345678" });
 OpenApiTypeTransformer.MapType<DiscordGuildId>(new OpenApiSchema
     { Type = JsonSchemaType.String, Example = "987654321098765432" });
 OpenApiTypeTransformer.MapType<BeatSaverKey>(new OpenApiSchema { Type = JsonSchemaType.String, Example = "a3c3" });
