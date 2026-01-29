@@ -35,6 +35,9 @@ public class ImportLegacyGuildSaberAdminConfirmationWorker(
 
         var pipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
         foreach (var playerId in playerIds)
-            await pipeline.ImportLegacyGuildSaberAdminConfirmationAsync(playerId, token);
+        {
+            var importedAny = await pipeline.ImportLegacyGuildSaberAdminConfirmationAsync(playerId, token);
+            if (importedAny) await pipeline.RecalculatePlayerScoresAsync(playerId, token);
+        }
     });
 }
