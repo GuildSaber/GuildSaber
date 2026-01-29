@@ -1,10 +1,9 @@
 using System.Diagnostics;
 using CSharpFunctionalExtensions;
-using GuildSaber.Api.Features.Players.Pipelines;
+using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
-using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds;
@@ -99,16 +98,14 @@ public class MemberService(
                     if (member.JoinState == Member.EJoinState.Requested)
                         return new Requested(member);
 
+                    Trace.Assert(member.JoinState == Member.EJoinState.Joined);
                     await taskQueue.QueueBackgroundWorkItemAsync(async token =>
                     {
-                        await using var scope = serviceScopeFactory.CreateAsyncScope();
-                        var playerScopePipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
-
-                        // Since all scores are stored by default on ScoreAddOrUpdate pipeline, we don't need to re-import scores here.
-                        await playerScopePipeline.RecalculatePlayerScoresAsync(member.PlayerId, token);
+                        using var scope = serviceScopeFactory.CreateScope();
+                        await scope.ServiceProvider.GetRequiredService<MemberJoinPipeline>()
+                            .ExecuteAsync(member.PlayerId, token);
                     });
 
-                    Trace.Assert(member.JoinState == Member.EJoinState.Joined);
                     return new Success(member);
                 },
                 Task.FromResult

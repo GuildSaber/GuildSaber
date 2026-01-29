@@ -247,8 +247,15 @@ builder.Services.AddTransient<ScoreAddOrUpdatePipeline>();
 builder.Services.AddTransient<PlayerScoresPipeline>();
 builder.Services.AddTransient<MemberPointStatsPipeline>();
 builder.Services.AddTransient<MemberLevelStatsPipeline>();
+builder.Services.AddTransient<MemberJoinPipeline>();
 builder.Services.AddHostedService<BLScoreSyncWorker>();
 builder.Services.AddHostedService<QueueProcessingService>();
+builder.Services.AddHostedService<ImportLegacyGuildSaberAdminConfirmationWorker>(provider =>
+    new ImportLegacyGuildSaberAdminConfirmationWorker(
+        new PeriodicTimer(TimeSpan.FromDays(1)),
+        provider.GetRequiredService<IBackgroundTaskQueue>(),
+        provider.GetRequiredService<IServiceScopeFactory>(),
+        provider.GetRequiredService<ILogger<ImportLegacyGuildSaberAdminConfirmationWorker>>()));
 builder.Services.AddSingleton<IBackgroundTaskQueue>(_ => new BackgroundTaskQueue(capacity: 100));
 
 #endregion

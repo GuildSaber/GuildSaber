@@ -250,7 +250,7 @@ file static class SearchCommand
             sb.AppendLine()
                 .Append("NJS: ").Append(version.Difficulty.Stats.NJS.ToString("0.##")).Append(" | ")
                 .Append("Length: ")
-                .Append(TimeSpan.FromSeconds(version.Difficulty.Stats.Duration) switch
+                .Append(TimeSpan.FromSeconds(version.Song.Stats.DurationSec) switch
                 {
                     { Hours: > 0 } ts => ts.ToString(@"hh\:mm\:ss"),
                     var ts => ts.ToString(@"mm\:ss")

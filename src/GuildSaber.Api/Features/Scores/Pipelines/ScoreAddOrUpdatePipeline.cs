@@ -48,7 +48,7 @@ public sealed class ScoreAddOrUpdatePipeline(
         => dbContext.BeatLeaderScores.FirstOrDefault(x =>
             x.PlayerId == playerId
             && x.SongDifficultyId == songDifficultyId
-            && x.SetAt - setAt < TimeSpan.FromSeconds(30)
+            && x.SetAt - setAt < TimeSpan.FromSeconds(2)
             && x.BaseScore == baseScore));
 
     private static readonly Func<ServerDbContext, PlayerId, SongDifficultyId, DateTimeOffset, BaseScore,
@@ -59,7 +59,7 @@ public sealed class ScoreAddOrUpdatePipeline(
         => dbContext.ScoreSaberScores.FirstOrDefault(x =>
             x.PlayerId == playerId
             && x.SongDifficultyId == songDifficultyId
-            && x.SetAt - setAt < TimeSpan.FromSeconds(30)
+            && x.SetAt - setAt < TimeSpan.FromSeconds(2)
             && x.BaseScore == baseScore));
 
     private record ScoreRankingContext(

@@ -10,22 +10,17 @@ using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Api.Features.RankedMaps.MapVersions;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Transformers;
-using GuildSaber.Common.Helpers;
-using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.OldGuildSaber;
 using GuildSaber.Common.Services.OldGuildSaber.Models;
-using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Mappers;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.RankedMaps;
-using GuildSaber.Database.Models.Server.RankedScores;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
-using Point = GuildSaber.Database.Models.Server.Guilds.Points.Point;
 
 namespace GuildSaber.Api.Features.Debug;
 
@@ -120,79 +115,13 @@ public class DebugEndpoints : IEndpoints
         IServiceScopeFactory serviceScopeFactory)
     {
         var playerId = principal.GetPlayerId()!.Value;
-        var (beatleaderId, scoreSaberId) = await efContext.Players
-            .Where(x => x.Id == playerId)
-            .Select(x => new Tuple<BeatLeaderId, ScoreSaberId?>(
-                x.LinkedAccounts.BeatLeaderId,
-                x.LinkedAccounts.ScoreSaberId))
-            .FirstAsync();
-
         await taskQueue.QueueBackgroundWorkItemAsync(async token =>
         {
             await using var scope = serviceScopeFactory.CreateAsyncScope();
-            await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
-            var oldGuildSaberApi = scope.ServiceProvider.GetRequiredService<OldGuildSaberApi>();
-
-            var impactedContextPoints = new HashSet<(ContextId, Point.PointId)>();
-            await foreach (var data in dbContext.RankedScores
-                               .Where(x => x.PlayerId == playerId && x.State.HasFlag(RankedScore.EState.Pending))
-                               .Select(x => new
-                               {
-                                   x.Id,
-                                   x.ContextId,
-                                   x.PointId,
-                                   x.Score.BaseScore,
-                                   x.SongDifficulty.BLLeaderboardId,
-                                   x.SongDifficulty.SSLeaderboardId
-                               })
-                               .AsAsyncEnumerable()
-                               .WithCancellation(token))
-            {
-                var result = await oldGuildSaberApi.GetRankedScoreStateAsync(
-                    beatleaderId,
-                    scoreSaberId,
-                    blId: data.BLLeaderboardId,
-                    ssId: data.SSLeaderboardId,
-                    unmodifiedScore: data.BaseScore);
-
-                if (!result.TryGetValue(out var state) || state.HasFlag(EState.NeedConfirmation))
-                    continue;
-
-                if (state.HasAnyFlag(EState.ScoringTeamConfirmed | EState.Allowed))
-                    await dbContext.RankedScores
-                        .Where(x => x.Id == data.Id)
-                        .ExecuteUpdateAsync(x => x.SetProperty(y => y.State,
-                                y => y.State & ~RankedScore.EState.Pending | RankedScore.EState.Confirmed),
-                            cancellationToken: token
-                        );
-                else if (state.HasAnyFlag(EState.ScoringTeamDenied | EState.Denied))
-                    await dbContext.RankedScores
-                        .Where(x => x.Id == data.Id)
-                        .ExecuteUpdateAsync(x => x.SetProperty(y => y.State,
-                                y => y.State & ~RankedScore.EState.Pending | RankedScore.EState.Refused),
-                            cancellationToken: token
-                        );
-                else continue;
-
-                impactedContextPoints.Add((data.ContextId, data.PointId));
-            }
-
-            if (!impactedContextPoints.Any())
-                return;
-
-            var memberPointStatsPipeline = scope.ServiceProvider.GetRequiredService<MemberPointStatsPipeline>();
-            var memberLevelStatsPipeline = scope.ServiceProvider.GetRequiredService<MemberLevelStatsPipeline>();
-
-            foreach (var tuple in impactedContextPoints)
-            {
-                var context = await dbContext.Contexts
-                    .Include(x => x.Points)
-                    .FirstAsync(x => x.Id == tuple.Item1, token);
-
-                await memberPointStatsPipeline.ExecuteAsync(playerId, context);
-                await memberLevelStatsPipeline.ExecuteAsync(playerId, context.GuildId, tuple.Item1, tuple.Item2);
-            }
+            await scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>()
+                .ImportLegacyGuildSaberAdminConfirmationAsync(playerId, token);
         });
+
         return TypedResults.Ok();
     }
 
@@ -229,7 +158,8 @@ public class DebugEndpoints : IEndpoints
             await using var scope = serviceScopeFactory.CreateAsyncScope();
             var memberPointStatsPipeline = scope.ServiceProvider.GetRequiredService<MemberPointStatsPipeline>();
 
-            foreach (var context in contextsWithPoints) await memberPointStatsPipeline.ExecuteAsync(playerId, context);
+            foreach (var context in contextsWithPoints)
+                await memberPointStatsPipeline.ExecuteAsync(playerId, context);
         });
 
         return TypedResults.Ok();
@@ -583,7 +513,8 @@ public class DebugEndpoints : IEndpoints
     }
 
     private static Expression<Func<RankedMap, bool>> MapDifficultyIsAlreadyRankedOnGuild(
-        GuildId guildId, EDifficulty difficulty, BeatSaverKey beatSaverKey, string gameMode, ServerDbContext dbContext)
+        GuildId guildId, EDifficulty difficulty, BeatSaverKey beatSaverKey, string gameMode,
+        ServerDbContext dbContext)
         => rankedMap => rankedMap.GuildId == guildId && rankedMap.MapVersions.Any(y =>
             y.SongDifficulty.GameMode.Name.Contains(gameMode)
             && y.SongDifficulty.Difficulty == difficulty
