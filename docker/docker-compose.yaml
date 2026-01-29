@@ -101,6 +101,7 @@ services:
         condition: "service_completed_successfully"
     networks:
       - "aspire"
+      - "dokploy"
     restart: "unless-stopped"
   discord-bot:
     image: "${DISCORD_BOT_IMAGE}"
@@ -146,6 +147,9 @@ services:
 networks:
   aspire:
     driver: "bridge"
+  dokploy:
+    external: true
+    name: "dokploy-network"
 volumes:
   guildsaber.apphost-edbb947576-postgres-data:
     driver: "local"
