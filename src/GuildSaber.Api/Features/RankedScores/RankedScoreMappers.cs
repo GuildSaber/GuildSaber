@@ -116,7 +116,8 @@ public static class RankedScoreMappers
                 RankedScore.EState.Confirmed => RankedScoreResponses.EState.Confirmed,
                 RankedScore.EState.Refused => RankedScoreResponses.EState.Refused,
                 // On purpose, because it will construct with each flag separately.
-                RankedScore.EState.NonPointGiving => RankedScoreResponses.EState.None,
+                RankedScore.EState.NonPointGiving or RankedScore.EState.NonPointGivingNoPending
+                    => RankedScoreResponses.EState.None,
                 _ => throw new ArgumentOutOfRangeException(nameof(flag), flag, null)
             })
             .Aggregate(RankedScoreResponses.EState.None, (acc, mapped) => acc | mapped);

@@ -9,7 +9,6 @@ using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Transformers;
-using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Options;

@@ -53,10 +53,10 @@ public class RankedScore : IComparable<RankedScore>
     {
         // Surely this score is better than a non-existing one.
         null => 1,
-        { State: var otherState } => ((State & EState.NonPointGiving) == 0) switch
+        { State: var otherState } => ((State & EState.NonPointGivingNoPending) == 0) switch
         {
             // State & otherState don't have any non-allowed flags.
-            true when (otherState & EState.NonPointGiving) == 0 =>
+            true when (otherState & EState.NonPointGivingNoPending) == 0 =>
                 RawPoints.CompareTo(other.RawPoints) switch
                 {
                     0 => EffectiveScore.CompareTo(other.EffectiveScore) switch
@@ -69,7 +69,7 @@ public class RankedScore : IComparable<RankedScore>
             // Other state has non-allowed flag(s) when State doesn't.
             true => 1,
             // Other state doesn't have non-allowed flag(s) while State has.
-            false when (otherState & EState.NonPointGiving) == 0 => -1,
+            false when (otherState & EState.NonPointGivingNoPending) == 0 => -1,
             // State and Other state have non-allowed flag(s).
             false => RawPoints.CompareTo(other.RawPoints) switch
             {
@@ -135,7 +135,8 @@ public class RankedScore : IComparable<RankedScore>
         Refused = 1 << 5,
 
         //Note for future me: Should auto-confirmed be its own state? Or just Confirmed.
-        NonPointGiving = None | Denied | Removed | Pending | Refused
+        NonPointGiving = None | Denied | Removed | Pending | Refused,
+        NonPointGivingNoPending = None | Denied | Removed | Refused
     }
 
     /// <summary>

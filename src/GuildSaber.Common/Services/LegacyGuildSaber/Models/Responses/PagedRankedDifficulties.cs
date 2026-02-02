@@ -1,6 +1,6 @@
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 
-namespace GuildSaber.Common.Services.OldGuildSaber.Models.Responses;
+namespace GuildSaber.Common.Services.LegacyGuildSaber.Models.Responses;
 
 public class PagedRankedDifficulties
 {
@@ -32,8 +32,8 @@ public class PagedRankedDifficulties
         public required EDifficulty BeatSaverDifficultyValue { get; init; }
         public required string BeatSaverDifficultyName { get; init; }
         public required int DifficultyId { get; init; }
-        public required int LevelId { get; init; }
-        public required int? GuildCategoryId { get; init; }
+        public required RankingLevel.LegacyLevelId LevelId { get; init; }
+        public required RankingCategory.LegacyCategoryId? GuildCategoryId { get; init; }
         public required int MaxScore { get; init; }
         public required float NoteJumpSpeed { get; init; }
         public required int NoteCount { get; init; }

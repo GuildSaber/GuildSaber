@@ -1,4 +1,4 @@
-namespace GuildSaber.Common.Services.OldGuildSaber.Models;
+namespace GuildSaber.Common.Services.LegacyGuildSaber.Models;
 
 public enum RankedMapsSortBy
 {

@@ -45,7 +45,7 @@ public static class PlaylistMappers
             .Where(map => !map.RankedScores.Any(score =>
                 score.PlayerId == playerId
                 && score.State.HasFlag(RankedScore.EState.Selected)
-                && ((int)score.State & (int)RankedScore.EState.NonPointGiving & ~(int)RankedScore.EState.Pending) == 0))
+                && ((int)score.State & (int)RankedScore.EState.NonPointGivingNoPending) == 0))
             .SelectMany(map => map.MapVersions)
             .Select(version => new PlaylistResponses.PlaylistSong(
                 Hash: version.Song.Hash,

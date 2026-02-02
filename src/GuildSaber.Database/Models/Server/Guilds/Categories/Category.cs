@@ -8,7 +8,7 @@ public class Category
 {
     public CategoryId Id { get; init; }
     public GuildId GuildId { get; init; }
-    public CategoryInfo Info { get; init; }
+    public CategoryInfo Info { get; set; }
 
     public readonly record struct CategoryId(int Value) : IEFStrongTypedId<CategoryId, int>
     {

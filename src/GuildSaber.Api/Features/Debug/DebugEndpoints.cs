@@ -1,24 +1,12 @@
-using System.Drawing;
-using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Guilds.Members.Pipelines;
+using GuildSaber.Api.Features.LegacyGS.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
-using GuildSaber.Api.Features.RankedMaps;
-using GuildSaber.Api.Features.RankedMaps.MapVersions;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Transformers;
-using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
-using GuildSaber.Common.Services.OldGuildSaber;
-using GuildSaber.Common.Services.OldGuildSaber.Models;
 using GuildSaber.Database.Contexts.Server;
-using GuildSaber.Database.Models.Mappers;
-using GuildSaber.Database.Models.Server.Guilds.Categories;
-using GuildSaber.Database.Models.Server.Guilds.Levels;
-using GuildSaber.Database.Models.Server.RankedMaps;
-using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
@@ -118,8 +106,8 @@ public class DebugEndpoints : IEndpoints
         await taskQueue.QueueBackgroundWorkItemAsync(async token =>
         {
             await using var scope = serviceScopeFactory.CreateAsyncScope();
-            await scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>()
-                .ImportLegacyGuildSaberAdminConfirmationAsync(playerId, token);
+            await scope.ServiceProvider.GetRequiredService<LegacyGSImportAdminConfPipeline>()
+                .ExecuteAsync(playerId, token);
         });
 
         return TypedResults.Ok();
@@ -264,6 +252,7 @@ public class DebugEndpoints : IEndpoints
         if (!await dbContext.Contexts.AnyAsync(x => x.Id == guildId && x.GuildId == guildId, cancellationToken))
             return TypedResults.NotFound($"Guild context for guild {guildId} not found.");
 
+        // Yes, we have the assumption that ContextId == GuildId for guild contexts here.
         var contextId = new ContextId(guildId);
 
         await taskQueue.QueueBackgroundWorkItemAsync(async token =>
@@ -271,252 +260,12 @@ public class DebugEndpoints : IEndpoints
             logger.LogInformation("Starting import of old GuildSaber maps for guild {GuildId}", guildId);
 
             await using var scope = serviceScopeFactory.CreateAsyncScope();
-            var scopedDbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
-            var oldGuildSaberApi = scope.ServiceProvider.GetRequiredService<OldGuildSaberApi>();
-            var rankedMapService = scope.ServiceProvider.GetRequiredService<RankedMapService>();
-            var scopedLogger = scope.ServiceProvider.GetRequiredService<ILogger<DebugEndpoints>>();
-
-            await foreach (var success in ImportOldGuildSaberMapsStream(
-                               guildId, contextId, page, count, scopedDbContext, oldGuildSaberApi, rankedMapService,
-                               scopedLogger, token))
-                scopedLogger.LogInformation(success.RankedMap
-                    .Map(success.Song, success.SongDifficulty, success.GameMode)
-                    .ToString());
+            await scope.ServiceProvider.GetRequiredService<LegacyGuildSaberMapImportPipeline>()
+                .ExecuteAsync(guildId, contextId, token);
 
             logger.LogInformation("Completed import of old GuildSaber maps for guild {GuildId}", guildId);
         });
 
         return TypedResults.Accepted((string?)null);
     }
-
-    public static async IAsyncEnumerable<RankedMapService.CreateResponse.Success> ImportOldGuildSaberMapsStream(
-        GuildId guildId,
-        ContextId contextId,
-        int page,
-        int count,
-        ServerDbContext dbContext,
-        OldGuildSaberApi oldGuildSaberApi,
-        RankedMapService rankedMapService,
-        ILogger logger,
-        [EnumeratorCancellation] CancellationToken token)
-    {
-        const int pageSize = 10;
-        var request = new OldGuildSaberApi.PaginatedRequestOptions<RankedMapsSortBy>
-        {
-            Page = page,
-            PageSize = pageSize,
-            MaxPage = count / pageSize,
-            SortBy = RankedMapsSortBy.EditedTime,
-            Reverse = true
-        };
-
-        var categories = await dbContext.Categories.Where(x => x.GuildId == guildId).ToListAsync(token);
-        var levels = await dbContext.Levels
-            .OfType<RankedMapListLevel>()
-            .Where(x => x.GuildId == guildId && x.ContextId == contextId)
-            .ToListAsync(token);
-        if (!(await oldGuildSaberApi.GetRankingLevelsAsync(guildId.Value)).TryGetValue(out var guildRankingLevels))
-            yield break;
-
-        if (!(await oldGuildSaberApi.GetRankingCategoriesAsync(guildId.Value)).TryGetValue(out var oldCategories))
-            yield break;
-
-        foreach (var oldCategory in oldCategories)
-        {
-            if (categories.Any(x => x.Info.Name == oldCategory.Name))
-                continue;
-
-            var newCategory = new Category
-            {
-                GuildId = guildId,
-                Info = new CategoryInfo
-                {
-                    Name = Name_2_50.CreateUnsafe(oldCategory.Name).Value,
-                    Description = Description.CreateUnsafe(oldCategory.Description).Value
-                }
-            };
-            dbContext.Categories.Add(newCategory);
-            categories.Add(newCategory);
-        }
-
-        await dbContext.SaveChangesAsync(token);
-        dbContext.ChangeTracker.Clear();
-
-        var categoryDict = oldCategories
-            .Join(categories, o => o.Name, n => n.Info.Name, (o, n) => (Old: o, New: n))
-            .ToDictionary(x => x.Old.Id, x => x.New);
-
-        var levelDict = new Dictionary<(int, int), (RankedMapListLevel, float)>();
-        foreach (var oldLevel in guildRankingLevels.OrderBy(x => x.LevelNumber))
-        {
-            var level = levels.FirstOrDefault(x =>
-                x.GuildId == guildId &&
-                x.ContextId == contextId &&
-                x.CategoryId == null &&
-                x.Info.Name == $"Lvl {oldLevel.LevelNumber:G}");
-            if (level is null)
-            {
-                level = new RankedMapListLevel
-                {
-                    GuildId = guildId,
-                    ContextId = contextId,
-                    CategoryId = null,
-                    Info = new LevelInfo
-                    {
-                        Name = Name_2_50.CreateUnsafe($"Lvl {oldLevel.LevelNumber:G}").Value,
-                        Color = Color.FromArgb(oldLevel.Color)
-                    },
-                    Order = await dbContext.Levels
-                        .Where(x => x.GuildId == guildId && x.ContextId == contextId && x.CategoryId == null)
-                        .MaxAsync(x => (uint?)x.Order, token) ?? 0 + 1,
-                    IsLocking = true,
-                    RequiredPassCount = 1
-                };
-
-                dbContext.Levels.Add(level);
-                await dbContext.SaveChangesAsync(token);
-                dbContext.ChangeTracker.Clear();
-            }
-
-            levelDict[(oldLevel.Id, 0)] = (level, oldLevel.LevelNumber);
-
-            foreach (var oldCategory in oldCategories)
-            {
-                var category = categoryDict[oldCategory.Id];
-                var categoryLevel = levels.FirstOrDefault(x =>
-                    x.GuildId == guildId &&
-                    x.ContextId == contextId &&
-                    x.CategoryId == category.Id &&
-                    x.Info.Name == $"Lvl {oldLevel.LevelNumber:G}"
-                );
-                if (categoryLevel is null)
-                {
-                    categoryLevel = new RankedMapListLevel
-                    {
-                        GuildId = guildId,
-                        ContextId = contextId,
-                        CategoryId = category.Id,
-                        Info = new LevelInfo
-                        {
-                            Name = Name_2_50.CreateUnsafe($"Lvl {oldLevel.LevelNumber:G}")
-                                .Value,
-                            Color = Color.FromArgb(oldLevel.Color)
-                        },
-                        Order = await dbContext.Levels
-                            .Where(x => x.GuildId == guildId && x.ContextId == contextId && x.CategoryId != null)
-                            .MaxAsync(x => (uint?)x.Order, token) ?? 0 + 1,
-                        IsLocking = true,
-                        RequiredPassCount = 1
-                    };
-
-                    dbContext.Levels.Add(categoryLevel);
-                    await dbContext.SaveChangesAsync(token);
-                    dbContext.ChangeTracker.Clear();
-                }
-
-                levelDict[(oldLevel.Id, oldCategory.Id)] = (categoryLevel, oldLevel.LevelNumber);
-            }
-        }
-
-        await dbContext.SaveChangesAsync(token);
-        dbContext.ChangeTracker.Clear();
-
-        await foreach (var guildRankedMapsResult in oldGuildSaberApi.GetGuildRankedMaps(guildId.Value, request)
-                           .WithCancellation(token))
-        {
-            if (!guildRankedMapsResult.TryGetValue(out var guildRankedMaps))
-                yield break;
-
-            foreach (var rankedMap in guildRankedMaps.Where(x => x.BeatSaverId is not null))
-            foreach (var difficulty in rankedMap.Difficulties.Where(x => x.GameModeName is not null))
-            {
-                if (await dbContext.RankedMaps.AnyAsync(MapDifficultyIsAlreadyRankedOnGuild(
-                            guildId, difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId!.Value,
-                            difficulty.GameModeName!, dbContext),
-                        token))
-                    continue;
-
-                var (level, levelNumber) = levelDict[(difficulty.LevelId, difficulty.GuildCategoryId ?? 0)];
-                var createRankedMap = new RankedMapRequests.CreateRankedMap
-                (
-                    ManualRating: new RankedMapRequests.ManualRating(
-                        DifficultyStar: levelNumber,
-                        AccuracyStar: null),
-                    Requirements: new RankedMapRequests.RankedMapRequirements(
-                        NeedConfirmation: difficulty.Requirements.HasFlag(ERequirements.NeedAdminConfirmation),
-                        NeedFullCombo: difficulty.Requirements.HasFlag(ERequirements.FullCombo),
-                        MaxPauseDurationSec: difficulty.Requirements.HasFlag(ERequirements.MaxPauses)
-                            ? 2f
-                            : null,
-                        ProhibitedModifiers: ModifiersMapper.ToModifiers(difficulty.ProhibitedModifiers).Map(),
-                        MandatoryModifiers: ModifiersMapper.ToModifiers(difficulty.MandatoryModifiers).Map(),
-                        MinAccuracy: difficulty.MinScoreRequirement is not 0
-                            ? (int)((float)difficulty.MinScoreRequirement / difficulty.MaxScore * 100f)
-                            : null),
-                    BaseMapVersion: new MapVersionRequests.AddMapVersion(
-                        BeatSaverKey: rankedMap.BeatSaverId.Value,
-                        Characteristic: difficulty.GameModeName!,
-                        Difficulty: difficulty.BeatSaverDifficultyValue,
-                        PlayMode: "Standard",
-                        Order: 0),
-                    CategoryIds: difficulty.GuildCategoryId.HasValue && difficulty.GuildCategoryId != 0
-                        ? [categoryDict[difficulty.GuildCategoryId.Value].Id]
-                        : [],
-                    LevelIds: difficulty.GuildCategoryId.HasValue && difficulty.GuildCategoryId != 0
-                        ? [level.Id, levelDict[(difficulty.LevelId, 0)].Item1.Id]
-                        : [level.Id]
-                );
-
-                var tryCount = 0;
-                do
-                {
-                    var createResult = await rankedMapService.CreateRankedMap(contextId, createRankedMap);
-                    if (createResult is RankedMapService.CreateResponse.Success success)
-                    {
-                        yield return success;
-                        break;
-                    }
-
-                    if (createResult is RankedMapService.CreateResponse.RateLimited limited)
-                    {
-                        await Task.Delay(limited.RetryAfter, token);
-                        continue;
-                    }
-
-                    if (createResult is RankedMapService.CreateResponse.NotOnBeatSaver notOnBeatSaver)
-                    {
-                        logger.LogWarning("Map not on BeatSaver: {BeatSaverKey}", notOnBeatSaver.BeatSaverKey);
-                        break;
-                    }
-
-                    if (createResult is RankedMapService.CreateResponse.ValidationFailure validationFailure)
-                    {
-                        logger.LogWarning(
-                            "Validation failed when importing BeatSaver map {BeatSaverKey} difficulty {DifficultyId} characteristic {Characteristic} for guild {GuildId}: {Errors}",
-                            createRankedMap.BaseMapVersion.BeatSaverKey, difficulty.DifficultyId,
-                            difficulty.GameModeName, guildId, string.Join(", ", validationFailure.Errors)
-                        );
-                        break;
-                    }
-
-                    if (createResult is not RankedMapService.CreateResponse.UnexpectedFailure failure)
-                        continue;
-
-                    logger.LogError(
-                        "Failed to import ranked map {RankedMapId} difficulty {DifficultyId} for guild {GuildId}: {Error}",
-                        rankedMap.MapId, difficulty.DifficultyId, guildId, failure.Message
-                    );
-                    break;
-                } while (tryCount++ < 3);
-            }
-        }
-    }
-
-    private static Expression<Func<RankedMap, bool>> MapDifficultyIsAlreadyRankedOnGuild(
-        GuildId guildId, EDifficulty difficulty, BeatSaverKey beatSaverKey, string gameMode,
-        ServerDbContext dbContext)
-        => rankedMap => rankedMap.GuildId == guildId && rankedMap.MapVersions.Any(y =>
-            y.SongDifficulty.GameMode.Name.Contains(gameMode)
-            && y.SongDifficulty.Difficulty == difficulty
-            && dbContext.Songs.Any(z => z.Id == y.SongId && z.BeatSaverKey == beatSaverKey));
 }

@@ -1,22 +1,22 @@
 using AwesomeAssertions;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
-using GuildSaber.Common.Services.OldGuildSaber;
-using GuildSaber.Common.Services.OldGuildSaber.Models;
+using GuildSaber.Common.Services.LegacyGuildSaber;
+using GuildSaber.Common.Services.LegacyGuildSaber.Models;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 
 namespace GuildSaber.Common.UnitTests.Services.OldGuildSaber;
 
-public class OldGuildSaberApiTests
+public class LegacyGuildSaberApiTests
 {
     private const int ValidGuildId = 1;
-    private readonly OldGuildSaberApi _oldGuildSaberApi;
+    private readonly LegacyGuildSaberApi _legacyGuildSaberApi;
 
-    public OldGuildSaberApiTests()
+    public LegacyGuildSaberApiTests()
     {
         var httpClient = new HttpClient();
         httpClient.DefaultRequestHeaders.Add("User-Agent", "GuildSaber");
 
-        _oldGuildSaberApi = new OldGuildSaberApi(httpClient);
+        _legacyGuildSaberApi = new LegacyGuildSaberApi(httpClient);
     }
 
     [Test]
@@ -24,7 +24,7 @@ public class OldGuildSaberApiTests
     {
         // Arrange
         var guildId = ValidGuildId;
-        var requestOptions = new OldGuildSaberApi.PaginatedRequestOptions<RankedMapsSortBy>
+        var requestOptions = new LegacyGuildSaberApi.PaginatedRequestOptions<RankedMapsSortBy>
         {
             Page = 1,
             PageSize = 2,
@@ -34,7 +34,7 @@ public class OldGuildSaberApiTests
         };
 
         // Act
-        await foreach (var data in _oldGuildSaberApi.GetGuildRankedMaps(guildId, requestOptions))
+        await foreach (var data in _legacyGuildSaberApi.GetGuildRankedMaps(guildId, requestOptions))
         {
             if (!data.TryGetValue(out var rankedMaps, out var error))
                 Assert.Fail(error);
@@ -50,7 +50,7 @@ public class OldGuildSaberApiTests
         var guildId = ValidGuildId;
 
         // Act
-        var result = await _oldGuildSaberApi.GetRankingLevelsAsync(guildId);
+        var result = await _legacyGuildSaberApi.GetRankingLevelsAsync(guildId);
 
         // Assert
         if (!result.TryGetValue(out var rankingLevels, out var error))
@@ -67,7 +67,7 @@ public class OldGuildSaberApiTests
         var guildId = ValidGuildId;
 
         // Act
-        var result = await _oldGuildSaberApi.GetRankingCategoriesAsync(guildId);
+        var result = await _legacyGuildSaberApi.GetRankingCategoriesAsync(guildId);
 
         // Assert
         if (!result.TryGetValue(out var rankingLevels, out var error))
@@ -87,7 +87,7 @@ public class OldGuildSaberApiTests
         var unmodifiedScore = 1319764;
 
         // Act
-        var result = await _oldGuildSaberApi.GetRankedScoreStateAsync(
+        var result = await _legacyGuildSaberApi.GetRankedScoreStateAsync(
             beatLeaderId, scoreSaberId, blid, ssid, unmodifiedScore);
 
         // Assert

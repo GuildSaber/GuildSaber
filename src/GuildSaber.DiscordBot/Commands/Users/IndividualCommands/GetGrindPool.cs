@@ -154,12 +154,12 @@ file static class SearchCommand
             $"{(int)(requestFilters.ExcludeRankedScoreStates ?? EState.None)}_{requestFilters.Search}",
             $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_{page + 1}_{(int)(requestFilters.AnyRankedScoreStates ?? EState.None)}_{(int)EState.None}_" +
             $"{(int)(requestFilters.ExcludeRankedScoreStates ?? EState.None)}_{requestFilters.Search}",
-            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-2_{(int)EState.NonPointGiving & ~(int)EState.Pending}_{(int)EState.None}_" +
+            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-2_{(int)EState.NonPointGivingNoPending}_{(int)EState.None}_" +
             $"{(int)EState.Pending}_{requestFilters.Search}",
             $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-3_{(int)EState.Selected}_{(int)EState.None}_" +
             $"{(int)EState.NonPointGiving}_{requestFilters.Search}",
             $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-4_{(int)EState.None}_{(int)(EState.Selected | EState.Pending)}_" +
-            $"{(int)EState.NonPointGiving & ~(int)EState.Pending}_{requestFilters.Search}"
+            $"{(int)EState.NonPointGivingNoPending}_{requestFilters.Search}"
         );
         var searchTermTooLong = prevCustomId.Length > 100 || nextCustomId.Length > 100 || unpassedCustomId.Length > 100
                                 || passedCustomId.Length > 100 || pendingCustomId.Length > 100;
@@ -200,7 +200,7 @@ file static class SearchCommand
     private static bool IsPassed(Filters filters) => filters.AnyRankedScoreStates == EState.Selected;
 
     private static bool IsUnpassed(Filters filters)
-        => filters.AnyRankedScoreStates == (EState.NonPointGiving & ~EState.Pending);
+        => filters.AnyRankedScoreStates == EState.NonPointGivingNoPending;
 
     private static bool IsPending(Filters filters)
         => filters.AllRankedScoreStates == (EState.Selected | EState.Pending);
@@ -306,7 +306,7 @@ file static class SearchCommand
                 sb.Clear()
                     .Append(rankedScore.State switch
                     {
-                        _ when rankedScore.State.HasAnyFlag(EState.NonPointGiving & ~EState.Pending) => ":x: ",
+                        _ when rankedScore.State.HasAnyFlag(EState.NonPointGivingNoPending) => ":x: ",
                         _ when rankedScore.State.HasAnyFlag(EState.Pending) => ":hourglass: ",
                         _ when rankedScore.State.HasAnyFlag(EState.Selected) => ":white_check_mark: ",
                         _ => string.Empty

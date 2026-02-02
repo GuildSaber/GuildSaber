@@ -12,9 +12,6 @@ namespace GuildSaber.Mod.Core;
 [SuppressMessage("ReSharper", "AsyncVoidMethod")]
 public class GuildSaberManager(GuildSaberClient client, SiraLog logger) : IInitializable
 {
-    public event Action<PlayerId?> OnPlayerIdFetched = _ => { };
-    public event Action<string> OnInitializationError = _ => { };
-
     public async void Initialize()
     {
         logger.Info("Initializing GuildSaberManager...");
@@ -48,4 +45,7 @@ public class GuildSaberManager(GuildSaberClient client, SiraLog logger) : IIniti
 
         OnPlayerIdFetched(playerId);
     }
+
+    public event Action<PlayerId?> OnPlayerIdFetched = _ => { };
+    public event Action<string> OnInitializationError = _ => { };
 }

@@ -136,4 +136,12 @@ public class RankedMapRequests
         int[] CategoryIds,
         int[] LevelIds
     );
+
+    //TODO: 
+    public record UpdateRankedMap(
+        RankedMapRequirements? Requirements = null,
+        ManualRating? ManualRating = null,
+        int[]? CategoryIds = null,
+        int[]? LevelIds = null
+    );
 }

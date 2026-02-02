@@ -10,6 +10,8 @@ using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Guilds.Members.Pipelines;
+using GuildSaber.Api.Features.LegacyGS;
+using GuildSaber.Api.Features.LegacyGS.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Api.Features.Scores;
@@ -20,7 +22,7 @@ using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.BeatSaver;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
-using GuildSaber.Common.Services.OldGuildSaber;
+using GuildSaber.Common.Services.LegacyGuildSaber;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Common.Settings;
@@ -227,7 +229,7 @@ builder.Services.AddHttpClient<BeatSaverApi>(client =>
     .SetHandlerLifetime(Timeout.InfiniteTimeSpan);
 
 builder.Services
-    .AddHttpClient<OldGuildSaberApi>(client => { client.DefaultRequestHeaders.Add("User-Agent", "GuildSaber"); })
+    .AddHttpClient<LegacyGuildSaberApi>(client => { client.DefaultRequestHeaders.Add("User-Agent", "GuildSaber"); })
     .UseSocketsHttpHandler((handler, _) => handler.PooledConnectionLifetime = TimeSpan.FromMinutes(5))
     .SetHandlerLifetime(Timeout.InfiniteTimeSpan);
 
@@ -245,17 +247,19 @@ builder.Services.AddTransient<BeatLeaderGeneralSocketStream>(_ =>
 
 builder.Services.AddTransient<ScoreAddOrUpdatePipeline>();
 builder.Services.AddTransient<PlayerScoresPipeline>();
+builder.Services.AddTransient<LegacyGSImportAdminConfPipeline>();
+builder.Services.AddTransient<LegacyGuildSaberMapImportPipeline>();
 builder.Services.AddTransient<MemberPointStatsPipeline>();
 builder.Services.AddTransient<MemberLevelStatsPipeline>();
 builder.Services.AddTransient<MemberJoinPipeline>();
 builder.Services.AddHostedService<BLScoreSyncWorker>();
 builder.Services.AddHostedService<QueueProcessingService>();
-builder.Services.AddHostedService<ImportLegacyGuildSaberAdminConfirmationWorker>(provider =>
-    new ImportLegacyGuildSaberAdminConfirmationWorker(
+builder.Services.AddHostedService<ImportLegacyGSAdminConfirmationWorker>(provider =>
+    new ImportLegacyGSAdminConfirmationWorker(
         new PeriodicTimer(TimeSpan.FromDays(1)),
         provider.GetRequiredService<IBackgroundTaskQueue>(),
         provider.GetRequiredService<IServiceScopeFactory>(),
-        provider.GetRequiredService<ILogger<ImportLegacyGuildSaberAdminConfirmationWorker>>()));
+        provider.GetRequiredService<ILogger<ImportLegacyGSAdminConfirmationWorker>>()));
 builder.Services.AddSingleton<IBackgroundTaskQueue>(_ => new BackgroundTaskQueue(capacity: 100));
 
 #endregion

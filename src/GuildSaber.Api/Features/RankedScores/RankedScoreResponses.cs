@@ -135,7 +135,8 @@ public static class RankedScoreResponses
         Pending = 1 << 3,
         Confirmed = 1 << 4,
         Refused = 1 << 5,
-        NonPointGiving = None | Denied | Removed | Pending | Refused
+        NonPointGiving = None | Denied | Removed | Pending | Refused,
+        NonPointGivingNoPending = None | Denied | Removed | Refused
     }
 
     public enum EHMD

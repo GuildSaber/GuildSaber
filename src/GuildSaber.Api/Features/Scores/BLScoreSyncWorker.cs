@@ -4,7 +4,6 @@ using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
-using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Mappers.BeatLeader;
 using Microsoft.EntityFrameworkCore;

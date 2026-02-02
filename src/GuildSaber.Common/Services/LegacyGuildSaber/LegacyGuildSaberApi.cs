@@ -4,13 +4,13 @@ using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
-using GuildSaber.Common.Services.OldGuildSaber.Models;
-using GuildSaber.Common.Services.OldGuildSaber.Models.Responses;
+using GuildSaber.Common.Services.LegacyGuildSaber.Models;
+using GuildSaber.Common.Services.LegacyGuildSaber.Models.Responses;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 
-namespace GuildSaber.Common.Services.OldGuildSaber;
+namespace GuildSaber.Common.Services.LegacyGuildSaber;
 
-public class OldGuildSaberApi(HttpClient httpClient)
+public class LegacyGuildSaberApi(HttpClient httpClient)
 {
     private const string ApiLink = "https://api-legacy.guildsaber.com/";
 
@@ -18,7 +18,13 @@ public class OldGuildSaberApi(HttpClient httpClient)
     {
         PropertyNameCaseInsensitive = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Converters = { new BeatSaverKeyJsonConverter(), new SongHashJsonConverter() }
+        Converters =
+        {
+            new BeatSaverKeyJsonConverter(),
+            new SongHashJsonConverter(),
+            new LegacyCategoryJsonConverter(),
+            new LegacyLevelJsonConverter()
+        }
     };
 
     /// <summary>
@@ -109,7 +115,7 @@ public class OldGuildSaberApi(HttpClient httpClient)
     }
 
     /// <summary>
-    /// Asynchronously retrieves ranking levels for a guild from OldGuildSaber.
+    /// Asynchronously retrieves ranking levels for a guild from LegacyGuildSaber.
     /// </summary>
     /// <param name="guildId">The ID of the guild whose ranking levels to retrieve.</param>
     /// <param name="categoryId">Optional category ID to filter levels by category.</param>
@@ -135,7 +141,7 @@ public class OldGuildSaberApi(HttpClient httpClient)
         };
 
     /// <summary>
-    /// Asynchronously retrieves ranking categories for a guild from OldGuildSaber.
+    /// Asynchronously retrieves ranking categories for a guild from LegacyGuildSaber.
     /// </summary>
     /// <param name="guildId">The ID of the guild whose ranking categories to retrieve.</param>
     /// <returns>

@@ -1,15 +1,16 @@
+using GuildSaber.Api.Features.LegacyGS.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.EntityFrameworkCore;
 
-namespace GuildSaber.Api.Features.Scores;
+namespace GuildSaber.Api.Features.LegacyGS;
 
-public class ImportLegacyGuildSaberAdminConfirmationWorker(
+public class ImportLegacyGSAdminConfirmationWorker(
     PeriodicTimer period,
     IBackgroundTaskQueue taskQueue,
     IServiceScopeFactory scopeFactory,
-    ILogger<ImportLegacyGuildSaberAdminConfirmationWorker> logger) : BackgroundService
+    ILogger<ImportLegacyGSAdminConfirmationWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -33,11 +34,13 @@ public class ImportLegacyGuildSaberAdminConfirmationWorker(
                 .ToArrayAsync(token);
         }
 
-        var pipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
+        var playerScoresPipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
+        var importAdminConfPipeline = scope.ServiceProvider.GetRequiredService<LegacyGSImportAdminConfPipeline>();
+
         foreach (var playerId in playerIds)
         {
-            var importedAny = await pipeline.ImportLegacyGuildSaberAdminConfirmationAsync(playerId, token);
-            if (importedAny) await pipeline.RecalculatePlayerScoresAsync(playerId, token);
+            var importedAny = await importAdminConfPipeline.ExecuteAsync(playerId, token);
+            if (importedAny) await playerScoresPipeline.RecalculatePlayerScoresAsync(playerId, token);
         }
     });
 }
