@@ -27,6 +27,10 @@ public class LegacyGuildSaberMapImportPipeline(
 {
     private readonly record struct LegacyLevelKey(LegacyLevelId LevelId, LegacyCategoryId CategoryId);
 
+    /// <remarks>
+    /// Importing guild with levels being floating points is currently unsupported.
+    /// (Solution: write a fallback to the default ordering SQL logic if such import is needed.)
+    /// </remarks>
     public async Task ExecuteAsync(
         GuildId guildId,
         ContextId contextId,
