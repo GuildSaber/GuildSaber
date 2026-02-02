@@ -233,16 +233,12 @@ public class LegacyGuildSaberMapImportPipeline(
                         Name = Name_2_50.CreateUnsafe(levelName).Value,
                         Color = Color.FromArgb(legacyLevel.Color)
                     },
-                    Order = await dbContext.Levels
-                        .Where(x => x.GuildId == guildId && x.ContextId == contextId && x.CategoryId == null)
-                        .MaxAsync(x => (uint?)x.Order, token) ?? 0 + 1,
+                    Order = (uint)Math.Round(legacyLevel.LevelNumber),
                     IsLocking = true,
                     RequiredPassCount = 1
                 };
 
                 dbContext.Levels.Add(level);
-                await dbContext.SaveChangesAsync(token);
-                dbContext.ChangeTracker.Clear();
             }
 
             result[new LegacyLevelKey(legacyLevel.Id, new LegacyCategoryId(0))] = level;
@@ -268,18 +264,14 @@ public class LegacyGuildSaberMapImportPipeline(
                                 .Value,
                             Color = Color.FromArgb(legacyLevel.Color)
                         },
-                        Order = await dbContext.Levels
-                            .Where(x => x.GuildId == guildId && x.ContextId == contextId && x.CategoryId != null)
-                            .MaxAsync(x => (uint?)x.Order, token) ?? 0 + 1,
+                        Order = (uint)Math.Round(legacyLevel.LevelNumber),
                         IsLocking = true,
                         RequiredPassCount = 1
                     };
 
                     dbContext.Levels.Add(categoryLevel);
-                    await dbContext.SaveChangesAsync(token);
-                    dbContext.ChangeTracker.Clear();
                 }
-
+                
                 result[new LegacyLevelKey(legacyLevel.Id, legacyCategoryId)] = categoryLevel;
             }
         }
