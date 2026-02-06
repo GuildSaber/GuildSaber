@@ -3929,6 +3929,25 @@
         ]
       }
     },
+    "/debug/recalculate-all-player-scores": {
+      "post": {
+        "tags": [
+          "Debug"
+        ],
+        "summary": "Recalculate all player scores.",
+        "description": "Recalculates all player scores for all players in the database. USE WITH CAUTION!",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/debug/delete-member-point-stats/{playerId}": {
       "post": {
         "tags": [

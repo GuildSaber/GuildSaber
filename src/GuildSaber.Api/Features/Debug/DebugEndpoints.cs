@@ -79,6 +79,11 @@ public class DebugEndpoints : IEndpoints
             .WithDescription("Recalculates all player scores for the specified player.")
             .RequireManager();
 
+        group.MapPost("/recalculate-all-player-scores", RecalculateAllPlayerScores)
+            .WithSummary("Recalculate all player scores.")
+            .WithDescription("Recalculates all player scores for all players in the database. USE WITH CAUTION!")
+            .RequireManager();
+
         group.MapPost("/delete-member-point-stats/{playerId}", async (PlayerId playerId, ServerDbContext dbContext) =>
             {
                 await dbContext.MemberPointStats
@@ -124,6 +129,25 @@ public class DebugEndpoints : IEndpoints
             var pipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
 
             await pipeline.RecalculatePlayerScoresAsync(playerId, token);
+        });
+
+        return TypedResults.Ok();
+    }
+
+    private static async Task<Ok> RecalculateAllPlayerScores(
+        IBackgroundTaskQueue taskQueue,
+        IServiceScopeFactory serviceScopeFactory)
+    {
+        await taskQueue.QueueBackgroundWorkItemAsync(async token =>
+        {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+            await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
+            var pipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
+
+            await foreach (var playerId in dbContext.Players.Select(x => x.Id)
+                               .AsAsyncEnumerable()
+                               .WithCancellation(token))
+                await pipeline.RecalculatePlayerScoresAsync(playerId, token);
         });
 
         return TypedResults.Ok();
