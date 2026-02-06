@@ -1,5 +1,4 @@
 using CSharpFunctionalExtensions;
-using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.RankedScores.Pipelines;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
@@ -19,7 +18,6 @@ namespace GuildSaber.Api.Features.Scores.Pipelines;
 
 public sealed class ScoreAddOrUpdatePipeline(
     ServerDbContext dbContext,
-    MemberPointStatsPipeline memberPointStatsPipeline,
     IServiceScopeFactory scopeFactory,
     HybridCache cache)
 {
@@ -98,7 +96,7 @@ public sealed class ScoreAddOrUpdatePipeline(
     /// <remarks>
     /// There is codebase assumption that all scores going in are stored and updated by default, don't change this behavior.
     /// </remarks>
-    public async Task<PipelineResult> ExecuteAsync(AbstractScore scoreToAdd)
+    public async Task<PipelineResult> ExecuteAsync(AbstractScore scoreToAdd, CancellationToken token)
         => await (await UpdateScoreIfChangedAsync(scoreToAdd, dbContext)
                 .Or(() => dbContext.AddAndSaveAsync(scoreToAdd))
                 .ToResult("Failed to add or update score.")
@@ -113,7 +111,7 @@ public sealed class ScoreAddOrUpdatePipeline(
             {
                 var enumerated = tuple.rankedScores.ToArray();
                 state.dbContext.RankedScores.UpdateRange(enumerated);
-                await state.dbContext.SaveChangesAsync();
+                await state.dbContext.SaveChangesAsync(state.token);
 
                 /* An optimization at the cost of memory consumption would be:
                  * track the RankedScores (in EF Core with .AsTracking()),
@@ -129,7 +127,7 @@ public sealed class ScoreAddOrUpdatePipeline(
                 // The same "ranked scores" might be used multiple time by the same context, we need to cleanup tracking.
                 state.dbContext.ChangeTracker.Clear();
                 return new PipelineResult(tuple.rankingContext.ContextsWithPoints);
-            }, (dbContext, scoreToAdd.PlayerId, memberStatPipeline: memberPointStatsPipeline))
+            }, (dbContext, scoreToAdd.PlayerId, token))
             .Unwrap();
 
     /// <summary>

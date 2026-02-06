@@ -38,7 +38,7 @@ public sealed class PlayerScoresPipeline(
                            .AsAsyncEnumerable()
                            .WithCancellation(token))
         {
-            var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(score);
+            var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(score, token);
 
             count++;
             foreach (var context in pipelineResult.ImpactedContextsWithPoints)
@@ -87,7 +87,7 @@ public sealed class PlayerScoresPipeline(
                 .Map();
 
             var abstractScore = score.Map(playerId, difficultyId, scoreStats);
-            var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(abstractScore);
+            var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(abstractScore, token);
 
             count++;
             foreach (var context in pipelineResult.ImpactedContextsWithPoints)
@@ -131,7 +131,7 @@ public sealed class PlayerScoresPipeline(
                 .TryGetValue(out var difficultyId)) continue;
 
             var abstractScore = playerScore.Score.Map(playerId, difficultyId);
-            var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(abstractScore);
+            var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(abstractScore, token);
 
             count++;
             foreach (var context in pipelineResult.ImpactedContextsWithPoints)

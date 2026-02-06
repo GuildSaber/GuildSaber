@@ -1,5 +1,7 @@
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Scores;
+using GuildSaber.Api.Features.Scores.Pipelines;
+using GuildSaber.Api.Queuing;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models;
 using GuildSaber.Common.Services.BeatSaver;
@@ -33,7 +35,9 @@ public class RankedMapService(
     BeatLeaderApi beatLeaderApi,
     ScoreSaberApi scoreSaberApi,
     TimeProvider timeProvider,
-    IOptions<RankedMapSettings> rankedMapSettings)
+    IOptions<RankedMapSettings> rankedMapSettings,
+    IBackgroundTaskQueue taskQueue,
+    IServiceScopeFactory serviceScopeFactory)
 {
     /// <remarks>
     /// The multi-version feature was removed a while then, but I think the latest version in the array is the newer.
@@ -153,7 +157,23 @@ public class RankedMapService(
                 .MapError(CreateResponse (errors) => new ValidationFailure(errors))
                 .Map(static (rankedMap, dbContext) => dbContext.AddAndSaveAsync(rankedMap), dbContext)
                 .Map(static (rankedMap, tuple) => (rankedMap, tuple.song, tuple.difficulty, tuple.gameMode), tuple))
-            .Match(tuple => new Success(tuple.rankedMap, tuple.song, tuple.difficulty, tuple.gameMode), err => err);
+            .Match(async tuple =>
+            {
+                await taskQueue.QueueBackgroundWorkItemAsync(async token =>
+                {
+                    using var scope = serviceScopeFactory.CreateScope();
+                    var serverDbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
+                    var scoreAddOrUpdatePipeline = scope.ServiceProvider.GetRequiredService<ScoreAddOrUpdatePipeline>();
+
+                    await foreach (var score in serverDbContext.Scores
+                                       .Where(x => x.SongDifficultyId == tuple.difficulty.Id)
+                                       .AsAsyncEnumerable()
+                                       .WithCancellation(token))
+                        await scoreAddOrUpdatePipeline.ExecuteAsync(score, token);
+                });
+
+                return new Success(tuple.rankedMap, tuple.song, tuple.difficulty, tuple.gameMode) as CreateResponse;
+            }, Task.FromResult);
 
     private async Task<UpdateResponse> UpdateRankedMapAsync(
         RankedMap.RankedMapId rankedMapId, GuildId guildId, ContextId contextId,
@@ -190,7 +210,28 @@ public class RankedMapService(
         rankedMap.Info = rankedMap.Info with { EditedAt = timeProvider.GetUtcNow() };
 
         if (await dbContext.SaveChangesAsync() > 0)
+        {
+            await taskQueue.QueueBackgroundWorkItemAsync(async token =>
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var serverDbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
+                var versions = await dbContext.MapVersions
+                    .Where(x => x.RankedMapId == rankedMap.Id)
+                    .Select(x => x.SongDifficultyId)
+                    .ToArrayAsync(token);
+
+                if (versions.Length == 0) return;
+                var scoreAddOrUpdatePipeline = scope.ServiceProvider.GetRequiredService<ScoreAddOrUpdatePipeline>();
+
+                await foreach (var score in serverDbContext.Scores
+                                   .Where(x => ((IEnumerable<SongDifficultyId>)versions).Contains(x.SongDifficultyId))
+                                   .AsAsyncEnumerable()
+                                   .WithCancellation(token))
+                    await scoreAddOrUpdatePipeline.ExecuteAsync(score, token);
+            });
+            
             return new UpdateResponse.Success(rankedMap);
+        }
 
         return new UpdateResponse.UnexpectedFailure("Failed to save changes to the database.");
     }

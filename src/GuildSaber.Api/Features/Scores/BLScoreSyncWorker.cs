@@ -53,10 +53,7 @@ public class BLScoreSyncWorker(
         var pointStatsLogger = scope.ServiceProvider.GetRequiredService<ILogger<MemberPointStatsPipeline>>();
         var levelStatsLogger = scope.ServiceProvider.GetRequiredService<ILogger<MemberLevelStatsPipeline>>();
 
-        var scoreAddOrUpdatePipeline = new ScoreAddOrUpdatePipeline(
-            dbContext,
-            new MemberPointStatsPipeline(dbContext, pointStatsLogger), serviceScopeFactory, cache
-        );
+        var scoreAddOrUpdatePipeline = new ScoreAddOrUpdatePipeline(dbContext, serviceScopeFactory, cache);
         var memberPointStatsPipeline = new MemberPointStatsPipeline(dbContext, pointStatsLogger);
         var memberLevelStatsPipeline = new MemberLevelStatsPipeline(dbContext, levelStatsLogger);
 
@@ -89,7 +86,7 @@ public class BLScoreSyncWorker(
                         $"Unknown message type received from BeatLeader: {response.GetType().Name}")
                 };
 
-                var pipelineResult = await scoreAddOrUpdatePipeline.ExecuteAsync(dbScore);
+                var pipelineResult = await scoreAddOrUpdatePipeline.ExecuteAsync(dbScore, token);
 
                 foreach (var context in pipelineResult.ImpactedContextsWithPoints)
                 {
