@@ -135,7 +135,7 @@ public static class RankedMapMappers
         DiffStar: self.DiffStar
     );
 
-    public static RankedMapResponses.RankedMapRequirements Map(this RankedMapRequirements self) => new(
+    public static RankedMapRequests.RankedMapRequirements Map(this RankedMapRequirements self) => new(
         NeedConfirmation: self.NeedConfirmation,
         NeedFullCombo: self.NeedFullCombo,
         MaxPauseDurationSec: self.MaxPauseDurationSec,

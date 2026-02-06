@@ -48,7 +48,7 @@ public class Version
     public required SongHash Hash { get; set; }
     public required string State { get; set; }
     public required DateTimeOffset CreatedAt { get; set; }
-    public required int SageScore { get; set; }
+    public int? SageScore { get; set; }
     public required List<Diff> Diffs { get; set; }
     public required string DownloadURL { get; set; }
     public required string CoverURL { get; set; }

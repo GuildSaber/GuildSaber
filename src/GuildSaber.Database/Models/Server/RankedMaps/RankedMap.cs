@@ -17,7 +17,7 @@ public class RankedMap
     public ContextId ContextId { get; init; }
 
     public required RankedMapInfo Info { get; set; }
-    public required RankedMapRequirements Requirements { get; init; }
+    public required RankedMapRequirements Requirements { get; set; }
     public required RankedMapRating Rating { get; init; }
 
     public IList<MapVersion> MapVersions { get; init; } = null!;

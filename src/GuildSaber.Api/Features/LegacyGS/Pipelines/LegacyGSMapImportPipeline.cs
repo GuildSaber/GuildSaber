@@ -58,14 +58,15 @@ public class LegacyGuildSaberMapImportPipeline(
             foreach (var rankedMap in guildRankedMaps.Where(x => x.BeatSaverId is not null))
             foreach (var difficulty in rankedMap.Difficulties.Where(x => x.GameModeName is not null))
             {
-                var existingRankedMap = await dbContext.RankedMaps
+                var existingRankedMaps = await dbContext.RankedMaps
+                    .Include(x => x.Categories)
+                    .Include(x => x.Levels)
                     .Where(MapDifficultyIsAlreadyRankedOnGuild(
                         guildId, difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId!.Value,
                         difficulty.GameModeName!, dbContext))
                     .ToArrayAsync(token);
 
-                var levelKey = new LegacyLevelKey(difficulty.LevelId,
-                    difficulty.GuildCategoryId ?? new LegacyCategoryId(0));
+                var levelKey = new LegacyLevelKey(difficulty.LevelId, new LegacyCategoryId(0));
                 var level = levelDict[levelKey];
 
                 var requirements = new RankedMapRequests.RankedMapRequirements(
@@ -86,18 +87,22 @@ public class LegacyGuildSaberMapImportPipeline(
                     ? [categoryDict[difficulty.GuildCategoryId.Value].Id]
                     : [];
                 int[] levelIds = difficulty.GuildCategoryId.HasValue && difficulty.GuildCategoryId != 0
-                    ? [level.Id, levelDict[levelKey].Id]
+                    ? [level.Id, levelDict[new LegacyLevelKey(difficulty.LevelId, difficulty.GuildCategoryId.Value)].Id]
                     : [level.Id];
 
-                if (existingRankedMap.Length > 0)
+                if (existingRankedMaps.Length > 0)
                 {
-                    if (MapShouldBeUpdated())
-                        _ = await UpdateMapAsync(contextId, new RankedMapRequests.UpdateRankedMap(
-                            Requirements: requirements,
-                            ManualRating: manualRating,
-                            CategoryIds: categoryIds,
-                            LevelIds: levelIds
-                        ));
+                    Trace.Assert(existingRankedMaps.Length == 1,
+                        "Old guildsaber didn't allow a single map to be ranked multiple time.");
+                    var currentMap = existingRankedMaps[0];
+                    if (MapShouldBeUpdated(currentMap, requirements, manualRating, categoryIds, levelIds))
+                        _ = await UpdateMapWithRetryAsync(currentMap.Id, contextId,
+                            new RankedMapRequests.UpdateRankedMap(
+                                Requirements: requirements,
+                                ManualRating: manualRating,
+                                CategoryIds: categoryIds,
+                                LevelIds: levelIds),
+                            retryCount: 3, token);
 
                     continue;
                 }
@@ -118,19 +123,68 @@ public class LegacyGuildSaberMapImportPipeline(
         }
     }
 
-    public bool MapShouldBeUpdated() => false;
+    private bool MapShouldBeUpdated(RankedMap currentMap, RankedMapRequests.RankedMapRequirements requirements,
+                                    RankedMapRequests.ManualRating manualRating, int[] categoryIds, int[] levelIds)
+    {
+        if (!currentMap.Categories.All(x => categoryIds.Contains(x.Id)))
+            return true;
 
-    public Task<bool> UpdateMapAsync(ContextId contextId, RankedMapRequests.UpdateRankedMap request)
-        => throw new NotImplementedException();
+        if (!currentMap.Levels.All(x => levelIds.Contains(x.Id)))
+            return true;
 
-    public async Task<bool> RankMapWithRetryAsync(
-        ContextId contextId, RankedMapRequests.CreateRankedMap request,
-        int retryCount, CancellationToken token)
+        // Requirements being a record, we can just compare them directly for equality.
+        if (currentMap.Requirements.Map() != requirements)
+            return true;
+
+        Trace.Assert(manualRating.DifficultyStar.HasValue, "All maps on legacy GS has a difficulty.");
+        return Math.Abs(currentMap.Rating.DiffStar.Value - manualRating.DifficultyStar.Value) > 0.01f;
+    }
+
+    public async Task<bool> UpdateMapWithRetryAsync(
+        RankedMap.RankedMapId rankedMapId,
+        ContextId contextId, RankedMapRequests.UpdateRankedMap request, int retryCount, CancellationToken token)
     {
         do
         {
-            var createResult = await rankedMapService.CreateRankedMap(contextId, request);
-            switch (createResult)
+            var result = await rankedMapService.UpdateRankedMapAsync(rankedMapId, contextId, request);
+            switch (result)
+            {
+                case UpdateResponse.Success:
+                    logger.LogInformation("Updated ranked map {RankedMapId} for context {ContextId}",
+                        rankedMapId, contextId);
+                    return true;
+                case UpdateResponse.NotFound:
+                    logger.LogWarning("Ranked map {RankedMapId} not found for update", rankedMapId);
+                    return false;
+                case UpdateResponse.ValidationFailure validationFailure:
+                    logger.LogWarning(
+                        "Validation failed when updating ranked map {RankedMapId} for contextId {ContextId}: {Errors}",
+                        rankedMapId, contextId, string.Join(", ", validationFailure.Errors)
+                    );
+                    return false;
+                case UpdateResponse.UnexpectedFailure failure:
+                    logger.LogError(
+                        "Unexpected failure when updating ranked map {RankedMapId} for contextId {ContextId}: {ErrorMessage}",
+                        rankedMapId, contextId, failure.Message);
+                    break;
+                default: throw new UnreachableException();
+            }
+        } while (retryCount++ < 3);
+
+        logger.LogError(
+            "Exceeded maximum retries when updating ranked map {RankedMapId} for contextId {ContextId}",
+            rankedMapId, contextId);
+
+        return false;
+    }
+
+    public async Task<bool> RankMapWithRetryAsync(
+        ContextId contextId, RankedMapRequests.CreateRankedMap request, int retryCount, CancellationToken token)
+    {
+        do
+        {
+            var result = await rankedMapService.CreateRankedMapAsync(contextId, request);
+            switch (result)
             {
                 case CreateResponse.Success success:
                     logger.LogInformation(
@@ -275,7 +329,7 @@ public class LegacyGuildSaberMapImportPipeline(
 
                     dbContext.Levels.Add(categoryLevel);
                 }
-                
+
                 result[new LegacyLevelKey(legacyLevel.Id, legacyCategoryId)] = categoryLevel;
             }
         }

@@ -137,11 +137,10 @@ public class RankedMapRequests
         int[] LevelIds
     );
 
-    //TODO: 
     public record UpdateRankedMap(
-        RankedMapRequirements? Requirements = null,
-        ManualRating? ManualRating = null,
-        int[]? CategoryIds = null,
-        int[]? LevelIds = null
+        RankedMapRequirements Requirements,
+        ManualRating ManualRating,
+        int[] CategoryIds,
+        int[] LevelIds
     );
 }

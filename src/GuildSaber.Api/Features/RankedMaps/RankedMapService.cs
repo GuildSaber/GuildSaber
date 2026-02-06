@@ -10,6 +10,7 @@ using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds.Boosts;
+using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.RankedMaps;
@@ -69,16 +70,47 @@ public class RankedMapService(
         public sealed record UnexpectedFailure(string Message) : CreateResponse;
     }
 
+    public abstract record UpdateResponse
+    {
+        public sealed record NotFound : UpdateResponse;
+
+        public sealed record ValidationFailure(IEnumerable<KeyValuePair<string, string[]>> Errors) : UpdateResponse
+        {
+            public ValidationFailure(string name, string error) : this([
+                new KeyValuePair<string, string[]>(name, [error])
+            ]) { }
+
+            public override string ToString()
+                => string.Join("; ", Errors.SelectMany(x => x.Value.Select(err => $"{x.Key}: {err}")));
+        }
+
+        public sealed record Success(
+            RankedMap RankedMap
+        ) : UpdateResponse;
+
+        public sealed record UnexpectedFailure(string Message) : UpdateResponse;
+    }
+
     public readonly record struct RankedMapBoostsCount(int Tier1, int Tier2, int Tier3);
 
-    public async Task<CreateResponse> CreateRankedMap(ContextId contextId, RankedMapRequests.CreateRankedMap request)
+    public async Task<CreateResponse> CreateRankedMapAsync(ContextId contextId,
+                                                           RankedMapRequests.CreateRankedMap request)
         => await GetParentGuildAsync(contextId) switch
         {
             null => new ValidationFailure("ContextId", $"Guild context with ID '{contextId}' does not exist."),
-            { } guildId => await CreateRankedMap(guildId, contextId, request)
+            { } guildId => await CreateRankedMapAsync(guildId, contextId, request)
         };
 
-    private async Task<CreateResponse> CreateRankedMap(
+    public async Task<UpdateResponse> UpdateRankedMapAsync(
+        RankedMap.RankedMapId rankedMapId, ContextId contextId, RankedMapRequests.UpdateRankedMap request)
+        => await GetParentGuildAsync(contextId) switch
+        {
+            null => new UpdateResponse.ValidationFailure("ContextId",
+                $"Guild context with ID '{contextId}' does not exist."),
+            { } guildId => await UpdateRankedMapAsync(rankedMapId, guildId, contextId, request)
+        };
+
+    private async Task<CreateResponse> CreateRankedMapAsync(
         GuildId guildId, ContextId contextId, RankedMapRequests.CreateRankedMap request)
         => await Success<int, CreateResponse>(await GetCurrentGuildRankedMapCount(guildId))
             .Check(async count => ValidateRankedMapCreationLimit(count, await GetBoostsCountsAsync(guildId))
@@ -122,6 +154,46 @@ public class RankedMapService(
                 .Map(static (rankedMap, dbContext) => dbContext.AddAndSaveAsync(rankedMap), dbContext)
                 .Map(static (rankedMap, tuple) => (rankedMap, tuple.song, tuple.difficulty, tuple.gameMode), tuple))
             .Match(tuple => new Success(tuple.rankedMap, tuple.song, tuple.difficulty, tuple.gameMode), err => err);
+
+    private async Task<UpdateResponse> UpdateRankedMapAsync(
+        RankedMap.RankedMapId rankedMapId, GuildId guildId, ContextId contextId,
+        RankedMapRequests.UpdateRankedMap request)
+    {
+        var rankedMap = await dbContext.RankedMaps
+            .AsTracking()
+            .Include(x => x.Categories)
+            .Include(x => x.Levels)
+            .FirstOrDefaultAsync(x => x.Id == rankedMapId && x.GuildId == guildId && x.ContextId == contextId);
+
+        if (rankedMap is null)
+            return new UpdateResponse.NotFound();
+
+        var validationResult = await Validate(guildId, request.Requirements, request.CategoryIds, request.LevelIds);
+        if (!validationResult.TryGetValue(out var validatedData, out var errors))
+            return new UpdateResponse.ValidationFailure(errors);
+
+        rankedMap.Requirements = validatedData.Requirements;
+        rankedMap.Categories.Clear();
+        foreach (var category in validatedData.Categories)
+            rankedMap.Categories.Add(category);
+
+        rankedMap.Levels.Clear();
+        foreach (var level in validatedData.Levels)
+            rankedMap.Levels.Add(level);
+
+        if (request.ManualRating.AccuracyStar is not null)
+            rankedMap.Rating.AccStar = new RankedMapRating.AccuracyStar(request.ManualRating.AccuracyStar.Value);
+
+        if (request.ManualRating.DifficultyStar is not null)
+            rankedMap.Rating.DiffStar = new RankedMapRating.DifficultyStar(request.ManualRating.DifficultyStar.Value);
+
+        rankedMap.Info = rankedMap.Info with { EditedAt = timeProvider.GetUtcNow() };
+
+        if (await dbContext.SaveChangesAsync() > 0)
+            return new UpdateResponse.Success(rankedMap);
+
+        return new UpdateResponse.UnexpectedFailure("Failed to save changes to the database.");
+    }
 
     private Task<GuildId?> GetParentGuildAsync(ContextId contextId) => dbContext.Contexts
         .Where(x => x.Id == contextId)
@@ -233,50 +305,8 @@ public class RankedMapService(
         PlayMode.PlayModeId playmodeId,
         RankedMapRequests.CreateRankedMap request)
     {
-        var errors = new List<KeyValuePair<string, string[]>>();
-
-        var requirementsResult = request.Requirements.Map();
-        if (!requirementsResult.TryGetValue(out var requirements, out var reqErrors))
-            errors.AddRange(reqErrors);
-
-        var accCurve = await GetFirstAccuracyCurveFromGuildAsync(guildId);
-        if (!accCurve.HasValue)
-            errors.Add(new KeyValuePair<string, string[]>("MissingPoint",
-                ["Guild does not have any point settings configured."]));
-
-        var categories = await dbContext.Categories
-            .AsTracking()
-            .Where(x => ((IEnumerable<int>)request.CategoryIds).Contains(x.Id) && x.GuildId == guildId)
-            .ToArrayAsync();
-
-        if (categories.Length != request.CategoryIds.Length)
-        {
-            var categoryErrors = request.CategoryIds
-                .Where(categoryId => categories.All(x => x.Id != categoryId))
-                .Select(categoryId => $"Category with ID '{categoryId}' does not exist in the guild.")
-                .ToArray();
-
-            errors.Add(new KeyValuePair<string, string[]>("CategoryIds", categoryErrors));
-        }
-
-        var levels = await dbContext.Levels
-            .AsTracking()
-            .OfType<RankedMapListLevel>()
-            .Where(x => ((IEnumerable<int>)request.LevelIds).Contains(x.Id) && x.GuildId == guildId)
-            .ToArrayAsync();
-
-        if (levels.Length != request.LevelIds.Length)
-        {
-            var levelErrors = request.LevelIds
-                .Where(levelId => levels.All(x => x.Id != levelId))
-                .Select(levelId =>
-                    $"Level with ID '{levelId}' does not exist in the guild or is not of type RankedMapListLevel.")
-                .ToArray();
-
-            errors.Add(new KeyValuePair<string, string[]>("LevelIds", levelErrors));
-        }
-
-        if (errors.Count > 0)
+        var validationResult = await Validate(guildId, request.Requirements, request.CategoryIds, request.LevelIds);
+        if (!validationResult.TryGetValue(out var validatedData, out var errors))
             return Failure<RankedMap, List<KeyValuePair<string, string[]>>>(errors);
 
         var rating = null as RankedMapRating;
@@ -291,11 +321,11 @@ public class RankedMapService(
         else
         {
             var ratingResult = await GetRankedMapRatingAsync(
-                requirements!,
+                validatedData.Requirements,
                 SelectLatestBeatMapVersion(beatMap),
                 request.BaseMapVersion.Characteristic,
                 request.BaseMapVersion.Difficulty,
-                accCurve.Value
+                validatedData.AccuracyCurve
             );
             if (!ratingResult.TryGetValue(out rating))
             {
@@ -330,7 +360,7 @@ public class RankedMapService(
                 CreatedAt: currentTime,
                 EditedAt: currentTime
             ),
-            Requirements = requirements!,
+            Requirements = validatedData.Requirements,
             Rating = rating,
             MapVersions =
             [
@@ -343,9 +373,74 @@ public class RankedMapService(
                     Order = 0
                 }
             ],
-            Categories = categories,
-            Levels = levels
+            Categories = validatedData.Categories,
+            Levels = validatedData.Levels
         };
+    }
+
+    private readonly record struct ValidatedData(
+        RankedMapRequirements Requirements,
+        CustomCurve AccuracyCurve,
+        Category[] Categories,
+        RankedMapListLevel[] Levels
+    );
+
+    private async Task<Result<ValidatedData, List<KeyValuePair<string, string[]>>>> Validate(
+        GuildId guildId,
+        RankedMapRequests.RankedMapRequirements requestRequirements, int[] categoryIds, int[] levelIds)
+    {
+        var errors = new List<KeyValuePair<string, string[]>>();
+
+        var requirementsResult = requestRequirements.Map();
+        if (!requirementsResult.TryGetValue(out var requirements, out var reqErrors))
+            errors.AddRange(reqErrors);
+
+        var accCurve = await GetFirstAccuracyCurveFromGuildAsync(guildId);
+        if (!accCurve.HasValue)
+            errors.Add(new KeyValuePair<string, string[]>("MissingPoint",
+                ["Guild does not have any point settings configured."]));
+
+        var categories = await dbContext.Categories
+            .AsTracking()
+            .Where(x => ((IEnumerable<int>)categoryIds).Contains(x.Id) && x.GuildId == guildId)
+            .ToArrayAsync();
+
+        if (categories.Length != categoryIds.Length)
+        {
+            var categoryErrors = categoryIds
+                .Where(categoryId => categories.All(x => x.Id != categoryId))
+                .Select(categoryId => $"Category with ID '{categoryId}' does not exist in the guild.")
+                .ToArray();
+
+            errors.Add(new KeyValuePair<string, string[]>("CategoryIds", categoryErrors));
+        }
+
+        var levels = await dbContext.Levels
+            .AsTracking()
+            .OfType<RankedMapListLevel>()
+            .Where(x => ((IEnumerable<int>)levelIds).Contains(x.Id) && x.GuildId == guildId)
+            .ToArrayAsync();
+
+        if (levels.Length != levelIds.Length)
+        {
+            var levelErrors = levelIds
+                .Where(levelId => levels.All(x => x.Id != levelId))
+                .Select(levelId =>
+                    $"Level with ID '{levelId}' does not exist in the guild or is not of type RankedMapListLevel.")
+                .ToArray();
+
+            errors.Add(new KeyValuePair<string, string[]>("LevelIds", levelErrors));
+        }
+
+        if (errors.Count > 0)
+            return Failure<ValidatedData, List<KeyValuePair<string, string[]>>>(errors);
+
+        return new ValidatedData(
+            Requirements: requirements!,
+            AccuracyCurve: accCurve.Value,
+            Categories: categories,
+            Levels: levels
+        );
     }
 
 

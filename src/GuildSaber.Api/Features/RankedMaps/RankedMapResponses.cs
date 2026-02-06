@@ -8,16 +8,7 @@ namespace GuildSaber.Api.Features.RankedMaps;
 public static class RankedMapResponses
 {
     public record RankedMapInfo(DateTimeOffset CreatedAt, DateTimeOffset EditedAt);
-
-    public record RankedMapRequirements(
-        bool NeedConfirmation,
-        bool NeedFullCombo,
-        float? MaxPauseDurationSec,
-        RankedMapRequests.EModifiers ProhibitedModifiers,
-        RankedMapRequests.EModifiers MandatoryModifiers,
-        float? MinAccuracy
-    );
-
+    
     public record RankedMapRating(float AccStar, float DiffStar);
 
     public record SongStats(
@@ -73,7 +64,7 @@ public static class RankedMapResponses
         GuildId GuildId,
         int ContextId,
         RankedMapInfo Info,
-        RankedMapRequirements Requirements,
+        RankedMapRequests.RankedMapRequirements Requirements,
         RankedMapRating Rating,
         MapVersion[] Versions,
         int[] CategoryIds,
