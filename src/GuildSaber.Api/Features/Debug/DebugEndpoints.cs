@@ -241,8 +241,6 @@ public class DebugEndpoints : IEndpoints
     /// </remarks>
     private static async Task<Results<Accepted, NotFound<string>>> ImportOldGuildSaberMapsBackgroundAsync(
         GuildId guildId,
-        [FromQuery] int count,
-        [FromQuery] int page,
         ServerDbContext dbContext,
         IBackgroundTaskQueue taskQueue,
         IServiceScopeFactory serviceScopeFactory,

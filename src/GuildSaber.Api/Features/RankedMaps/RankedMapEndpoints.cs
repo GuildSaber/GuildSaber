@@ -81,7 +81,7 @@ public class RankedMapEndpoints : IEndpoints
     /// </remarks>
     public static async Task<IResult> CreateRankedMapAsync(
         ContextId contextId, CreateRankedMap create, RankedMapService rankedMapService)
-        => await rankedMapService.CreateRankedMap(contextId, create) switch
+        => await rankedMapService.CreateRankedMapAsync(contextId, create) switch
         {
             CreateResponse.Success(var rankedMap, var song, var songDifficulty, var gameMode) => TypedResults
                 .Ok(rankedMap.Map(song, songDifficulty, gameMode)),
@@ -101,7 +101,7 @@ public class RankedMapEndpoints : IEndpoints
                 .InternalServerError($"BeatSaver API error: {message}"),
             CreateResponse.UnexpectedFailure(var message) => TypedResults
                 .InternalServerError($"Unexpected error: {message}"),
-            _ => throw new ArgumentOutOfRangeException(nameof(rankedMapService.CreateRankedMap),
+            _ => throw new ArgumentOutOfRangeException(nameof(rankedMapService.CreateRankedMapAsync),
                 "Unexpected response from CreateRankedMap.")
         };
 

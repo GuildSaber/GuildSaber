@@ -3658,32 +3658,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "count",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
-            }
           }
         ],
         "responses": {
@@ -6706,21 +6680,15 @@
         }
       },
       "RankedMapRequirements": {
-        "required": [
-          "needConfirmation",
-          "needFullCombo",
-          "maxPauseDurationSec",
-          "prohibitedModifiers",
-          "mandatoryModifiers",
-          "minAccuracy"
-        ],
         "type": "object",
         "properties": {
           "needConfirmation": {
-            "type": "boolean"
+            "type": "boolean",
+            "default": false
           },
           "needFullCombo": {
-            "type": "boolean"
+            "type": "boolean",
+            "default": false
           },
           "maxPauseDurationSec": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
