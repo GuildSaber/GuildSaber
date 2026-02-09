@@ -49,7 +49,7 @@ public class LegacyGuildSaberMapImportPipeline(
         var categoryDict = await SyncCategoriesWithLegacyAsync(guildId, token);
         var levelDict = await SyncLevelsWithLegacyAsync(guildId, contextId, categoryDict, token);
 
-        await foreach (var guildRankedMapsResult in legacyGuildSaberApi.GetGuildRankedMaps(guildId.Value, request)
+        await foreach (var guildRankedMapsResult in legacyGuildSaberApi.GetGuildRankedMaps(guildId, request)
                            .WithCancellation(token))
         {
             if (!guildRankedMapsResult.TryGetValue(out var guildRankedMaps))
@@ -232,7 +232,7 @@ public class LegacyGuildSaberMapImportPipeline(
         GuildId guildId, CancellationToken token)
     {
         var categories = await dbContext.Categories.AsTracking().Where(x => x.GuildId == guildId).ToListAsync(token);
-        if (!(await legacyGuildSaberApi.GetRankingCategoriesAsync(guildId.Value)).TryGetValue(out var legacyCategories))
+        if (!(await legacyGuildSaberApi.GetRankingCategoriesAsync(guildId)).TryGetValue(out var legacyCategories))
             return [];
 
         foreach (var oldCategory in legacyCategories)
@@ -267,7 +267,7 @@ public class LegacyGuildSaberMapImportPipeline(
             .OfType<RankedMapListLevel>()
             .Where(x => x.GuildId == guildId && x.ContextId == contextId)
             .ToListAsync(token);
-        if (!(await legacyGuildSaberApi.GetRankingLevelsAsync(guildId.Value)).TryGetValue(out var legacyLevels))
+        if (!(await legacyGuildSaberApi.GetRankingLevelsAsync(guildId)).TryGetValue(out var legacyLevels))
             return [];
 
         var result = new Dictionary<LegacyLevelKey, RankedMapListLevel>();

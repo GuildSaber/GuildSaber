@@ -103,7 +103,7 @@ public class MemberService(
                     {
                         using var scope = serviceScopeFactory.CreateScope();
                         await scope.ServiceProvider.GetRequiredService<MemberJoinPipeline>()
-                            .ExecuteAsync(member.PlayerId, token);
+                            .ExecuteAsync(member.GuildId, member.PlayerId, token);
                     });
 
                     return new Success(member);

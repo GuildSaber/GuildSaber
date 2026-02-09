@@ -3977,25 +3977,6 @@
         ]
       }
     },
-    "/debug/import-admin-conf-states": {
-      "post": {
-        "tags": [
-          "Debug"
-        ],
-        "summary": "Import admin confirmation states for the current player from legacy GuildSaber.",
-        "description": "Imports admin confirmation states for all pending ranked scores of the current player from the legacy GuildSaber system.",
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        },
-        "security": [
-          {
-            "Bearer": []
-          }
-        ]
-      }
-    },
     "/auth/login/beatleader": {
       "get": {
         "tags": [

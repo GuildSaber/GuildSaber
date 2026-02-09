@@ -93,29 +93,6 @@ public class DebugEndpoints : IEndpoints
             }).WithSummary("Delete all member point stats for a player.")
             .WithDescription("Deletes all member point stats for the specified player. USE WITH CAUTION!")
             .RequireManager();
-
-        group.MapPost("/import-admin-conf-states", ImportAdminConfStatesAtMe)
-            .WithSummary("Import admin confirmation states for the current player from legacy GuildSaber.")
-            .WithDescription("Imports admin confirmation states for all pending ranked scores of the current player" +
-                             " from the legacy GuildSaber system.")
-            .RequireAuthorization();
-    }
-
-    private static async Task<Ok> ImportAdminConfStatesAtMe(
-        ClaimsPrincipal principal,
-        IBackgroundTaskQueue taskQueue,
-        ServerDbContext efContext,
-        IServiceScopeFactory serviceScopeFactory)
-    {
-        var playerId = principal.GetPlayerId()!.Value;
-        await taskQueue.QueueBackgroundWorkItemAsync(async token =>
-        {
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
-            await scope.ServiceProvider.GetRequiredService<LegacyGSImportAdminConfPipeline>()
-                .ExecuteAsync(playerId, token);
-        });
-
-        return TypedResults.Ok();
     }
 
     private static async Task<Ok> RecalculatePlayerScores(

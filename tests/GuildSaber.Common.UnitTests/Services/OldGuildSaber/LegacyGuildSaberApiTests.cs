@@ -3,12 +3,13 @@ using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.LegacyGuildSaber;
 using GuildSaber.Common.Services.LegacyGuildSaber.Models;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
+using GuildSaber.Common.StrongTypes;
 
 namespace GuildSaber.Common.UnitTests.Services.OldGuildSaber;
 
 public class LegacyGuildSaberApiTests
 {
-    private const int ValidGuildId = 1;
+    private readonly GuildId _validGuildId = new(1);
     private readonly LegacyGuildSaberApi _legacyGuildSaberApi;
 
     public LegacyGuildSaberApiTests()
@@ -23,7 +24,7 @@ public class LegacyGuildSaberApiTests
     public async Task GetGuildRankedDifficulties_ShouldReturnEmptyArray_WhenNoMoreData()
     {
         // Arrange
-        var guildId = ValidGuildId;
+        var guildId = _validGuildId;
         var requestOptions = new LegacyGuildSaberApi.PaginatedRequestOptions<RankedMapsSortBy>
         {
             Page = 1,
@@ -47,7 +48,7 @@ public class LegacyGuildSaberApiTests
     public async Task GetRankingLevels_ShouldReturnAtLeast10Levels_WhenValidGuildId()
     {
         // Arrange
-        var guildId = ValidGuildId;
+        var guildId = _validGuildId;
 
         // Act
         var result = await _legacyGuildSaberApi.GetRankingLevelsAsync(guildId);
@@ -64,7 +65,7 @@ public class LegacyGuildSaberApiTests
     public async Task GetRankingCategories_ShouldReturnAtLeast10Levels_WhenValidGuildId()
     {
         // Arrange
-        var guildId = ValidGuildId;
+        var guildId = _validGuildId;
 
         // Act
         var result = await _legacyGuildSaberApi.GetRankingCategoriesAsync(guildId);
@@ -80,6 +81,7 @@ public class LegacyGuildSaberApiTests
     [Test]
     public async Task GetRankedScoreStateAsync_ShouldReturnAllowedState_WhenScoreIsValid()
     {
+        var guildId = _validGuildId;
         var beatLeaderId = BeatLeaderId.CreateUnsafe(76561198126131670).Value;
         var scoreSaberId = ScoreSaberId.CreateUnsafe(76561198126131670).Value;
         var ssid = 287616;
@@ -88,12 +90,30 @@ public class LegacyGuildSaberApiTests
 
         // Act
         var result = await _legacyGuildSaberApi.GetRankedScoreStateAsync(
-            beatLeaderId, scoreSaberId, blid, ssid, unmodifiedScore);
+            guildId, beatLeaderId, scoreSaberId, blid, ssid, unmodifiedScore);
 
         // Assert
         if (!result.TryGetValue(out var state, out var error))
             Assert.Fail(error);
 
         state.Should().Be(EState.Allowed, "because the score should be valid and allowed");
+    }
+
+    [Test]
+    public async Task GetRankedScoreStateAsync_ShouldReturnFailure_WhenScoreIsInvalid()
+    {
+        var guildId = _validGuildId;
+        var beatLeaderId = BeatLeaderId.CreateUnsafe(76561198126131670).Value;
+        var scoreSaberId = ScoreSaberId.CreateUnsafe(76561198126131670).Value;
+        var ssid = 287616;
+        var blid = "d8d091";
+        var unmodifiedScore = 1; // Invalid score
+
+        // Act
+        var result = await _legacyGuildSaberApi.GetRankedScoreStateAsync(
+            guildId, beatLeaderId, scoreSaberId, blid, ssid, unmodifiedScore);
+
+        // Assert
+        result.Should().Fail("because the score is invalid and shouldn't be found on LegacyGuildSaber");
     }
 }

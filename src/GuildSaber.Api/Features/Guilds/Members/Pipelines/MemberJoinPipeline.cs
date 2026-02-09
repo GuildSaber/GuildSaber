@@ -8,7 +8,7 @@ public sealed class MemberJoinPipeline(
     LegacyGSImportAdminConfPipeline legacyGSImportAdminConfPipeline,
     ILogger<MemberJoinPipeline> logger)
 {
-    public async Task ExecuteAsync(PlayerId playerId, CancellationToken token)
+    public async Task ExecuteAsync(GuildId guildId, PlayerId playerId, CancellationToken token)
     {
         logger.LogInformation("Starting member join pipeline for player {PlayerId}.", playerId);
 
@@ -18,7 +18,7 @@ public sealed class MemberJoinPipeline(
 
         /* We needed the previous recalculation to have the RankedScores used to check for confirmation.
          * If any confirmation is imported, we need to recalculate again to update the scores accordingly. */
-        var importedAny = await legacyGSImportAdminConfPipeline.ExecuteAsync(playerId, token);
+        var importedAny = await legacyGSImportAdminConfPipeline.ExecuteAsync(guildId, playerId, token);
         if (importedAny) await playerScoresPipeline.RecalculatePlayerScoresAsync(playerId, token);
 
         logger.LogInformation("Finished member join pipeline for player {PlayerId}.", playerId);

@@ -14,9 +14,11 @@ public class LegacyGSImportAdminConfPipeline(
     ILogger<LegacyGSImportAdminConfPipeline> logger)
 {
     /// <returns>True if any confirmations were imported; otherwise, false.</returns>
-    public async Task<bool> ExecuteAsync(PlayerId playerId, CancellationToken token)
+    public async Task<bool> ExecuteAsync(GuildId guildId, PlayerId playerId, CancellationToken token)
     {
-        logger.LogInformation("Importing legacy GuildSaber admin confirmations for player {PlayerId}", playerId);
+        logger.LogInformation(
+            "Importing legacy GuildSaber admin confirmations for player {PlayerId} in guild {GuildId}",
+            playerId, guildId);
         var (beatleaderId, scoreSaberId) = await dbContext.Players
             .Where(x => x.Id == playerId)
             .Select(x => new Tuple<BeatLeaderId, ScoreSaberId?>(
@@ -40,6 +42,7 @@ public class LegacyGSImportAdminConfPipeline(
                            .WithCancellation(token))
         {
             var result = await legacyGuildSaberApi.GetRankedScoreStateAsync(
+                guildId,
                 beatleaderId,
                 scoreSaberId,
                 blId: data.BLLeaderboardId,
@@ -70,7 +73,9 @@ public class LegacyGSImportAdminConfPipeline(
 
         if (impactedContextPoints.Count == 0)
         {
-            logger.LogInformation("No legacy GuildSaber admin confirmations to import for player {PlayerId}", playerId);
+            logger.LogInformation(
+                "No legacy GuildSaber admin confirmations to import for player {PlayerId} in guild {GuildId}",
+                playerId, guildId);
             return false;
         }
 

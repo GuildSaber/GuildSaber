@@ -73,7 +73,7 @@ public class LegacyGuildSaberApi(HttpClient httpClient)
     /// Enumeration stops automatically after receiving null, an empty array, or an error.
     /// </remarks>
     public async IAsyncEnumerable<Result<PagedRankedDifficulties.RankedMapData[]?>> GetGuildRankedMaps(
-        int guildId, PaginatedRequestOptions<RankedMapsSortBy> requestOptions)
+        GuildId guildId, PaginatedRequestOptions<RankedMapsSortBy> requestOptions)
     {
         var rateLimitRetries = 0;
         while (requestOptions.Page <= requestOptions.MaxPage)
@@ -128,7 +128,7 @@ public class LegacyGuildSaberApi(HttpClient httpClient)
     /// - Success with an empty array when no levels exist for the guild
     /// - Failure with an error message for HTTP errors
     /// </remarks>
-    public async Task<Result<RankingLevel[]>> GetRankingLevelsAsync(int guildId, int? categoryId = null)
+    public async Task<Result<RankingLevel[]>> GetRankingLevelsAsync(GuildId guildId, int? categoryId = null)
         => await httpClient.GetAsync(GetRankingLevelsUrl(guildId, categoryId)) switch
         {
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
@@ -153,7 +153,7 @@ public class LegacyGuildSaberApi(HttpClient httpClient)
     /// - Success with an empty array when no levels exist for the guild
     /// - Failure with an error message for HTTP errors
     /// </remarks>
-    public async Task<Result<RankingCategory[]>> GetRankingCategoriesAsync(int guildId)
+    public async Task<Result<RankingCategory[]>> GetRankingCategoriesAsync(GuildId guildId)
         => await httpClient.GetAsync(new Uri($"{ApiLink}categories/data/all?guild-id={guildId}", UriKind.Absolute))
             switch
             {
@@ -167,10 +167,11 @@ public class LegacyGuildSaberApi(HttpClient httpClient)
             };
 
     public async Task<Result<EState>> GetRankedScoreStateAsync(
-        BeatLeaderId beatLeaderId, ScoreSaberId? scoreSaberId, string? blId, int? ssId, int unmodifiedScore)
+        GuildId guildId, BeatLeaderId beatLeaderId, ScoreSaberId? scoreSaberId,
+        string? blId, int? ssId, int unmodifiedScore)
         => await httpClient.GetAsync(
                 new Uri(
-                    $"{ApiLink}rankeddifficultyscores/state/by-identifiable-fields/{beatLeaderId}/{(string.IsNullOrEmpty(blId) ? "0" : blId)}/{unmodifiedScore}" +
+                    $"{ApiLink}rankeddifficultyscores/state/by-identifiable-fields/{guildId}/{beatLeaderId}/{(string.IsNullOrEmpty(blId) ? "0" : blId)}/{unmodifiedScore}" +
                     $"{(scoreSaberId.HasValue ? $"?scoresaberid={scoreSaberId.Value}" : string.Empty)}" +
                     $"{(ssId.HasValue ? $"{(scoreSaberId.HasValue ? "&" : "?")}ssid={ssId.Value}" : string.Empty)}",
                     UriKind.Absolute))

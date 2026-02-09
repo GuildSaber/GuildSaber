@@ -6,7 +6,6 @@ using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient.Auth;
-using GuildSaber.CSharpClient.Routes.Debug;
 using GuildSaber.CSharpClient.Routes.Guilds;
 using GuildSaber.CSharpClient.Routes.Guilds.Categories;
 using GuildSaber.CSharpClient.Routes.Guilds.Levels;
@@ -157,12 +156,6 @@ public class GuildSaberClient : IDisposable
     /// </summary>
     public LevelClient Levels
         => field ??= new LevelClient(HttpClient, _jsonOptions);
-
-    /// <summary>
-    /// Gets the debug client for interacting with debug endpoints.
-    /// </summary>
-    public DebugClient Debug
-        => field ??= new DebugClient(HttpClient, _authenticationHeader);
 
     /// <inheritdoc />
     public void Dispose()

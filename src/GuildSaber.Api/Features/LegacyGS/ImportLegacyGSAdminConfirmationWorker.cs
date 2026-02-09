@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using GuildSaber.Api.Features.LegacyGS.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Queuing;
@@ -22,25 +23,31 @@ public class ImportLegacyGSAdminConfirmationWorker(
         }
     }
 
+    private readonly record struct PlayerWithGuilds(PlayerId PlayerId, GuildId[] GuildIds);
+
+    [SuppressMessage("ReSharper", "LoopCanBeConvertedToQuery")]
     private async Task DoWorkAsync() => await taskQueue.QueueBackgroundWorkItemAsync(async token =>
     {
         using var scope = scopeFactory.CreateScope();
 
-        PlayerId[] playerIds;
+        PlayerWithGuilds[] playersWithGuilds;
         await using (var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>())
         {
-            playerIds = await dbContext.Players
-                .Select(p => p.Id)
+            playersWithGuilds = await dbContext.Players
+                .Select(p => new PlayerWithGuilds(p.Id, p.Members.Select(x => x.GuildId).ToArray()))
                 .ToArrayAsync(token);
         }
 
         var playerScoresPipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
         var importAdminConfPipeline = scope.ServiceProvider.GetRequiredService<LegacyGSImportAdminConfPipeline>();
 
-        foreach (var playerId in playerIds)
+        foreach (var playerWithGuilds in playersWithGuilds)
         {
-            var importedAny = await importAdminConfPipeline.ExecuteAsync(playerId, token);
-            if (importedAny) await playerScoresPipeline.RecalculatePlayerScoresAsync(playerId, token);
+            var importedAny = false;
+            foreach (var guildId in playerWithGuilds.GuildIds)
+                importedAny |= await importAdminConfPipeline.ExecuteAsync(guildId, playerWithGuilds.PlayerId, token);
+
+            if (importedAny) await playerScoresPipeline.RecalculatePlayerScoresAsync(playerWithGuilds.PlayerId, token);
         }
     });
 }
