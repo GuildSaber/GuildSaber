@@ -14,6 +14,7 @@ using GuildSaber.Api.Features.LegacyGS;
 using GuildSaber.Api.Features.LegacyGS.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Features.RankedMaps;
+using GuildSaber.Api.Features.RankedMaps.Pipelines;
 using GuildSaber.Api.Features.Scores;
 using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Api.Queuing;
@@ -252,6 +253,7 @@ builder.Services.AddTransient<LegacyGuildSaberMapImportPipeline>();
 builder.Services.AddTransient<MemberPointStatsPipeline>();
 builder.Services.AddTransient<MemberLevelStatsPipeline>();
 builder.Services.AddTransient<MemberJoinPipeline>();
+builder.Services.AddTransient<AddRankedMapPipeline>();
 builder.Services.AddHostedService<BLScoreSyncWorker>();
 builder.Services.AddHostedService<QueueProcessingService>();
 builder.Services.AddHostedService<ImportLegacyGSAdminConfirmationWorker>(provider =>
