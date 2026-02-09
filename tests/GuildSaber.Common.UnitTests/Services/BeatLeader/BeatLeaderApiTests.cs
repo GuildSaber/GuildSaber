@@ -14,6 +14,7 @@ public class BeatLeaderApiTests
     private readonly BeatLeaderApi _beatLeaderApi;
     private readonly BeatLeaderId _invalidBeatLeaderId = BeatLeaderId.CreateUnsafe(99999999999).Value;
     private readonly BeatLeaderScoreId _invalidBeatLeaderScoreId = BeatLeaderScoreId.CreateUnsafe(999999999).Value;
+    private readonly BLLeaderboardId _invalidLeaderboardId = BLLeaderboardId.CreateUnsafe("0").Value;
 
     private readonly string _invalidSongCharacteristic = "InvalidMode";
     private readonly EDifficulty _invalidSongDifficulty = (EDifficulty)(-1);
@@ -21,6 +22,7 @@ public class BeatLeaderApiTests
 
     private readonly BeatLeaderId _validBeatLeaderId = BeatLeaderId.CreateUnsafe(76561198126131670).Value;
     private readonly BeatLeaderScoreId _validBeatLeaderScoreId = BeatLeaderScoreId.CreateUnsafe(9655850).Value;
+    private readonly BLLeaderboardId _validLeaderboardId = BLLeaderboardId.CreateUnsafe("a3c391").Value;
 
     private readonly string _validSongCharacteristic = "Standard";
     private readonly EDifficulty _validSongDifficulty = EDifficulty.ExpertPlus;
@@ -36,7 +38,7 @@ public class BeatLeaderApiTests
     }
 
     [Test]
-    public async Task GetPlayerScoresCompact_ShouldReturnNullAndStopIteration_WhenInvalidPlayerId()
+    public async Task GetPlayerScoresCompactAsyncEnumerable_ShouldReturnNullAndStopIteration_WhenInvalidPlayerId()
     {
         // Arrange
         var playerId = _invalidBeatLeaderId;
@@ -51,7 +53,7 @@ public class BeatLeaderApiTests
         var iterationCount = 0;
 
         // Act
-        await foreach (var data in _beatLeaderApi.GetPlayerScoresCompact(playerId, requestOptions))
+        await foreach (var data in _beatLeaderApi.GetPlayerScoresCompactAsyncEnumerable(playerId, requestOptions))
         {
             iterationCount++.Should().Be(0, "because we expect to stop after the first iteration");
 
@@ -65,8 +67,9 @@ public class BeatLeaderApiTests
     [Test]
     [Arguments(ScoresSortBy.Date, Order.Desc), Arguments(ScoresSortBy.Acc, Order.Asc)]
     [Arguments(ScoresSortBy.Acc, Order.Desc), Arguments(ScoresSortBy.Date, Order.Asc)]
-    public async Task GetPlayerScoresCompact_ShouldReturnScoresInCorrectSortingOrder_WhenOrderByAndSortBySpecified(
-        ScoresSortBy sortBy, Order orderBy)
+    public async Task
+        GetPlayerScoresCompactAsyncEnumerable_ShouldReturnScoresInCorrectSortingOrder_WhenOrderByAndSortBySpecified(
+            ScoresSortBy sortBy, Order orderBy)
     {
         // Arrange
         var playerId = _validBeatLeaderId;
@@ -82,7 +85,7 @@ public class BeatLeaderApiTests
         var scores = new List<CompactScoreResponse>();
 
         // Act
-        await foreach (var data in _beatLeaderApi.GetPlayerScoresCompact(playerId, requestOptions))
+        await foreach (var data in _beatLeaderApi.GetPlayerScoresCompactAsyncEnumerable(playerId, requestOptions))
         {
             if (!data.TryGetValue(out var compactScores))
                 Assert.Fail(data.Error);
@@ -105,7 +108,7 @@ public class BeatLeaderApiTests
     }
 
     [Test]
-    public async Task GetPlayerScoresCompact_ShouldReturnEmptyArray_WhenNoMoreData()
+    public async Task GetPlayerScoresCompactAsyncEnumerable_ShouldReturnEmptyArray_WhenNoMoreData()
     {
         // Arrange
         var playerId = _validBeatLeaderId;
@@ -119,7 +122,7 @@ public class BeatLeaderApiTests
         };
 
         // Act
-        await foreach (var data in _beatLeaderApi.GetPlayerScoresCompact(playerId, requestOptions))
+        await foreach (var data in _beatLeaderApi.GetPlayerScoresCompactAsyncEnumerable(playerId, requestOptions))
         {
             if (!data.TryGetValue(out var compactScores))
                 Assert.Fail(data.Error);
@@ -129,7 +132,7 @@ public class BeatLeaderApiTests
     }
 
     [Test]
-    public async Task GetPlayerScores_ShouldReturnNullAndStopIteration_WhenInvalidPlayerId()
+    public async Task GetPlayerScoresAsyncEnumerable_ShouldReturnNullAndStopIteration_WhenInvalidPlayerId()
     {
         // Arrange
         var playerId = _invalidBeatLeaderId;
@@ -144,7 +147,7 @@ public class BeatLeaderApiTests
         var iterationCount = 0;
 
         // Act
-        await foreach (var data in _beatLeaderApi.GetPlayerScores(playerId, requestOptions))
+        await foreach (var data in _beatLeaderApi.GetPlayerScoresAsyncEnumerable(playerId, requestOptions))
         {
             iterationCount++.Should().Be(0, "because we expect to stop after the first iteration");
 
@@ -158,8 +161,9 @@ public class BeatLeaderApiTests
     [Test]
     [Arguments(ScoresSortBy.Date, Order.Desc), Arguments(ScoresSortBy.Acc, Order.Asc)]
     [Arguments(ScoresSortBy.Acc, Order.Desc), Arguments(ScoresSortBy.Date, Order.Asc)]
-    public async Task GetPlayerScores_ShouldReturnScoresInCorrectSortingOrder_WhenOrderByAndSortBySpecified(
-        ScoresSortBy sortBy, Order orderBy)
+    public async Task
+        GetPlayerScoresAsyncEnumerable_ShouldReturnScoresInCorrectSortingOrder_WhenOrderByAndSortBySpecified(
+            ScoresSortBy sortBy, Order orderBy)
     {
         // Arrange
         var playerId = _validBeatLeaderId;
@@ -175,7 +179,7 @@ public class BeatLeaderApiTests
         var scores = new List<ScoreResponse>();
 
         // Act
-        await foreach (var data in _beatLeaderApi.GetPlayerScores(playerId, requestOptions))
+        await foreach (var data in _beatLeaderApi.GetPlayerScoresAsyncEnumerable(playerId, requestOptions))
         {
             if (!data.TryGetValue(out var scoreResponses))
                 Assert.Fail(data.Error);
@@ -198,7 +202,7 @@ public class BeatLeaderApiTests
     }
 
     [Test]
-    public async Task GetPlayerScores_ShouldReturnEmptyArray_WhenNoMoreData()
+    public async Task GetPlayerScoresAsyncEnumerable_ShouldReturnEmptyArray_WhenNoMoreData()
     {
         // Arrange
         var playerId = _validBeatLeaderId;
@@ -212,7 +216,7 @@ public class BeatLeaderApiTests
         };
 
         // Act
-        await foreach (var data in _beatLeaderApi.GetPlayerScores(playerId, requestOptions))
+        await foreach (var data in _beatLeaderApi.GetPlayerScoresAsyncEnumerable(playerId, requestOptions))
         {
             if (!data.TryGetValue(out var scores))
                 Assert.Fail(data.Error);
@@ -360,5 +364,180 @@ public class BeatLeaderApiTests
                         l.Difficulty.DifficultyName == expectedDifficulty.ToString()),
                 "Leaderboards should contain an entry for the expected difficulty and characteristic"
             );
+    }
+
+    [Test]
+    public async Task GetLeaderboard_ShouldReturnNull_WhenInvalidLeaderboardId()
+    {
+        // Arrange
+        var leaderboardId = _invalidLeaderboardId;
+        var requestOptions = new BeatLeaderApi.PaginatedRequestOptions<LeaderboardSortBy>
+        {
+            Page = 1,
+            PageSize = 2,
+            Order = Order.Desc,
+            SortBy = LeaderboardSortBy.Rank
+        };
+
+        // Act
+        var leaderboard = await _beatLeaderApi.GetLeaderboardAsync(leaderboardId, requestOptions);
+
+        // Assert
+        leaderboard.SuccessShould().BeNull("A 404 response should return a null success response");
+    }
+
+    [Test]
+    public async Task GetLeaderboard_ShouldReturnValidLeaderboard_WhenValidLeaderboardId()
+    {
+        // Arrange
+        var leaderboardId = _validLeaderboardId;
+        const EDifficulty expectedDifficulty = EDifficulty.ExpertPlus;
+        const string expectedCharacteristic = "Standard";
+        var requestOptions = new BeatLeaderApi.PaginatedRequestOptions<LeaderboardSortBy>
+        {
+            Page = 1,
+            PageSize = 2,
+            Order = Order.Desc,
+            SortBy = LeaderboardSortBy.Rank
+        };
+
+        // Act
+        var leaderboard = await _beatLeaderApi.GetLeaderboardAsync(leaderboardId, requestOptions);
+
+        // Assert
+        leaderboard.SuccessShould()
+            .NotBeNull("The leaderboard response should not be null")
+            .And
+            .Match<LeaderboardResponse>(x =>
+                    x.Difficulty!.ModeName == expectedCharacteristic &&
+                    x.Difficulty.DifficultyName == expectedDifficulty.ToString() &&
+                    x.Scores!.Count > 0,
+                "The leaderboard should have the expected difficulty, characteristic, and contain scores"
+            );
+    }
+
+    [Test]
+    public async Task GetLeaderboardAsyncEnumerable_ShouldReturnNullAndStopIteration_WhenInvalidLeaderboardId()
+    {
+        // Arrange
+        var leaderboardId = _invalidLeaderboardId;
+        var requestOptions = new BeatLeaderApi.PaginatedRequestOptions<LeaderboardSortBy>
+        {
+            Page = 1,
+            PageSize = 2,
+            MaxPage = 2,
+            Order = Order.Desc,
+            SortBy = LeaderboardSortBy.Rank
+        };
+        var iterationCount = 0;
+
+        // Act
+        await foreach (var data in _beatLeaderApi.GetLeaderboardAsyncEnumerable(leaderboardId, requestOptions))
+        {
+            iterationCount++.Should().Be(0, "because we expect to stop after the first iteration");
+
+            if (!data.TryGetValue(out var leaderboard))
+                Assert.Fail(data.Error);
+
+            leaderboard.Should().BeNull("because the leaderboard ID is invalid");
+        }
+    }
+
+    [Test]
+    public async Task GetLeaderboardAsyncEnumerable_ShouldReturnValidLeaderboard_WhenValidLeaderboardId()
+    {
+        // Arrange
+        var leaderboardId = _validLeaderboardId;
+        const EDifficulty expectedDifficulty = EDifficulty.ExpertPlus;
+        const string expectedCharacteristic = "Standard";
+        var requestOptions = new BeatLeaderApi.PaginatedRequestOptions<LeaderboardSortBy>
+        {
+            Page = 1,
+            PageSize = 2,
+            MaxPage = 2,
+            Order = Order.Desc,
+            SortBy = LeaderboardSortBy.Rank
+        };
+
+        var leaderboards = new List<LeaderboardResponse>();
+
+        // Act
+        await foreach (var data in _beatLeaderApi.GetLeaderboardAsyncEnumerable(leaderboardId, requestOptions))
+        {
+            if (!data.TryGetValue(out var leaderboard))
+                Assert.Fail(data.Error);
+
+            if (leaderboard != null)
+                leaderboards.Add(leaderboard);
+        }
+
+        // Assert
+        leaderboards.Should().NotBeNullOrEmpty("The leaderboard response should not be null or empty");
+        leaderboards.Should().AllSatisfy(x =>
+        {
+            x.Difficulty.Should().NotBeNull();
+            x.Difficulty!.ModeName.Should().Be(expectedCharacteristic);
+            x.Difficulty.DifficultyName.Should().Be(expectedDifficulty.ToString());
+            x.Scores.Should().NotBeNullOrEmpty();
+        }, "The leaderboard should have the expected difficulty, characteristic, and contain scores");
+    }
+
+    [Test]
+    public async Task GetLeaderboardAsyncEnumerable_ShouldStopIteration_WhenNoMoreData()
+    {
+        // Arrange
+        var leaderboardId = _validLeaderboardId;
+        var requestOptions = new BeatLeaderApi.PaginatedRequestOptions<LeaderboardSortBy>
+        {
+            Page = 1,
+            PageSize = 2,
+            MaxPage = 2,
+            Order = Order.Desc,
+            SortBy = LeaderboardSortBy.Rank
+        };
+
+        // Act
+        await foreach (var data in _beatLeaderApi.GetLeaderboardAsyncEnumerable(leaderboardId, requestOptions))
+        {
+            if (!data.TryGetValue(out var leaderboard))
+                Assert.Fail(data.Error);
+
+            leaderboard.Should().NotBeNull("because we expect to receive leaderboard data");
+        }
+    }
+
+    [Test]
+    public async Task GetLeaderboardAsyncEnumerable_ShouldStopIterationByReturningNull_WhenNoMoreScoresAvailable()
+    {
+        // Arrange
+        var leaderboardId = _validLeaderboardId;
+        var requestOptions = new BeatLeaderApi.PaginatedRequestOptions<LeaderboardSortBy>
+        {
+            Page = 1,
+            PageSize = 100,
+            MaxPage = int.MaxValue,
+            Order = Order.Desc,
+            SortBy = LeaderboardSortBy.Rank
+        };
+
+        var leaderboards = new List<LeaderboardResponse>();
+        var receivedNull = false;
+
+        // Act
+        await foreach (var data in _beatLeaderApi.GetLeaderboardAsyncEnumerable(leaderboardId, requestOptions))
+        {
+            if (!data.TryGetValue(out var leaderboard))
+                Assert.Fail(data.Error);
+
+            if (leaderboard is null)
+                receivedNull = true;
+            else
+                leaderboards.Add(leaderboard);
+        }
+
+        // Assert
+        leaderboards.Should().NotBeEmpty("because we expect to receive at least some leaderboard data before stopping");
+        receivedNull.Should()
+            .BeTrue("because iteration should stop by receiving null when no more scores are available");
     }
 }

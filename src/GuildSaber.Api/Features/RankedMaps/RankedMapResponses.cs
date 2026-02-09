@@ -8,7 +8,7 @@ namespace GuildSaber.Api.Features.RankedMaps;
 public static class RankedMapResponses
 {
     public record RankedMapInfo(DateTimeOffset CreatedAt, DateTimeOffset EditedAt);
-    
+
     public record RankedMapRating(float AccStar, float DiffStar);
 
     public record SongStats(

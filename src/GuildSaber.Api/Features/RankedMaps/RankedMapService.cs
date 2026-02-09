@@ -1,6 +1,6 @@
 using CSharpFunctionalExtensions;
+using GuildSaber.Api.Features.RankedMaps.Pipelines;
 using GuildSaber.Api.Features.Scores;
-using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models;
@@ -97,8 +97,15 @@ public class RankedMapService(
 
     public readonly record struct RankedMapBoostsCount(int Tier1, int Tier2, int Tier3);
 
-    public async Task<CreateResponse> CreateRankedMapAsync(ContextId contextId,
-                                                           RankedMapRequests.CreateRankedMap request)
+    private readonly record struct ValidatedData(
+        RankedMapRequirements Requirements,
+        CustomCurve AccuracyCurve,
+        Category[] Categories,
+        RankedMapListLevel[] Levels
+    );
+
+    public async Task<CreateResponse> CreateRankedMapAsync(
+        ContextId contextId, RankedMapRequests.CreateRankedMap request)
         => await GetParentGuildAsync(contextId) switch
         {
             null => new ValidationFailure("ContextId", $"Guild context with ID '{contextId}' does not exist."),
@@ -162,14 +169,8 @@ public class RankedMapService(
                 await taskQueue.QueueBackgroundWorkItemAsync(async token =>
                 {
                     using var scope = serviceScopeFactory.CreateScope();
-                    var serverDbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
-                    var scoreAddOrUpdatePipeline = scope.ServiceProvider.GetRequiredService<ScoreAddOrUpdatePipeline>();
-
-                    await foreach (var score in serverDbContext.Scores
-                                       .Where(x => x.SongDifficultyId == tuple.difficulty.Id)
-                                       .AsAsyncEnumerable()
-                                       .WithCancellation(token))
-                        await scoreAddOrUpdatePipeline.ExecuteAsync(score, token);
+                    await scope.ServiceProvider.GetRequiredService<AddRankedMapPipeline>()
+                        .ExecuteAsync(tuple.difficulty, token);
                 });
 
                 return new Success(tuple.rankedMap, tuple.song, tuple.difficulty, tuple.gameMode) as CreateResponse;
@@ -209,31 +210,17 @@ public class RankedMapService(
 
         rankedMap.Info = rankedMap.Info with { EditedAt = timeProvider.GetUtcNow() };
 
-        if (await dbContext.SaveChangesAsync() > 0)
+        if (await dbContext.SaveChangesAsync() <= 0)
+            return new UpdateResponse.UnexpectedFailure("Failed to save changes to the database.");
+
+        await taskQueue.QueueBackgroundWorkItemAsync(async token =>
         {
-            await taskQueue.QueueBackgroundWorkItemAsync(async token =>
-            {
-                using var scope = serviceScopeFactory.CreateScope();
-                var serverDbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
-                var versions = await dbContext.MapVersions
-                    .Where(x => x.RankedMapId == rankedMap.Id)
-                    .Select(x => x.SongDifficultyId)
-                    .ToArrayAsync(token);
+            using var scope = serviceScopeFactory.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<EditRankedMapPipeline>()
+                .ExecuteAsync(rankedMap.Id, token);
+        });
 
-                if (versions.Length == 0) return;
-                var scoreAddOrUpdatePipeline = scope.ServiceProvider.GetRequiredService<ScoreAddOrUpdatePipeline>();
-
-                await foreach (var score in serverDbContext.Scores
-                                   .Where(x => ((IEnumerable<SongDifficultyId>)versions).Contains(x.SongDifficultyId))
-                                   .AsAsyncEnumerable()
-                                   .WithCancellation(token))
-                    await scoreAddOrUpdatePipeline.ExecuteAsync(score, token);
-            });
-            
-            return new UpdateResponse.Success(rankedMap);
-        }
-
-        return new UpdateResponse.UnexpectedFailure("Failed to save changes to the database.");
+        return new UpdateResponse.Success(rankedMap);
     }
 
     private Task<GuildId?> GetParentGuildAsync(ContextId contextId) => dbContext.Contexts
@@ -418,13 +405,6 @@ public class RankedMapService(
             Levels = validatedData.Levels
         };
     }
-
-    private readonly record struct ValidatedData(
-        RankedMapRequirements Requirements,
-        CustomCurve AccuracyCurve,
-        Category[] Categories,
-        RankedMapListLevel[] Levels
-    );
 
     private async Task<Result<ValidatedData, List<KeyValuePair<string, string[]>>>> Validate(
         GuildId guildId,

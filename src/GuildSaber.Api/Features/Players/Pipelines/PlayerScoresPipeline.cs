@@ -75,7 +75,7 @@ public sealed class PlayerScoresPipeline(
         var contextsWithPoints = new Dictionary<ContextId, Context>();
 
         // Unwrap the result to kill the current Task if there's an error.
-        await foreach (var score in beatLeaderApi.GetPlayerScores(beatLeaderId, initialRequest)
+        await foreach (var score in beatLeaderApi.GetPlayerScoresAsyncEnumerable(beatLeaderId, initialRequest)
                            .SelectMany(x => x.Unwrap() ?? [])
                            .WithCancellation(token))
         {
