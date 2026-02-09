@@ -48,8 +48,8 @@ public sealed class PlayerScoresPipeline(
         foreach (var tuple in contextsWithPoints)
         {
             await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value);
-            await memberLevelStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key,
-                tuple.Value.Points.FirstOrDefault()?.Id ?? default);
+            foreach (var point in tuple.Value.Points)
+                await memberLevelStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key, point.Id);
         }
 
         logger.LogInformation("Completed recalculating {count} scores for player {PlayerId}", count, playerId);
@@ -97,8 +97,8 @@ public sealed class PlayerScoresPipeline(
         foreach (var tuple in contextsWithPoints)
         {
             await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value);
-            await memberLevelStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key,
-                tuple.Value.Points.FirstOrDefault()?.Id ?? default);
+            foreach (var point in tuple.Value.Points)
+                await memberLevelStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key, point.Id);
         }
 
         logger.LogInformation("Completed importing {count} BeatLeader scores for player {PlayerId}", count, playerId);
@@ -141,8 +141,8 @@ public sealed class PlayerScoresPipeline(
         foreach (var tuple in contextsWithPoints)
         {
             await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value);
-            await memberLevelStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key,
-                tuple.Value.Points.FirstOrDefault()?.Id ?? default);
+            foreach (var point in tuple.Value.Points)
+                await memberLevelStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key, point.Id);
         }
 
         logger.LogInformation("Completed importing {count} ScoreSaber scores for player {PlayerId}", count, playerId);

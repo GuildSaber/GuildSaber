@@ -257,6 +257,7 @@ builder.Services.AddTransient<AddRankedMapPipeline>();
 builder.Services.AddTransient<EditRankedMapPipeline>();
 builder.Services.AddHostedService<BLScoreSyncWorker>();
 builder.Services.AddHostedService<QueueProcessingService>();
+builder.Services.AddHostedService<HeavyQueueProcessingService>();
 builder.Services.AddHostedService<ImportLegacyGSAdminConfirmationWorker>(provider =>
     new ImportLegacyGSAdminConfirmationWorker(
         new PeriodicTimer(TimeSpan.FromDays(1)),
@@ -264,6 +265,7 @@ builder.Services.AddHostedService<ImportLegacyGSAdminConfirmationWorker>(provide
         provider.GetRequiredService<IServiceScopeFactory>(),
         provider.GetRequiredService<ILogger<ImportLegacyGSAdminConfirmationWorker>>()));
 builder.Services.AddSingleton<IBackgroundTaskQueue>(_ => new BackgroundTaskQueue(capacity: 100));
+builder.Services.AddSingleton<IHeavyBackgroundTaskQueue>(_ => new HeavyBackgroundTaskQueue(capacity: 10));
 
 #endregion
 

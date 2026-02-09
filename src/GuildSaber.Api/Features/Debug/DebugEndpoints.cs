@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Guilds.Members.Pipelines;
@@ -243,9 +242,8 @@ public class DebugEndpoints : IEndpoints
     private static async Task<Results<Accepted, NotFound<string>>> ImportOldGuildSaberMapsBackgroundAsync(
         GuildId guildId,
         ServerDbContext dbContext,
-        IBackgroundTaskQueue taskQueue,
+        IHeavyBackgroundTaskQueue taskQueue,
         IServiceScopeFactory serviceScopeFactory,
-        ILogger<DebugEndpoints> logger,
         CancellationToken cancellationToken)
     {
         if (!await dbContext.Contexts.AnyAsync(x => x.Id == guildId && x.GuildId == guildId, cancellationToken))
@@ -256,13 +254,9 @@ public class DebugEndpoints : IEndpoints
 
         await taskQueue.QueueBackgroundWorkItemAsync(async token =>
         {
-            logger.LogInformation("Starting import of old GuildSaber maps for guild {GuildId}", guildId);
-
             await using var scope = serviceScopeFactory.CreateAsyncScope();
             await scope.ServiceProvider.GetRequiredService<LegacyGuildSaberMapImportPipeline>()
                 .ExecuteAsync(guildId, contextId, token);
-
-            logger.LogInformation("Completed import of old GuildSaber maps for guild {GuildId}", guildId);
         });
 
         return TypedResults.Accepted((string?)null);
