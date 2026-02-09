@@ -254,6 +254,7 @@ builder.Services.AddTransient<MemberPointStatsPipeline>();
 builder.Services.AddTransient<MemberLevelStatsPipeline>();
 builder.Services.AddTransient<MemberJoinPipeline>();
 builder.Services.AddTransient<AddRankedMapPipeline>();
+builder.Services.AddTransient<EditRankedMapPipeline>();
 builder.Services.AddHostedService<BLScoreSyncWorker>();
 builder.Services.AddHostedService<QueueProcessingService>();
 builder.Services.AddHostedService<ImportLegacyGSAdminConfirmationWorker>(provider =>
