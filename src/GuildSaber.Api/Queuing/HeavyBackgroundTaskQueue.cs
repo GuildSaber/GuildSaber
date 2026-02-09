@@ -3,15 +3,15 @@ using System.Threading.Channels;
 namespace GuildSaber.Api.Queuing;
 
 /// <summary>
-/// This queue is intended to be used for tasks that will not add more work to the normal queue.
+/// This queue is intended to be used for tasks that will add more work to the normal queue.
 /// </summary>
-public interface IBackgroundTaskQueue
+public interface IHeavyBackgroundTaskQueue
 {
     ValueTask QueueBackgroundWorkItemAsync(Func<CancellationToken, ValueTask> workItem);
     ValueTask<Func<CancellationToken, ValueTask>> DequeueAsync(CancellationToken cancellationToken);
 }
 
-public sealed class BackgroundTaskQueue(int capacity) : IBackgroundTaskQueue
+public sealed class HeavyBackgroundTaskQueue(int capacity) : IHeavyBackgroundTaskQueue
 {
     private readonly Channel<Func<CancellationToken, ValueTask>> _queue =
         Channel.CreateBounded<Func<CancellationToken, ValueTask>>(

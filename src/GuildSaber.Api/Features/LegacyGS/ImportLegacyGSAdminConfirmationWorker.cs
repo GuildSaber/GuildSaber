@@ -23,18 +23,18 @@ public class ImportLegacyGSAdminConfirmationWorker(
         }
     }
 
-    private readonly record struct PlayerWithGuilds(PlayerId PlayerId, GuildId[] GuildIds);
+    private readonly record struct PlayerIdWithGuildIds(PlayerId PlayerId, GuildId[] GuildIds);
 
     [SuppressMessage("ReSharper", "LoopCanBeConvertedToQuery")]
     private async Task DoWorkAsync() => await taskQueue.QueueBackgroundWorkItemAsync(async token =>
     {
         using var scope = scopeFactory.CreateScope();
 
-        PlayerWithGuilds[] playersWithGuilds;
+        PlayerIdWithGuildIds[] playersWithGuilds;
         await using (var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>())
         {
             playersWithGuilds = await dbContext.Players
-                .Select(p => new PlayerWithGuilds(p.Id, p.Members.Select(x => x.GuildId).ToArray()))
+                .Select(p => new PlayerIdWithGuildIds(p.Id, p.Members.Select(x => x.GuildId).ToArray()))
                 .ToArrayAsync(token);
         }
 
