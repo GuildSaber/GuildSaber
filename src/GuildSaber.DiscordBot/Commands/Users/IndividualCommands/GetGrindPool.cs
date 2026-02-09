@@ -226,7 +226,8 @@ file static class SearchCommand
                 .Append(song.Key).Append(")**")
                 .Append(" (").Append(song.Key is { } key ? key.ToBsrKey() : "no !bsr").Append(")\n")
                 .Append("Mapper(s): ").AppendLine(song.Info.MapperName)
-                .Append("Difficulty: ").AppendLine(version.Difficulty.Difficulty.ToString())
+                .Append("Difficulty: ").Append(version.Difficulty.Difficulty.ToString())
+                .Append(", ").AppendLine(version.Difficulty.GameMode)
                 .AppendLine();
 
             sb.Append("⭐: ").Append(rankedMap.Rating.DiffStar.ToString("0.00")).Append(" | ");
