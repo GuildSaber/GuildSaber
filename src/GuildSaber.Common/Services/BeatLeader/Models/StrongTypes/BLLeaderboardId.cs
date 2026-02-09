@@ -32,9 +32,10 @@ public class BLLeaderboardIdJsonConverter : JsonConverter<BLLeaderboardId>
     public override BLLeaderboardId Read(
         ref Utf8JsonReader reader, Type typeToConvert,
         JsonSerializerOptions options)
-        => reader.TokenType == JsonTokenType.String
+        => reader.TokenType is JsonTokenType.String
             ? BLLeaderboardId.CreateUnsafe(reader.GetString()!).Value
-            : throw new JsonException("Cannot convert to BLLeaderboardId");
+            : throw new JsonException(
+                $"Unexpected token parsing BLLeaderboardId. Expected String (Non Null), got {reader.TokenType}.");
 
     public override void Write(
         Utf8JsonWriter writer, BLLeaderboardId value,

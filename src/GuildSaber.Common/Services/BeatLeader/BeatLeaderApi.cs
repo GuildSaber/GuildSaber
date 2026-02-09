@@ -38,16 +38,23 @@ public class BeatLeaderApi(HttpClient httpClient)
         public static readonly PaginatedRequestOptions<TSortBy> Default = new();
     }
 
-    private Uri GetPlayerScoreCompactUrl(BeatLeaderId playerId, PaginatedRequestOptions<ScoresSortBy> requestOptions)
+    private Uri GetPlayerScoreCompactUrl(BeatLeaderId id, PaginatedRequestOptions<ScoresSortBy> requestOptions)
         => new(
-            $"player/{playerId}/scores/compact?page={requestOptions.Page}&count={requestOptions.PageSize}" +
+            $"player/{id}/scores/compact?page={requestOptions.Page}&count={requestOptions.PageSize}" +
             $"&order={requestOptions.Order}&sortBy={requestOptions.SortBy}",
             UriKind.Relative
         );
 
-    private Uri GetPlayerScoreUrl(BeatLeaderId playerId, PaginatedRequestOptions<ScoresSortBy> requestOptions)
+    private Uri GetPlayerScoreUrl(BeatLeaderId id, PaginatedRequestOptions<ScoresSortBy> requestOptions)
         => new(
-            $"player/{playerId}/scores?page={requestOptions.Page}&count={requestOptions.PageSize}" +
+            $"player/{id}/scores?page={requestOptions.Page}&count={requestOptions.PageSize}" +
+            $"&order={requestOptions.Order}&sortBy={requestOptions.SortBy}",
+            UriKind.Relative
+        );
+
+    private Uri GetLeaderboardUrl(BLLeaderboardId id, PaginatedRequestOptions<LeaderboardSortBy> requestOptions)
+        => new(
+            $"leaderboard/scores/{id}?page={requestOptions.Page}&count={requestOptions.PageSize}" +
             $"&order={requestOptions.Order}&sortBy={requestOptions.SortBy}",
             UriKind.Relative
         );
@@ -68,7 +75,7 @@ public class BeatLeaderApi(HttpClient httpClient)
     /// - Null when the player doesn't exist (HTTP 404)
     /// Enumeration stops automatically after receiving null, an empty array, or an error.
     /// </remarks>
-    public async IAsyncEnumerable<Result<CompactScoreResponse[]?>> GetPlayerScoresCompact(
+    public async IAsyncEnumerable<Result<CompactScoreResponse[]?>> GetPlayerScoresCompactAsyncEnumerable(
         BeatLeaderId playerId, PaginatedRequestOptions<ScoresSortBy> requestOptions)
     {
         while (requestOptions.Page <= requestOptions.MaxPage)
@@ -110,7 +117,7 @@ public class BeatLeaderApi(HttpClient httpClient)
     /// - Null when the player doesn't exist (HTTP 404)
     /// Enumeration stops automatically after receiving null, an empty array, or an error.
     /// </remarks>
-    public async IAsyncEnumerable<Result<ScoreResponse[]?>> GetPlayerScores(
+    public async IAsyncEnumerable<Result<ScoreResponse[]?>> GetPlayerScoresAsyncEnumerable(
         BeatLeaderId playerId, PaginatedRequestOptions<ScoresSortBy> requestOptions)
     {
         while (requestOptions.Page <= requestOptions.MaxPage)
@@ -216,6 +223,16 @@ public class BeatLeaderApi(HttpClient httpClient)
                     .ReadFromJsonAsync<ExMachinaResponse>(_jsonOptions))
             };
 
+    /// <summary>
+    /// Asynchronously retrieves all leaderboards for a specific song from BeatLeader.
+    /// </summary>
+    /// <param name="hash">The hash of the song to retrieve leaderboards for.</param>
+    /// <remarks>
+    /// The result will be:
+    /// - Success with leaderboards data for a found song
+    /// - Success with null when the song doesn't exist (HTTP 404)
+    /// - Failure with an error message for other HTTP errors
+    /// </remarks>
     public async Task<Result<LeaderboardsResponse?>> GetLeaderboardsAsync(SongHash hash)
         => await httpClient.GetAsync($"leaderboards/hash/{hash}") switch
         {
@@ -227,4 +244,70 @@ public class BeatLeaderApi(HttpClient httpClient)
             var response => await Try(() => response.Content
                 .ReadFromJsonAsync<LeaderboardsResponse>(_jsonOptions))
         };
+
+    /// <summary>
+    /// Asynchronously retrieves a specific leaderboard with paginated scores from BeatLeader.
+    /// </summary>
+    /// <param name="leaderboardId">The BeatLeader leaderboard ID to retrieve.</param>
+    /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <remarks>
+    /// The result will be:
+    /// - Success with leaderboard data for a found leaderboard
+    /// - Success with null when the leaderboard doesn't exist (HTTP 404)
+    /// - Failure with an error message for other HTTP errors
+    /// </remarks>
+    public async Task<Result<LeaderboardResponse?>> GetLeaderboardAsync(
+        BLLeaderboardId leaderboardId, PaginatedRequestOptions<LeaderboardSortBy> requestOptions)
+        => await httpClient.GetAsync(GetLeaderboardUrl(leaderboardId, requestOptions)) switch
+        {
+            { StatusCode: HttpStatusCode.NotFound } => null,
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<LeaderboardResponse?>(
+                    $"Failed to retrieve leaderboard for leaderboard {leaderboardId} with pagination: {statusCode} {reasonPhrase}"
+                ),
+            var response => (await Try(() => response.Content.ReadFromJsonAsync<LeaderboardResponse?>(_jsonOptions)))!
+        };
+
+    /// <summary>
+    /// Asynchronously retrieves leaderboard data for a given leaderboard ID with customizable pagination, sorting, and
+    /// ordering.
+    /// </summary>
+    /// <param name="leaderboardId">The BeatLeader leaderboard ID to retrieve.</param>
+    /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <returns>
+    /// An async enumerable sequence of <see cref="Result{T}" /> containing nullable <see cref="LeaderboardResponse" />
+    /// objects.
+    /// </returns>
+    /// <remarks>
+    /// Each successful result contains:
+    /// - A page of leaderboard data when available
+    /// - Null when the leaderboard doesn't exist (HTTP 404)
+    /// - Null when no scores are available for the requested page (HTTP 2XX with empty data)
+    /// - Failure with an error message for other HTTP errors
+    /// Enumeration stops automatically after receiving null or an error.
+    /// </remarks>
+    public async IAsyncEnumerable<Result<LeaderboardResponse?>> GetLeaderboardAsyncEnumerable(
+        BLLeaderboardId leaderboardId, PaginatedRequestOptions<LeaderboardSortBy> requestOptions)
+    {
+        while (requestOptions.Page <= requestOptions.MaxPage)
+        {
+            var url = GetLeaderboardUrl(leaderboardId, requestOptions);
+            var response = await httpClient.GetAsync(url);
+            requestOptions.Page++;
+
+            Result<LeaderboardResponse?> result;
+            yield return result = response switch
+            {
+                { StatusCode: HttpStatusCode.NotFound } => Success<LeaderboardResponse?>(null),
+                { IsSuccessStatusCode: false } => Failure<LeaderboardResponse?>(
+                    $"Failed to retrieve leaderboard {leaderboardId} at page {requestOptions.Page - 1}: {response.StatusCode} {response.ReasonPhrase}"),
+                _ => await Try(() => response.Content
+                        .ReadFromJsonAsync<LeaderboardResponse?>(_jsonOptions))
+                    .Map(value => value?.Scores is null or [] ? null : value)
+            };
+
+            if (result is { IsFailure: true } or { Value: null })
+                yield break;
+        }
+    }
 }
