@@ -1,4 +1,5 @@
 ﻿using GuildSaber.Database.Extensions;
+using GuildSaber.Database.Models.DiscordBot.FlexHistories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
@@ -11,6 +12,16 @@ public sealed class DiscordBotDbContext : DbContext
     public DiscordBotDbContext(DbContextOptions<DiscordBotDbContext> options) : base(options) { }
     public DiscordBotDbContext() { }
 
+    public DbSet<FlexHistory> FlexHistories { get; set; } = null!;
+    public DbSet<FlexHistoryLevelStat> FlexHistoryLevelStats { get; set; } = null!;
+    public DbSet<FlexHistoryPointStat> FlexHistoryPointStats { get; set; } = null!;
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfiguration(new FlexHistoryConfiguration());
+        modelBuilder.ApplyConfiguration(new FlexHistoryLevelStatConfiguration());
+        modelBuilder.ApplyConfiguration(new FlexHistoryPointStatConfiguration());
+    }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {

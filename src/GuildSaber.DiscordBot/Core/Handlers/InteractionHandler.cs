@@ -42,8 +42,10 @@ public class InteractionHandler(
     public async Task InitializeAsync()
     {
         commands.AddTypeConverter<GuildId>(new GuildIdTypeConverter());
+        commands.AddTypeConverter<ContextId>(new ContextIdTypeConverter());
         commands.AddTypeConverter<RankedScoreResponses.EState>(new EStateTypeConverter());
         commands.AddTypeReader<PlayerId>(new PlayerIdTypeReader());
+        commands.AddTypeReader<ContextId>(new ContextIdTypeReader());
         await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
 
         client.InteractionCreated += HandleInteraction;

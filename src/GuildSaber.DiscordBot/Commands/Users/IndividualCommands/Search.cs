@@ -19,7 +19,7 @@ public partial class UserModuleSlash
 {
     [SlashCommand("search", "Search ranked maps on the context by a query")]
     public async Task Search(
-        [Autocomplete<ContextAutocompleteHandler>] int contextId,
+        [Autocomplete<ContextAutocompleteHandler>] ContextId contextId,
         [Summary("Search", "The search term to find ranked maps")] string search,
         [Summary("Category", "The category to filter by"), Autocomplete<CategoryAutocompleteHandler>] int? categoryId =
             null,
@@ -34,7 +34,7 @@ public partial class UserModuleSlash
         .Build());
 
     [ComponentInteraction("search_*_*_*_*")]
-    public async Task Search(int contextId, int categoryId, int page, string search)
+    public async Task Search(ContextId contextId, int categoryId, int page, string search)
     {
         var component = (await SearchCommand.GetRankedMapsComponentAsync
             (await GetGuildIdAsync(), contextId, new RankedMapRequests.Filters(Search: search,
@@ -50,7 +50,7 @@ public partial class UserModuleSlash
 file static class SearchCommand
 {
     public static async Task<ComponentBuilderV2> GetRankedMapsComponentAsync(
-        GuildId guildId, int contextId, RankedMapRequests.Filters requestFilters,
+        GuildId guildId, ContextId contextId, RankedMapRequests.Filters requestFilters,
         int page, GuildSaberClient client, HybridCache cache,
         IOptions<EmojiSettings> emojiSettings)
     {

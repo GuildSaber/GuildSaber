@@ -25,7 +25,7 @@ public partial class UserModuleSlash
 {
     [SlashCommand("ggp", "Displays ranked maps on a level alongside a player's ranked scores")]
     public async Task GetGrindPool(
-        [Autocomplete<ContextAutocompleteHandler>] int contextId,
+        [Autocomplete<ContextAutocompleteHandler>] ContextId contextId,
         [Summary("Level")] int level,
         [Summary("Category", "The category to filter levels by"), Autocomplete<CategoryAutocompleteHandler>]
         int? categoryId = null,
@@ -44,7 +44,7 @@ public partial class UserModuleSlash
 
     [ComponentInteraction("ggp_*_*_*_*_*_*_*_*_*")]
     public async Task Ggp(
-        int contextId, PlayerId playerId, int categoryId, int level, int page,
+        ContextId contextId, PlayerId playerId, int categoryId, int level, int page,
         EState anyRankedScoreStates,
         EState allRankedScoreStates,
         EState excludeRankedScoreStates,
@@ -64,7 +64,7 @@ public partial class UserModuleSlash
 
     [ComponentInteraction("ggp_*_*_*_*_*_*_*_*_")]
     public async Task Ggp(
-        int contextId, PlayerId playerId, int categoryId, int level, int page,
+        ContextId contextId, PlayerId playerId, int categoryId, int level, int page,
         EState anyRankedScoreStates,
         EState allRankedScoreStates,
         EState excludeRankedScoreStates)
@@ -85,7 +85,7 @@ public partial class UserModuleSlash
 file static class SearchCommand
 {
     public static async Task<MessageComponent> GetGgpComponentAsync(
-        GuildId guildId, int contextId, PlayerId playerId, int page, int levelOrder, GuildSaberClient client,
+        GuildId guildId, ContextId contextId, PlayerId playerId, int page, int levelOrder, GuildSaberClient client,
         HybridCache cache,
         IOptions<EmojiSettings> emojiSettings, Filters requestFilters)
     {
