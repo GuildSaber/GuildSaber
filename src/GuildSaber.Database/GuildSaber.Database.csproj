@@ -28,7 +28,6 @@
     <ItemGroup>
         <Folder Include="Contexts\DiscordBot\Migrations\" />
         <Folder Include="Contexts\Server\Migrations\" />
-        <Folder Include="Models\DiscordBot\" />
     </ItemGroup>
 
     <ItemGroup>
