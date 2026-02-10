@@ -22,8 +22,9 @@ internal class GuildSaberClientFactory(PluginConfig config, SiraLog logger) : IF
     public GuildSaberClient Create()
     {
         var apiUri = config.ApiEnv.ToApiUri;
-        logger.Debug($"Creating GuildSaberClient for: {apiUri}");
+        var cdnUri = config.ApiEnv.ToCdnUri;
+        logger.Debug($"Creating GuildSaberClient for: {apiUri}, CDN: {cdnUri}");
 
-        return new GuildSaberClient(apiUri, authentication: null);
+        return new GuildSaberClient(apiUri, cdnUri, authentication: null);
     }
 }

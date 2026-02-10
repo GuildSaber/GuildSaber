@@ -13,5 +13,12 @@ public static class ApiEnvExtensions
             ApiEnv.Dev => Constants.DevApiBaseUrl,
             _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
         };
+
+        public Uri ToCdnUri => self switch
+        {
+            ApiEnv.Prod => Constants.ProdCdnBaseUrl,
+            ApiEnv.Dev => Constants.DevCdnBaseUrl,
+            _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
+        };
     }
 }

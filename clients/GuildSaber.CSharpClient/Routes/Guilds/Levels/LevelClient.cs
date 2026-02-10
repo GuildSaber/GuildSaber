@@ -11,6 +11,7 @@ namespace GuildSaber.CSharpClient.Routes.Guilds.Levels;
 /// </summary>
 public sealed class LevelClient(
     HttpClient httpClient,
+    Uri cdnBaseUri,
     JsonSerializerOptions jsonOptions)
 {
     /// <summary>
@@ -58,4 +59,6 @@ public sealed class LevelClient(
                     .ConfigureAwait(false))!
             };
     }
+
+    public Uri GetCoverUrl(int levelId) => new(cdnBaseUri, $"levels/{levelId}/cover.png");
 }

@@ -1,4 +1,5 @@
-﻿using GuildSaber.CSharpClient;
+﻿using GuildSaber.Common.Settings;
+using GuildSaber.CSharpClient;
 using TUnit.Core.Interfaces;
 
 namespace GuildSaber.AspireTests.DataClasses;
@@ -14,7 +15,11 @@ public class GuildSaberClientDataClass : IAsyncInitializer, IAsyncDisposable
     public async Task InitializeAsync()
     {
         HttpClient = GlobalHooks.App!.CreateHttpClient("api");
-        GuildSaberClient = new GuildSaberClient(HttpClient, null);
+
+        GuildSaberClient = new GuildSaberClient(
+            HttpClient,
+            GlobalHooks.App!.Services.GetRequiredService<LinkSettings>().CdnBaseUri,
+            null);
         if (GlobalHooks.NotificationService is null) return;
 
         await GlobalHooks.NotificationService

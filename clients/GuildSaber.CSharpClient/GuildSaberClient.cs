@@ -53,14 +53,16 @@ public class GuildSaberClient : IDisposable
 
     private readonly bool _disposeHttpClient;
     private readonly AuthenticationHeaderValue? _authenticationHeader;
+    private readonly Uri _cdnBaseUri;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GuildSaberClient" /> class using an existing HTTP client.
     /// </summary>
     /// <param name="httpClient">The HTTP client to use. Must have a BaseAddress set.</param>
+    /// <param name="cdnBaseUri">The base URI for the CDN. This is used for constructing URLs to access media assets.</param>
     /// <param name="authentication">Optional authentication credentials.</param>
     /// <exception cref="ArgumentNullException">Thrown when httpClient is null or BaseAddress is not set.</exception>
-    public GuildSaberClient(HttpClient httpClient, GuildSaberAuthentication? authentication)
+    public GuildSaberClient(HttpClient httpClient, Uri cdnBaseUri, GuildSaberAuthentication? authentication)
     {
         if (httpClient.BaseAddress is null)
             throw new ArgumentNullException(nameof(httpClient.BaseAddress), "HttpClient must have a BaseAddress set.");
@@ -71,6 +73,7 @@ public class GuildSaberClient : IDisposable
             HttpClient.DefaultRequestHeaders.Add("User-Agent", "GuildSaber.CSharpClient/1.0");
 
         _authenticationHeader = authentication?.ToAuthenticationHeader();
+        _cdnBaseUri = cdnBaseUri;
     }
 
 #if NETCOREAPP2_1_OR_GREATER
@@ -79,8 +82,9 @@ public class GuildSaberClient : IDisposable
     /// Creates an internal HTTP client with optimized connection pooling settings.
     /// </summary>
     /// <param name="baseUri">The base URI for the GuildSaber API.</param>
+    /// <param name="cdnBaseUri">The base URI for the CDN. This is used for constructing URLs to access media assets.</param>
     /// <param name="authentication">Optional authentication credentials.</param>
-    public GuildSaberClient(Uri baseUri, GuildSaberAuthentication? authentication) :
+    public GuildSaberClient(Uri baseUri, Uri cdnBaseUri, GuildSaberAuthentication? authentication) :
         this(new HttpClient(new SocketsHttpHandler
         {
             PooledConnectionLifetime = TimeSpan.FromMinutes(5),
@@ -90,25 +94,27 @@ public class GuildSaberClient : IDisposable
         {
             BaseAddress = baseUri,
             Timeout = TimeSpan.FromSeconds(30)
-        }, authentication) => _disposeHttpClient = true;
+        }, cdnBaseUri, authentication) => _disposeHttpClient = true;
 #else
     /// <summary>
     /// Initializes a new instance of the <see cref="GuildSaberClient" /> class with a base URI.
     /// Creates an internal HTTP client.
     /// </summary>
     /// <param name="baseUri">The base URI for the GuildSaber API.</param>
+    /// <param name="cdnBaseUri">The base URI for the CDN. This is used for constructing URLs to access media assets.</param>
     /// <param name="authentication">Optional authentication credentials.</param>
-    public GuildSaberClient(Uri baseUri, GuildSaberAuthentication? authentication) : this(new HttpClient
+    public GuildSaberClient(Uri baseUri, Uri cdnBaseUri, GuildSaberAuthentication? authentication) : this(new HttpClient
     {
         BaseAddress = baseUri,
         Timeout = TimeSpan.FromSeconds(30)
-    }, authentication) => _disposeHttpClient = true;
+    }, cdnBaseUri, authentication) => _disposeHttpClient = true;
 #endif
 
     /// <summary>
     /// Gets the guild client for interacting with guild endpoints.
     /// </summary>
-    public GuildClient Guilds => field ??= new GuildClient(HttpClient, _authenticationHeader, _jsonOptions);
+    public GuildClient Guilds => field
+        ??= new GuildClient(HttpClient, _cdnBaseUri, _authenticationHeader, _jsonOptions);
 
     /// <summary>
     /// Gets the player client for interacting with player endpoints.
@@ -154,8 +160,7 @@ public class GuildSaberClient : IDisposable
     /// <summary>
     /// Gets the level client for interacting with level endpoints.
     /// </summary>
-    public LevelClient Levels
-        => field ??= new LevelClient(HttpClient, _jsonOptions);
+    public LevelClient Levels => field ??= new LevelClient(HttpClient, _cdnBaseUri, _jsonOptions);
 
     /// <inheritdoc />
     public void Dispose()

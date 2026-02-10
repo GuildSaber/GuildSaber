@@ -15,6 +15,7 @@ namespace GuildSaber.CSharpClient.Routes.Guilds;
 /// </summary>
 public sealed class GuildClient(
     HttpClient httpClient,
+    Uri cdnBaseUri,
     AuthenticationHeaderValue? authenticationHeader,
     JsonSerializerOptions jsonOptions)
 {
@@ -202,4 +203,7 @@ public sealed class GuildClient(
             }).ConfigureAwait(false)
         };
     }
+
+    public Uri GetLogoUrl(GuildId id) => new(cdnBaseUri, $"guilds/{id}/logo.jpg");
+    public Uri GetGuildBannerUrl(GuildId id) => new(cdnBaseUri, $"guilds/{id}/banner.jpg");
 }

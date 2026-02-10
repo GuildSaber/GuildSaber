@@ -1,3 +1,4 @@
+using GuildSaber.Common.Settings;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using GuildSaber.CSharpClient.Auth;
@@ -12,13 +13,16 @@ public static class GuildSaberClientExtensions
     {
         public static GuildSaberClient GetAuthenticatedClient(DiscordId? discordUserId, IServiceProvider services)
             => new(
-                services.GetRequiredService<IHttpClientFactory>().CreateClient("GuildSaber"),
+                httpClient: services.GetRequiredService<IHttpClientFactory>().CreateClient("GuildSaber"),
+                cdnBaseUri: services.GetRequiredService<IOptions<LinkSettings>>().Value.CdnBaseUri,
                 new GuildSaberAuthentication.CustomBasicApiKeyAuthentication(
                     Key: services.GetRequiredService<IOptions<AuthSettings>>().Value.ApiKey,
                     DiscordId: discordUserId
                 ));
 
-        public static GuildSaberClient GetNonAuthenticatedClient(IServiceProvider services)
-            => new(services.GetRequiredService<IHttpClientFactory>().CreateClient("GuildSaber"), null);
+        public static GuildSaberClient GetNonAuthenticatedClient(IServiceProvider services) => new(
+            httpClient: services.GetRequiredService<IHttpClientFactory>().CreateClient("GuildSaber"),
+            cdnBaseUri: services.GetRequiredService<IOptions<LinkSettings>>().Value.CdnBaseUri,
+            authentication: null);
     }
 }
