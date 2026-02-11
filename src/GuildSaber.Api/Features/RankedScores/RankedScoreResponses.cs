@@ -13,6 +13,7 @@ public static class RankedScoreResponses
     [JsonDerivedType(typeof(ScoreSaberScore), "ScoreSaber")]
     public abstract record Score(
         long Id,
+        long SongDifficultyId,
         int BaseScore,
         RankedMapRequests.EModifiers Modifiers,
         DateTimeOffset SetAt,
@@ -24,6 +25,7 @@ public static class RankedScoreResponses
     {
         public sealed record BeatLeaderScore(
             long Id,
+            long SongDifficultyId,
             int BaseScore,
             RankedMapRequests.EModifiers Modifiers,
             DateTimeOffset SetAt,
@@ -34,10 +36,11 @@ public static class RankedScoreResponses
             EHMD HMD,
             //ScoreStatistics? Statistics,
             BeatLeaderScoreId? BeatLeaderScoreId
-        ) : Score(Id, BaseScore, Modifiers, SetAt, MaxCombo, IsFullCombo, MissedNotes, BadCuts, HMD);
+        ) : Score(Id, SongDifficultyId, BaseScore, Modifiers, SetAt, MaxCombo, IsFullCombo, MissedNotes, BadCuts, HMD);
 
         public sealed record ScoreSaberScore(
             long Id,
+            long SongDifficultyId,
             int BaseScore,
             RankedMapRequests.EModifiers Modifiers,
             DateTimeOffset SetAt,
@@ -50,7 +53,7 @@ public static class RankedScoreResponses
             string? DeviceHmd,
             string? DeviceControllerLeft,
             string? DeviceControllerRight
-        ) : Score(Id, BaseScore, Modifiers, SetAt, MaxCombo, IsFullCombo, MissedNotes, BadCuts, HMD);
+        ) : Score(Id, SongDifficultyId, BaseScore, Modifiers, SetAt, MaxCombo, IsFullCombo, MissedNotes, BadCuts, HMD);
     }
 
     public sealed record RankedScore(

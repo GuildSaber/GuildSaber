@@ -35,6 +35,7 @@ public static class RankedMapResponses
     );
 
     public record SongDifficulty(
+        long Id,
         BLLeaderboardId? BLLeaderboardId,
         SSLeaderboardId? SSLeaderboardId,
         EDifficulty Difficulty,

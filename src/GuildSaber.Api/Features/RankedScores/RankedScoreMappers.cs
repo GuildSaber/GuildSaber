@@ -14,6 +14,7 @@ public static class RankedScoreMappers
         => score => score.Type == AbstractScore.EScoreType.BeatLeader
             ? new RankedScoreResponses.Score.BeatLeaderScore(
                 score.Id,
+                score.SongDifficultyId,
                 score.BaseScore,
                 score.Modifiers.Map(),
                 score.SetAt,
@@ -25,6 +26,7 @@ public static class RankedScoreMappers
                 ((BeatLeaderScore)score).BeatLeaderScoreId)
             : new RankedScoreResponses.Score.ScoreSaberScore(
                 score.Id,
+                score.SongDifficultyId,
                 score.BaseScore,
                 score.Modifiers.Map(),
                 score.SetAt,

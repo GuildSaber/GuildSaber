@@ -3948,6 +3948,25 @@
         ]
       }
     },
+    "/debug/refetch-all-player-scores-from-bl-and-scoresaber": {
+      "post": {
+        "tags": [
+          "Debug"
+        ],
+        "summary": "Refetch all player scores from BeatLeader and ScoreSaber.",
+        "description": "Refetches all player scores for all players in the database from BeatLeader and ScoreSaber. USE WITH CAUTION!",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/debug/delete-member-point-stats/{playerId}": {
       "post": {
         "tags": [
@@ -5414,9 +5433,11 @@
       },
       "LevelAccStarLevel": {
         "required": [
-          "minAccStar",
+          "minStar",
           "requiredPassCount",
           "id",
+          "guildId",
+          "contextId",
           "categoryId",
           "info",
           "order",
@@ -5429,10 +5450,9 @@
             ],
             "type": "string"
           },
-          "minAccStar": {
+          "minStar": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
             "type": [
-              "null",
               "number",
               "string"
             ],
@@ -5444,7 +5464,7 @@
               "integer",
               "string"
             ],
-            "format": "int32"
+            "format": "uint32"
           },
           "id": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -5453,6 +5473,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "guildId": {
+            "$ref": "#/components/schemas/GuildId"
+          },
+          "contextId": {
+            "$ref": "#/components/schemas/ContextId"
           },
           "categoryId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -5472,7 +5498,7 @@
               "integer",
               "string"
             ],
-            "format": "int32"
+            "format": "uint32"
           },
           "isLocking": {
             "type": "boolean"
@@ -5481,9 +5507,11 @@
       },
       "LevelDiffStarLevel": {
         "required": [
-          "minDiffStar",
+          "minStar",
           "requiredPassCount",
           "id",
+          "guildId",
+          "contextId",
           "categoryId",
           "info",
           "order",
@@ -5496,10 +5524,9 @@
             ],
             "type": "string"
           },
-          "minDiffStar": {
+          "minStar": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
             "type": [
-              "null",
               "number",
               "string"
             ],
@@ -5511,7 +5538,7 @@
               "integer",
               "string"
             ],
-            "format": "int32"
+            "format": "uint32"
           },
           "id": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -5520,6 +5547,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "guildId": {
+            "$ref": "#/components/schemas/GuildId"
+          },
+          "contextId": {
+            "$ref": "#/components/schemas/ContextId"
           },
           "categoryId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -5539,7 +5572,7 @@
               "integer",
               "string"
             ],
-            "format": "int32"
+            "format": "uint32"
           },
           "isLocking": {
             "type": "boolean"
@@ -5547,10 +5580,6 @@
         }
       },
       "LevelInfo": {
-        "required": [
-          "name",
-          "color"
-        ],
         "type": "object",
         "properties": {
           "name": {
@@ -5569,8 +5598,10 @@
       "LevelRankedMapListLevel": {
         "required": [
           "requiredPassCount",
-          "rankedMapCount",
+          "totalCount",
           "id",
+          "guildId",
+          "contextId",
           "categoryId",
           "info",
           "order",
@@ -5589,9 +5620,9 @@
               "integer",
               "string"
             ],
-            "format": "int32"
+            "format": "uint32"
           },
-          "rankedMapCount": {
+          "totalCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
@@ -5606,6 +5637,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "guildId": {
+            "$ref": "#/components/schemas/GuildId"
+          },
+          "contextId": {
+            "$ref": "#/components/schemas/ContextId"
           },
           "categoryId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -5625,7 +5662,7 @@
               "integer",
               "string"
             ],
-            "format": "int32"
+            "format": "uint32"
           },
           "isLocking": {
             "type": "boolean"
@@ -6884,6 +6921,7 @@
         "required": [
           "beatLeaderScoreId",
           "id",
+          "songDifficultyId",
           "baseScore",
           "modifiers",
           "setAt",
@@ -6911,6 +6949,14 @@
             ]
           },
           "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "songDifficultyId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
@@ -6974,6 +7020,7 @@
           "deviceControllerLeft",
           "deviceControllerRight",
           "id",
+          "songDifficultyId",
           "baseScore",
           "modifiers",
           "setAt",
@@ -7012,6 +7059,14 @@
             ]
           },
           "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "songDifficultyId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
@@ -7154,6 +7209,7 @@
       },
       "SongDifficulty": {
         "required": [
+          "id",
           "blLeaderboardId",
           "ssLeaderboardId",
           "difficulty",
@@ -7162,6 +7218,14 @@
         ],
         "type": "object",
         "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
           "blLeaderboardId": {
             "oneOf": [
               {

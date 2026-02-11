@@ -2,6 +2,7 @@
 using Discord;
 using Discord.Interactions;
 using GuildSaber.Api.Features.Guilds.Categories;
+using GuildSaber.Api.Features.Guilds.Levels;
 using GuildSaber.Api.Features.Guilds.Members.ContextStats;
 using GuildSaber.Api.Features.Guilds.Members.LevelStats;
 using GuildSaber.Api.Features.Players;
@@ -250,8 +251,7 @@ file static class CardRenderingExtensions
             return ctx;
         }
 
-        private void DrawCategoryLevel(
-            CategoryLevelData category, float baseX, float y, float maxLabelWidth, Font font)
+        private void DrawCategoryLevel(CategoryLevelData category, float baseX, float y, float maxLabelWidth, Font font)
         {
             var label = $"{category.CategoryName}: ";
             var labelSize = TextMeasurer.MeasureSize(label, new TextOptions(font));
@@ -346,8 +346,8 @@ file record struct TrophiesData(int Plastic, int Silver, int Gold, int Diamond, 
         {
             var completionPercent = stat.Level switch
             {
-                LevelStatResponses.Level.RankedMapListLevel { RankedMapCount: > 0 } listLevel => stat.PassCount.HasValue
-                    ? stat.PassCount.Value / (float)listLevel.RankedMapCount
+                LevelResponses.Level.RankedMapListLevel { TotalCount: > 0 } listLevel => stat.PassCount.HasValue
+                    ? stat.PassCount.Value / (float)listLevel.TotalCount
                     : 0f,
                 _ => 0f
             };
@@ -413,7 +413,7 @@ file record struct CardData(
                 categoryLevelStat.Level.Info.Name,
                 Color.FromArgb(categoryLevelStat.Level.Info.Color)
             ));
-            categoryLevelOrders.Add(categoryLevelStat.Level.Order);
+            categoryLevelOrders.Add((int)categoryLevelStat.Level.Order);
         }
 
         var equilibriumPercentage = categoryLevelOrders.Count > 1

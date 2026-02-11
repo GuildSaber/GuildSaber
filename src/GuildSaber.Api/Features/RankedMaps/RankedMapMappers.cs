@@ -44,6 +44,7 @@ public static class RankedMapMappers
                         x.Song.Stats.IsAutoMapped
                     )),
                 new RankedMapResponses.SongDifficulty(
+                    x.SongDifficultyId,
                     x.SongDifficulty.BLLeaderboardId,
                     x.SongDifficulty.SSLeaderboardId,
                     x.SongDifficulty.Difficulty,
@@ -90,6 +91,7 @@ public static class RankedMapMappers
                         x.Song.Stats.IsAutoMapped
                     )),
                 new RankedMapResponses.SongDifficulty(
+                    x.SongDifficultyId,
                     x.SongDifficulty.BLLeaderboardId,
                     x.SongDifficulty.SSLeaderboardId,
                     x.SongDifficulty.Difficulty,
@@ -164,6 +166,7 @@ public static class RankedMapMappers
     );
 
     public static RankedMapResponses.SongDifficulty Map(this SongDifficulty self, GameMode gameMode) => new(
+        Id: self.Id,
         BLLeaderboardId: self.BLLeaderboardId,
         SSLeaderboardId: self.SSLeaderboardId,
         Difficulty: self.Difficulty,

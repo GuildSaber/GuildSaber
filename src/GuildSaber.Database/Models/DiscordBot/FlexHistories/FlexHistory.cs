@@ -17,8 +17,8 @@ public class FlexHistory
     public required DateTimeOffset Timestamp { get; set; }
 
     public Level.LevelId? GlobalLevelId { get; set; }
-    public ICollection<FlexHistoryLevelStat> LevelStats { get; set; } = [];
-    public ICollection<FlexHistoryPointStat> PointStats { get; set; } = [];
+    public IList<FlexHistoryLevelStat> LevelStats { get; set; } = [];
+    public IList<FlexHistoryPointStat> PointStats { get; set; } = [];
 
     public readonly record struct FlexHistoryId(long Value)
     {
