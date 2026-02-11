@@ -89,6 +89,12 @@ public class DebugEndpoints : IEndpoints
                 "Refetches all player scores for all players in the database from BeatLeader and ScoreSaber. USE WITH CAUTION!")
             .RequireManager();
 
+        group.MapPost("/import-all-admin-conf", ImportAllAdminConf)
+            .WithSummary("Import all admin confirmations from the old GuildSaber system.")
+            .WithDescription(
+                "Imports all admin confirmations from the old GuildSaber system for all players and guilds. USE WITH CAUTION!")
+            .RequireManager();
+
         group.MapPost("/delete-member-point-stats/{playerId}", async (PlayerId playerId, ServerDbContext dbContext) =>
             {
                 await dbContext.MemberPointStats
@@ -130,6 +136,38 @@ public class DebugEndpoints : IEndpoints
                                .AsAsyncEnumerable()
                                .WithCancellation(token))
                 await pipeline.RecalculatePlayerScoresAsync(playerId, token);
+        });
+
+        return TypedResults.Ok();
+    }
+
+
+    private readonly record struct PlayerIdWithGuildIds(PlayerId PlayerId, GuildId[] GuildIds);
+
+    private static async Task<Ok> ImportAllAdminConf(
+        ServerDbContext dbContext, IBackgroundTaskQueue taskQueue, IServiceScopeFactory serviceScopeFactory)
+    {
+        var playersWithGuilds = await dbContext.Players
+            .Select(p => new PlayerIdWithGuildIds(p.Id, p.Members.Select(x => x.GuildId).ToArray()))
+            .ToArrayAsync();
+
+        await taskQueue.QueueBackgroundWorkItemAsync(async token =>
+        {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var playerScoresPipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
+            var importAdminConfPipeline = scope.ServiceProvider.GetRequiredService<LegacyGSImportAdminConfPipeline>();
+
+            foreach (var playerWithGuilds in playersWithGuilds)
+            {
+                var importedAny = false;
+                foreach (var guildId in playerWithGuilds.GuildIds)
+                    importedAny |=
+                        await importAdminConfPipeline.ExecuteAsync(guildId, playerWithGuilds.PlayerId, token);
+
+                if (importedAny)
+                    await playerScoresPipeline.RecalculatePlayerScoresAsync(playerWithGuilds.PlayerId, token);
+            }
         });
 
         return TypedResults.Ok();

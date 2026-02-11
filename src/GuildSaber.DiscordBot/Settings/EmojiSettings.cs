@@ -7,6 +7,8 @@ public class EmojiSettings
     public const string EmojiSettingsSectionKey = "EmojiSettings";
 
     [Required] public required string NeedConfirmation { get; init; }
+    [Required] public required string Confirmed { get; init; }
+    [Required] public required string Refused { get; init; }
     [Required] public required string WatchingYou { get; init; }
     [Required] public required string Congrats { get; init; }
     [Required] public required string Nope { get; init; }

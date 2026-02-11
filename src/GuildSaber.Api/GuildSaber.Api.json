@@ -3962,6 +3962,25 @@
         },
         "security": [
           {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/debug/import-all-admin-conf": {
+      "post": {
+        "tags": [
+          "Debug"
+        ],
+        "summary": "Import all admin confirmations from the old GuildSaber system.",
+        "description": "Imports all admin confirmations from the old GuildSaber system for all players and guilds. USE WITH CAUTION!",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
             "Bearer": [ ]
           }
         ]

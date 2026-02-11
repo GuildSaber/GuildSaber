@@ -118,7 +118,8 @@ file static class FlexCommand
             ? Color.FromArgb(levelsById[globalLevelId.Value].Info.Color)
             : Color.Default;
 
-        var passedMapContainers = ToRankedScoreContainer(rankedMapsWithScores, levelsById, categories, pointNamesById);
+        var passedMapContainers = ToRankedScoreContainer(rankedMapsWithScores, levelsById, categories, pointNamesById,
+            emojiSettings);
         foreach (var container in passedMapContainers)
             builder.WithContainer(container.WithAccentColor(color));
 
@@ -176,36 +177,66 @@ file static class FlexCommand
         List<RankedMapWithScores> rankedMapWithScores,
         Dictionary<int, LevelResponses.Level> levelsById,
         CategoryResponses.Category[] categories,
-        Dictionary<int, string> pointNamesById)
+        Dictionary<int, string> pointNamesById,
+        EmojiSettings emojiSettings)
     {
         var containers = new List<ContainerBuilder>();
         var passedMaps = rankedMapWithScores
-            .Where(x => x.RankedScores.Any(y => !y.State.HasAnyFlag(EState.NonPointGiving)))
+            .Where(x => x.RankedScores.Any(y => !y.State.HasAnyFlag(EState.NonPointGiving)
+                                                && !y.State.HasFlag(EState.Confirmed)))
             .ToArray();
 
         var prohibitedMaps = rankedMapWithScores
-            .Where(x => x.RankedScores.Any(y => y.State.HasAnyFlag(EState.NonPointGivingNoPending)))
+            .Where(x => x.RankedScores.Any(y => y.State.HasAnyFlag(EState.NonPointGivingNoPending)
+                                                && !y.State.HasFlag(EState.Refused)))
             .ToArray();
 
         var pendingMaps = rankedMapWithScores
             .Where(x => x.RankedScores.Any(y => y.State.HasAnyFlag(EState.Pending)))
             .ToArray();
 
+        var adminConfirmedMaps = rankedMapWithScores
+            .Where(x => x.RankedScores.Any(y => y.State.HasAnyFlag(EState.Confirmed)))
+            .ToArray();
+
+        var adminRefusedMaps = rankedMapWithScores
+            .Where(x => x.RankedScores.Any(y => y.State.HasAnyFlag(EState.Refused)))
+            .ToArray();
+
         if (passedMaps.Length > 0)
             containers.Add(RankedScoreContainerBuilder(
                 title: "### You passed the following maps:\n", passedMaps, levelsById, categories, pointNamesById,
+                emojiSettings,
                 take: 10));
 
         if (prohibitedMaps.Length > 0)
             containers.Add(RankedScoreContainerBuilder(
                 title: "### You got scores on invalid states:\n", prohibitedMaps, levelsById, categories,
                 pointNamesById,
+                emojiSettings,
                 take: 10));
 
         if (pendingMaps.Length > 0)
             containers.Add(RankedScoreContainerBuilder(
                 title: "### You got scores that are pending review:\n", pendingMaps, levelsById, categories,
                 pointNamesById,
+                emojiSettings,
+                take: 10));
+
+        if (adminConfirmedMaps.Length > 0)
+            containers.Add(RankedScoreContainerBuilder(
+                title: "### Scores got admin confirmed:\n",
+                adminConfirmedMaps, levelsById, categories,
+                pointNamesById,
+                emojiSettings,
+                take: 10));
+
+        if (adminRefusedMaps.Length > 0)
+            containers.Add(RankedScoreContainerBuilder(
+                title: "### Scores got admin refused:\n",
+                adminRefusedMaps, levelsById, categories,
+                pointNamesById,
+                emojiSettings,
                 take: 10));
 
         return containers;
@@ -215,13 +246,16 @@ file static class FlexCommand
         string title, RankedMapWithScores[] rankedMapWithScores,
         Dictionary<int, LevelResponses.Level> levelsById,
         CategoryResponses.Category[] categories,
-        Dictionary<int, string> pointNamesById, int take)
+        Dictionary<int, string> pointNamesById,
+        EmojiSettings emojiSettings,
+        int take)
     {
         var stringBuilder = new StringBuilder(title);
 
         foreach (var rankedMap in rankedMapWithScores.Take(take))
         foreach (var rankedScore in rankedMap.RankedScores)
-            stringBuilder.WriteRankedScores(rankedScore, rankedMap.RankedMap, levelsById, categories, pointNamesById);
+            stringBuilder.WriteRankedScores(rankedScore, rankedMap.RankedMap, levelsById, categories, pointNamesById,
+                emojiSettings);
 
         if (rankedMapWithScores.Length > take)
             stringBuilder.AppendLine($"...and {rankedMapWithScores.Length - take} more.");
@@ -234,7 +268,8 @@ file static class FlexCommand
         RankedMap rankedMap,
         Dictionary<int, LevelResponses.Level> levelsById,
         CategoryResponses.Category[] categories,
-        Dictionary<int, string> pointNamesById)
+        Dictionary<int, string> pointNamesById,
+        EmojiSettings emojiSettings)
     {
         var score = rankedScore.Score;
         var version = rankedMap.Versions.First(x => x.Difficulty.Id == score.SongDifficultyId);
@@ -243,6 +278,8 @@ file static class FlexCommand
         {
             _ when rankedScore.State.HasAnyFlag(EState.NonPointGivingNoPending) => ":x: ",
             _ when rankedScore.State.HasAnyFlag(EState.Pending) => ":hourglass: ",
+            _ when rankedScore.State.HasAnyFlag(EState.Confirmed) => emojiSettings.Confirmed,
+            _ when rankedScore.State.HasAnyFlag(EState.Refused) => emojiSettings.Refused,
             _ when rankedScore.State.HasAnyFlag(EState.Selected) => ":white_check_mark: ",
             _ => string.Empty
         });
