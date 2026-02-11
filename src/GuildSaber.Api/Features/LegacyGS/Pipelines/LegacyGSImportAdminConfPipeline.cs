@@ -11,6 +11,7 @@ namespace GuildSaber.Api.Features.LegacyGS.Pipelines;
 public class LegacyGSImportAdminConfPipeline(
     ServerDbContext dbContext,
     LegacyGuildSaberApi legacyGuildSaberApi,
+    TimeProvider timeProvider,
     ILogger<LegacyGSImportAdminConfPipeline> logger)
 {
     /// <returns>True if any confirmations were imported; otherwise, false.</returns>
@@ -55,15 +56,23 @@ public class LegacyGSImportAdminConfPipeline(
             if (state.HasAnyFlag(OldGSState.ScoringTeamConfirmed | OldGSState.Allowed))
                 await dbContext.RankedScores
                     .Where(x => x.Id == data.Id)
-                    .ExecuteUpdateAsync(x => x.SetProperty(y => y.State,
-                            y => y.State & ~RankedScore.EState.Pending | RankedScore.EState.Confirmed),
+                    .ExecuteUpdateAsync(x =>
+                        {
+                            x.SetProperty(y => y.State, y => y.State
+                                & ~RankedScore.EState.Pending | RankedScore.EState.Confirmed);
+                            x.SetProperty(y => y.EditedAt, y => timeProvider.GetUtcNow());
+                        },
                         cancellationToken: token
                     );
             else if (state.HasAnyFlag(OldGSState.ScoringTeamDenied | OldGSState.Denied))
                 await dbContext.RankedScores
                     .Where(x => x.Id == data.Id)
-                    .ExecuteUpdateAsync(x => x.SetProperty(y => y.State,
-                            y => y.State & ~RankedScore.EState.Pending | RankedScore.EState.Refused),
+                    .ExecuteUpdateAsync(x =>
+                        {
+                            x.SetProperty(y => y.State, y => y.State
+                                & ~RankedScore.EState.Pending | RankedScore.EState.Refused);
+                            x.SetProperty(y => y.EditedAt, y => timeProvider.GetUtcNow());
+                        },
                         cancellationToken: token
                     );
             else continue;

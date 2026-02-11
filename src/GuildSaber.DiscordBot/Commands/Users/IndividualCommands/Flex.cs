@@ -80,19 +80,15 @@ public partial class UserModuleSlash
             Order = EOrder.Desc
         };
 
-        var count = 0;
         List<RankedMapWithScores> rankedMapsWithScores = [];
         await foreach (var rankedMapWithScore in Client.Value.RankedMaps.GetAsyncWithScoreAtMeEnumerable(
                                contextId, new RankedMapRequests.Filters(), requestOptions)
                            .SelectMany(x => x.Unwrap()))
         {
-            const int maxCountAntiApiSpam = 1000;
-            if (count > maxCountAntiApiSpam
-                || rankedMapWithScore.RankedScores.All(x => x.Score.SetAt < previousFlexHistory?.Timestamp))
+            if (rankedMapWithScore.RankedScores.All(x => x.EditedAt < previousFlexHistory?.Timestamp))
                 break;
 
             rankedMapsWithScores.Add(rankedMapWithScore);
-            count += rankedMapWithScore.RankedScores.Length;
         }
 
         await FollowupAsync(components: FlexCommand.BuildFlexComponents(player, flexHistory, previousFlexHistory,

@@ -270,7 +270,7 @@ public static class RankedMapExtensions
                     .ThenBy(order, x => x.Id),
                 ERankedMapSorter.RankedScoreTime => query.OrderBy(order, x => x.RankedScores
                         .Where(rs => rs.PlayerId == playerId && rs.State.HasFlag(ServerRankedScore.EState.Selected))
-                        .Select(rs => rs.Score.SetAt)
+                        .Select(rs => rs.EditedAt)
                         .FirstOrDefault())
                     .ThenBy(order, x => x.Id),
                 _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)

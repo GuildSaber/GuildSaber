@@ -37,10 +37,7 @@ public class RankedScore : IComparable<RankedScore>
     public required RawPoints RawPoints { get; set; }
 
     public required int Rank { get; set; }
-
-    //TODO: Might need to re-evaluate this (or add a update time) if we want to keep track of ranked score states over time (like with admin conf).
-    /* Date won't be stored here, it can just be based on the underlying score's SetAt property.
-     (Because the ranked map and rules can be tweaked, reassigning dates here would be confusing) */
+    public required DateTimeOffset EditedAt { get; set; }
 
     public AbstractScore Score { get; set; } = null!;
     public AbstractScore? PrevScore { get; init; }
@@ -204,6 +201,7 @@ public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
         builder.HasIndex(x => new { x.RankedMapId, x.PlayerId, x.State });
         builder.HasIndex(x => new { x.PlayerId, x.State });
         builder.HasIndex(x => x.State);
+        builder.HasIndex(x => x.EditedAt);
 
         builder.Property(x => x.EffectiveScore)
             .HasConversion<int>(from => from, to => EffectiveScore.CreateUnsafe(to).Value);

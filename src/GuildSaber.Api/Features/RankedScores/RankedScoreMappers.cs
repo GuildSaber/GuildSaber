@@ -46,6 +46,7 @@ public static class RankedScoreMappers
             rankedScore.Id,
             rankedScore.PointId,
             rankedScore.RankedMapId,
+            rankedScore.EditedAt,
             dbContext.Scores.Where(s => s.Id == rankedScore.ScoreId)
                 .Select(MapScoreExpression)
                 .First(),
@@ -65,6 +66,7 @@ public static class RankedScoreMappers
                 rankedScore.Id,
                 rankedScore.PointId,
                 rankedScore.RankedMapId,
+                rankedScore.EditedAt,
                 dbContext.Scores.Where(s => s.Id == rankedScore.ScoreId)
                     .Select(MapScoreExpression)
                     .First(),
@@ -88,6 +90,7 @@ public static class RankedScoreMappers
                 rankedScore.Id,
                 rankedScore.PointId,
                 rankedScore.RankedMapId,
+                rankedScore.EditedAt,
                 dbContext.Scores.Where(s => s.Id == rankedScore.ScoreId)
                     .Select(MapScoreExpression)
                     .First(),

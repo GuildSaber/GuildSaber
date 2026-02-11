@@ -60,6 +60,7 @@ public static class RankedScoreResponses
         long Id,
         int PointId,
         long RankedMapId,
+        DateTimeOffset EditedAt,
         Score Score,
         Score? PrevScore,
         EState State,

@@ -289,7 +289,8 @@ public sealed class ScoreAddOrUpdatePipeline(
                     DenyReason = EDenyReason.Unspecified,
                     EffectiveScore = default,
                     RawPoints = default,
-                    Rank = 0
+                    Rank = 0,
+                    EditedAt = score.SetAt
                 });
         }
     }

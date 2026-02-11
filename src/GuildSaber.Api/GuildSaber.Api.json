@@ -6771,6 +6771,7 @@
           "id",
           "pointId",
           "rankedMapId",
+          "editedAt",
           "score",
           "prevScore",
           "state",
@@ -6803,6 +6804,10 @@
               "string"
             ],
             "format": "int64"
+          },
+          "editedAt": {
+            "type": "string",
+            "format": "date-time"
           },
           "score": {
             "$ref": "#/components/schemas/Score"
