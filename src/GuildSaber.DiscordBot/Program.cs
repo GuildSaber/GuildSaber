@@ -24,12 +24,15 @@ builder.Services
 builder.AddNpgsqlDbContext<DiscordBotDbContext>(connectionName: Constants.DiscordBotDbConnectionStringKey,
     configureDbContextOptions: options => options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
 
+#pragma warning disable EXTEXP0001
 builder.Services.AddHttpClient("GuildSaber", client =>
     {
         client.BaseAddress = new Uri("https+http://api");
         client.DefaultRequestHeaders.Add("User-Agent", "GuildSaber-Bot");
     }).UseSocketsHttpHandler((handler, _) => handler.PooledConnectionLifetime = TimeSpan.FromMinutes(5))
-    .SetHandlerLifetime(Timeout.InfiniteTimeSpan);
+    .SetHandlerLifetime(Timeout.InfiniteTimeSpan)
+    .RemoveAllResilienceHandlers();
+#pragma warning restore EXTEXP0001
 
 builder.AddServiceDefaults();
 
