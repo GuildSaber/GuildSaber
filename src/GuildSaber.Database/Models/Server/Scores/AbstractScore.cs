@@ -88,6 +88,9 @@ public class AbstractScoreConfiguration : IEntityTypeConfiguration<AbstractScore
         builder.Property(x => x.Id)
             .HasGenericConversion<AbstractScore.ScoreId, int>()
             .ValueGeneratedOnAdd();
+
+        builder.HasIndex(x => x.SetAt);
+
         builder.HasDiscriminator(x => x.Type)
             .HasValue<ScoreSaberScore>(AbstractScore.EScoreType.ScoreSaber)
             .HasValue<BeatLeaderScore>(AbstractScore.EScoreType.BeatLeader)
