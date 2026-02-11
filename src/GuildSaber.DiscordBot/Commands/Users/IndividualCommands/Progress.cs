@@ -7,6 +7,7 @@ using GuildSaber.DiscordBot.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Extensions;
 using GuildSaber.DiscordBot.Core.Handlers;
 using GuildSaber.DiscordBot.Settings;
+using static GuildSaber.Api.Features.Guilds.Levels.LevelResponses;
 using static GuildSaber.Api.Features.Guilds.Members.LevelStats.LevelStatResponses;
 using static GuildSaber.Api.Features.Guilds.Categories.CategoryResponses;
 using static GuildSaber.Api.Features.Players.PlayerResponses;
@@ -106,12 +107,12 @@ file static class ProgressCommand
 
     private static string GenerateProgressText(
         in Level.RankedMapListLevel level, in MemberLevelStat stat, TrophyEmojis trophyEmojis)
-        => MakeProgressBar(stat.PassCount!.Value, level.RankedMapCount, 10) +
-           trophyEmojis.GetFromPercentage(stat.PassCount!.Value / (double)level.RankedMapCount) switch
+        => MakeProgressBar(stat.PassCount!.Value, level.TotalCount, 10) +
+           trophyEmojis.GetFromPercentage(stat.PassCount!.Value / (double)level.TotalCount) switch
            {
                null => string.Empty,
                var (_, emoji) => $" {emoji}"
-           } + $" ({stat.PassCount}/{level.RankedMapCount})";
+           } + $" ({stat.PassCount}/{level.TotalCount})";
 
     private static string MakeProgressBar(int value, int maxValue, int size)
     {

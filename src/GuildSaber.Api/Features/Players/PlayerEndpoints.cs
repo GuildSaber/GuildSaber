@@ -103,7 +103,7 @@ public class PlayerEndpoints : IEndpoints
     {
         var query = dbContext.Players.AsQueryable();
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(x => x.Info.Username.Contains(search) || x.Info.Country.Contains(search));
+            query = query.Where(x => EF.Functions.ILike(x.Info.Username, $"%{search}%"));
 
         return TypedResults.Ok(await query
             .ApplySortOrder(sortBy, order)

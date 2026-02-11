@@ -37,10 +37,12 @@ public class RankedScore : IComparable<RankedScore>
     public required RawPoints RawPoints { get; set; }
 
     public required int Rank { get; set; }
+
+    //TODO: Might need to re-evaluate this (or add a update time) if we want to keep track of ranked score states over time (like with admin conf).
     /* Date won't be stored here, it can just be based on the underlying score's SetAt property.
      (Because the ranked map and rules can be tweaked, reassigning dates here would be confusing) */
 
-    public AbstractScore Score { get; init; } = null!;
+    public AbstractScore Score { get; set; } = null!;
     public AbstractScore? PrevScore { get; init; }
     public Player Player { get; init; } = null!;
     public RankedMap RankedMap { get; init; } = null!;
@@ -61,7 +63,7 @@ public class RankedScore : IComparable<RankedScore>
                 {
                     0 => EffectiveScore.CompareTo(other.EffectiveScore) switch
                     {
-                        0 => ScoreId.Value.CompareTo(other.ScoreId.Value),
+                        0 => PreferBlScore(other),
                         var x => x
                     },
                     var x => x
@@ -75,11 +77,32 @@ public class RankedScore : IComparable<RankedScore>
             {
                 0 => EffectiveScore.CompareTo(other.EffectiveScore) switch
                 {
-                    0 => ScoreId.Value.CompareTo(other.ScoreId.Value),
+                    0 => PreferBlScore(other),
                     var x => x
                 },
                 var x => x
             }
+        }
+    };
+
+    public int PreferBlScore(RankedScore other) => Score switch
+    {
+        { Type: AbstractScore.EScoreType.BeatLeader } => other.Score switch
+        {
+            { Type: AbstractScore.EScoreType.BeatLeader } => (((BeatLeaderScore)Score).BeatLeaderScoreId,
+                    ((BeatLeaderScore)other.Score).BeatLeaderScoreId) switch
+                {
+                    (null, null) => ScoreId.Value.CompareTo(other.ScoreId.Value),
+                    (not null, null) => 1,
+                    (null, not null) => -1,
+                    ({ } blId, { } otherBlId) => ((int)blId).CompareTo(otherBlId)
+                },
+            _ => 1
+        },
+        _ => other.Score switch
+        {
+            { Type: AbstractScore.EScoreType.BeatLeader } => -1,
+            _ => ScoreId.Value.CompareTo(other.ScoreId.Value)
         }
     };
 

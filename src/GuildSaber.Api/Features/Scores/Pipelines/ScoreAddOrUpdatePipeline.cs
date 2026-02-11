@@ -110,6 +110,11 @@ public sealed class ScoreAddOrUpdatePipeline(
             .Map(static async (tuple, state) =>
             {
                 var enumerated = tuple.rankedScores.ToArray();
+                /* We need to nullify the Score property before updating the RankedScore,
+                 * otherwise EF Core will try to insert/update the AbstractScore (which is not tracked) and fail. */
+                foreach (var rankedScore in enumerated)
+                    rankedScore.Score = null!;
+
                 state.dbContext.RankedScores.UpdateRange(enumerated);
                 await state.dbContext.SaveChangesAsync(state.token);
 
@@ -311,6 +316,9 @@ public sealed class ScoreAddOrUpdatePipeline(
             context.Point,
             context.Map.Rating
         );
+
+        // RankedScore comparison relies on the Score property (BeatLeader scores are preferred).
+        rankedScore.Score = context.Score;
 
         return rankedScore;
     }

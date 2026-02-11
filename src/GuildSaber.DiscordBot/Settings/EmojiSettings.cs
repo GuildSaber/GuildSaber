@@ -8,6 +8,10 @@ public class EmojiSettings
 
     [Required] public required string NeedConfirmation { get; init; }
     [Required] public required string WatchingYou { get; init; }
+    [Required] public required string Congrats { get; init; }
+    [Required] public required string Nope { get; init; }
+    [Required] public required string Sad { get; init; }
+    [Required] public required string KeepItUp { get; init; }
     [Required] public required TrophyEmojis Trophies { get; init; }
 }
 

@@ -11,7 +11,12 @@ public readonly record struct RawPoints : IComparable<RawPoints>
     private RawPoints(float value)
         => _value = value;
 
-    public int CompareTo(RawPoints other) => _value.CompareTo(other._value);
+    public int CompareTo(RawPoints other)
+    {
+        const float epsilon = 1e-3f;
+        var diff = _value - other._value;
+        return Math.Abs(diff) < epsilon ? 0 : diff < 0 ? -1 : 1;
+    }
 
     public static Result<RawPoints> TryCreate(float? value) => value switch
     {

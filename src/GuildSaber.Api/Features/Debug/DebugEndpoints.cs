@@ -83,6 +83,12 @@ public class DebugEndpoints : IEndpoints
             .WithDescription("Recalculates all player scores for all players in the database. USE WITH CAUTION!")
             .RequireManager();
 
+        group.MapPost("/refetch-all-player-scores-from-bl-and-scoresaber", RefetchAllPlayerScoresFromBLandSS)
+            .WithSummary("Refetch all player scores from BeatLeader and ScoreSaber.")
+            .WithDescription(
+                "Refetches all player scores for all players in the database from BeatLeader and ScoreSaber. USE WITH CAUTION!")
+            .RequireManager();
+
         group.MapPost("/delete-member-point-stats/{playerId}", async (PlayerId playerId, ServerDbContext dbContext) =>
             {
                 await dbContext.MemberPointStats
@@ -124,6 +130,31 @@ public class DebugEndpoints : IEndpoints
                                .AsAsyncEnumerable()
                                .WithCancellation(token))
                 await pipeline.RecalculatePlayerScoresAsync(playerId, token);
+        });
+
+        return TypedResults.Ok();
+    }
+
+    private static async Task<Ok> RefetchAllPlayerScoresFromBLandSS(
+        IBackgroundTaskQueue taskQueue,
+        IServiceScopeFactory serviceScopeFactory)
+    {
+        await taskQueue.QueueBackgroundWorkItemAsync(async token =>
+        {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+            await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
+            var pipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
+
+            await foreach (var player in dbContext.Players
+                               .Select(x => new { x.Id, x.LinkedAccounts.BeatLeaderId, x.LinkedAccounts.ScoreSaberId })
+                               .AsAsyncEnumerable()
+                               .WithCancellation(token))
+            {
+                await pipeline.ImportBeatLeaderScoresAsync(player.Id, player.BeatLeaderId, token);
+
+                if (player.ScoreSaberId is { } scoreSaberId)
+                    await pipeline.ImportScoreSaberScoresAsync(player.Id, scoreSaberId, token);
+            }
         });
 
         return TypedResults.Ok();

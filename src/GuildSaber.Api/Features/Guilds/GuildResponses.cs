@@ -56,7 +56,7 @@ public static class GuildResponses
     );
 
     public readonly record struct GuildContext(
-        int Id,
+        ContextId Id,
         EContextType Type,
         GuildContextInfo Info,
         //TODO: int[] CategoryIds (But it seems like it will be a tough one to implement).

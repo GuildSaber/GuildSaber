@@ -18,7 +18,7 @@ public class RankedMapClient(
     JsonSerializerOptions jsonOptions)
 {
     private Uri GetRankedMapUrl(
-        int contextId, Filters requestFilters,
+        ContextId contextId, Filters requestFilters,
         PaginatedRequestOptions<ERankedMapSorter> requestOptions)
         => new(
             $"contexts/{contextId}/ranked-maps?{(requestFilters.Search is null ? "" : $"search={requestFilters.Search}&")}page={requestOptions.Page}" +
@@ -40,7 +40,7 @@ public class RankedMapClient(
         );
 
     private Uri GetRankedMapWithScoreUrl(
-        int contextId, PlayerId? playerId, Filters requestFilters,
+        ContextId contextId, PlayerId? playerId, Filters requestFilters,
         PaginatedRequestOptions<ERankedMapSorter> requestOptions)
         => new(
             $"contexts/{contextId}/ranked-maps/with-scores/{(playerId is null ? "@me" : playerId)}?{(requestFilters.Search is null ? "" : $"search={requestFilters.Search}&")}page={requestOptions.Page}" +
@@ -89,7 +89,7 @@ public class RankedMapClient(
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing a paginated list of ranked maps.</returns>
     public async Task<Result<PagedList<RankedMap>>> GetAsync(
-        int contextId,
+        ContextId contextId,
         Filters requestFilters,
         PaginatedRequestOptions<ERankedMapSorter> requestOptions,
         CancellationToken token = default)
@@ -114,7 +114,7 @@ public class RankedMapClient(
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing a paginated list of ranked maps with score.</returns>
     public async Task<Result<PagedList<RankedMapWithScores>>> GetWithScoreAsync(
-        int contextId,
+        ContextId contextId,
         PlayerId playerId,
         Filters requestFilters,
         PaginatedRequestOptions<ERankedMapSorter> requestOptions,
@@ -140,7 +140,7 @@ public class RankedMapClient(
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing a paginated list of ranked maps with score for @me.</returns>
     public async Task<Result<PagedList<RankedMapWithScores>>> GetWithScoreAtMeAsync(
-        int contextId,
+        ContextId contextId,
         Filters requestFilters,
         PaginatedRequestOptions<ERankedMapSorter> requestOptions,
         CancellationToken token = default)
@@ -174,7 +174,7 @@ public class RankedMapClient(
     /// Enumeration stops automatically after receiving an empty array or an error.
     /// </remarks>
     public async IAsyncEnumerable<Result<RankedMap[]>> GetAsyncEnumerable(
-        int contextId,
+        ContextId contextId,
         Filters requestFilters,
         PaginatedRequestOptions<ERankedMapSorter> pageOptions)
     {
@@ -213,7 +213,7 @@ public class RankedMapClient(
     /// An async enumerable sequence of <see cref="Result{T}" /> containing arrays of <see cref="RankedMapWithScores" />.
     /// </returns>
     public async IAsyncEnumerable<Result<RankedMapWithScores[]>> GetAsyncWithScoreEnumerable(
-        int contextId,
+        ContextId contextId,
         PlayerId playerId,
         Filters requestFilters,
         PaginatedRequestOptions<ERankedMapSorter> pageOptions)
@@ -251,7 +251,7 @@ public class RankedMapClient(
     /// An async enumerable sequence of <see cref="Result{T}" /> containing arrays of <see cref="RankedMapWithScores" />.
     /// </returns>
     public async IAsyncEnumerable<Result<RankedMapWithScores[]>> GetAsyncWithScoreAtMeEnumerable(
-        int contextId,
+        ContextId contextId,
         Filters requestFilters,
         PaginatedRequestOptions<ERankedMapSorter> pageOptions)
     {
