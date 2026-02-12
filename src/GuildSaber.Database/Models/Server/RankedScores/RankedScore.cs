@@ -198,6 +198,8 @@ public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
             .ValueGeneratedOnAdd();
 
         builder.HasIndex(x => new { x.ContextId, x.PointId, x.RankedMapId });
+        builder.HasIndex(x => new { x.ContextId, x.PlayerId, x.RawPoints, x.Id })
+            .IsDescending(false, false, true, false);
         builder.HasIndex(x => new { x.RankedMapId, x.PlayerId, x.State });
         builder.HasIndex(x => new { x.PlayerId, x.State });
         builder.HasIndex(x => x.State);

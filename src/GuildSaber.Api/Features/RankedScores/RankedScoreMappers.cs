@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
 using GuildSaber.Api.Features.Players;
 using GuildSaber.Api.Features.RankedMaps;
-using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.Server.RankedScores;
 using GuildSaber.Database.Models.Server.Scores;
@@ -40,73 +39,115 @@ public static class RankedScoreMappers
                 ((ScoreSaberScore)score).DeviceControllerLeft,
                 ((ScoreSaberScore)score).DeviceControllerRight);
 
-    public static Expression<Func<RankedScore, RankedScoreResponses.RankedScore>> MapRankedScoreExpression(
-        ServerDbContext dbContext)
+    /// <remarks>
+    /// This property doesn't use .Compile() because the AsExpandable() doesn't work well in nested contexts and
+    /// .WithExpressionExpanding().
+    /// </remarks>
+    public static Expression<Func<RankedScore, RankedScoreResponses.RankedScore>> MapRankedScoreExpression
         => rankedScore => new RankedScoreResponses.RankedScore(
             rankedScore.Id,
             rankedScore.PointId,
             rankedScore.RankedMapId,
             rankedScore.EditedAt,
-            dbContext.Scores.Where(s => s.Id == rankedScore.ScoreId)
-                .Select(MapScoreExpression)
-                .First(),
-            dbContext.Scores.Where(s => s.Id == rankedScore.PrevScoreId)
-                .Select(MapScoreExpression)
-                .FirstOrDefault(),
+            rankedScore.Score.Type == AbstractScore.EScoreType.BeatLeader
+                ? new RankedScoreResponses.Score.BeatLeaderScore(
+                    rankedScore.Score.Id,
+                    rankedScore.Score.SongDifficultyId,
+                    rankedScore.Score.BaseScore,
+                    rankedScore.Score.Modifiers.Map(),
+                    rankedScore.Score.SetAt,
+                    rankedScore.Score.MaxCombo,
+                    rankedScore.Score.IsFullCombo,
+                    rankedScore.Score.MissedNotes,
+                    rankedScore.Score.BadCuts,
+                    rankedScore.Score.HMD.Map(),
+                    ((BeatLeaderScore)rankedScore.Score).BeatLeaderScoreId)
+                : new RankedScoreResponses.Score.ScoreSaberScore(
+                    rankedScore.Score.Id,
+                    rankedScore.Score.SongDifficultyId,
+                    rankedScore.Score.BaseScore,
+                    rankedScore.Score.Modifiers.Map(),
+                    rankedScore.Score.SetAt,
+                    rankedScore.Score.MaxCombo,
+                    rankedScore.Score.IsFullCombo,
+                    rankedScore.Score.MissedNotes,
+                    rankedScore.Score.BadCuts,
+                    rankedScore.Score.HMD.Map(),
+                    ((ScoreSaberScore)rankedScore.Score).ScoreSaberScoreId,
+                    ((ScoreSaberScore)rankedScore.Score).DeviceHmd,
+                    ((ScoreSaberScore)rankedScore.Score).DeviceControllerLeft,
+                    ((ScoreSaberScore)rankedScore.Score).DeviceControllerRight),
+            rankedScore.PrevScore == null
+                ? null
+                : rankedScore.PrevScore.Type == AbstractScore.EScoreType.BeatLeader
+                    ? new RankedScoreResponses.Score.BeatLeaderScore(
+                        rankedScore.PrevScore.Id,
+                        rankedScore.PrevScore.SongDifficultyId,
+                        rankedScore.PrevScore.BaseScore,
+                        rankedScore.PrevScore.Modifiers.Map(),
+                        rankedScore.PrevScore.SetAt,
+                        rankedScore.PrevScore.MaxCombo,
+                        rankedScore.PrevScore.IsFullCombo,
+                        rankedScore.PrevScore.MissedNotes,
+                        rankedScore.PrevScore.BadCuts,
+                        rankedScore.PrevScore.HMD.Map(),
+                        ((BeatLeaderScore)rankedScore.PrevScore).BeatLeaderScoreId)
+                    : new RankedScoreResponses.Score.ScoreSaberScore(
+                        rankedScore.PrevScore.Id,
+                        rankedScore.PrevScore.SongDifficultyId,
+                        rankedScore.PrevScore.BaseScore,
+                        rankedScore.PrevScore.Modifiers.Map(),
+                        rankedScore.PrevScore.SetAt,
+                        rankedScore.PrevScore.MaxCombo,
+                        rankedScore.PrevScore.IsFullCombo,
+                        rankedScore.PrevScore.MissedNotes,
+                        rankedScore.PrevScore.BadCuts,
+                        rankedScore.PrevScore.HMD.Map(),
+                        ((ScoreSaberScore)rankedScore.PrevScore).ScoreSaberScoreId,
+                        ((ScoreSaberScore)rankedScore.PrevScore).DeviceHmd,
+                        ((ScoreSaberScore)rankedScore.PrevScore).DeviceControllerLeft,
+                        ((ScoreSaberScore)rankedScore.PrevScore).DeviceControllerRight),
             rankedScore.State.Map(),
             rankedScore.Rank,
             rankedScore.RawPoints,
             rankedScore.EffectiveScore
         );
 
+    /// <warning>.AsExpandable() must be called with this expression</warning>
     public static Expression<Func<RankedScore, RankedScoreResponses.RankedScoreWithPlayer>>
-        MapRankedScoreWithPlayerExpression(ServerDbContext dbContext)
-        => rankedScore => new RankedScoreResponses.RankedScoreWithPlayer(
-            new RankedScoreResponses.RankedScore(
-                rankedScore.Id,
-                rankedScore.PointId,
-                rankedScore.RankedMapId,
-                rankedScore.EditedAt,
-                dbContext.Scores.Where(s => s.Id == rankedScore.ScoreId)
-                    .Select(MapScoreExpression)
-                    .First(),
-                dbContext.Scores.Where(s => s.Id == rankedScore.PrevScoreId)
-                    .Select(MapScoreExpression)
-                    .FirstOrDefault(),
-                rankedScore.State.Map(),
-                rankedScore.Rank,
-                rankedScore.RawPoints,
-                rankedScore.EffectiveScore
-            ),
-            dbContext.Players.Where(p => p.Id == rankedScore.PlayerId)
-                .Select(PlayerMappers.MapPlayerExpression)
-                .First()
-        );
+        MapRankedScoreWithPlayerExpression => rankedScore => new RankedScoreResponses.RankedScoreWithPlayer(
+        new RankedScoreResponses.RankedScore(
+            rankedScore.Id,
+            rankedScore.PointId,
+            rankedScore.RankedMapId,
+            rankedScore.EditedAt,
+            MapScoreExpression.Invoke(rankedScore.Score),
+            rankedScore.PrevScore == null ? null : MapScoreExpression.Invoke(rankedScore.PrevScore),
+            rankedScore.State.Map(),
+            rankedScore.Rank,
+            rankedScore.RawPoints,
+            rankedScore.EffectiveScore
+        ),
+        PlayerMappers.MapPlayerExpression.Invoke(rankedScore.Player)
+    );
 
+    /// <warning>.AsExpandable() must be called with this expression</warning>
     public static Expression<Func<RankedScore, RankedScoreResponses.RankedScoreWithRankedMap>>
-        MapRankedScoreWithRankedMapExpression(ServerDbContext dbContext)
-        => rankedScore => new RankedScoreResponses.RankedScoreWithRankedMap(
-            new RankedScoreResponses.RankedScore(
-                rankedScore.Id,
-                rankedScore.PointId,
-                rankedScore.RankedMapId,
-                rankedScore.EditedAt,
-                dbContext.Scores.Where(s => s.Id == rankedScore.ScoreId)
-                    .Select(MapScoreExpression)
-                    .First(),
-                dbContext.Scores.Where(s => s.Id == rankedScore.PrevScoreId)
-                    .Select(MapScoreExpression)
-                    .FirstOrDefault(),
-                rankedScore.State.Map(),
-                rankedScore.Rank,
-                rankedScore.RawPoints,
-                rankedScore.EffectiveScore
-            ),
-            dbContext.RankedMaps.Where(p => p.Id == rankedScore.RankedMapId)
-                .Select(RankedMapMappers.MapRankedMapExpression)
-                .First()
-        );
-
+        MapRankedScoreWithRankedMapExpression => rankedScore => new RankedScoreResponses.RankedScoreWithRankedMap(
+        new RankedScoreResponses.RankedScore(
+            rankedScore.Id,
+            rankedScore.PointId,
+            rankedScore.RankedMapId,
+            rankedScore.EditedAt,
+            MapScoreExpression.Invoke(rankedScore.Score),
+            rankedScore.PrevScore == null ? null : MapScoreExpression.Invoke(rankedScore.PrevScore),
+            rankedScore.State.Map(),
+            rankedScore.Rank,
+            rankedScore.RawPoints,
+            rankedScore.EffectiveScore
+        ),
+        RankedMapMappers.MapRankedMapExpression.Invoke(rankedScore.RankedMap)
+    );
 
     public static RankedScoreResponses.EState Map(this RankedScore.EState self) =>
         Enum.GetValues<RankedScore.EState>()

@@ -49,12 +49,13 @@ public class LeaderboardEndpoints : IEndpoints
         LeaderboardRequests.ERankedMapLeaderboardSorter sortBy = LeaderboardRequests.ERankedMapLeaderboardSorter.Points,
         EOrder order = EOrder.Asc)
         => TypedResults.Ok(await dbContext.RankedScores
+            .AsExpandable()
             .Where(x =>
                 x.ContextId == contextId &&
                 x.PointId == pointId &&
                 x.RankedMapId == rankedMapId)
             .ApplySortOrder(sortBy, order)
-            .Select(RankedScoreMappers.MapRankedScoreWithPlayerExpression(dbContext))
+            .Select(RankedScoreMappers.MapRankedScoreWithPlayerExpression)
             .ToPagedListAsync(page, pageSize)
         );
 
@@ -68,12 +69,13 @@ public class LeaderboardEndpoints : IEndpoints
             EMemberStatLeaderboardSorter sortBy = EMemberStatLeaderboardSorter.Points,
             EOrder order = EOrder.Asc)
         => TypedResults.Ok(await dbContext.MemberPointStats
+            .AsExpandable()
             .Where(x =>
                 x.ContextId == contextId &&
                 x.PointId == pointId &&
                 x.CategoryId == null)
             .ApplySortOrder(sortBy, order)
-            .Select(LeaderboardMappers.MapMemberStatExpression(dbContext))
+            .Select(LeaderboardMappers.MapMemberStatExpression)
             .ToPagedListAsync(page, pageSize)
         );
 
@@ -88,12 +90,13 @@ public class LeaderboardEndpoints : IEndpoints
             EMemberStatLeaderboardSorter sortBy = EMemberStatLeaderboardSorter.Points,
             EOrder order = EOrder.Asc)
         => TypedResults.Ok(await dbContext.MemberPointStats
+            .AsExpandable()
             .Where(x =>
                 x.ContextId == contextId &&
                 x.PointId == pointId &&
                 x.CategoryId == categoryId)
             .ApplySortOrder(sortBy, order)
-            .Select(LeaderboardMappers.MapMemberStatExpression(dbContext))
+            .Select(LeaderboardMappers.MapMemberStatExpression)
             .ToPagedListAsync(page, pageSize)
         );
 }

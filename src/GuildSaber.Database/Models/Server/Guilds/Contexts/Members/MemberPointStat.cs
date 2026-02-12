@@ -1,5 +1,6 @@
 using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds.Points;
+using GuildSaber.Database.Models.Server.Players;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -19,6 +20,7 @@ public class MemberPointStat
     public int PassCount { get; set; }
 
     public Point Point { get; init; } = null!;
+    public Player Player { get; init; } = null!;
 }
 
 public class MemberPointStatConfiguration : IEntityTypeConfiguration<MemberPointStat>
@@ -33,9 +35,21 @@ public class MemberPointStatConfiguration : IEntityTypeConfiguration<MemberPoint
             .WithMany(x => x.PointStats)
             .HasForeignKey(x => new { x.GuildId, x.ContextId, x.PlayerId });
 
+        builder.HasOne<Guild>()
+            .WithMany().HasForeignKey(x => x.GuildId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<Context>()
+            .WithMany().HasForeignKey(x => x.ContextId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasOne(x => x.Point)
             .WithMany()
             .HasForeignKey(x => x.PointId);
+
+        builder.HasOne(x => x.Player)
+            .WithMany().HasForeignKey(x => x.PlayerId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne<Category>()
             .WithMany()
