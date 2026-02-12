@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using NpgsqlTypes;
@@ -13,9 +14,11 @@ using NpgsqlTypes;
 namespace GuildSaber.Database.Contexts.Server.Migrations
 {
     [DbContext(typeof(ServerDbContext))]
-    partial class ServerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260212175917_OptimizedRankedScoreIndexes")]
+    partial class OptimizedRankedScoreIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -451,8 +454,6 @@ namespace GuildSaber.Database.Contexts.Server.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
-
-                    b.HasIndex("PlayerId");
 
                     b.HasIndex("PointId");
 
@@ -1513,24 +1514,6 @@ namespace GuildSaber.Database.Contexts.Server.Migrations
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("GuildSaber.Database.Models.Server.Guilds.Context", null)
-                        .WithMany()
-                        .HasForeignKey("ContextId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GuildSaber.Database.Models.Server.Guilds.Guild", null)
-                        .WithMany()
-                        .HasForeignKey("GuildId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GuildSaber.Database.Models.Server.Players.Player", "Player")
-                        .WithMany()
-                        .HasForeignKey("PlayerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("GuildSaber.Database.Models.Server.Guilds.Points.Point", "Point")
                         .WithMany()
                         .HasForeignKey("PointId")
@@ -1542,8 +1525,6 @@ namespace GuildSaber.Database.Contexts.Server.Migrations
                         .HasForeignKey("GuildId", "ContextId", "PlayerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Player");
 
                     b.Navigation("Point");
                 });

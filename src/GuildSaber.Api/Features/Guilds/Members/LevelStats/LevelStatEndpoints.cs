@@ -41,13 +41,14 @@ public class LevelStatEndpoints : IEndpoints
         PlayerId playerId,
         ServerDbContext dbContext)
         => TypedResults.Ok(await dbContext.MemberLevelStats
+            .AsExpandable()
             .Where(x =>
                 x.ContextId == contextId &&
                 x.PlayerId == playerId)
             .OrderBy(x => x.Level.Order)
             .ThenBy(x => x.Level.CategoryId)
             .ThenBy(x => x.Id)
-            .Select(LevelStatMappers.MapMemberLevelStatExpression(dbContext))
+            .Select(LevelStatMappers.MapMemberLevelStatExpression)
             .ToListAsync()
         );
 }

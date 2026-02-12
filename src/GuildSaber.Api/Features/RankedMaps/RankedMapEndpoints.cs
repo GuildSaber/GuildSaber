@@ -42,13 +42,13 @@ public class RankedMapEndpoints : IEndpoints
             .WithSummary("Get ranked maps for a context.")
             .WithDescription("Get ranked maps for a context by its Id, with optional search and sorting.");
 
-        group.MapGet("/with-scores/{playerId}", GetRankedMapsWithScoreAsync)
+        group.MapGet("/with-scores/{playerId}", GetRankedMapsWithScoresAsync)
             .WithName("GetRankedMapsWithScores")
             .WithSummary("Get ranked maps for a context with a player score.")
             .WithDescription("Get ranked maps for a context by its Id, with optional search and sorting, including " +
                              "the player's best point scores on each map.");
 
-        group.MapGet("/with-scores/@me", GetRankedMapsWithScoreAtMeAsync)
+        group.MapGet("/with-scores/@me", GetRankedMapsWithScoresAtMeAsync)
             .WithName("GetRankedMapsWithScoresAtMe")
             .WithSummary("Get ranked maps for a context with the current player's score.")
             .WithDescription("Get ranked maps for a context by its Id, with optional search and sorting, including " +
@@ -129,7 +129,7 @@ public class RankedMapEndpoints : IEndpoints
             .Select(RankedMapMappers.MapRankedMapExpression)
             .ToPagedListAsync(page, pageSize));
 
-    private static async Task<Ok<PagedList<RankedMapWithScores>>> GetRankedMapsWithScoreAtMeAsync(
+    private static async Task<Ok<PagedList<RankedMapWithScores>>> GetRankedMapsWithScoresAtMeAsync(
         [FromRoute] ContextId contextId,
         ServerDbContext dbContext,
         ClaimsPrincipal claimsPrincipal,
@@ -138,10 +138,10 @@ public class RankedMapEndpoints : IEndpoints
         [Range(1, 100)] int pageSize = 10,
         ERankedMapSorter sortBy = ERankedMapSorter.DifficultyStar,
         EOrder order = EOrder.Asc)
-        => await GetRankedMapsWithScoreAsync(contextId, claimsPrincipal.GetPlayerId()!.Value, dbContext, filters,
+        => await GetRankedMapsWithScoresAsync(contextId, claimsPrincipal.GetPlayerId()!.Value, dbContext, filters,
             page, pageSize, sortBy, order);
 
-    private static async Task<Ok<PagedList<RankedMapWithScores>>> GetRankedMapsWithScoreAsync(
+    private static async Task<Ok<PagedList<RankedMapWithScores>>> GetRankedMapsWithScoresAsync(
         [FromRoute] ContextId contextId,
         [FromRoute] PlayerId playerId,
         ServerDbContext dbContext,
@@ -150,10 +150,13 @@ public class RankedMapEndpoints : IEndpoints
         [Range(1, 100)] int pageSize = 10,
         ERankedMapSorter sortBy = ERankedMapSorter.DifficultyStar,
         EOrder order = EOrder.Asc)
-        => TypedResults.Ok(await dbContext.RankedMaps.AsSplitQuery().Where(x => x.ContextId == contextId)
+        => TypedResults.Ok(await dbContext.RankedMaps
+            .AsExpandable()
+            .AsSplitQuery()
+            .Where(x => x.ContextId == contextId)
             .ApplyFilters(filters, playerId)
             .ApplySortOrder(sortBy, order, playerId)
-            .Select(RankedMapMappers.MapRankedMapWithScoreExpression(playerId, dbContext))
+            .Select(RankedMapMappers.MapRankedMapWithScoresExpression(playerId, dbContext))
             .ToPagedListAsync(page, pageSize));
 }
 

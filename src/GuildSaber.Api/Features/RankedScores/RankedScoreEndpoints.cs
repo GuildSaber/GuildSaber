@@ -99,7 +99,7 @@ public class RankedScoreEndpoints : IEndpoints
 
         return TypedResults.Ok(await query
             .ApplySortOrder(sortBy, order)
-            .Select(RankedScoreMappers.MapRankedScoreExpression(dbContext))
+            .Select(RankedScoreMappers.MapRankedScoreExpression)
             .ToPagedListAsync(page, pageSize));
     }
 
@@ -155,8 +155,9 @@ public class RankedScoreEndpoints : IEndpoints
             query = query.Where(x => x.RankedMap.MapVersions.Any(y => y.Song.Stats.BPM <= bpmTo.Value));
 
         return TypedResults.Ok(await query
+            .AsExpandable()
             .ApplySortOrder(sortBy, order)
-            .Select(RankedScoreMappers.MapRankedScoreWithRankedMapExpression(dbContext))
+            .Select(RankedScoreMappers.MapRankedScoreWithRankedMapExpression)
             .ToPagedListAsync(page, pageSize));
     }
 }

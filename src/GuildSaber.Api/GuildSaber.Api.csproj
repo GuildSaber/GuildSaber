@@ -21,6 +21,7 @@
     <ItemGroup>
         <PackageReference Include="AspNet.Security.OAuth.Discord" />
         <PackageReference Include="CSharpFunctionalExtensions.HttpResults" />
+        <PackageReference Include="LinqKit.Microsoft.EntityFrameworkCore" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
         <PackageReference Include="Microsoft.AspNetCore.JsonPatch.SystemTextJson" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
