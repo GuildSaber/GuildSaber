@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.RankedScores;
-using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
 using GuildSaber.Database.Models.Server.RankedScores;
@@ -15,7 +14,13 @@ namespace GuildSaber.Api.Features.RankedMaps;
 
 public static class RankedMapMappers
 {
-    public static Expression<Func<RankedMap, RankedMapResponses.RankedMap>> MapRankedMapExpression
+    private static Func<RankedMap, RankedMapResponses.RankedMap>? _mapRankedMapImpl;
+
+    [Expandable(nameof(MapRankedMapExpression))]
+    public static RankedMapResponses.RankedMap Map(this RankedMap self)
+        => (_mapRankedMapImpl ??= MapRankedMapExpression().Compile())(self);
+
+    public static Expression<Func<RankedMap, RankedMapResponses.RankedMap>> MapRankedMapExpression()
         => self => new RankedMapResponses.RankedMap(
             self.Id,
             self.GuildId,
@@ -63,14 +68,11 @@ public static class RankedMapMappers
 
     /// <warning>.AsExpandable() must be called with this expression</warning>
     public static Expression<Func<RankedMap, RankedMapResponses.RankedMapWithScores>> MapRankedMapWithScoresExpression(
-        PlayerId playerId, ServerDbContext dbContext) => self => new RankedMapResponses.RankedMapWithScores(
-        MapRankedMapExpression.Invoke(self),
-        dbContext.RankedScores
-            .Where(x =>
-                x.RankedMapId == self.Id
-                && x.PlayerId == playerId
-                && x.State.HasFlag(RankedScore.EState.Selected))
-            .Select(RankedScoreMappers.MapRankedScoreExpression)
+        PlayerId playerId) => self => new RankedMapResponses.RankedMapWithScores(
+        self.Map(),
+        self.RankedScores.AsQueryable()
+            .Where(x => x.PlayerId == playerId && x.State.HasFlag(RankedScore.EState.Selected))
+            .Select(x => x.Map())
             .ToArray());
 
     public static RankedMapResponses.RankedMap Map(

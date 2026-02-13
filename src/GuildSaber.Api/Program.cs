@@ -15,6 +15,7 @@ using GuildSaber.Api.Features.LegacyGS.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Api.Features.RankedMaps.Pipelines;
+using GuildSaber.Api.Features.Scores;
 using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Transformers;
@@ -108,9 +109,10 @@ builder.Services.AddDbContext<ServerDbContext>((_, options) =>
     options.UseNpgsql(builder.Configuration.GetConnectionString(Constants.ServerDbConnectionStringKey))
         .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
         .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
-        /* This makes .Compile() and .Invoke() crash in expressions when .AsExpandable isn't called.
+        /* Allows methods (and mapping with ExpandableAttribute) to be translated to lambdas.
+         * This also makes .Compile() and .Invoke() crash in expressions when .AsExpandable isn't called.
          * (Instead of allowing it to pull all the data instead of just what's needed)
-         * Using this helps with Expression reusability and optimizes queries. */
+         * Using this then helps with Expression reusability and optimizes queries. */
         .WithExpressionExpanding()
 );
 builder.EnrichNpgsqlDbContext<ServerDbContext>();
@@ -260,7 +262,7 @@ builder.Services.AddTransient<MemberLevelStatsPipeline>();
 builder.Services.AddTransient<MemberJoinPipeline>();
 builder.Services.AddTransient<AddRankedMapPipeline>();
 builder.Services.AddTransient<EditRankedMapPipeline>();
-//builder.Services.AddHostedService<BLScoreSyncWorker>();
+builder.Services.AddHostedService<BLScoreSyncWorker>();
 builder.Services.AddHostedService<QueueProcessingService>();
 builder.Services.AddHostedService<HeavyQueueProcessingService>();
 builder.Services.AddHostedService<ImportLegacyGSAdminConfirmationWorker>(provider =>

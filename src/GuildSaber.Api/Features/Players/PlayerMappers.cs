@@ -8,6 +8,14 @@ namespace GuildSaber.Api.Features.Players;
 [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
 public static class PlayerMappers
 {
+    private static Func<Player, PlayerResponses.Player>? _mapPlayerImpl;
+
+    public static PlayerResponses.Player Map(this Player self)
+    {
+        _mapPlayerImpl ??= MapPlayerExpression.Compile();
+        return _mapPlayerImpl(self);
+    }
+    
     public static Expression<Func<Player, PlayerResponses.Player>> MapPlayerExpression
         => self => new PlayerResponses.Player(
             self.Id,

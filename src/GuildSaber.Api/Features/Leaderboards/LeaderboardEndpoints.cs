@@ -49,7 +49,6 @@ public class LeaderboardEndpoints : IEndpoints
         LeaderboardRequests.ERankedMapLeaderboardSorter sortBy = LeaderboardRequests.ERankedMapLeaderboardSorter.Points,
         EOrder order = EOrder.Asc)
         => TypedResults.Ok(await dbContext.RankedScores
-            .AsExpandable()
             .Where(x =>
                 x.ContextId == contextId &&
                 x.PointId == pointId &&
@@ -69,7 +68,6 @@ public class LeaderboardEndpoints : IEndpoints
             EMemberStatLeaderboardSorter sortBy = EMemberStatLeaderboardSorter.Points,
             EOrder order = EOrder.Asc)
         => TypedResults.Ok(await dbContext.MemberPointStats
-            .AsExpandable()
             .Where(x =>
                 x.ContextId == contextId &&
                 x.PointId == pointId &&
@@ -90,7 +88,6 @@ public class LeaderboardEndpoints : IEndpoints
             EMemberStatLeaderboardSorter sortBy = EMemberStatLeaderboardSorter.Points,
             EOrder order = EOrder.Asc)
         => TypedResults.Ok(await dbContext.MemberPointStats
-            .AsExpandable()
             .Where(x =>
                 x.ContextId == contextId &&
                 x.PointId == pointId &&

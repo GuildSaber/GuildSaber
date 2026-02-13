@@ -99,7 +99,7 @@ public class RankedScoreEndpoints : IEndpoints
 
         return TypedResults.Ok(await query
             .ApplySortOrder(sortBy, order)
-            .Select(RankedScoreMappers.MapRankedScoreExpression)
+            .Select(RankedScoreMappers.MapRankedScoreExpression())
             .ToPagedListAsync(page, pageSize));
     }
 

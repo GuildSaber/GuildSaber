@@ -123,7 +123,7 @@ public class DebugEndpoints : IEndpoints
     }
 
     private static async Task<Ok> RecalculateAllPlayerScores(
-        IBackgroundTaskQueue taskQueue,
+        IHeavyBackgroundTaskQueue taskQueue,
         IServiceScopeFactory serviceScopeFactory)
     {
         await taskQueue.QueueBackgroundWorkItemAsync(async token =>
@@ -145,7 +145,9 @@ public class DebugEndpoints : IEndpoints
     private readonly record struct PlayerIdWithGuildIds(PlayerId PlayerId, GuildId[] GuildIds);
 
     private static async Task<Ok> ImportAllAdminConf(
-        ServerDbContext dbContext, IBackgroundTaskQueue taskQueue, IServiceScopeFactory serviceScopeFactory)
+        ServerDbContext dbContext,
+        IHeavyBackgroundTaskQueue taskQueue,
+        IServiceScopeFactory serviceScopeFactory)
     {
         var playersWithGuilds = await dbContext.Players
             .Select(p => new PlayerIdWithGuildIds(p.Id, p.Members.Select(x => x.GuildId).ToArray()))
@@ -156,14 +158,13 @@ public class DebugEndpoints : IEndpoints
             await using var scope = serviceScopeFactory.CreateAsyncScope();
 
             var playerScoresPipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
-            var importAdminConfPipeline = scope.ServiceProvider.GetRequiredService<LegacyGSImportAdminConfPipeline>();
+            var adminConfPipeline = scope.ServiceProvider.GetRequiredService<LegacyGSImportAdminConfPipeline>();
 
             foreach (var playerWithGuilds in playersWithGuilds)
             {
                 var importedAny = false;
                 foreach (var guildId in playerWithGuilds.GuildIds)
-                    importedAny |=
-                        await importAdminConfPipeline.ExecuteAsync(guildId, playerWithGuilds.PlayerId, token);
+                    importedAny |= await adminConfPipeline.ExecuteAsync(guildId, playerWithGuilds.PlayerId, token);
 
                 if (importedAny)
                     await playerScoresPipeline.RecalculatePlayerScoresAsync(playerWithGuilds.PlayerId, token);
@@ -174,12 +175,13 @@ public class DebugEndpoints : IEndpoints
     }
 
     private static async Task<Ok> RefetchAllPlayerScoresFromBLandSS(
-        IBackgroundTaskQueue taskQueue,
+        IHeavyBackgroundTaskQueue taskQueue,
         IServiceScopeFactory serviceScopeFactory)
     {
         await taskQueue.QueueBackgroundWorkItemAsync(async token =>
         {
             await using var scope = serviceScopeFactory.CreateAsyncScope();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<DebugEndpoints>>();
             await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
             var pipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
 
@@ -188,10 +190,17 @@ public class DebugEndpoints : IEndpoints
                                .AsAsyncEnumerable()
                                .WithCancellation(token))
             {
-                await pipeline.ImportBeatLeaderScoresAsync(player.Id, player.BeatLeaderId, token);
+                try
+                {
+                    await pipeline.ImportBeatLeaderScoresAsync(player.Id, player.BeatLeaderId, token);
 
-                if (player.ScoreSaberId is { } scoreSaberId)
-                    await pipeline.ImportScoreSaberScoresAsync(player.Id, scoreSaberId, token);
+                    if (player.ScoreSaberId is { } scoreSaberId)
+                        await pipeline.ImportScoreSaberScoresAsync(player.Id, scoreSaberId, token);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, "Error refetching scores from BL and SS for player {PlayerId}", player.Id);
+                }
             }
         });
 

@@ -108,7 +108,7 @@ public class RankedMapEndpoints : IEndpoints
     private static async Task<Results<Ok<RankedMap>, NotFound>> GetRankedMapAsync(
         RankedMapId rankedMapId, ServerDbContext dbContext) => await dbContext.RankedMaps
             .Where(x => x.Id == rankedMapId)
-            .Select(RankedMapMappers.MapRankedMapExpression)
+            .Select(RankedMapMappers.MapRankedMapExpression())
             .FirstOrDefaultAsync() switch
         {
             null => TypedResults.NotFound(),
@@ -126,7 +126,7 @@ public class RankedMapEndpoints : IEndpoints
         => TypedResults.Ok(await dbContext.RankedMaps.AsSplitQuery().Where(x => x.ContextId == contextId)
             .ApplyFilters(filters, null)
             .ApplySortOrder(sortBy, order, null)
-            .Select(RankedMapMappers.MapRankedMapExpression)
+            .Select(RankedMapMappers.MapRankedMapExpression())
             .ToPagedListAsync(page, pageSize));
 
     private static async Task<Ok<PagedList<RankedMapWithScores>>> GetRankedMapsWithScoresAtMeAsync(
@@ -150,13 +150,11 @@ public class RankedMapEndpoints : IEndpoints
         [Range(1, 100)] int pageSize = 10,
         ERankedMapSorter sortBy = ERankedMapSorter.DifficultyStar,
         EOrder order = EOrder.Asc)
-        => TypedResults.Ok(await dbContext.RankedMaps
-            .AsExpandable()
-            .AsSplitQuery()
+        => TypedResults.Ok(await dbContext.RankedMaps.AsExpandable()
             .Where(x => x.ContextId == contextId)
             .ApplyFilters(filters, playerId)
             .ApplySortOrder(sortBy, order, playerId)
-            .Select(RankedMapMappers.MapRankedMapWithScoresExpression(playerId, dbContext))
+            .Select(RankedMapMappers.MapRankedMapWithScoresExpression(playerId))
             .ToPagedListAsync(page, pageSize));
 }
 

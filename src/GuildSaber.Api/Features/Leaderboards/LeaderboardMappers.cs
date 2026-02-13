@@ -9,7 +9,7 @@ public static class LeaderboardMappers
     public static Expression<Func<MemberPointStat, LeaderboardResponses.MemberPointStat>>
         MapMemberStatExpression => self => new LeaderboardResponses.MemberPointStat
     {
-        Player = PlayerMappers.MapPlayerExpression.Invoke(self.Player),
+        Player = self.Player.Map(),
         Points = self.Points,
         PassCount = self.PassCount
     };
