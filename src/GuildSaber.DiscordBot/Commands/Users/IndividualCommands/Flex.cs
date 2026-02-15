@@ -150,7 +150,10 @@ public partial class UserModuleSlash
                 $"Failed to update your roles.. {EmojiSettings.Value.Sad}\n" +
                 $"Maybe they did delete a role without updating the level role ids? Ask the Ranking Team I guess.\n" +
                 $":x: {exception.Message}");
+            return;
         }
+
+        await FollowupAsync("> Your roles have been updated!");
     }
 }
 
