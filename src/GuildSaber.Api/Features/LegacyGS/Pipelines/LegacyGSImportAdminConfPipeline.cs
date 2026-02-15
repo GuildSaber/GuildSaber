@@ -1,3 +1,4 @@
+using CSharpFunctionalExtensions;
 using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Services.LegacyGuildSaber;
 using GuildSaber.Database.Contexts.Server;
@@ -42,13 +43,24 @@ public class LegacyGSImportAdminConfPipeline(
                            .AsAsyncEnumerable()
                            .WithCancellation(token))
         {
-            var result = await legacyGuildSaberApi.GetRankedScoreStateAsync(
-                guildId,
-                beatleaderId,
-                scoreSaberId,
-                blId: data.BLLeaderboardId,
-                ssId: data.SSLeaderboardId,
-                unmodifiedScore: data.BaseScore);
+            Result<OldGSState> result;
+            try
+            {
+                result = await legacyGuildSaberApi.GetRankedScoreStateAsync(
+                    guildId,
+                    beatleaderId,
+                    scoreSaberId,
+                    blId: data.BLLeaderboardId,
+                    ssId: data.SSLeaderboardId,
+                    unmodifiedScore: data.BaseScore);
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception,
+                    "Error retrieving ranked score state from LegacyGuildSaber for ranked score {RankedScoreId} (ContextId: {ContextId}, PointId: {PointId})",
+                    data.Id, data.ContextId, data.PointId);
+                continue;
+            }
 
             if (!result.TryGetValue(out var state) || state.HasFlag(OldGSState.NeedConfirmation))
                 continue;

@@ -29,7 +29,15 @@ public static class Extensions
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
             // Turn on resilience by default
-            http.AddStandardResilienceHandler();
+            http.AddStandardResilienceHandler(options =>
+            {
+                // Increase the default failure ratio to prevent wrongly breaking the circuit during a temporary rate limit.
+                options.CircuitBreaker.FailureRatio = 0.5;
+                options.CircuitBreaker.MinimumThroughput = 20;
+
+                // Some 529 might not have the retry-after header, so we increase the default retry attempts to improve resiliency in those cases.
+                options.Retry.MaxRetryAttempts = 10;
+            });
 
             // Turn on service discovery by default
             http.AddServiceDiscovery();
