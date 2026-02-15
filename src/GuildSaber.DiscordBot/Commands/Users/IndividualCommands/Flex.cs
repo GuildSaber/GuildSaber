@@ -134,19 +134,15 @@ public partial class UserModuleSlash
             .Select(x => x.Id)
             .Except(levelRoleIdsToRemove)
             .Union(levelRoleIdsToAssign)
+            .Order()
             .ToArray();
 
-        if (user.Roles.Select(x => x.Id).SequenceEqual(roles))
+        if (user.Roles.Select(x => x.Id).Order().SequenceEqual(roles))
             return;
 
         try
         {
-            await ((SocketGuildUser)Context.User).ModifyAsync(x =>
-            {
-                x.RoleIds = new Optional<IEnumerable<ulong>>(x.RoleIds.Value
-                    .Except(levelRoleIdsToRemove)
-                    .Union(levelRoleIdsToAssign));
-            });
+            await ((SocketGuildUser)Context.User).ModifyAsync(x => x.RoleIds = roles);
         }
         catch (Exception exception)
         {
