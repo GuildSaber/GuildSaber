@@ -1,6 +1,8 @@
 using System.Text;
 using Discord;
 using Discord.Interactions;
+using Discord.Net;
+using Discord.WebSocket;
 using GuildSaber.Api.Features.Guilds.Categories;
 using GuildSaber.Api.Features.Guilds.Levels;
 using GuildSaber.Api.Features.Guilds.Members.ContextStats;
@@ -91,14 +93,68 @@ public partial class UserModuleSlash
             rankedMapsWithScores.Add(rankedMapWithScore);
         }
 
-        await FollowupAsync(components: FlexCommand.BuildFlexComponents(player, flexHistory, previousFlexHistory,
+        var flexComponent = FlexCommand.BuildFlexComponents(player, flexHistory, previousFlexHistory,
             rankedMapsWithScores,
             levelStats.Select(x => x.Level).ToDictionary(x => x.Id),
             categories,
             contextStats.SimplePointsWithRank
                 .Where(x => x.CategoryId == null)
-                .ToDictionary(x => x.PointId, x => x.Name), EmojiSettings.Value)
+                .ToDictionary(x => x.PointId, x => x.Name), EmojiSettings.Value,
+            levelId => Client.Value.Levels.GetCoverUrl(levelId)
         );
+
+        try
+        {
+            await FollowupAsync(components: flexComponent);
+        }
+        catch (HttpException httpException)
+            when (httpException.DiscordCode == DiscordErrorCode.InvalidFormBody)
+        {
+            // Component is too big, split it into multiple messages.
+            foreach (var component in flexComponent.Components)
+                await FollowupAsync(components: new ComponentBuilderV2([component]).Build());
+        }
+
+        var (levelRoleIdsToAssign, levelRoleIdsToRemove) = (
+            levelStats
+                .Where(x => x.Level.CategoryId is null
+                            && x is { IsLocked: false, IsCompleted: true, Level.DiscordInfo.RoleId: not null })
+                .Select(x => (ulong)x.Level.DiscordInfo.RoleId!.Value)
+                .Distinct()
+                .ToArray(),
+            levelStats.Where(x => x.Level.CategoryId is null
+                                  && x is { IsCompleted: false, Level.DiscordInfo.RoleId: not null })
+                .Select(x => (ulong)x.Level.DiscordInfo.RoleId!.Value)
+                .Distinct()
+                .ToArray()
+        );
+
+        var user = (SocketGuildUser)Context.User;
+        var roles = user.Roles
+            .Select(x => x.Id)
+            .Except(levelRoleIdsToRemove)
+            .Union(levelRoleIdsToAssign)
+            .ToArray();
+
+        if (user.Roles.Select(x => x.Id).SequenceEqual(roles))
+            return;
+
+        try
+        {
+            await ((SocketGuildUser)Context.User).ModifyAsync(x =>
+            {
+                x.RoleIds = new Optional<IEnumerable<ulong>>(x.RoleIds.Value
+                    .Except(levelRoleIdsToRemove)
+                    .Union(levelRoleIdsToAssign));
+            });
+        }
+        catch (Exception exception)
+        {
+            await FollowupAsync(
+                $"Failed to update your roles.. {EmojiSettings.Value.Sad}\n" +
+                $"Maybe they did delete a role without updating the level role ids? Ask the Ranking Team I guess.\n" +
+                $":x: {exception.Message}");
+        }
     }
 }
 
@@ -111,17 +167,22 @@ file static class FlexCommand
         Dictionary<int, LevelResponses.Level> levelsById,
         CategoryResponses.Category[] categories,
         Dictionary<int, string> pointNamesById,
-        EmojiSettings emojiSettings)
+        EmojiSettings emojiSettings,
+        Func<Level.LevelId, Uri> getLevelThumbnailUri)
     {
         var builder = new ComponentBuilderV2();
-        var color = flexHistory.GlobalLevelId is { } globalLevelId
+        var prevColor = previousFlexHistory is not null
+            ? Color.FromArgb(levelsById[previousFlexHistory.GlobalLevelId?.Value ?? 0].Info.Color)
+            : Color.Default;
+        var newColor = flexHistory.GlobalLevelId is { } globalLevelId
             ? Color.FromArgb(levelsById[globalLevelId.Value].Info.Color)
             : Color.Default;
 
         var passedMapContainers = ToRankedScoreContainer(rankedMapsWithScores, levelsById, categories, pointNamesById,
             emojiSettings);
         foreach (var container in passedMapContainers)
-            builder.WithContainer(container.WithAccentColor(color));
+            // Prev color is used to emphasize the level change during the flex.
+            builder.WithContainer(container.WithAccentColor(prevColor));
 
         var stringBuilder = new StringBuilder();
         stringBuilder.Append("### [")
@@ -168,12 +229,48 @@ file static class FlexCommand
             .WithSection(section => section
                 .WithTextDisplay(stringBuilder.ToString())
                 .WithAccessory(new ThumbnailBuilder().WithMedia(player.PlayerInfo.AvatarUrl)))
-            .WithAccentColor(color));
+            .WithAccentColor(prevColor));
+
+        if (flexHistory.GlobalLevelId == previousFlexHistory?.GlobalLevelId)
+            return builder.Build();
+
+        var oldLevel = previousFlexHistory?.GlobalLevelId is { } oldLevelId ? levelsById[oldLevelId.Value] : null;
+        var newLevel = flexHistory.GlobalLevelId is { } newLevelId ? levelsById[newLevelId.Value] : null;
+
+        builder.WithContainer(content => content
+            .WithSection(section =>
+            {
+                if (newLevel is not null)
+                    section.WithAccessory(new ThumbnailBuilder()
+                        .WithMedia(getLevelThumbnailUri(new Level.LevelId(newLevel.Id)).ToString()));
+
+                section.WithTextDisplay((oldLevel, newLevel) switch
+                {
+                    (null, null) =>
+                        $"## No levels yet!\n\u200B\nIt seems like you don't have any levels yet. Time to grind! {emojiSettings.KeepItUp}",
+                    ({ } prevLevel, null) =>
+                        $"## How unfortunate..\n\u200B\nIt seems like you lost **all your levels** since your last flex," +
+                        $" from **{prevLevel.Info.Name}** to nothing. Don't be sad {emojiSettings.Sad}," +
+                        $" it's just time to grind back up! {emojiSettings.KeepItUp}\n" +
+                        "(To avoid level loss, try to play more maps in each level.)",
+                    (null, { } level) =>
+                        $"## Your got your first level!\n\u200B\nGG on reaching **{level.Info.Name}**!",
+                    ({ } prevLevel, { } level) when prevLevel.Order < level.Order =>
+                        $"## Level up!\n\u200B\nYou moved from **{prevLevel.Info.Name}** to **{level.Info.Name}**!",
+                    ({ } prevLevel, { } level) when prevLevel.Order > level.Order =>
+                        $"## Level down..\n\u200B\nIt seems like you lost some levels since your last flex," +
+                        $" from **{prevLevel.Info.Name}** to **{level.Info.Name}**.\n" +
+                        $"Don't be sad {emojiSettings.Sad}, you can do it!\n(To avoid level loss, try to play more maps in each level.)",
+                    ({ } prevLevel, { } level) =>
+                        $"## New level!\n\u200B\nIt seems like your level changed from **{prevLevel.Info.Name}**" +
+                        $" to **{level.Info.Name}** since your last flex."
+                });
+            }).WithAccentColor(newColor));
 
         return builder.Build();
     }
 
-    public static List<ContainerBuilder> ToRankedScoreContainer(
+    private static List<ContainerBuilder> ToRankedScoreContainer(
         List<RankedMapWithScores> rankedMapWithScores,
         Dictionary<int, LevelResponses.Level> levelsById,
         CategoryResponses.Category[] categories,
@@ -181,47 +278,48 @@ file static class FlexCommand
         EmojiSettings emojiSettings)
     {
         var containers = new List<ContainerBuilder>();
-        var passedMaps = rankedMapWithScores
-            .Where(x => x.RankedScores.Any(y => !y.State.HasAnyFlag(EState.NonPointGiving)
-                                                && !y.State.HasFlag(EState.Confirmed)))
-            .ToArray();
-
-        var prohibitedMaps = rankedMapWithScores
-            .Where(x => x.RankedScores.Any(y => y.State.HasAnyFlag(EState.NonPointGivingNoPending)
-                                                && !y.State.HasFlag(EState.Refused)))
-            .ToArray();
-
-        var pendingMaps = rankedMapWithScores
-            .Where(x => x.RankedScores.Any(y => y.State.HasAnyFlag(EState.Pending)))
-            .ToArray();
-
-        var adminConfirmedMaps = rankedMapWithScores
-            .Where(x => x.RankedScores.Any(y => y.State.HasAnyFlag(EState.Confirmed)))
-            .ToArray();
-
-        var adminRefusedMaps = rankedMapWithScores
-            .Where(x => x.RankedScores.Any(y => y.State.HasAnyFlag(EState.Refused)))
-            .ToArray();
+        var (passedMaps, prohibitedMaps, pendingMaps, adminConfirmedMaps, adminRefusedMaps) =
+        (
+            rankedMapWithScores
+                .Where(x => x.RankedScores.Any(y =>
+                    !y.State.HasAnyFlag(EState.NonPointGiving)
+                    && !y.State.HasFlag(EState.Confirmed)))
+                .ToArray(),
+            rankedMapWithScores
+                .Where(x => x.RankedScores.Any(y =>
+                    y.State.HasAnyFlag(EState.NonPointGivingNoPending)
+                    && !y.State.HasFlag(EState.Refused)))
+                .ToArray(),
+            rankedMapWithScores
+                .Where(x => x.RankedScores.Any(y => y.State.HasAnyFlag(EState.Pending)))
+                .ToArray(),
+            rankedMapWithScores
+                .Where(x => x.RankedScores.Any(y => y.State.HasAnyFlag(EState.Confirmed)))
+                .ToArray(),
+            rankedMapWithScores
+                .Where(x => x.RankedScores.Any(y => y.State.HasAnyFlag(EState.Refused)))
+                .ToArray()
+        );
 
         if (passedMaps.Length > 0)
             containers.Add(RankedScoreContainerBuilder(
                 title: "### You passed the following maps:\n", passedMaps, levelsById, categories, pointNamesById,
                 emojiSettings,
-                take: 10));
+                take: 15));
 
         if (prohibitedMaps.Length > 0)
             containers.Add(RankedScoreContainerBuilder(
                 title: "### You got scores on invalid states:\n", prohibitedMaps, levelsById, categories,
                 pointNamesById,
                 emojiSettings,
-                take: 10));
+                take: 15));
 
         if (pendingMaps.Length > 0)
             containers.Add(RankedScoreContainerBuilder(
                 title: "### You got scores that are pending review:\n", pendingMaps, levelsById, categories,
                 pointNamesById,
                 emojiSettings,
-                take: 10));
+                take: 15));
 
         if (adminConfirmedMaps.Length > 0)
             containers.Add(RankedScoreContainerBuilder(
@@ -229,7 +327,7 @@ file static class FlexCommand
                 adminConfirmedMaps, levelsById, categories,
                 pointNamesById,
                 emojiSettings,
-                take: 10));
+                take: 15));
 
         if (adminRefusedMaps.Length > 0)
             containers.Add(RankedScoreContainerBuilder(
@@ -237,7 +335,7 @@ file static class FlexCommand
                 adminRefusedMaps, levelsById, categories,
                 pointNamesById,
                 emojiSettings,
-                take: 10));
+                take: 15));
 
         return containers;
     }

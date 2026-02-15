@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using GuildSaber.Common.StrongTypes;
 
 namespace GuildSaber.Api.Features.Guilds.Levels;
 
@@ -14,6 +15,7 @@ public static class LevelResponses
         ContextId ContextId,
         int? CategoryId,
         LevelInfo Info,
+        LevelDiscordInfo DiscordInfo,
         uint Order,
         bool IsLocking
     )
@@ -24,11 +26,12 @@ public static class LevelResponses
             ContextId ContextId,
             int? CategoryId,
             LevelInfo Info,
+            LevelDiscordInfo DiscordInfo,
             uint Order,
             bool IsLocking,
             uint RequiredPassCount,
             int TotalCount
-        ) : Level(Id, GuildId, ContextId, CategoryId, Info, Order, IsLocking);
+        ) : Level(Id, GuildId, ContextId, CategoryId, Info, DiscordInfo, Order, IsLocking);
 
         public sealed record DiffStarLevel(
             int Id,
@@ -36,11 +39,12 @@ public static class LevelResponses
             ContextId ContextId,
             int? CategoryId,
             LevelInfo Info,
+            LevelDiscordInfo DiscordInfo,
             uint Order,
             bool IsLocking,
             float MinStar,
             uint RequiredPassCount
-        ) : Level(Id, GuildId, ContextId, CategoryId, Info, Order, IsLocking);
+        ) : Level(Id, GuildId, ContextId, CategoryId, Info, DiscordInfo, Order, IsLocking);
 
         public sealed record AccStarLevel(
             int Id,
@@ -48,15 +52,18 @@ public static class LevelResponses
             ContextId ContextId,
             int? CategoryId,
             LevelInfo Info,
+            LevelDiscordInfo DiscordInfo,
             uint Order,
             bool IsLocking,
             float MinStar,
             uint RequiredPassCount
-        ) : Level(Id, GuildId, ContextId, CategoryId, Info, Order, IsLocking);
+        ) : Level(Id, GuildId, ContextId, CategoryId, Info, DiscordInfo, Order, IsLocking);
     }
 
-    public readonly record struct LevelInfo(
+    public record LevelInfo(
         string Name,
         int Color
     );
+
+    public record LevelDiscordInfo(DiscordRoleId? RoleId);
 }

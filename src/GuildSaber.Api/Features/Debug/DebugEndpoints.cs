@@ -176,20 +176,25 @@ public class DebugEndpoints : IEndpoints
 
     private static async Task<Ok> RefetchAllPlayerScoresFromBLandSS(
         IHeavyBackgroundTaskQueue taskQueue,
-        IServiceScopeFactory serviceScopeFactory)
+        IServiceScopeFactory serviceScopeFactory,
+        PlayerId? fromPlayerId = null)
     {
         await taskQueue.QueueBackgroundWorkItemAsync(async token =>
         {
             await using var scope = serviceScopeFactory.CreateAsyncScope();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<DebugEndpoints>>();
             await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
-            var pipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
 
             await foreach (var player in dbContext.Players
+                               .Where(x => x.Id >= (fromPlayerId ?? 0))
                                .Select(x => new { x.Id, x.LinkedAccounts.BeatLeaderId, x.LinkedAccounts.ScoreSaberId })
                                .AsAsyncEnumerable()
                                .WithCancellation(token))
             {
+                // There were weird issues, so maybe creating a pipeline per player will help.
+                await using var playerScope = scope.ServiceProvider.CreateAsyncScope();
+                var pipeline = playerScope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
+                
                 try
                 {
                     await pipeline.ImportBeatLeaderScoresAsync(player.Id, player.BeatLeaderId, token);

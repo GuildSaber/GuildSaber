@@ -1,12 +1,14 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq.Expressions;
+using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Api.Features.RankedMaps.MapVersions;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.LegacyGuildSaber;
 using GuildSaber.Common.Services.LegacyGuildSaber.Models;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Mappers;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
@@ -319,6 +321,7 @@ public class LegacyGuildSaberMapImportPipeline(
         CancellationToken token)
     {
         var levels = await dbContext.Levels
+            .AsTracking()
             .OfType<RankedMapListLevel>()
             .Where(x => x.GuildId == guildId && x.ContextId == contextId)
             .ToListAsync(token);
@@ -346,12 +349,20 @@ public class LegacyGuildSaberMapImportPipeline(
                         Name = Name_2_50.CreateUnsafe(levelName).Value,
                         Color = Color.FromArgb(legacyLevel.Color)
                     },
+                    DiscordInfo = new LevelDiscordInfo(DiscordRoleId.TryCreate(legacyLevel.DiscordRoleId)
+                        .Match(roleId => (DiscordRoleId?)roleId, _ => null)),
                     Order = (uint)Math.Round(legacyLevel.LevelNumber),
                     IsLocking = true,
                     RequiredPassCount = 1
                 };
 
                 dbContext.Levels.Add(level);
+            }
+            else
+            {
+                level.Info = level.Info with { Color = Color.FromArgb(legacyLevel.Color) };
+                level.DiscordInfo = new LevelDiscordInfo(DiscordRoleId.TryCreate(legacyLevel.DiscordRoleId)
+                    .Match(roleId => (DiscordRoleId?)roleId, _ => null));
             }
 
             result[new LegacyLevelKey(legacyLevel.Id, new LegacyCategoryId(0))] = level;
@@ -377,12 +388,20 @@ public class LegacyGuildSaberMapImportPipeline(
                                 .Value,
                             Color = Color.FromArgb(legacyLevel.Color)
                         },
+                        DiscordInfo = new LevelDiscordInfo(DiscordRoleId.TryCreate(legacyLevel.DiscordRoleId)
+                            .Match(roleId => (DiscordRoleId?)roleId, _ => null)),
                         Order = (uint)Math.Round(legacyLevel.LevelNumber),
                         IsLocking = true,
                         RequiredPassCount = 1
                     };
 
                     dbContext.Levels.Add(categoryLevel);
+                }
+                else
+                {
+                    categoryLevel.Info = categoryLevel.Info with { Color = Color.FromArgb(legacyLevel.Color) };
+                    categoryLevel.DiscordInfo = new LevelDiscordInfo(DiscordRoleId.TryCreate(legacyLevel.DiscordRoleId)
+                        .Match(roleId => (DiscordRoleId?)roleId, _ => null));
                 }
 
                 result[new LegacyLevelKey(legacyLevel.Id, legacyCategoryId)] = categoryLevel;

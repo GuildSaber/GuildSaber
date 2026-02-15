@@ -15,6 +15,7 @@ public abstract class Level
     public Category.CategoryId? CategoryId { get; init; }
 
     public required LevelInfo Info { get; set; }
+    public required LevelDiscordInfo DiscordInfo { get; set; }
 
     public required uint Order { get; set; }
     public required bool IsLocking { get; set; }
@@ -66,6 +67,7 @@ public class LevelConfiguration : IEntityTypeConfiguration<Level>
             .ValueGeneratedOnAdd();
 
         builder.ComplexProperty(x => x.Info).Configure(new LevelInfoConfiguration());
+        builder.ComplexProperty(x => x.DiscordInfo).Configure(new LevelDiscordInfoConfiguration());
 
         builder.HasOne(x => x.Guild)
             .WithMany()

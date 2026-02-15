@@ -27,6 +27,7 @@ using GuildSaber.Common.Services.LegacyGuildSaber;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Common.Settings;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.AspNetCore.Authentication;
@@ -296,6 +297,9 @@ OpenApiTypeTransformer.MapType<BeatLeaderId>(new OpenApiSchema
     { Type = JsonSchemaType.String, Format = "int64", Example = "123456789012345678" });
 OpenApiTypeTransformer.MapType<DiscordGuildId>(new OpenApiSchema
     { Type = JsonSchemaType.String, Example = "987654321098765432" });
+OpenApiTypeTransformer.MapType<DiscordRoleId>(new OpenApiSchema
+    { Type = JsonSchemaType.String, Example = "987654321098765432" });
+
 OpenApiTypeTransformer.MapType<BeatSaverKey>(new OpenApiSchema { Type = JsonSchemaType.String, Example = "a3c3" });
 OpenApiTypeTransformer.MapType<SongHash>(new OpenApiSchema
     { Type = JsonSchemaType.String, Example = "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890" });

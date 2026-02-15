@@ -3955,6 +3955,15 @@
         ],
         "summary": "Refetch all player scores from BeatLeader and ScoreSaber.",
         "description": "Refetches all player scores for all players in the database from BeatLeader and ScoreSaber. USE WITH CAUTION!",
+        "parameters": [
+          {
+            "name": "fromPlayerId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -4879,6 +4888,10 @@
         "type": "string",
         "example": "987654321098765432"
       },
+      "DiscordRoleId": {
+        "type": "string",
+        "example": "987654321098765432"
+      },
       "EContextType": {
         "enum": [
           "Default",
@@ -5459,6 +5472,7 @@
           "contextId",
           "categoryId",
           "info",
+          "discordInfo",
           "order",
           "isLocking"
         ],
@@ -5511,6 +5525,9 @@
           "info": {
             "$ref": "#/components/schemas/LevelInfo"
           },
+          "discordInfo": {
+            "$ref": "#/components/schemas/LevelDiscordInfo"
+          },
           "order": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
@@ -5533,6 +5550,7 @@
           "contextId",
           "categoryId",
           "info",
+          "discordInfo",
           "order",
           "isLocking"
         ],
@@ -5585,6 +5603,9 @@
           "info": {
             "$ref": "#/components/schemas/LevelInfo"
           },
+          "discordInfo": {
+            "$ref": "#/components/schemas/LevelDiscordInfo"
+          },
           "order": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
@@ -5598,7 +5619,29 @@
           }
         }
       },
+      "LevelDiscordInfo": {
+        "required": [
+          "roleId"
+        ],
+        "type": "object",
+        "properties": {
+          "roleId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DiscordRoleId"
+              }
+            ]
+          }
+        }
+      },
       "LevelInfo": {
+        "required": [
+          "name",
+          "color"
+        ],
         "type": "object",
         "properties": {
           "name": {
@@ -5623,6 +5666,7 @@
           "contextId",
           "categoryId",
           "info",
+          "discordInfo",
           "order",
           "isLocking"
         ],
@@ -5674,6 +5718,9 @@
           },
           "info": {
             "$ref": "#/components/schemas/LevelInfo"
+          },
+          "discordInfo": {
+            "$ref": "#/components/schemas/LevelDiscordInfo"
           },
           "order": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
