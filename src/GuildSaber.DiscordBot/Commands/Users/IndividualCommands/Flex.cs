@@ -2,7 +2,6 @@ using System.Text;
 using Discord;
 using Discord.Interactions;
 using Discord.Net;
-using Discord.WebSocket;
 using GuildSaber.Api.Features.Guilds.Categories;
 using GuildSaber.Api.Features.Guilds.Levels;
 using GuildSaber.Api.Features.Guilds.Members.ContextStats;
@@ -128,9 +127,9 @@ public partial class UserModuleSlash
                 .Distinct()
                 .ToArray()
         );
-        
-        var user = (SocketGuildUser)Context.User;
-        var currentRoleIds = user.Roles.Select(x => x.Id).ToHashSet();
+
+        var user = await ((IGuild)Context.Guild).GetUserAsync(Context.User.Id);
+        var currentRoleIds = user.RoleIds.ToHashSet();
         var expectedRoleIds = currentRoleIds
             .Except(levelRoleIdsToRemove)
             .Union(levelRoleIdsToAssign)
