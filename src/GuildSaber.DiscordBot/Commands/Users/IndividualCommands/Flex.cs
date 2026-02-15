@@ -128,21 +128,21 @@ public partial class UserModuleSlash
                 .Distinct()
                 .ToArray()
         );
-
+        
         var user = (SocketGuildUser)Context.User;
-        var roles = user.Roles
-            .Select(x => x.Id)
+        var currentRoleIds = user.Roles.Select(x => x.Id).ToHashSet();
+        var expectedRoleIds = currentRoleIds
             .Except(levelRoleIdsToRemove)
             .Union(levelRoleIdsToAssign)
-            .Order()
-            .ToArray();
+            .ToHashSet();
 
-        if (user.Roles.Select(x => x.Id).Order().SequenceEqual(roles))
+        if (currentRoleIds.SetEquals(expectedRoleIds))
             return;
 
         try
         {
-            await ((SocketGuildUser)Context.User).ModifyAsync(x => x.RoleIds = roles);
+            await user.AddRolesAsync(levelRoleIdsToAssign);
+            await user.RemoveRolesAsync(levelRoleIdsToRemove);
         }
         catch (Exception exception)
         {
