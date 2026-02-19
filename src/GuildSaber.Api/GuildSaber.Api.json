@@ -6581,7 +6581,7 @@
         "enum": [
           "None",
           "NoneWithPassedScores",
-          "NoneWithPassedOrPendingScores"
+          "NoneWithPassedNorPendingScores"
         ]
       },
       "PlaylistSong": {

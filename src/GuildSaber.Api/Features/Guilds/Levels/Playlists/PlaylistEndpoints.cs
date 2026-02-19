@@ -79,9 +79,9 @@ public static class PlaylistExtensions
             Failure<IQueryable<Playlist>>("PlayerId is required for PassedScores filter."),
         PlaylistFilter.NoneWithPassedScores => Success(query
             .Select(PlaylistMappers.MapPlaylistPassedScoreExpression(playerId.Value, syncURL, image))),
-        PlaylistFilter.NoneWithPassedOrPendingScores when playerId is null =>
+        PlaylistFilter.NoneWithPassedNorPendingScores when playerId is null =>
             Failure<IQueryable<Playlist>>("PlayerId is required for PassedOrPendingScores filter."),
-        PlaylistFilter.NoneWithPassedOrPendingScores => Success(query
+        PlaylistFilter.NoneWithPassedNorPendingScores => Success(query
             .Select(PlaylistMappers.MapPlaylistPassedOrPendingScoreExpression(playerId.Value, syncURL, image))),
         _ => throw new UnreachableException("Unhandled PlaylistFilter case.")
     };
