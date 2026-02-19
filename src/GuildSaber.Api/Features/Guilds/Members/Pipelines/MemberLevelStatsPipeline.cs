@@ -7,7 +7,6 @@ using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
-using GuildSaber.Database.Models.Server.RankedMaps;
 using Microsoft.EntityFrameworkCore;
 using AccStarQueryFunc = System.Func<
     GuildSaber.Database.Contexts.Server.ServerDbContext,
@@ -16,7 +15,7 @@ using AccStarQueryFunc = System.Func<
     GuildSaber.Common.StrongTypes.PlayerId,
     GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId,
     int?,
-    GuildSaber.Database.Models.Server.RankedMaps.RankedMapRating.AccuracyStar?,
+    float?,
     int, System.Threading.Tasks.Task<bool>
 >;
 using DiffStarQueryFunc = System.Func<
@@ -26,7 +25,7 @@ using DiffStarQueryFunc = System.Func<
     GuildSaber.Common.StrongTypes.PlayerId,
     GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId,
     int?,
-    GuildSaber.Database.Models.Server.RankedMaps.RankedMapRating.DifficultyStar?,
+    float?,
     int, System.Threading.Tasks.Task<bool>
 >;
 using RankedMapListPassCountQueryFunc = System.Func<
@@ -46,7 +45,7 @@ public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext, ILogger<
     private static readonly AccStarQueryFunc _checkAccStarCompletionQuery = EF.CompileAsyncQuery((
         ServerDbContext db, GuildId guildId, ContextId contextId, PlayerId playerId,
         Point.PointId pointId, int? categoryId,
-        RankedMapRating.AccuracyStar? minAccStar, int skipCount) => db.RankedScores
+        float? minStar, int skipCount) => db.RankedScores
         .Where(x =>
             x.GuildId == guildId &&
             x.ContextId == contextId &&
@@ -54,14 +53,14 @@ public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext, ILogger<
             x.PointId == pointId)
         .Where(RankedScoreExtensions.IsValidPassesExpression)
         .Where(x => categoryId == null || x.RankedMap.Categories.Any(c => c.Id == categoryId.Value))
-        .Where(x => minAccStar == null || x.RankedMap.Rating.AccStar >= minAccStar.Value)
+        .Where(x => minStar == null || x.RankedMap.Rating.AccStar >= minStar.Value)
         .Skip(skipCount)
         .Any());
 
     private static readonly DiffStarQueryFunc _checkDiffStarCompletionQuery = EF.CompileAsyncQuery((
         ServerDbContext db, GuildId guildId, ContextId contextId, PlayerId playerId,
         Point.PointId pointId, int? categoryId,
-        RankedMapRating.DifficultyStar? minAccStar, int skipCount) => db.RankedScores
+        float? minStar, int skipCount) => db.RankedScores
         .Where(x =>
             x.GuildId == guildId &&
             x.ContextId == contextId &&
@@ -69,7 +68,8 @@ public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext, ILogger<
             x.PointId == pointId)
         .Where(RankedScoreExtensions.IsValidPassesExpression)
         .Where(x => categoryId == null || x.RankedMap.Categories.Any(c => c.Id == categoryId.Value))
-        .Where(x => minAccStar == null || x.RankedMap.Rating.DiffStar >= minAccStar.Value)
+        // minStar is float? instead of RankedMapRating.DifficultyStar? because EF Core can't see the mapping for some reason.
+        .Where(x => minStar == null || x.RankedMap.Rating.DiffStar >= minStar.Value)
         .Skip(skipCount)
         .Any());
 
