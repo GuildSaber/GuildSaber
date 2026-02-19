@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
@@ -79,7 +80,15 @@ public partial class UserModuleSlash
                 contextName: guildExtended.Contexts.First(x => x.Id == contextId).Info.Name,
                 categoryName: categories.FirstOrDefault(c => c.Id == categoryId).Info.Name
             );
-            await FollowupWithFileAsync(stream, fileName, "Playlist  generated.");
+            await FollowupWithFileAsync(stream, fileName, filter switch
+            {
+                PlaylistRequests.PlaylistFilter.None => "Playlist generated.",
+                PlaylistRequests.PlaylistFilter.NoneWithPassedScores
+                    => $"Playlist containing only unpassed songs of {user?.Username ?? Context.User.Username} generated.",
+                PlaylistRequests.PlaylistFilter.NoneWithPassedNorPendingScores
+                    => $"Playlist containing only unpassed and non-pending songs of {user?.Username ?? Context.User.Username} generated.",
+                _ => throw new UnreachableException()
+            });
             return;
         }
 
@@ -102,7 +111,15 @@ public partial class UserModuleSlash
             contextName: guildExtended.Contexts.First(x => x.Id == contextId).Info.Name,
             categoryName: categories.FirstOrDefault(c => c.Id == categoryId).Info.Name
         );
-        await FollowupWithFileAsync(zipStream, archiveName, "Playlists generated.");
+        await FollowupWithFileAsync(zipStream, archiveName, filter switch
+        {
+            PlaylistRequests.PlaylistFilter.None => "Playlists generated.",
+            PlaylistRequests.PlaylistFilter.NoneWithPassedScores
+                => $"Playlists containing only unpassed songs of {user?.Username ?? Context.User.Username} generated.",
+            PlaylistRequests.PlaylistFilter.NoneWithPassedNorPendingScores
+                => $"Playlists containing only unpassed and non-pending songs of {user?.Username ?? Context.User.Username} generated.",
+            _ => throw new UnreachableException()
+        });
     }
 }
 

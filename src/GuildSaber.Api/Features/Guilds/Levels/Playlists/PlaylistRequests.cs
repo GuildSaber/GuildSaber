@@ -17,6 +17,6 @@ public static class PlaylistRequests
         /// <summary>
         /// Remove songs with passed or pending scores.
         /// </summary>
-        NoneWithPassedOrPendingScores
+        NoneWithPassedNorPendingScores
     }
 }
