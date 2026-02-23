@@ -75,10 +75,11 @@ file static class ProgressCommand
         var (categoryId, trophyEmojis) = (data.CategoryId, data.TrophyEmojis);
         var progressLines = data.Stats
             .Where(x => x.Level.CategoryId == categoryId)
-            .Aggregate(new StringBuilder(), (sb, memberLevelStat) => sb
-                .Append(memberLevelStat.Level.Info.Name)
-                .Append(' ')
-                .AppendLine(memberLevelStat.ToProgress(trophyEmojis)));
+            .Aggregate(new StringBuilder(), (sb, memberLevelStat) =>
+            {
+                var line = memberLevelStat.ToProgress(trophyEmojis);
+                return line is null ? sb : sb.Append(memberLevelStat.Level.Info.Name).Append(' ').AppendLine(line);
+            });
 
         var (userName, categoryName, color, avatarUrl) = (
             data.Player.PlayerInfo.Username,
@@ -98,11 +99,11 @@ file static class ProgressCommand
         return builder.Build();
     }
 
-    private static string ToProgress(this MemberLevelStat memberLevelStat, TrophyEmojis trophyEmojis)
+    private static string? ToProgress(this MemberLevelStat memberLevelStat, TrophyEmojis trophyEmojis)
         => memberLevelStat.Level switch
         {
             Level.RankedMapListLevel listLevel => GenerateProgressText(listLevel, memberLevelStat, trophyEmojis),
-            _ => "[Currently unsupported Level Type]"
+            _ => null
         };
 
     private static string GenerateProgressText(

@@ -406,7 +406,10 @@ file record struct CardData(
                 .Where(x => x.Level.CategoryId == category.Id && !x.IsLocked)
                 .LastOrDefault(x => x.IsCompleted);
             if (categoryLevelStat is null)
+            {
+                categoryLevelOrders.Add(0);
                 continue;
+            }
 
             categoryLevels.Add(new CategoryLevelData(
                 category.Info.Name,
@@ -417,8 +420,9 @@ file record struct CardData(
         }
 
         var equilibriumPercentage = categoryLevelOrders.Count > 1
-            ? Math.Max(0f, 100f - MeCommand
-                .StandardDeviation(categoryLevelOrders) * 100f / categoryLevelOrders.Average())
+            ? Math.Max(
+                0f,
+                100f - MeCommand.StandardDeviation(categoryLevelOrders) * 100f / categoryLevelOrders.Average())
             : 100f;
 
         return new CardData(
