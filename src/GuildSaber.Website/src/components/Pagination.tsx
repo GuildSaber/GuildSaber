@@ -63,7 +63,7 @@ const Pagination = ({ totalPages, showEllipsis = true, maxVisiblePages = 5, isLo
 
   return (
     <PaginationComponent className="sticky bottom-6 md:bottom-3">
-      <PaginationContent className="bg-background rounded-lg border p-[0.2rem]">
+      <PaginationContent className="bg-background select-none rounded-lg border p-[0.2rem]">
         <PaginationItem>
           <PaginationPrevious
             onClick={() => {
@@ -104,7 +104,7 @@ const Pagination = ({ totalPages, showEllipsis = true, maxVisiblePages = 5, isLo
               }}
               isActive={currentPage === page}
               className={cn({
-                "pointer-events-none": currentPage === totalPages || isLoading,
+                "pointer-events-none": currentPage === page || isLoading,
               })}
             >
               {isLoading && currentPage === page ? <Loader2 className="animate-spin" /> : page}
