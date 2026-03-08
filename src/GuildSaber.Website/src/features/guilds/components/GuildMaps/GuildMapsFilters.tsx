@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
 import { useGuildMapFilters } from "@/features/guilds/hooks/useGuildMapFilters"
+import { useSliderCommit } from "@/features/guilds/hooks/useSliderCommit"
 import { cn } from "@/lib/utils"
 import { MAP_SORT_BY, MAX_BPM, MAX_STARS, MIN_BPM, MIN_STARS, ORDER_BY } from "@/utils/constants"
-import { useState, type ChangeEvent } from "react"
+import { type ChangeEvent } from "react"
 import { useDebounceCallback } from "usehooks-ts"
 
 type Props = {
@@ -19,16 +20,16 @@ type Props = {
 const GuildMapsFilters = ({ categories }: Props) => {
   const [filters, setFilters] = useGuildMapFilters()
 
-  const [localStars, setLocalStars] = useState(filters.stars)
-  const [localBpm, setLocalBpm] = useState(filters.bpm)
-
   const updateFilters = (newFilters: Partial<typeof filters>) => {
     setFilters({ ...newFilters, page: 1 })
   }
 
+  const stars = useSliderCommit(filters.stars, (v) => updateFilters({ stars: v }))
+  const bpm = useSliderCommit(filters.bpm, (v) => updateFilters({ bpm: v }))
+
   const handleResetFilters = () => {
-    setLocalStars([MIN_STARS, MAX_STARS])
-    setLocalBpm([MIN_BPM, MAX_BPM])
+    stars.reset([MIN_STARS, MAX_STARS])
+    bpm.reset([MIN_BPM, MAX_BPM])
     setFilters(null)
   }
 
@@ -44,14 +45,6 @@ const GuildMapsFilters = ({ categories }: Props) => {
 
   const handleSortChange = (v: ERankedMapSorter) => {
     updateFilters({ sort: v })
-  }
-
-  const handleStarsChange = (v: number[]) => {
-    updateFilters({ stars: v })
-  }
-
-  const handleBpmChange = (v: number[]) => {
-    updateFilters({ bpm: v })
   }
 
   const handleCategoriesSelect = (categoryId: number) => () => {
@@ -116,33 +109,35 @@ const GuildMapsFilters = ({ categories }: Props) => {
       <Field>
         <FieldLabel>Stars</FieldLabel>
         <FieldDescription>
-          Only show maps with Stars between <span className="font-semibold text-amber-400">{localStars[0]}</span> and{" "}
-          <span className="font-semibold text-amber-400">{localStars[1]}</span>
+          Only show maps with Stars between <span className="font-semibold text-amber-400">{stars.localValue[0]}</span> and{" "}
+          <span className="font-semibold text-amber-400">{stars.localValue[1]}</span>
         </FieldDescription>
         <Slider
           className="**:data-[slot=slider-range]:bg-amber-400 **:data-[slot=slider-thumb]:border-amber-400 **:data-[slot=slider-thumb]:ring-amber-400/50"
-          value={localStars}
+          value={stars.localValue}
           min={MIN_STARS}
           max={MAX_STARS}
           step={1}
-          onValueChange={setLocalStars}
-          onValueCommit={handleStarsChange}
+          minStepsBetweenThumbs={0}
+          onValueChange={stars.handleChange}
+          onPointerUp={stars.handleCommit}
         />
       </Field>
 
       <Field>
         <FieldLabel>BPM</FieldLabel>
         <FieldDescription>
-          Only show maps with BPM between <span className="text-primary font-semibold">{localBpm[0]}</span> and{" "}
-          <span className="text-primary font-semibold">{localBpm[1]}</span>
+          Only show maps with BPM between <span className="text-primary font-semibold">{bpm.localValue[0]}</span> and{" "}
+          <span className="text-primary font-semibold">{bpm.localValue[1]}</span>
         </FieldDescription>
         <Slider
-          value={localBpm}
+          value={bpm.localValue}
           min={MIN_BPM}
           max={MAX_BPM}
           step={1}
-          onValueChange={setLocalBpm}
-          onValueCommit={handleBpmChange}
+          minStepsBetweenThumbs={0}
+          onValueChange={bpm.handleChange}
+          onPointerUp={bpm.handleCommit}
         />
       </Field>
 
