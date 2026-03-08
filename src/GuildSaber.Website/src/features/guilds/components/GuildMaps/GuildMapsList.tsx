@@ -39,6 +39,7 @@ const GuildMapsList = () => {
         matchAnyCategory: filters.matchAnyCategory,
       },
     }),
+    enabled: Boolean(guild),
   })
 
   if (isLoading) {
