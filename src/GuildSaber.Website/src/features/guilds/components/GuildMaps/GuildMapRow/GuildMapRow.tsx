@@ -1,10 +1,11 @@
 import type { GetRankedMapResponse } from "@/client"
+import BeatSaver from "@/components/icons/BeatSaver"
 import Image from "@/components/Image"
 import { Button } from "@/components/ui/button"
 import { useArcViewerStore } from "@/features/maps/stores/arcViewerStore"
 import { getMapCover } from "@/utils/beatsaver"
 import { MAP_DIFFICULTY } from "@/utils/constants"
-import { DownloadCloud, Link, Play, Sparkles, Star, Twitch } from "lucide-react"
+import { DownloadCloud, Play, Sparkles, Star, Twitch } from "lucide-react"
 import { useCopyToClipboard } from "usehooks-ts"
 
 type Props = {
@@ -72,7 +73,7 @@ export const GuildMapRow = ({ map }: Props) => {
           variant="outline"
           className="hover:border-pink-500!"
         >
-          <Link className="size-4" />
+          <BeatSaver className="size-4" />
         </Button>
         <Button
           title="View map in Arc Viewer"
