@@ -90,20 +90,22 @@ const GuildHeader = () => {
 
 const LoadingSkeleton = () => (
   <Card className="overflow-hidden p-0">
-    <Skeleton className="h-20 w-full rounded-none object-cover md:h-40" />
+    <Skeleton className="h-20 w-full rounded-none md:h-40" />
     <CardContent className="grid gap-6 md:grid-cols-[2fr_1fr]">
-      <div className="flex items-start gap-4">
-        <Skeleton className="h-20 w-20 rounded-lg md:h-40 md:w-40" />
-
-        <div className="flex flex-1 flex-col">
-          <Skeleton className="mb-2 h-10 w-3/4" />
-          <Skeleton className="mt-2 h-4 w-2/3" />
-          <Skeleton className="mt-2 h-4 w-1/3" />
+      <div>
+        <div className="mb-2 flex flex-col items-center gap-4 md:flex-row md:items-start">
+          <div className="border-card bg-card z-10 -mt-14 size-20 shrink-0 rounded-lg border-6 md:-mt-22 md:size-34">
+            <Skeleton className="size-full rounded-lg" />
+          </div>
+          <Skeleton className="h-8 w-3/4 md:h-9" />
         </div>
+        <Skeleton className="mx-auto h-4 w-2/3 md:mx-0" />
+        <Skeleton className="mx-auto mt-2 h-4 w-1/2 md:mx-0" />
       </div>
 
-      <div className="flex flex-col items-end justify-start text-right">
-        <Skeleton className="h-9 w-24" />
+      <div className="flex items-end justify-between text-right md:flex-col md:justify-start">
+        <Skeleton className="h-8 w-16 rounded" />
+        <Skeleton className="h-9 w-16 md:mt-auto" />
       </div>
     </CardContent>
     <CardFooter />
