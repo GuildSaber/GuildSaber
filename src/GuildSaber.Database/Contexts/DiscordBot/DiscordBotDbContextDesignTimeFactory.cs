@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Design;
 namespace GuildSaber.Database.Contexts.DiscordBot;
 
 [UsedImplicitly(Reason = "Used by EF Core to create a design-time DbContext")]
-public class DiscordBotContextDesignTimeFactory : IDesignTimeDbContextFactory<DiscordBotDbContext>
+public class DiscordBotDbContextDesignTimeFactory : IDesignTimeDbContextFactory<DiscordBotDbContext>
 {
     public DiscordBotDbContext CreateDbContext(string[] args)
     {

@@ -37,6 +37,9 @@
         <PackageReference Include="MyCSharp.HttpUserAgentParser.AspNetCore" />
         <PackageReference Include="Scalar.AspNetCore" />
         <PackageReference Include="Scalar.AspNetCore.Microsoft" />
+        <PackageReference Include="TickerQ" />
+        <PackageReference Include="TickerQ.Dashboard" />
+        <PackageReference Include="TickerQ.EntityFrameworkCore" />
     </ItemGroup>
 
     <ItemGroup>

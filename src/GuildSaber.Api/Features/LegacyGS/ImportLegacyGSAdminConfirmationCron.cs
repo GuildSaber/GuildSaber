@@ -4,30 +4,22 @@ using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.EntityFrameworkCore;
+using TickerQ.Utilities.Base;
 
 namespace GuildSaber.Api.Features.LegacyGS;
 
-public class ImportLegacyGSAdminConfirmationWorker(
-    PeriodicTimer period,
+public class ImportLegacyGSAdminConfirmationCron(
     IBackgroundTaskQueue taskQueue,
     IServiceScopeFactory scopeFactory,
-    ILogger<ImportLegacyGSAdminConfirmationWorker> logger) : BackgroundService
+    ILogger<ImportLegacyGSAdminConfirmationCron> logger)
 {
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while (await period.WaitForNextTickAsync(stoppingToken) && !stoppingToken.IsCancellationRequested)
-        {
-            logger.LogInformation("Starting legacy GuildSaber admin confirmation import job.");
-            await DoWorkAsync();
-            logger.LogInformation("Finished legacy GuildSaber admin confirmation import job.");
-        }
-    }
-
     private readonly record struct PlayerIdWithGuildIds(PlayerId PlayerId, GuildId[] GuildIds);
 
+    [TickerFunction("ImportLegacyGSAdminConfirmation", cronExpression: "0 0 7 * * *")]
     [SuppressMessage("ReSharper", "LoopCanBeConvertedToQuery")]
-    private async Task DoWorkAsync() => await taskQueue.QueueBackgroundWorkItemAsync(async token =>
+    public async Task DoWorkAsync() => await taskQueue.QueueBackgroundWorkItemAsync(async token =>
     {
+        logger.LogInformation("Starting legacy GuildSaber admin confirmation import job.");
         using var scope = scopeFactory.CreateScope();
 
         PlayerIdWithGuildIds[] playersWithGuilds;
@@ -49,5 +41,7 @@ public class ImportLegacyGSAdminConfirmationWorker(
 
             if (importedAny) await playerScoresPipeline.RecalculatePlayerScoresAsync(playerWithGuilds.PlayerId, token);
         }
+
+        logger.LogInformation("Finished legacy GuildSaber admin confirmation import job.");
     });
 }

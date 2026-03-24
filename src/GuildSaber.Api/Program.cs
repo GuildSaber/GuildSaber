@@ -40,6 +40,10 @@ using Microsoft.OpenApi;
 using MyCSharp.HttpUserAgentParser.AspNetCore.DependencyInjection;
 using MyCSharp.HttpUserAgentParser.DependencyInjection;
 using Scalar.AspNetCore;
+using TickerQ.Dashboard.DependencyInjection;
+using TickerQ.DependencyInjection;
+using TickerQ.EntityFrameworkCore.Customizer;
+using TickerQ.EntityFrameworkCore.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -117,6 +121,27 @@ builder.Services.AddDbContext<ServerDbContext>((_, options) =>
         .WithExpressionExpanding()
 );
 builder.EnrichNpgsqlDbContext<ServerDbContext>();
+
+#endregion
+
+#region scheduler
+
+builder.Services.AddTickerQ(options =>
+{
+    options.ConfigureScheduler(scheduler =>
+    {
+        scheduler.MaxConcurrency = 8;
+        scheduler.NodeIdentifier = Environment.MachineName;
+    });
+
+    options.AddOperationalStore(efOptions =>
+    {
+        efOptions.UseApplicationDbContext<ServerDbContext>(ConfigurationType.IgnoreModelCustomizer);
+        efOptions.SetDbContextPoolSize(34);
+    });
+
+    options.AddDashboard();
+});
 
 #endregion
 
@@ -263,15 +288,11 @@ builder.Services.AddTransient<MemberLevelStatsPipeline>();
 builder.Services.AddTransient<MemberJoinPipeline>();
 builder.Services.AddTransient<AddRankedMapPipeline>();
 builder.Services.AddTransient<EditRankedMapPipeline>();
+builder.Services.AddTransient<ImportLegacyGSAdminConfirmationCron>();
+builder.Services.AddTransient<ImportLegacyGSMapImportCron>();
 builder.Services.AddHostedService<BLScoreSyncWorker>();
 builder.Services.AddHostedService<QueueProcessingService>();
 builder.Services.AddHostedService<HeavyQueueProcessingService>();
-builder.Services.AddHostedService<ImportLegacyGSAdminConfirmationWorker>(provider =>
-    new ImportLegacyGSAdminConfirmationWorker(
-        new PeriodicTimer(TimeSpan.FromDays(1)),
-        provider.GetRequiredService<IBackgroundTaskQueue>(),
-        provider.GetRequiredService<IServiceScopeFactory>(),
-        provider.GetRequiredService<ILogger<ImportLegacyGSAdminConfirmationWorker>>()));
 builder.Services.AddSingleton<IBackgroundTaskQueue>(_ => new BackgroundTaskQueue(capacity: 100));
 builder.Services.AddSingleton<IHeavyBackgroundTaskQueue>(_ => new HeavyBackgroundTaskQueue(capacity: 10));
 
@@ -350,6 +371,8 @@ app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseTickerQ();
 
 #endregion
 

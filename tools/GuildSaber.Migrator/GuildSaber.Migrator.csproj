@@ -18,8 +18,4 @@
         <ProjectReference Include="..\..\aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj" />
         <ProjectReference Include="..\..\src\GuildSaber.Database\GuildSaber.Database.csproj" />
     </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="DiscordBot\Seeders\" />
-    </ItemGroup>
 </Project>
