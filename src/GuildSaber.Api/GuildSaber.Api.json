@@ -1768,7 +1768,7 @@
           "Context.RankedMaps"
         ],
         "summary": "Create a ranked map for a context.",
-        "description": "    This endpoint:\r\n    * Returns 200 OK with ranked map details when created successfully.\r\n* Returns 401 Unauthorized when the guild has reached its maximum number of ranked maps.\r\n* Returns 400 Bad Request with validation details when validation fails.\r\n* Returns 404 Not Found when the map is not found on BeatSaver.\r\n* Returns 429 Too Many Requests when rate limited by BeatSaver API.\r\n* Returns 500 Internal Server Error when BeatSaver API fails.",
+        "description": "    This endpoint:\n    * Returns 200 OK with ranked map details when created successfully.\n* Returns 401 Unauthorized when the guild has reached its maximum number of ranked maps.\n* Returns 400 Bad Request with validation details when validation fails.\n* Returns 404 Not Found when the map is not found on BeatSaver.\n* Returns 429 Too Many Requests when rate limited by BeatSaver API.\n* Returns 500 Internal Server Error when BeatSaver API fails.",
         "operationId": "CreateRankedMap",
         "parameters": [
           {
@@ -4025,7 +4025,7 @@
           "Context.Levels"
         ],
         "summary": "Get all levels in a context, optionally filtered by category.",
-        "description": "- No parameters: Returns all levels.\r\n- hasCategory=false: Only return levels with no category.\r\n- category=5: Returns levels with category 5.",
+        "description": "- No parameters: Returns all levels.\n- hasCategory=false: Only return levels with no category.\n- category=5: Returns levels with category 5.",
         "operationId": "GetLevels",
         "parameters": [
           {
@@ -5714,7 +5714,7 @@
             "$ref": "#/components/schemas/RankedMapRequirements"
           },
           "manualRating": {
-            "description": "Used to force a specific difficulty and/or accuracy star rating for the map.\r\nIf null, the star ratings will be calculated automatically by BeatLeader's ExMachina.",
+            "description": "Used to force a specific difficulty and/or accuracy star rating for the map.\nIf null, the star ratings will be calculated automatically by BeatLeader's ExMachina.",
             "$ref": "#/components/schemas/ManualRating"
           },
           "categoryIds": {
