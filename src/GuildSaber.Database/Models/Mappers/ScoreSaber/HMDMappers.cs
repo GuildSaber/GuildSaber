@@ -5,20 +5,23 @@ namespace GuildSaber.Database.Models.Mappers.ScoreSaber;
 
 public static class HMDMappers
 {
-    public static PlayerHardwareInfo.EHMD Map(this HMD self, string? deviceHmd)
-        => (self, deviceHmd) switch
-        {
-            (HMD.Rift, _) _ => PlayerHardwareInfo.EHMD.Rift,
-            (HMD.Vive, _) => PlayerHardwareInfo.EHMD.Vive,
-            (HMD.VivePro, _) => PlayerHardwareInfo.EHMD.VivePro,
-            (HMD.WMR, _) => PlayerHardwareInfo.EHMD.WMR,
-            (HMD.RiftS, _) => PlayerHardwareInfo.EHMD.RiftS,
-            (HMD.Quest, _) => PlayerHardwareInfo.EHMD.Quest,
-            (HMD.Index, _) => PlayerHardwareInfo.EHMD.Index,
-            (HMD.ViveCosmos, _) => PlayerHardwareInfo.EHMD.ViveCosmos,
-            (HMD.Unknown, "Quest 2") => PlayerHardwareInfo.EHMD.Quest2,
-            (HMD.Unknown, "Quest 3") => PlayerHardwareInfo.EHMD.Quest3,
-            (HMD.Unknown, "Quest 3S") => PlayerHardwareInfo.EHMD.Quest3S,
-            _ => PlayerHardwareInfo.EHMD.Unknown
-        };
+    public static PlayerHardwareInfo.EHMD Map(this HMD self, string? deviceHmd) => (self, deviceHmd) switch
+    {
+        (HMD.Rift, _) _ => PlayerHardwareInfo.EHMD.Rift,
+        (HMD.Vive, _) => PlayerHardwareInfo.EHMD.Vive,
+        (HMD.VivePro, _) => PlayerHardwareInfo.EHMD.VivePro,
+        (HMD.WMR, _) => PlayerHardwareInfo.EHMD.WMR,
+        (HMD.RiftS, _) => PlayerHardwareInfo.EHMD.RiftS,
+        (HMD.Quest, _) => PlayerHardwareInfo.EHMD.Quest,
+        (HMD.Index, _) => PlayerHardwareInfo.EHMD.Index,
+        (HMD.ViveCosmos, _) => PlayerHardwareInfo.EHMD.ViveCosmos,
+        (HMD.Unknown, "Quest 2") => PlayerHardwareInfo.EHMD.Quest2,
+        (HMD.Unknown, "Quest 3") => PlayerHardwareInfo.EHMD.Quest3,
+        (HMD.Unknown, "Quest 3S") => PlayerHardwareInfo.EHMD.Quest3S,
+        // "Quest X (Virtual Desktop)" being a thing, I prefer handling all possibilities after the Headset name.
+        (HMD.Unknown, ['Q', 'u', 'e', 's', 't', ' ', '2', ..]) => PlayerHardwareInfo.EHMD.Quest2,
+        (HMD.Unknown, ['Q', 'u', 'e', 's', 't', ' ', '3', 'S', ..]) => PlayerHardwareInfo.EHMD.Quest3S,
+        (HMD.Unknown, ['Q', 'u', 'e', 's', 't', ' ', '3', ..]) => PlayerHardwareInfo.EHMD.Quest3,
+        _ => PlayerHardwareInfo.EHMD.Unknown
+    };
 }
