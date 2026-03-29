@@ -3,6 +3,7 @@ using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models;
+using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models;
@@ -74,24 +75,38 @@ public sealed class PlayerScoresPipeline(
         var count = 0;
         var contextsWithPoints = new Dictionary<ContextId, Context>();
 
+        const int parallelizedChunkSize = 30;
+        var chunkedScoresToProcess = new List<(ScoreResponse, SongDifficultyId)>(parallelizedChunkSize);
+
+        var toBeatLeaderScoreAsync = async (ScoreResponse score, SongDifficultyId songDifficultyId) =>
+            score.Map(playerId, songDifficultyId, (await beatLeaderApi.GetScoreStatisticsAsync(score.Id))
+                .GetValueOrDefault().Map());
+
         // Unwrap the result to kill the current Task if there's an error.
-        await foreach (var score in beatLeaderApi.GetPlayerScoresAsyncEnumerable(beatLeaderId, initialRequest)
+        await foreach (var scoreResponses in beatLeaderApi.GetPlayerScoresAsyncEnumerable(beatLeaderId, initialRequest)
                            .SelectMany(x => x.Unwrap() ?? [])
+                           .Chunk(parallelizedChunkSize)
                            .WithCancellation(token))
         {
-            if (!(await GetSongDifficultyIdAsync(score.LeaderboardId, dbContext, token))
-                .TryGetValue(out var difficultyId)) continue;
+            chunkedScoresToProcess.Clear();
+            foreach (var scoreResponse in scoreResponses)
+            {
+                if (!(await GetSongDifficultyIdAsync(scoreResponse.LeaderboardId, dbContext, token))
+                    .TryGetValue(out var difficultyId)) continue;
 
-            var scoreStats = (await beatLeaderApi.GetScoreStatisticsAsync(score.Id))
-                .GetValueOrDefault()
-                .Map();
+                chunkedScoresToProcess.Add((scoreResponse, difficultyId));
+            }
 
-            var abstractScore = score.Map(playerId, difficultyId, scoreStats);
-            var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(abstractScore, token);
+            var scores =
+                await Task.WhenAll(chunkedScoresToProcess.Select(x => toBeatLeaderScoreAsync(x.Item1, x.Item2)));
+            foreach (var score in scores)
+            {
+                var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(score, token);
 
-            count++;
-            foreach (var context in pipelineResult.ImpactedContextsWithPoints)
-                contextsWithPoints.TryAdd(context.Id, context);
+                count++;
+                foreach (var context in pipelineResult.ImpactedContextsWithPoints)
+                    contextsWithPoints.TryAdd(context.Id, context);
+            }
         }
 
         foreach (var tuple in contextsWithPoints)
