@@ -7,17 +7,18 @@ using Zenject;
 
 namespace GuildSaber.Mod.Installers;
 
-internal class AppInstaller(PluginConfig config) : Installer
+internal class AppInstaller(GSConfig config) : Installer
 {
     public override void InstallBindings()
     {
         Container.BindInstance(config);
         Container.Bind<GuildSaberClient>().FromFactory<GuildSaberClientFactory>().AsSingle();
         Container.BindInterfacesAndSelfTo<GuildSaberManager>().AsSingle();
+        Container.Bind<ModData>().AsSingle();
     }
 }
 
-internal class GuildSaberClientFactory(PluginConfig config, SiraLog logger) : IFactory<GuildSaberClient>
+internal class GuildSaberClientFactory(GSConfig config, SiraLog logger) : IFactory<GuildSaberClient>
 {
     public GuildSaberClient Create()
     {

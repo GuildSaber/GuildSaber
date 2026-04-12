@@ -1,6 +1,9 @@
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using GuildSaber.Mod.Core.UI;
 using GuildSaber.Mod.Resources;
+using TMPro;
 using UnityEngine;
 using Zenject;
 using Logger = IPA.Logging.Logger;
@@ -18,8 +21,20 @@ public class ResourcesInstaller(Logger logger) : Installer
         Container.Bind<Texture2D>().WithId(nameof(ResourceMap.GsWhiteLogo))
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.GsWhiteLogo, logger))
             .AsCached();
+
+        Container.Bind<GsUiResources>()
+            .FromFactory<GSResourcesFactory>()
+            .AsCached();
     }
 
+    internal class GSResourcesFactory : IFactory<GsUiResources>
+    {
+        public GsUiResources Create() => new GsUiResources(
+            UnityEngine.Resources.FindObjectsOfTypeAll<TextMeshProUGUI>().Where(x
+                => x.font.name.Contains("Teko-Medium")).ElementAt(1).font
+        );
+    }
+    
     private static Texture2D LoadTexture2DFromResource(string resourcePath, Logger logger)
     {
         logger.Debug($"[{nameof(ResourcesInstaller)}/{nameof(LoadTexture2DFromResource)}] " +

@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 namespace GuildSaber.Mod.Core.PlayerCard;

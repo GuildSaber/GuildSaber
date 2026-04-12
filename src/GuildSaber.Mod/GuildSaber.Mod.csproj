@@ -54,6 +54,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="System.Text.Json" />
         <Reference Include="BeatSaber.ViewSystem">
             <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BeatSaber.ViewSystem.dll</HintPath>
             <Private>False</Private>
@@ -120,16 +121,17 @@
             <HintPath>$(BeatSaberDir)/Plugins/SiraUtil.dll</HintPath>
             <Private>false</Private>
         </Reference>
-        <Reference Include="System" />
-        <Reference Include="System.Core">
-            <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\System.Core.dll</HintPath>
-            <Private>false</Private>
-        </Reference>
         <Reference Include="SongCore">
             <HintPath>$(BeatSaberDir)\Plugins\SongCore.dll</HintPath>
             <Private>False</Private>
             <SpecificVersion>False</SpecificVersion>
         </Reference>
+        <Reference Include="System" />
+        <Reference Include="System.Core">
+            <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\System.Core.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="System.Net.Http" />
         <Reference Include="Unity.TextMeshPro">
             <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\Unity.TextMeshPro.dll</HintPath>
             <Private>False</Private>
@@ -146,6 +148,10 @@
             <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
             <Private>False</Private>
             <SpecificVersion>False</SpecificVersion>
+        </Reference>
+        <Reference Include="UnityEngine.TextRenderingModule">
+            <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+            <Private>false</Private>
         </Reference>
         <Reference Include="UnityEngine.UI">
             <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\UnityEngine.UI.dll</HintPath>
@@ -167,7 +173,6 @@
             <HintPath>$(BeatSaberDir)/Beat Saber_Data/Managed/Zenject-usage.dll</HintPath>
             <Private>false</Private>
         </Reference>
-        <PackageReference Include="System.Text.Json" />
     </ItemGroup>
 
     <ItemGroup>
