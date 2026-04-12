@@ -5,7 +5,6 @@ using CP_SDK.UI.Components;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Mod.Core;
-using GuildSaber.Mod.Core.PlayerCard;
 using GuildSaber.Mod.Core.UI.Utils;
 using UnityEngine;
 using Zenject;

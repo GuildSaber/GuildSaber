@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using BeatSaberMarkupLanguage;
 using BeatSaberMarkupLanguage.FloatingScreen;
 using CP_SDK_BS.Game;
@@ -8,8 +6,6 @@ using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Mod.Configurations;
 using GuildSaber.Mod.Core;
-using GuildSaber.Mod.Core.PlayerCard;
-using GuildSaber.Mod.Core.PlayerCard.UI.Components;
 using GuildSaber.Mod.Core.UI.Common;
 using GuildSaber.Mod.Core.UI.Extensions;
 using GuildSaber.Mod.PlayerCard.UI.Components;
@@ -29,9 +25,9 @@ internal class PlayerCardView : ViewController<PlayerCardView>
     [Inject] private readonly TimeController TimeControl = null!;
     [Inject] private readonly FloatingScreen CardFloatingScreen = null!;
     [Inject] private readonly ModData _modData = null!;
-
+    
     private ImageView BorderImage = null!;
-
+    
     protected GSText MessageText = null!;
     protected GSSecondaryButton ShowSettingsButton = null!;
     protected XUIVLayout InvalidConfigLayout = null!;
@@ -41,10 +37,10 @@ internal class PlayerCardView : ViewController<PlayerCardView>
     protected GSText PlayerPassesText = null!;
     protected GSText PlayerLevelText = null!;
     protected GSText TimeText = null!;
-
+    
     protected XUIVLayout PointsContainer = null!;
     protected XUIVLayout PlayerDataContainer = null!;
-
+    
     protected XUIVLayout PlayerImageContainer = null!;
 
     protected XUIIconButton PlayerImage = null!;
@@ -53,12 +49,13 @@ internal class PlayerCardView : ViewController<PlayerCardView>
 
     protected XUIHLayout MainLayout = null!;
 
-    protected PagedLevelList MainPlayerLevelsContainer = null!;
+    protected XUIVLayout MainPlayerLevelsContainer = null!;
 
     protected GSSecondaryButton PageLeftButton = null!;
     protected GSSecondaryButton PageRightButton = null!;
-
-
+    
+    
+    
     protected override void OnViewCreation()
     {
         XUIVLayout.Make(
@@ -116,11 +113,20 @@ internal class PlayerCardView : ViewController<PlayerCardView>
                     )
                     .SetPadding(2, 2, 2, 7)
                     .Bind(ref PlayerImageContainer),
-                PagedLevelList.Make()
-                    .Bind(ref MainPlayerLevelsContainer)
+                XUIVLayout.Make(
+                        XUIGLayout.Make().Bind(ref PlayerLevelsContainer).SetSpacing(new Vector2(0, -1)).SetMinWidth(30)
+                            .SetCellSize(new Vector2(18, 12f)).SetConstraintCount(2),
+                        XUIHLayout.Make(
+                                GSSecondaryButton.Make("<", PageLeft).SetWidth(5).SetHeight(5).Bind(ref PageLeftButton),
+                                GSSecondaryButton.Make(">", PageRight).SetWidth(5).SetHeight(5)
+                                    .Bind(ref PageRightButton)
+                            ).SetSpacing(10)
+                            .SetPadding(new RectOffset(-5, 2, 2, 2))
+                    )
                     .SetPadding(2, 2, 2, 12)
                     .SetSpacing(-0.5f)
                     .SetActive(false)
+                    .Bind(ref MainPlayerLevelsContainer)
             )
             .OnReady(x => x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleCenter)
             .OnReady(x => x.CSizeFitter.horizontalFit =
@@ -156,19 +162,24 @@ internal class PlayerCardView : ViewController<PlayerCardView>
         {
             if (Logic.ActiveScene != Logic.ESceneType.Playing)
             {
-                Config.PlayerCard.Transforms.Menu = new CardTransform(x.Position, x.Rotation);
+                Config.PlayerCard.InMenuPosition = x.Position;
+                Config.PlayerCard.InMenuRotation = x.Rotation.eulerAngles;
                 Config.Save();
             }
             else
             {
-                Config.PlayerCard.Transforms.InSong = new CardTransform(x.Position, x.Rotation);
+                Config.PlayerCard.InSongPosition = x.Position;
+                Config.PlayerCard.InSongRotation = x.Rotation.eulerAngles;
                 Config.Save();
             }
         };
     }
 
-    private void AskForGuild() { }
-
+    private void AskForGuild()
+    {
+        
+    }
+    
     public void OnTimeChanged(int hours, int minutes, int seconds)
     {
         TimeText.SetText($"{hours:00}:{minutes:00}:{seconds:00}");
@@ -178,13 +189,12 @@ internal class PlayerCardView : ViewController<PlayerCardView>
     {
         if (x != Logic.ESceneType.Playing)
         {
-            GetCardFloatingScreen().transform.position = Config.PlayerCard.Transforms.Menu.Position;
-            GetCardFloatingScreen().transform.rotation = Config.PlayerCard.Transforms.Menu.Rotation;
-        }
-        else
+            GetFloatingScreen().transform.position = GSConfig.Instance.CardInMenuPosition;
+            GetFloatingScreen().transform.rotation = Quaternion.Euler(GSConfig.Instance.CardInMenuRotation);
+        } else
         {
-            GetCardFloatingScreen().transform.position = Config.PlayerCard.Transforms.InSong.Position;
-            GetCardFloatingScreen().transform.rotation = Config.PlayerCard.Transforms.InSong.Rotation;
+            GetFloatingScreen().transform.position = GSConfig.Instance.CardInSongPosition;
+            GetFloatingScreen().transform.rotation = Quaternion.Euler(GSConfig.Instance.CardInSongRotation);
         }
     }
 
@@ -209,83 +219,76 @@ internal class PlayerCardView : ViewController<PlayerCardView>
     }
 
     public void RefreshCardSize(bool displayCardLevelsDetails)
-    {
-        if (CardPlayerData.CategoryData == null && displayCardLevelsDetails)
-        {
-            RefreshCardSize(false);
-            return;
-        }
-
-        if (CardPlayerData.CategoryData.Count() == 0 && displayCardLevelsDetails)
-        {
-            RefreshCardSize(false);
-            return;
-        }
-
-        float l_Width = 55;
-        if (displayCardLevelsDetails && CardPlayerData.CategoryData.Any())
-            l_Width += 30;
-
-        if (_modData.Player != null)
-        {
-            GetCardFloatingScreen().ScreenSize =
-                new Vector2(l_Width + _modData.Player.PlayerInfo.Username.Length, 40);
-        }
-    }
-
-    public async void RefreshCard()
-    {
-        LevelsPage = 0;
-
-        PlayerNameText.SetText(CardPlayerData.Name);
-
-        try
-        {
-            PlayerLevelText.SetText($"LVL: {CardPlayerData.LevelValue.ToString()}");
-            PlayerPasses.SetText($"{CardPlayerData.GuildValidPassCount} passes");
-        }
-        catch (Exception ex)
-        {
-            Logger.Error(ex);
-        }
-
-        var l_ImageResult = await GuildSaberUtils.GetImage(CardPlayerData.Avatar ?? string.Empty);
-        if (!l_ImageResult.IsError)
-            PlayerImage.SetSprite(Sprite.Create(l_ImageResult.Texture,
-                new Rect(0, 0, l_ImageResult.Texture.width, l_ImageResult.Texture.height), new Vector2()));
-
-        DisplayCard(EDisplayMode.Normal);
-
-        LoadConfig();
-    }
-
-    public void RefreshPoints()
-    {
-        var l_Points = CardPlayerData.RankData;
-
-        if (l_Points == null)
-        {
-            l_Points = new List<PointsData>();
-        }
-
-        //Logger.Instance.Info(l_Points.Count.ToString());
-        foreach (var l_Item in CardPoints)
-            l_Item.SetActive(false);
-
-        for (int l_i = 0; l_i < l_Points.Count(); l_i++)
-        {
-            if (CardPoints.Count - 1 < l_i)
             {
-                CardPoints l_Point = Components.CardPoints.Make();
-                l_Point.BuildUI(PointsContainer.Element.transform);
-                CardPoints.Add(l_Point);
+                if (CardPlayerData.CategoryData == null && displayCardLevelsDetails)
+                {
+                    RefreshCardSize(false);
+                    return;
+                }
+
+                if (CardPlayerData.CategoryData.Count() == 0 && displayCardLevelsDetails)
+                {
+                    RefreshCardSize(false);
+                    return;
+                }
+
+                float l_Width = 55;
+                if (displayCardLevelsDetails && CardPlayerData.CategoryData.Any())
+                    l_Width += 30;
+
+                GSModule.CardFloatingPanel.ScreenSize =
+                    new Vector2(l_Width + CardPlayerData.Name.Length, 40);
             }
 
-            CardPoints[l_i].SetPoints(l_Points.ElementAt(l_i), GetUsedColor());
-            CardPoints[l_i].SetActive(true);
-        }
-    }
+            public async void RefreshCard()
+            {
+                LevelsPage = 0;
 
+                PlayerNameText.SetText(CardPlayerData.Name);
+
+                try {
+                    PlayerLevelText.SetText($"LVL: {CardPlayerData.LevelValue.ToString()}");
+                    PlayerPasses.SetText($"{CardPlayerData.GuildValidPassCount} passes");
+                } catch (Exception ex)
+                {
+                    Logger.Error(ex);
+                }
+
+                var l_ImageResult = await GuildSaberUtils.GetImage(CardPlayerData.Avatar ?? string.Empty);
+                if (!l_ImageResult.IsError)
+                    PlayerImage.SetSprite(Sprite.Create(l_ImageResult.Texture, new Rect(0, 0, l_ImageResult.Texture.width, l_ImageResult.Texture.height), new Vector2()));
+
+                DisplayCard(EDisplayMode.Normal);
+
+                LoadConfig();
+            }
+
+            public void RefreshPoints()
+            {
+                var l_Points = CardPlayerData.RankData;
+
+                if (l_Points == null)
+                {
+                    l_Points = new List<PointsData>();
+                }
+                //Logger.Instance.Info(l_Points.Count.ToString());
+                foreach (var l_Item in CardPoints)
+                    l_Item.SetActive(false);
+
+                for (int l_i = 0; l_i < l_Points.Count();l_i++)
+                {
+                    if (CardPoints.Count - 1 < l_i)
+                    {
+                        CardPoints l_Point = Components.CardPoints.Make();
+                        l_Point.BuildUI(PointsContainer.Element.transform);
+                        CardPoints.Add(l_Point);
+                    }
+
+                    CardPoints[l_i].SetPoints(l_Points.ElementAt(l_i), GetUsedColor());
+                    CardPoints[l_i].SetActive(true);
+                }
+            }
+    
     private void DisplaySettings()
     {
         if (PlayerCardSettingsFlowCoordinator.Instance == null)
@@ -305,7 +308,7 @@ internal class PlayerCardView : ViewController<PlayerCardView>
         TimeControl.Reset();
         DisplayCard(EDisplayMode.Normal);
     }
-
+    
     private int GetMaxPage()
     {
         float l_PreciseValue = ((float)CardPlayerData.CategoryData.Count / LEVELS_COUNT_BY_PAGE);
@@ -335,7 +338,7 @@ internal class PlayerCardView : ViewController<PlayerCardView>
 
         RefreshLevelsDetails();
     }
-
+    
     public void DisplayLevelsDetails(bool display)
     {
         if (CardPlayerData.CategoryData == null && display)
@@ -354,8 +357,7 @@ internal class PlayerCardView : ViewController<PlayerCardView>
             MainPlayerLevelsContainer.SetPadding(2, 2, 2, 14);
 
             RefreshLevelsDetails();
-        }
-        else
+        } else
         {
             PlayerDataContainer.SetPadding(2, 2, 2, 2);
             PlayerImageContainer.SetPadding(2, 2, 2, 2);
@@ -369,61 +371,57 @@ internal class PlayerCardView : ViewController<PlayerCardView>
             l_Item.SetText(string.Empty);
         }
     }
-
-
+    }
+    
     public void RefreshLevelsDetails()
-    {
-        if (CardPlayerData.CategoryData.Count == 0)
-        {
-            _logger.Warn("No levels ???");
-            DisplayLevelsDetails(false);
-            return;
-        }
-
-        if (CardLevels.Count == 0)
-        {
-            for (int l_i = 0; l_i < LEVELS_COUNT_BY_PAGE; l_i++)
             {
-                CardLevel l_Level = CardLevel.Make();
-                l_Level.BuildUI(PlayerLevelsContainer.Element.transform);
-                CardLevels.Add(l_Level);
+                if (CardPlayerData.CategoryData.Count == 0)
+                {
+                    Logger.Instance.Info("No levels ???");
+                    DisplayLevelsDetails(false);
+                    return;
+                }
+
+                if (CardLevels.Count == 0)
+                {
+                    for (int l_i = 0; l_i < LEVELS_COUNT_BY_PAGE;l_i++)
+                    {
+                        CardLevel l_Level = CardLevel.Make();
+                        l_Level.BuildUI(PlayerLevelsContainer.Element.transform);
+                        CardLevels.Add(l_Level);
+                    }
+                }
+
+                HideAllLevels();
+
+                int l_Page = LevelsPage;
+
+                var l_AllCategories = CardPlayerData.CategoryData;
+                List<CategoryData> l_DisplayedCategories = new List<CategoryData>();
+                for (int l_i = 0; l_i < l_AllCategories.Count;l_i++)
+                {
+                    if (l_i >= LEVELS_COUNT_BY_PAGE * l_Page && l_i < LEVELS_COUNT_BY_PAGE * (l_Page + 1))
+                    {
+                        l_DisplayedCategories.Add(l_AllCategories.ElementAt(l_i));
+                    }
+                }
+
+                for (int l_i = 0; l_i < l_DisplayedCategories.Count();l_i++)
+                {
+
+                    //CardLevels[l_i].SetActive(true);
+                    var l_Category = l_DisplayedCategories[l_i];
+                    if (l_Category == null)
+                    {
+                        Logger.Instance.Error($"Could not get category with id {l_DisplayedCategories[l_i].CategoryID}");
+                        CardLevels[l_i].SetActive(false);
+                        continue;
+                    }
+                    CardLevels[l_i].SetLevel(l_DisplayedCategories[l_i].CategoryName, l_DisplayedCategories[l_i].LevelValue);
+                }
+
+                PageLeftButton.SetActive(CardPlayerData.CategoryData.Count > LEVELS_COUNT_BY_PAGE);
+                PageRightButton.SetActive(CardPlayerData.CategoryData.Count > LEVELS_COUNT_BY_PAGE);
+                
             }
-        }
-
-        HideAllLevels();
-
-        int l_Page = LevelsPage;
-
-        var l_AllCategories = CardPlayerData.CategoryData;
-        List<CategoryData> l_DisplayedCategories = new List<CategoryData>();
-        for (int l_i = 0; l_i < l_AllCategories.Count; l_i++)
-        {
-            if (l_i >= LEVELS_COUNT_BY_PAGE * l_Page && l_i < LEVELS_COUNT_BY_PAGE * (l_Page + 1))
-            {
-                l_DisplayedCategories.Add(l_AllCategories.ElementAt(l_i));
-            }
-        }
-
-        for (int l_i = 0; l_i < l_DisplayedCategories.Count(); l_i++)
-        {
-            //CardLevels[l_i].SetActive(true);
-            var l_Category = l_DisplayedCategories[l_i];
-            if (l_Category == null)
-            {
-                Logger.Instance.Error($"Could not get category with id {l_DisplayedCategories[l_i].CategoryID}");
-                CardLevels[l_i].SetActive(false);
-                continue;
-            }
-
-            CardLevels[l_i].SetLevel(l_DisplayedCategories[l_i].CategoryName, l_DisplayedCategories[l_i].LevelValue);
-        }
-
-        PageLeftButton.SetActive(CardPlayerData.CategoryData.Count > LEVELS_COUNT_BY_PAGE);
-        PageRightButton.SetActive(CardPlayerData.CategoryData.Count > LEVELS_COUNT_BY_PAGE);
-    }
-
-    public FloatingScreen GetCardFloatingScreen()
-    {
-        return CardFloatingScreen;
-    }
 }
