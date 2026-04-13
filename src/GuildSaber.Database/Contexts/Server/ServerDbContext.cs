@@ -19,6 +19,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using TickerQ.EntityFrameworkCore.Configurations;
+using TickerQ.Utilities.Entities;
 
 namespace GuildSaber.Database.Contexts.Server;
 
@@ -70,30 +72,39 @@ public class ServerDbContext : DbContext
     /// Sadly, can't use ApplyConfigurationsFromAssembly because there isn't only one DbContext registering
     /// configurations in this assembly.
     /// </remarks>
-    protected override void OnModelCreating(ModelBuilder builder) => builder
-        .ApplyConfiguration(new GuildConfiguration())
-        .ApplyConfiguration(new ContextConfiguration())
-        .ApplyConfiguration(new LevelConfiguration())
-        .ApplyConfiguration(new RankedMapListLevelConfiguration())
-        .ApplyConfiguration(new DiffStarLevelConfiguration())
-        .ApplyConfiguration(new AccStarLevelConfiguration())
-        .ApplyConfiguration(new MemberConfiguration())
-        .ApplyConfiguration(new MemberPointStatConfiguration())
-        .ApplyConfiguration(new MemberLevelStatConfiguration())
-        .ApplyConfiguration(new ContextMemberConfiguration())
-        .ApplyConfiguration(new BoostConfiguration())
-        .ApplyConfiguration(new PointConfiguration())
-        .ApplyConfiguration(new CategoryConfiguration())
-        .ApplyConfiguration(new PlayerConfiguration())
-        .ApplyConfiguration(new SessionConfiguration())
-        .ApplyConfiguration(new AbstractScoreConfiguration())
-        .ApplyConfiguration(new ScoreSaberScoreConfiguration())
-        .ApplyConfiguration(new BeatLeaderScoreConfiguration())
-        .ApplyConfiguration(new RankedMapConfiguration())
-        .ApplyConfiguration(new MapVersionConfiguration())
-        .ApplyConfiguration(new RankedScoreConfiguration())
-        .ApplyConfiguration(new SongConfiguration())
-        .ApplyConfiguration(new SongDifficultyConfiguration())
-        .ApplyConfiguration(new PlayModeConfiguration())
-        .ApplyConfiguration(new GameModeConfiguration());
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        builder.ApplyConfiguration(new GuildConfiguration());
+        builder.ApplyConfiguration(new ContextConfiguration());
+        builder.ApplyConfiguration(new LevelConfiguration());
+        builder.ApplyConfiguration(new RankedMapListLevelConfiguration());
+        builder.ApplyConfiguration(new DiffStarLevelConfiguration());
+        builder.ApplyConfiguration(new AccStarLevelConfiguration());
+        builder.ApplyConfiguration(new MemberConfiguration());
+        builder.ApplyConfiguration(new MemberPointStatConfiguration());
+        builder.ApplyConfiguration(new MemberLevelStatConfiguration());
+        builder.ApplyConfiguration(new ContextMemberConfiguration());
+        builder.ApplyConfiguration(new BoostConfiguration());
+        builder.ApplyConfiguration(new PointConfiguration());
+        builder.ApplyConfiguration(new CategoryConfiguration());
+        builder.ApplyConfiguration(new PlayerConfiguration());
+        builder.ApplyConfiguration(new SessionConfiguration());
+        builder.ApplyConfiguration(new AbstractScoreConfiguration());
+        builder.ApplyConfiguration(new ScoreSaberScoreConfiguration());
+        builder.ApplyConfiguration(new BeatLeaderScoreConfiguration());
+        builder.ApplyConfiguration(new RankedMapConfiguration());
+        builder.ApplyConfiguration(new MapVersionConfiguration());
+        builder.ApplyConfiguration(new RankedScoreConfiguration());
+        builder.ApplyConfiguration(new SongConfiguration());
+        builder.ApplyConfiguration(new SongDifficultyConfiguration());
+        builder.ApplyConfiguration(new PlayModeConfiguration());
+        builder.ApplyConfiguration(new GameModeConfiguration());
+
+        // TickerQ Configurations
+        builder.ApplyConfiguration(new TimeTickerConfigurations<TimeTickerEntity>());
+        builder.ApplyConfiguration(new CronTickerConfigurations<CronTickerEntity>());
+        builder.ApplyConfiguration(new CronTickerOccurrenceConfigurations<CronTickerEntity>());
+
+        base.OnModelCreating(builder);
+    }
 }

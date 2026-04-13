@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -10,7 +11,6 @@ using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Guilds.Members.Pipelines;
-using GuildSaber.Api.Features.LegacyGS;
 using GuildSaber.Api.Features.LegacyGS.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Features.RankedMaps;
@@ -40,6 +40,10 @@ using Microsoft.OpenApi;
 using MyCSharp.HttpUserAgentParser.AspNetCore.DependencyInjection;
 using MyCSharp.HttpUserAgentParser.DependencyInjection;
 using Scalar.AspNetCore;
+using TickerQ.Dashboard.DependencyInjection;
+using TickerQ.DependencyInjection;
+using TickerQ.EntityFrameworkCore.Customizer;
+using TickerQ.EntityFrameworkCore.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -117,6 +121,27 @@ builder.Services.AddDbContext<ServerDbContext>((_, options) =>
         .WithExpressionExpanding()
 );
 builder.EnrichNpgsqlDbContext<ServerDbContext>();
+
+#endregion
+
+#region scheduler
+
+builder.Services.AddTickerQ(options =>
+{
+    options.ConfigureScheduler(scheduler =>
+    {
+        scheduler.MaxConcurrency = 1;
+        scheduler.NodeIdentifier = Environment.MachineName;
+    });
+
+    options.AddOperationalStore(efOptions =>
+    {
+        efOptions.UseApplicationDbContext<ServerDbContext>(ConfigurationType.IgnoreModelCustomizer);
+        efOptions.SetDbContextPoolSize(34);
+    });
+
+    options.AddDashboard();
+});
 
 #endregion
 
@@ -266,12 +291,6 @@ builder.Services.AddTransient<EditRankedMapPipeline>();
 builder.Services.AddHostedService<BLScoreSyncWorker>();
 builder.Services.AddHostedService<QueueProcessingService>();
 builder.Services.AddHostedService<HeavyQueueProcessingService>();
-builder.Services.AddHostedService<ImportLegacyGSAdminConfirmationWorker>(provider =>
-    new ImportLegacyGSAdminConfirmationWorker(
-        new PeriodicTimer(TimeSpan.FromDays(1)),
-        provider.GetRequiredService<IBackgroundTaskQueue>(),
-        provider.GetRequiredService<IServiceScopeFactory>(),
-        provider.GetRequiredService<ILogger<ImportLegacyGSAdminConfirmationWorker>>()));
 builder.Services.AddSingleton<IBackgroundTaskQueue>(_ => new BackgroundTaskQueue(capacity: 100));
 builder.Services.AddSingleton<IHeavyBackgroundTaskQueue>(_ => new HeavyBackgroundTaskQueue(capacity: 10));
 
@@ -350,6 +369,10 @@ app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// https://github.com/Arcenox-co/TickerQ/issues/788
+if (Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider")
+    app.UseTickerQ();
 
 #endregion
 

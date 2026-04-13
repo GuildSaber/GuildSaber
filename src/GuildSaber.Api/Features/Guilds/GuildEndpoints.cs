@@ -81,7 +81,7 @@ public class GuildEndpoints : IEndpoints
         var affectedRows = await dbContext.Guilds
             .Where(x => x.Id == guildId)
             .ExecuteDeleteAsync();
-
+        
         return affectedRows > 0
             ? TypedResults.NoContent()
             : TypedResults.NotFound();

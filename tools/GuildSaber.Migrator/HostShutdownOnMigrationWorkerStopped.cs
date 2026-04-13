@@ -2,9 +2,7 @@ using GuildSaber.Migrator.DiscordBot;
 
 namespace GuildSaber.Migrator;
 
-public class HostShutdownOnMigrationWorkerStopped(
-    IHostApplicationLifetime hostApplicationLifetime
-) : BackgroundService
+public class HostShutdownOnMigrationWorkerStopped(IHostApplicationLifetime hostApplicationLifetime) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
