@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -10,7 +11,6 @@ using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Guilds.Members.Pipelines;
-using GuildSaber.Api.Features.LegacyGS;
 using GuildSaber.Api.Features.LegacyGS.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Features.RankedMaps;
@@ -130,7 +130,7 @@ builder.Services.AddTickerQ(options =>
 {
     options.ConfigureScheduler(scheduler =>
     {
-        scheduler.MaxConcurrency = 8;
+        scheduler.MaxConcurrency = 1;
         scheduler.NodeIdentifier = Environment.MachineName;
     });
 
@@ -288,8 +288,6 @@ builder.Services.AddTransient<MemberLevelStatsPipeline>();
 builder.Services.AddTransient<MemberJoinPipeline>();
 builder.Services.AddTransient<AddRankedMapPipeline>();
 builder.Services.AddTransient<EditRankedMapPipeline>();
-builder.Services.AddTransient<ImportLegacyGSAdminConfirmationCron>();
-builder.Services.AddTransient<ImportLegacyGSMapImportCron>();
 builder.Services.AddHostedService<BLScoreSyncWorker>();
 builder.Services.AddHostedService<QueueProcessingService>();
 builder.Services.AddHostedService<HeavyQueueProcessingService>();
@@ -372,7 +370,9 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseTickerQ();
+// https://github.com/Arcenox-co/TickerQ/issues/788
+if (Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider")
+    app.UseTickerQ();
 
 #endregion
 
