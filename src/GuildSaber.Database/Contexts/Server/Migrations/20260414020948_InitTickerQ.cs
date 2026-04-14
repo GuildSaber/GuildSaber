@@ -24,7 +24,7 @@ namespace GuildSaber.Database.Contexts.Server.Migrations
                     Request = table.Column<byte[]>(type: "bytea", nullable: true),
                     Retries = table.Column<int>(type: "integer", nullable: false),
                     RetryIntervals = table.Column<int[]>(type: "integer[]", nullable: true),
-                    IsEnabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    IsEnabled = table.Column<bool>(type: "boolean", nullable: false),
                     Function = table.Column<string>(type: "text", nullable: true),
                     Description = table.Column<string>(type: "text", nullable: true),
                     InitIdentifier = table.Column<string>(type: "text", nullable: true),

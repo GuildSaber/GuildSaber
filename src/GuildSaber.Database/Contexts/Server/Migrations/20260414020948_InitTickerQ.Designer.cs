@@ -14,7 +14,7 @@ using NpgsqlTypes;
 namespace GuildSaber.Database.Contexts.Server.Migrations
 {
     [DbContext(typeof(ServerDbContext))]
-    [Migration("20260317235048_InitTickerQ")]
+    [Migration("20260414020948_InitTickerQ")]
     partial class InitTickerQ
     {
         /// <inheritdoc />
@@ -1133,9 +1133,7 @@ namespace GuildSaber.Database.Contexts.Server.Migrations
                         .HasColumnType("text");
 
                     b.Property<bool>("IsEnabled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                        .HasColumnType("boolean");
 
                     b.Property<byte[]>("Request")
                         .HasColumnType("bytea");
@@ -1528,8 +1526,8 @@ namespace GuildSaber.Database.Contexts.Server.Migrations
                         .HasColumnType("character varying(20)");
 
                     b.Property<string>("DeviceHmd")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.Property<int>("ScoreSaberScoreId")
                         .HasColumnType("integer");

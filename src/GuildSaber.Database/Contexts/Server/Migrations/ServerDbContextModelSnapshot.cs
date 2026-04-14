@@ -1130,9 +1130,7 @@ namespace GuildSaber.Database.Contexts.Server.Migrations
                         .HasColumnType("text");
 
                     b.Property<bool>("IsEnabled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                        .HasColumnType("boolean");
 
                     b.Property<byte[]>("Request")
                         .HasColumnType("bytea");
