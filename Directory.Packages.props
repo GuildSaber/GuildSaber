@@ -5,10 +5,11 @@
     <ItemGroup>
         <PackageVersion Include="Aspire.Hosting.Docker" Version="13.2.2" />
         <PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.2.2" />
-        <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.2.2" />
+        <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.1.1" />
         <PackageVersion Include="Aspire.Hosting.Redis" Version="13.2.2" />
         <PackageVersion Include="Aspire.Hosting.Valkey" Version="13.2.2" />
-        <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.2.2" />
+        <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.3" />
+        <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
         <PackageVersion Include="AspNet.Security.OAuth.Discord" Version="10.0.0" />
         <PackageVersion Include="Bogus" Version="35.6.5" />
         <PackageVersion Include="BeatSaberModdingTools.Tasks" Version="2.0.0-beta7" />
@@ -32,9 +33,12 @@
         <PackageVersion Include="CSharpFunctionalExtensions" Version="3.7.0" />
         <PackageVersion Include="CSharpFunctionalExtensions.Analyzers" Version="1.4.1" />
         <PackageVersion Include="CSharpFunctionalExtensions.HttpResults" Version="1.2.1" />
-        <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.6" />
         <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.6" />
-        <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.6" />
+
+        <!-- https://github.com/dotnet/efcore/issues/38105 -->
+        <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="[10.0.2]" />
+        <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="[10.0.2]" />
+
         <PackageVersion Include="MyCSharp.HttpUserAgentParser.AspNetCore" Version="3.1.6" />
         <PackageVersion Include="Scalar.AspNetCore" Version="2.13.22" />
         <PackageVersion Include="Scalar.AspNetCore.Microsoft" Version="2.13.22" />
