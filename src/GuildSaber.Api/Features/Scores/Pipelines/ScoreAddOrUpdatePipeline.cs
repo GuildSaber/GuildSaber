@@ -148,7 +148,7 @@ public sealed class ScoreAddOrUpdatePipeline(
         AbstractScore score, ServerDbContext dbContext)
         => score switch
         {
-            BeatLeaderScore leaderScore => await UpdateScoreIfChangedAsync(leaderScore, dbContext),
+            BeatLeaderScore beatLeaderScore => await UpdateScoreIfChangedAsync(beatLeaderScore, dbContext),
             ScoreSaberScore saberScore => await UpdateScoreIfChangedAsync(saberScore, dbContext),
             _ => throw new InvalidOperationException("Score must be either a BeatLeaderScore or a ScoreSaberScore.")
         };
@@ -183,6 +183,12 @@ public sealed class ScoreAddOrUpdatePipeline(
         if (score.BeatLeaderScoreId is null)
             return oldScore;
 
+        /* The score seems to be the exact same, no need to update.
+         * It might just be a full score recalculation/refresh (no need to update).
+         * PS: This also fixes .ScoreStatistics null causing .Discriminator changed crash. */
+        if (score.Id == oldScore.Id && score.BeatLeaderScoreId == oldScore.BeatLeaderScoreId)
+            return oldScore;
+
         score.Id = oldScore.Id;
         dbContext.BeatLeaderScores.Update(score);
         await dbContext.SaveChangesAsync();
@@ -201,6 +207,11 @@ public sealed class ScoreAddOrUpdatePipeline(
             score.BaseScore);
         if (oldScore is null)
             return None;
+
+        /* The score seems to be the exact same, no need to update.
+         * It might just be a full score recalculation/refresh (no need to update). */
+        if (score.Id == oldScore.Id && score.ScoreSaberScoreId == oldScore.ScoreSaberScoreId)
+            return oldScore;
 
         score.Id = oldScore.Id;
         dbContext.ScoreSaberScores.Update(score);

@@ -34,8 +34,8 @@ public class DifficultyDescription
     public required int QualifiedTime { get; init; }
     public required int RankedTime { get; init; }
 
-    public required string Hash { get; init; } = "";
-    public required string? SongId { get; init; }
+    public string? Hash { get; init; }
+    public string? SongId { get; init; }
 
     public required int SpeedTags { get; init; }
     public required int StyleTags { get; init; }

@@ -3,9 +3,11 @@ using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.LegacyGS.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
+using GuildSaber.Api.Features.RankedMaps.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Transformers;
 using GuildSaber.Database.Contexts.Server;
+using GuildSaber.Database.Models.Server.RankedMaps;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
@@ -104,6 +106,11 @@ public class DebugEndpoints : IEndpoints
             }).WithSummary("Delete all member point stats for a player.")
             .WithDescription("Deletes all member point stats for the specified player. USE WITH CAUTION!")
             .RequireManager();
+
+        group.MapPost("/trigger-edit-ranked-map-pipeline/{rankedMapId}", TriggerEditMapPipeline)
+            .WithSummary("Trigger the EditRankedMapPipeline for a specific ranked map.")
+            .WithDescription("Triggers the EditRankedMapPipeline for the specified ranked map")
+            .RequireManager();
     }
 
     private static async Task<Ok> RecalculatePlayerScores(
@@ -194,7 +201,7 @@ public class DebugEndpoints : IEndpoints
                 // There were weird issues, so maybe creating a pipeline per player will help.
                 await using var playerScope = scope.ServiceProvider.CreateAsyncScope();
                 var pipeline = playerScope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
-                
+
                 try
                 {
                     await pipeline.ImportBeatLeaderScoresAsync(player.Id, player.BeatLeaderId, token);
@@ -343,5 +350,18 @@ public class DebugEndpoints : IEndpoints
         });
 
         return TypedResults.Accepted((string?)null);
+    }
+
+    private static async Task<Ok> TriggerEditMapPipeline(
+        RankedMap.RankedMapId rankedMapId, IBackgroundTaskQueue taskQueue, IServiceScopeFactory serviceScopeFactory)
+    {
+        await taskQueue.QueueBackgroundWorkItemAsync(async token =>
+        {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+            await scope.ServiceProvider.GetRequiredService<EditRankedMapPipeline>()
+                .ExecuteAsync(rankedMapId, token);
+        });
+
+        return TypedResults.Ok();
     }
 }
