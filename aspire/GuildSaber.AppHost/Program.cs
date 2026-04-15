@@ -25,7 +25,8 @@ var discordbotDb = postgres.AddDatabase("discordbot-db", "discordbot-db");
 var migrator = builder.AddProject<GuildSaber_Migrator>("migrator", options => options.ExcludeLaunchProfile = true)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", environment)
     .WithReference(guildsaberDb).WaitFor(guildsaberDb)
-    .WithReference(discordbotDb).WaitFor(discordbotDb);
+    .WithReference(discordbotDb).WaitFor(discordbotDb)
+    .PublishAsDockerComposeService((_, service) => service.PullPolicy = "always");
 
 var apiKey = builder.AddParameter("api-key", builder.Configuration["ApiKey"]!, secret: true);
 var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.ExcludeLaunchProfile = true)
@@ -39,7 +40,11 @@ var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.Ex
     .WithHttpEndpoint(port: builder.ExecutionContext.IsRunMode ? 5042 : null, isProxied: false)
     .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints()
-    .PublishAsDockerComposeService((_, service) => service.Restart = "unless-stopped");
+    .PublishAsDockerComposeService((_, service) =>
+    {
+        service.PullPolicy = "always";
+        service.Restart = "unless-stopped";
+    });
 
 var discordBot = builder.AddProject<GuildSaber_DiscordBot>("discord-bot", option => option.ExcludeLaunchProfile = true)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", environment)
@@ -47,7 +52,11 @@ var discordBot = builder.AddProject<GuildSaber_DiscordBot>("discord-bot", option
     .WithReference(discordbotDb).WaitFor(migrator)
     .WithReference(apiService).WaitFor(apiService)
     .WithParentRelationship(apiService)
-    .PublishAsDockerComposeService((_, service) => service.Restart = "unless-stopped");
+    .PublishAsDockerComposeService((_, service) =>
+    {
+        service.PullPolicy = "always";
+        service.Restart = "unless-stopped";
+    });
 
 var website = builder.AddViteApp("website", "../../src/GuildSaber.Website")
     .WithEndpoint("http", endpointAnnotation => endpointAnnotation.Port = 5044)
@@ -86,6 +95,8 @@ if (builder.ExecutionContext.IsPublishMode)
             builder.AddParameter("AuthSettings-Redirect-AllowedOriginUrls-0"))
         .WithEnvironment("AuthSettings:Redirect:AllowedOriginUrls:1",
             builder.AddParameter("AuthSettings-Redirect-AllowedOriginUrls-1"))
+        .WithEnvironment("AuthSettings:TickerQ:ApiKey",
+            builder.AddParameter("AuthSettings-TickerQ-ApiKey", secret: true))
         .WithEnvironment("GuildSettings:Creation:RequiredSubscriptionTier",
             builder.AddParameter("GuildSettings-Creation-RequiredSubscriptionTier"))
         .WithEnvironment("GuildSettings:Creation:MaxGuildCountPerUser",

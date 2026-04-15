@@ -75,6 +75,9 @@ builder.Services
 builder.Services
     .AddOptionsWithValidateOnStart<RedirectSettings>()
     .Bind(authSettings.GetSection(nameof(AuthSettings.Redirect))).ValidateDataAnnotations();
+builder.Services
+    .AddOptionsWithValidateOnStart<TickerQAuthSettings>()
+    .Bind(authSettings.GetSection(nameof(AuthSettings.TickerQ))).ValidateDataAnnotations();
 
 var guildSettings = builder.Configuration.GetSection(GuildSettings.GuildSettingsSectionKey);
 builder.Services
@@ -126,22 +129,25 @@ builder.EnrichNpgsqlDbContext<ServerDbContext>();
 
 #region scheduler
 
-builder.Services.AddTickerQ(options =>
-{
-    options.ConfigureScheduler(scheduler =>
+// https://github.com/Arcenox-co/TickerQ/issues/788
+if (Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider")
+    builder.Services.AddTickerQ(options =>
     {
-        scheduler.MaxConcurrency = 1;
-        scheduler.NodeIdentifier = Environment.MachineName;
-    });
+        options.ConfigureScheduler(scheduler =>
+        {
+            scheduler.MaxConcurrency = 1;
+            scheduler.NodeIdentifier = Environment.MachineName;
+        });
 
-    options.AddOperationalStore(efOptions =>
-    {
-        efOptions.UseApplicationDbContext<ServerDbContext>(ConfigurationType.IgnoreModelCustomizer);
-        efOptions.SetDbContextPoolSize(34);
-    });
+        options.AddOperationalStore(efOptions =>
+        {
+            efOptions.UseApplicationDbContext<ServerDbContext>(ConfigurationType.IgnoreModelCustomizer);
+            efOptions.SetDbContextPoolSize(34);
+        });
 
-    options.AddDashboard();
-});
+        options.AddDashboard(dashboardOptionsBuilder => dashboardOptionsBuilder
+            .WithApiKey(authSettings.GetSection(nameof(AuthSettings.TickerQ)).Get<TickerQAuthSettings>()!.ApiKey));
+    });
 
 #endregion
 
