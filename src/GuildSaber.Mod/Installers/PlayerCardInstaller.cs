@@ -1,6 +1,7 @@
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Core.PlayerCard;
 using GuildSaber.Mod.Core.PlayerCard.UI;
+using GuildSaber.Mod.PlayerCard.UI;
 using GuildSaber.Mod.Resources;
 using HMUI;
 using SiraUtil.Logging;

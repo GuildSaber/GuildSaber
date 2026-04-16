@@ -1,8 +1,12 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using GuildSaber.Mod.Core.PlayerCard;
 using GuildSaber.Mod.Core.UI.Extensions;
 using UnityEngine;
 
 namespace GuildSaber.Mod.Core.UI.Utils;
+
+// TODO: Turn this garbage into shader
 
 internal static class TextureUtils
 {
@@ -13,7 +17,25 @@ internal static class TextureUtils
     }
 
     private static readonly Color m_TransparentColor = new(0, 0, 0, 0);
+    
+    public static async Task<Texture2D?> GetImage(string p_Url, PlayerCardResources resources)
+    {
+        var l_NewTexture = new Texture2D(100, 100);
 
+        try {
+            using (var l_Client = new System.Net.WebClient()) {
+                byte[] l_Bytes = await l_Client.DownloadDataTaskAsync(new Uri(p_Url));
+
+                l_NewTexture.LoadImage(l_Bytes, false);
+            }
+        }
+        catch {
+            l_NewTexture = resources.GsWhiteLogoTexture;
+        }
+
+        return l_NewTexture;
+    }
+    
     public static Texture2D MakeCorrespondHeight(Texture2D p_Texture, Rect p_Rect)
     {
         if (p_Rect.y >= p_Texture.height) return p_Texture;
@@ -93,109 +115,57 @@ internal static class TextureUtils
         return l_Result;
     }
 
-
-    public static async Task<Texture2D> CreateRoundedTexture(Texture2D p_Origin, float p_Radius, bool p_PushPixels = false)
+    public static void RoundTexture(Texture2D self, float radius)
     {
-        var l_Texture = p_Origin.GetCopy();
-
-
-        await Task.Run(() =>
+        for (var corner = 0; corner < 4; corner++)
+        for (var x = 0; x < radius; x++)
         {
-            for (var l_I = 0; l_I < 4; l_I++)
-            for (var l_X = 0; l_X < p_Radius; l_X++)
+            for (var y = 0; y < radius; y++)
             {
-                var l_Moved = false;
+                var point = corner switch
+                {
+                    0 => new Vector2(x, y) /* Corner Bottom Left */,
+                    1 => new Vector2(x + (self.width - radius), y) /* Corner Bottom Right */,
+                    2 => new Vector2(x, y + (self.height - radius)) /* Corner Top Left */,
+                    3 => new Vector2(x + (self.width - radius), y + (self.height - radius)) /* Corner Top Right */,
+                    _ => throw new ArgumentOutOfRangeException(nameof(corner), corner, null)
+                };
+                var pointRadius = corner switch
+                {
+                    0 => new Vector2(radius, radius) /* Corner Bottom Left */,
+                    1 => new Vector2(self.width - radius, radius) /* Corner Bottom Right */,
+                    2 => new Vector2(radius, self.height - radius) /* Corner Top Left */,
+                    3 => new Vector2(self.width - radius, self.height - radius) /* Corner Top Right */,
+                    _ => throw new ArgumentOutOfRangeException(nameof(corner), corner, null)
+                };
+                var pixelColor = self.GetPixel((int)point.x, (int)point.y);
+                if (Vector2.Distance(point, pointRadius) > radius)
+                {
+                    self.SetPixel((int)point.x, (int)point.y, m_TransparentColor);
+                }
 
-                for (var l_Y = 0; l_Y < p_Radius; l_Y++)
-                    switch (l_I)
-                    {
-                        /// Corner Bottom Left
-                        case 0:
-                        {
-                            var l_Point       = new Vector2(l_X,      l_Y);
-                            var l_RadiusPoint = new Vector2(p_Radius, p_Radius);
-
-                            if (Vector2.Distance(l_Point, l_RadiusPoint) > p_Radius)
-                            {
-                                l_Moved = true;
-                                l_Texture.SetPixel((int)l_Point.x, (int)l_Point.y, m_TransparentColor);
-                            }
-
-                            if (p_PushPixels && !l_Moved)
-                            {
-                                var l_PixelColor = l_Texture.GetPixel((int)l_Point.x, (int)l_Point.y);
-                                l_Texture.SetPixel((int)(p_Radius + l_Point.x), (int)(p_Radius + l_Point.y), l_PixelColor);
-                            }
-
-                            continue;
-                        }
-                        /// Corner Bottom Right
-                        case 1:
-                        {
-                            var l_Point       = new Vector2(l_X             + (l_Texture.width - p_Radius), l_Y);
-                            var l_RadiusPoint = new Vector2(l_Texture.width - p_Radius,                     p_Radius);
-
-                            if (Vector2.Distance(l_Point, l_RadiusPoint) > p_Radius)
-                            {
-                                l_Moved = true;
-                                l_Texture.SetPixel((int)l_Point.x, (int)l_Point.y, m_TransparentColor);
-                            }
-
-                            if (p_PushPixels)
-                            {
-                                var l_PixelColor = l_Texture.GetPixel((int)l_Point.x, (int)l_Point.y);
-                                l_Texture.SetPixel((int)(l_Texture.width - p_Radius * 2 + l_Point.x), (int)(p_Radius + (p_Radius - l_Point.y)), l_PixelColor.ColorWithAlpha(1));
-                            }
-
-                            continue;
-                        }
-                        /// Corner Top Left
-                        case 2:
-                        {
-                            var l_Point       = new Vector2(l_X,      l_Y              + (l_Texture.height - p_Radius));
-                            var l_RadiusPoint = new Vector2(p_Radius, l_Texture.height - p_Radius);
-
-                            if (Vector2.Distance(l_Point, l_RadiusPoint) > p_Radius)
-                            {
-                                l_Moved = true;
-                                l_Texture.SetPixel((int)l_Point.x, (int)l_Point.y, m_TransparentColor);
-                            }
-
-                            if (p_PushPixels)
-                            {
-                                var l_PixelColor = l_Texture.GetPixel((int)l_Point.x, (int)l_Point.y);
-                                l_Texture.SetPixel((int)(p_Radius + (p_Radius - l_Point.x)), (int)(l_Texture.height - p_Radius * 2 + l_Point.y), l_PixelColor.ColorWithAlpha(1));
-                            }
-
-                            break;
-                        }
-                        /// Corner Top Right
-                        case 3:
-                        {
-                            var l_Point       = new Vector2(l_X             + (l_Texture.width - p_Radius), l_Y              + (l_Texture.height - p_Radius));
-                            var l_RadiusPoint = new Vector2(l_Texture.width - p_Radius,                     l_Texture.height - p_Radius);
-
-                            if (Vector2.Distance(l_Point, l_RadiusPoint) > p_Radius)
-                            {
-                                l_Moved = true;
-                                l_Texture.SetPixel((int)l_Point.x, (int)l_Point.y, m_TransparentColor);
-                            }
-
-                            if (p_PushPixels)
-                            {
-                                var l_PixelColor = l_Texture.GetPixel((int)l_Point.x, (int)l_Point.y);
-                                l_Texture.SetPixel((int)(l_Texture.width - p_Radius * 2 + l_Point.x), (int)(l_Texture.height - p_Radius * 2 + l_Point.y), l_PixelColor.ColorWithAlpha(1));
-                            }
-
-                            break;
-                        }
-                    }
+                // This logic seems weird but if it works, then it works.
+                var (newX, newY) = corner switch
+                {
+                    0 => (point.x + radius, point.y + radius) /* Corner Bottom Left */,
+                    1 => (self.width - 2f * radius + point.x, 2f * radius - point.y) /* Corner Bottom Right */,
+                    2 => (2f * radius - point.x, self.height - 2f * radius + point.y) /* Corner Top Left */,
+                    3 => (self.width - 2f * radius + point.x, self.height - 2f * radius + point.y) /* Corner Top Right */,
+                    _ => throw new ArgumentOutOfRangeException(nameof(corner), corner, null)
+                };
+                
+                self.SetPixel((int)newX, (int)newY, pixelColor.ColorWithAlpha(1));
             }
-        });
-        l_Texture.Apply();
-        return l_Texture;
+        }
     }
-
+    public static async Task<Texture2D> CreateRoundedTextureAsync(
+        Texture2D origin, float radius)
+    {
+        var texture = origin.GetCopy();
+        await Task.Run(() => RoundTexture(texture, radius));
+        texture.Apply();
+        return texture;
+    }
     public static Texture2D GetCopy(this Texture2D p_Texture)
     {
         var l_New  = new Texture2D(p_Texture.width, p_Texture.height);

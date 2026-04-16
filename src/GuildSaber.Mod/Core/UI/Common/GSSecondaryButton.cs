@@ -76,7 +76,7 @@ public class GSSecondaryButton : XUISecondaryButton
             }
         }
 
-        var l_NewTex = await TextureUtils.CreateRoundedTexture( /*await Utils.TextureUtils.Gradient(l_Tex, new Color(1, 1, 1, 0.7f), new Color(1f, 1f, 1f, 1), p_UseAlpha: true)*/l_Tex, 10);
+        var l_NewTex = await TextureUtils.CreateRoundedTextureAsync( /*await Utils.TextureUtils.Gradient(l_Tex, new Color(1, 1, 1, 0.7f), new Color(1f, 1f, 1f, 1), p_UseAlpha: true)*/l_Tex, 10);
         var l_Sprite = Sprite.Create(l_NewTex, new Rect(0, 0, l_Tex.width, l_Tex.height), new Vector2(0, 0), 1000, 0, SpriteMeshType.FullRect);
         return l_Sprite;
     }

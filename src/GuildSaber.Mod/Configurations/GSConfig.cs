@@ -31,6 +31,8 @@ internal class CardConfig
         )
     );
 
+    public CardColors ColorSettings = new(false, false, Color.white, Color.white, Color.white);
+    
     public TimeConfig TimeData { get; set; } = new TimeConfig();
     
     public int GuildId { get; set; } = -1;
@@ -55,6 +57,14 @@ internal record struct CardTransforms(
 internal record struct CardTransform(
     Vector3 Position,
     Quaternion Rotation
+);
+
+internal record struct CardColors(
+    bool UseCustomColors,
+    bool UseGradient,
+    Color MainCardColor,
+    Color GradientColor0,
+    Color GradientColor1
 );
 
 /// <summary>

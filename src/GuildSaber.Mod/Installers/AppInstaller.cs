@@ -26,6 +26,6 @@ internal class GuildSaberClientFactory(GSConfig config, SiraLog logger) : IFacto
         var cdnUri = config.ApiEnv.ToCdnUri;
         logger.Debug($"Creating GuildSaberClient for: {apiUri}, CDN: {cdnUri}");
 
-        return new GuildSaberClient(apiUri, cdnUri, authentication: null);
+        return new GuildSaberClient(apiUri, authentication: null);
     }
 }

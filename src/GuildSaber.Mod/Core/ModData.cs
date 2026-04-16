@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Guilds.Categories;
+using GuildSaber.Api.Features.Guilds.Members.ContextStats;
+using GuildSaber.Api.Features.Guilds.Members.LevelStats;
 using GuildSaber.Api.Features.Players;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
@@ -23,7 +25,10 @@ public class ModData
     protected Dictionary<int, CategoryResponses.Category[]> CategoriesCache = new Dictionary<int, CategoryResponses.Category[]>();
     
     public List<GuildResponses.Guild> Guilds = [];
-    public PlayerResponses.Player? Player = null!;
+    public PlayerResponses.PlayerExtended? Player = null!;
+    public LevelStatResponses.MemberLevelStat[] PlayerLevels = null!;
+    public ContextStatResponses.SimplePointWithRank[] PlayerPoints = null!;
+    public Color CardUsedColor = Color.white;
     
     public ModData()
     {

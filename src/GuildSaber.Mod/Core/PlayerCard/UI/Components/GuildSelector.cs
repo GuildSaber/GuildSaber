@@ -52,7 +52,7 @@ namespace GuildSaber.Mod.PlayerCard.UI.Components;
 
                 _guildID = guildId;
 
-                Texture2D l_RoundedLogo = await TextureUtils.CreateRoundedTexture(l_GuildLogo, l_GuildLogo.width * 0.1f);
+                Texture2D l_RoundedLogo = await TextureUtils.CreateRoundedTextureAsync(l_GuildLogo, l_GuildLogo.width * 0.1f);
                 SetSprite(Sprite.Create(l_RoundedLogo, new Rect(0, 0, l_RoundedLogo.width, l_RoundedLogo.height), Vector2.zero));
 
                 SetWidth(8);
