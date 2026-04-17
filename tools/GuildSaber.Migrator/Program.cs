@@ -12,6 +12,9 @@ builder.AddServiceDefaults();
 builder.Services.AddOpenTelemetry().WithTracing(tracing => tracing
     .AddSource(Server_Worker.ActivitySourceName, DiscordBot_Worker.ActivitySourceName));
 
+// https://github.com/dotnet/efcore/issues/38105
+AppContext.SetSwitch("Microsoft.EntityFrameworkCore.Issue37337", true);
+
 builder.AddNpgsqlDbContext<ServerDbContext>(Constants.ServerDbConnectionStringKey);
 builder.AddNpgsqlDbContext<DiscordBotDbContext>(Constants.DiscordBotDbConnectionStringKey);
 

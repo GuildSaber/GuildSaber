@@ -21,6 +21,9 @@ builder.Services
     .AddOptionsWithValidateOnStart<LinkSettings>()
     .Bind(builder.Configuration.GetSection(LinkSettings.LinkSettingsSectionsKey)).ValidateDataAnnotations();
 
+// https://github.com/dotnet/efcore/issues/38105
+AppContext.SetSwitch("Microsoft.EntityFrameworkCore.Issue37337", true);
+
 builder.AddNpgsqlDbContext<DiscordBotDbContext>(connectionName: Constants.DiscordBotDbConnectionStringKey,
     configureDbContextOptions: options => options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
 
