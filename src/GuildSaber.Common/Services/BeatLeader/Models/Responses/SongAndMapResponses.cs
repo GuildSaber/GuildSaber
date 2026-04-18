@@ -7,15 +7,15 @@ public class CompactSongResponse
     public required string Id { get; init; }
     public required string Hash { get; init; }
     public required string Name { get; init; }
-    public required string? SubName { get; init; }
+    public string? SubName { get; init; }
     public required string Author { get; init; }
     public required string Mapper { get; init; }
     public required int MapperId { get; init; }
-    public required string? CollaboratorIds { get; init; }
+    public string? CollaboratorIds { get; init; }
     public required string CoverImage { get; init; }
     public required double Bpm { get; init; }
     public required double Duration { get; init; }
-    public required string? FullCoverImage { get; init; }
+    public string? FullCoverImage { get; init; }
 }
 
 public class DifficultyDescription
@@ -98,18 +98,18 @@ public class Song
     public required string Id { get; init; }
     public required string Hash { get; init; }
     public required string Name { get; init; }
-    public required string? SubName { get; init; }
+    public string? SubName { get; init; }
     public required string Author { get; init; }
     public required string Mapper { get; init; }
     public required int MapperId { get; init; }
-    public required string? CollaboratorIds { get; init; }
+    public string? CollaboratorIds { get; init; }
     public required string CoverImage { get; init; }
-    public required string? FullCoverImage { get; init; }
+    public string? FullCoverImage { get; init; }
     public required string DownloadUrl { get; init; }
     public required double Bpm { get; init; }
     public required double Duration { get; init; }
-    public required string? Tags { get; init; }
-    public required SongCreator MapCreator { get; init; }
+    public string? Tags { get; init; }
+    //public required SongCreator MapCreator { get; init; }
     public required int UploadTime { get; init; }
     public required ICollection<DifficultyDescription> Difficulties { get; init; }
 }
@@ -127,12 +127,12 @@ public class SongResponse
     public required string Id { get; init; }
     public required string Hash { get; init; }
     public required string Name { get; init; }
-    public required string? SubName { get; init; }
+    public string? SubName { get; init; }
     public required string Author { get; init; }
     public required string Mapper { get; init; }
     public required int MapperId { get; init; }
     public required string CoverImage { get; init; }
-    public required string? FullCoverImage { get; init; }
+    public string? FullCoverImage { get; init; }
     public required string DownloadUrl { get; init; }
     public required double Bpm { get; init; }
     public required double Duration { get; init; }
@@ -192,7 +192,7 @@ public class MapDiffResponse : DifficultyResponse
 public class MapperResponse
 {
     public required int? Id { get; init; }
-    public required string? PlayerId { get; init; }
+    public string? PlayerId { get; init; }
     public required string Name { get; init; }
     public required string Avatar { get; init; }
 }
@@ -203,18 +203,18 @@ public class MapInfoResponse
     public required ICollection<MapDiffResponse> Difficulties { get; init; }
     public required string Hash { get; init; }
     public required string Name { get; init; }
-    public required string? SubName { get; init; }
+    public string? SubName { get; init; }
     public required string Author { get; init; }
     public required string Mapper { get; init; }
     public required ICollection<MapperResponse>? Mappers { get; init; }
     public required int MapperId { get; init; }
-    public required string? CollaboratorIds { get; init; }
+    public string? CollaboratorIds { get; init; }
     public required string CoverImage { get; init; }
-    public required string? FullCoverImage { get; init; }
+    public string? FullCoverImage { get; init; }
     public required string DownloadUrl { get; init; }
     public required double Bpm { get; init; }
     public required double Duration { get; init; }
-    public required string? Tags { get; init; }
+    public string? Tags { get; init; }
     public required int UploadTime { get; init; }
 }
 

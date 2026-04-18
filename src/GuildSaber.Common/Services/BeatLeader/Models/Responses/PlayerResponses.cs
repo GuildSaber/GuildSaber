@@ -55,7 +55,7 @@ public class PlayerResponse
     public required string Platform { get; init; }
     public required string Avatar { get; init; }
     public required string Country { get; init; }
-    public required string? Alias { get; init; }
+    public string? Alias { get; init; }
 
     public required bool Bot { get; init; }
 
