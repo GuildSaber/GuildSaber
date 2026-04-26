@@ -189,7 +189,7 @@ file static class SearchCommand
             $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-3_{(int)EState.Selected}_{(int)EState.None}_" +
             $"{(int)EState.NonPointGiving}_{needConfirmationValue}_{requestFilters.Search}",
             $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-4_{(int)EState.None}_{(int)(EState.Selected | EState.Pending)}_" +
-            $"{(int)EState.NonPointGivingNoPending}_{(int)EState.NonPointGivingNoPending}_{needConfirmationValue}_{requestFilters.Search}"
+            $"{(int)EState.NonPointGivingNoPending}_{needConfirmationValue}_{requestFilters.Search}"
         );
         var searchTermTooLong = prevCustomId.Length > 100 || nextCustomId.Length > 100 ||
                                 unpassedCustomId.Length > 100
