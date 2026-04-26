@@ -845,6 +845,13 @@
             }
           },
           {
+            "name": "needConfirmation",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "schema": {
@@ -1199,6 +1206,13 @@
             }
           },
           {
+            "name": "needConfirmation",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "schema": {
@@ -1421,6 +1435,13 @@
                 "string"
               ],
               "format": "float"
+            }
+          },
+          {
+            "name": "needConfirmation",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
             }
           },
           {

@@ -37,6 +37,7 @@ public class RankedMapRequests
     /// <param name="DurationSecTo">The maximum duration (in seconds) to filter maps.</param>
     /// <param name="BpmFrom">The minimum BPM to filter maps.</param>
     /// <param name="BpmTo">The maximum BPM to filter maps.</param>
+    /// <param name="NeedConfirmation">If specified, filters maps based on whether they require confirmation for ranked scores.</param>
     public record struct Filters(
         [FromQuery(Name = "search")] string? Search = null,
         [FromQuery(Name = "categoryIds")] int[]? CategoryIds = null,
@@ -51,7 +52,8 @@ public class RankedMapRequests
         [FromQuery(Name = "durationSecFrom")] float? DurationSecFrom = null,
         [FromQuery(Name = "durationSecTo")] float? DurationSecTo = null,
         [FromQuery(Name = "bpmFrom")] float? BpmFrom = null,
-        [FromQuery(Name = "bpmTo")] float? BpmTo = null
+        [FromQuery(Name = "bpmTo")] float? BpmTo = null,
+        [FromQuery(Name = "needConfirmation")] bool? NeedConfirmation = null
     );
 
     [Flags]

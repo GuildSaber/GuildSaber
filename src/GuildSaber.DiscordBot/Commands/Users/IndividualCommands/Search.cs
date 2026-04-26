@@ -23,23 +23,32 @@ public partial class UserModuleSlash
         [Summary("Search", "The search term to find ranked maps")] string search,
         [Summary("Category", "The category to filter by"), Autocomplete<CategoryAutocompleteHandler>] int? categoryId =
             null,
+        [Summary("Need_Confirmation",
+            "Whether to filter ranked maps by whether they require confirmation for ranked scores")]
+        bool? needConfirmation = null,
         [Summary("Page", "Page number for pagination")] int page = 1,
         [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Visible
     ) => await RespondAsync(ephemeral: displayChoice.ToEphemeral(), components: (await SearchCommand
             .GetRankedMapsComponentAsync(
                 await GetGuildIdAsync(), contextId, new RankedMapRequests.Filters(Search: search.Trim(),
                     CategoryIds: categoryId is null ? null : [categoryId.Value],
-                    MatchAnyCategory: true),
+                    MatchAnyCategory: true, NeedConfirmation: needConfirmation),
                 page, Client.Value, Cache, EmojiSettings))
         .Build());
 
-    [ComponentInteraction("search_*_*_*_*")]
-    public async Task Search(ContextId contextId, int categoryId, int page, string search)
+    [ComponentInteraction("search_*_*_*_*_*")]
+    public async Task Search(ContextId contextId, int categoryId, int page, int needConfirmation, string search)
     {
         var component = (await SearchCommand.GetRankedMapsComponentAsync
             (await GetGuildIdAsync(), contextId, new RankedMapRequests.Filters(Search: search,
                     CategoryIds: categoryId is 0 ? null : [categoryId],
-                    MatchAnyCategory: true),
+                    MatchAnyCategory: true,
+                    NeedConfirmation: needConfirmation switch
+                    {
+                        0 => false,
+                        1 => true,
+                        _ => null
+                    }),
                 page, Client.Value, Cache, EmojiSettings))
             .Build();
 
@@ -82,35 +91,48 @@ file static class SearchCommand
         IOptions<EmojiSettings> emojiSettings)
     {
         var builder = new ComponentBuilderV2();
+        var needConfirmationText = requestFilters.NeedConfirmation switch
+        {
+            true => " that require confirmation",
+            false => " that don't require confirmation",
+            null => string.Empty
+        };
 
         if (pagedRankedMaps.Data.Length == 0)
             return builder.WithTextDisplay(pagedRankedMaps.Page != 1
-                ? $"(Page {pagedRankedMaps.Page}), No ranked maps found for the search term: {requestFilters.Search}{
+                ? $"(Page {pagedRankedMaps.Page}), No ranked maps{needConfirmationText} found for the search term: {requestFilters.Search}{
                     (requestFilters.CategoryIds?.FirstOrDefault() is not (null or 0)
                         ? " in **" + categories.First(c => c.Id == requestFilters.CategoryIds[0]).Info.Name + "**"
                         : string.Empty)}.\n" + "You might want to go back to page 1."
-                : $"No ranked maps found for the search term: {requestFilters.Search}.\n***Tips:*** " +
+                : $"No ranked maps{needConfirmationText} found for the search term: {requestFilters.Search}.\n***Tips:*** " +
                   "You can also write the __bsr key__, the __mapper name__, the __map hash__, and so on..");
 
         foreach (var rankedMap in pagedRankedMaps.Data)
             builder.WithContainer(BuildRankedMapDisplayContainer(rankedMap, categories, emojiSettings));
 
         if (pagedRankedMaps.TotalCount == pagedRankedMaps.Data.Length)
-            return builder.WithTextDisplay($"Found **{pagedRankedMaps.TotalCount}** ranked maps" +
+            return builder.WithTextDisplay($"Found **{pagedRankedMaps.TotalCount}** ranked maps{needConfirmationText}" +
                                            $" for the search term: '{requestFilters.Search}'{
                                                (requestFilters.CategoryIds?.FirstOrDefault() is not (null or 0)
                                                    ? " in **" + categories.First(c => c.Id == requestFilters.CategoryIds[0]).Info.Name + "**"
                                                    : string.Empty)}.");
 
         builder.WithTextDisplay($"(Page: **{pagedRankedMaps.Page}**/{pagedRankedMaps.TotalPages}) " +
-                                $"Found **{pagedRankedMaps.TotalCount}** ranked maps for the search term: '{requestFilters.Search}'{
+                                $"Found **{pagedRankedMaps.TotalCount}** ranked maps{needConfirmationText} for the search term: '{requestFilters.Search}'{
                                     (requestFilters.CategoryIds?.FirstOrDefault() is not (null or 0)
                                         ? " in **" + categories.First(c => c.Id == requestFilters.CategoryIds[0]).Info.Name + "**"
                                         : string.Empty)}.");
 
+        var needConfirmationValue = requestFilters.NeedConfirmation switch
+        {
+            true => 1,
+            false => 0,
+            null => 2
+        };
+
         builder.WithActionRow(new ActionRowBuilder()
             .WithButton(
-                $"search_{contextId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{pagedRankedMaps.Page - 1}_{requestFilters.Search}"
+                $"search_{contextId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{pagedRankedMaps.Page - 1}_{needConfirmationValue}_{requestFilters.Search}"
                     switch
                     {
                         { Length: > 100 } => new ButtonBuilder()
@@ -124,7 +146,7 @@ file static class SearchCommand
                             .WithDisabled(pagedRankedMaps.Page <= 1)
                     })
             .WithButton(
-                $"search_{contextId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{pagedRankedMaps.Page + 1}_{requestFilters.Search}"
+                $"search_{contextId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{pagedRankedMaps.Page + 1}_{needConfirmationValue}_{requestFilters.Search}"
                     switch
                     {
                         { Length: > 100 } => new ButtonBuilder()
@@ -171,7 +193,7 @@ file static class SearchCommand
 
             sb.AppendLine();
 
-            if (rankedMap.CategoryIds?.Any() == true)
+            if (rankedMap.CategoryIds.Length != 0)
             {
                 sb.Append("Categories: ");
                 var categoryNames = rankedMap.CategoryIds

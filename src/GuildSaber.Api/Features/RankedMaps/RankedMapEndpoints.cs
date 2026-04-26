@@ -225,6 +225,9 @@ public static class RankedMapExtensions
             if (filters.BpmTo is { } bpmTo)
                 query = query.Where(x => x.MapVersions.Any(v => v.Song.Stats.BPM <= bpmTo));
 
+            if (filters.NeedConfirmation is { } needConfirmation)
+                query = query.Where(x => x.Requirements.NeedConfirmation == needConfirmation);
+
             return query.ApplyMapSearch(filters.Search);
         }
 

@@ -34,6 +34,7 @@ public class RankedMapClient(
             $"{(requestFilters.DurationSecTo is null ? "" : $"&durationSecTo={requestFilters.DurationSecTo}")}" +
             $"{(requestFilters.BpmFrom is null ? "" : $"&bpmFrom={requestFilters.BpmFrom}")}" +
             $"{(requestFilters.BpmTo is null ? "" : $"&bpmTo={requestFilters.BpmTo}")}" +
+            $"{(requestFilters.NeedConfirmation is null ? "" : $"&needConfirmation={requestFilters.NeedConfirmation}")}" +
             $"{(requestFilters.CategoryIds is null ? "" : $"&categoryIds={string.Join(",", requestFilters.CategoryIds)}")}" +
             $"&matchAnyCategory={requestFilters.MatchAnyCategory}",
             UriKind.Relative
@@ -56,6 +57,7 @@ public class RankedMapClient(
             $"{(requestFilters.DurationSecTo is null ? "" : $"&durationSecTo={requestFilters.DurationSecTo}")}" +
             $"{(requestFilters.BpmFrom is null ? "" : $"&bpmFrom={requestFilters.BpmFrom}")}" +
             $"{(requestFilters.BpmTo is null ? "" : $"&bpmTo={requestFilters.BpmTo}")}" +
+            $"{(requestFilters.NeedConfirmation is null ? "" : $"&needConfirmation={requestFilters.NeedConfirmation}")}" +
             $"{(requestFilters.CategoryIds is null ? "" : $"&categoryIds={string.Join(",", requestFilters.CategoryIds)}")}" +
             $"&matchAnyCategory={requestFilters.MatchAnyCategory}",
             UriKind.Relative

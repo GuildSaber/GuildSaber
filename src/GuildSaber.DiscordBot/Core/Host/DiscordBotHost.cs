@@ -31,12 +31,10 @@ public class DiscordBotHost(
             return Task.CompletedTask;
         };
 
-        client.Ready += () =>
+        client.Ready += async () =>
         {
             logger.LogInformation("[DiscordClient] DiscordClient Ready.");
-            interactionService.RegisterCommandsGloballyAsync();
-
-            return Task.CompletedTask;
+            await interactionService.RegisterCommandsGloballyAsync();
         };
 
         await client.LoginAsync(TokenType.Bot, options.Value.Token);

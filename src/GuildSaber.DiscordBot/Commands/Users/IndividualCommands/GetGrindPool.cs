@@ -30,6 +30,9 @@ public partial class UserModuleSlash
         [Summary("Category", "The category to filter levels by"), Autocomplete<CategoryAutocompleteHandler>]
         int? categoryId = null,
         [Summary("Search", "The search term to find ranked maps")] string? search = null,
+        [Summary("Need_Confirmation",
+            "Whether to filter ranked maps by whether they require confirmation for ranked scores")]
+        bool? needConfirmation = null,
         [Summary("User", "The user to show the ggp for (you if empty)")] IUser? user = null,
         [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Visible
     ) => await RespondAsync(ephemeral: displayChoice.ToEphemeral(), components: await SearchCommand
@@ -40,14 +43,16 @@ public partial class UserModuleSlash
                 AnyRankedScoreStates: EState.Selected,
                 ExcludeRankedScoreStates: EState.NonPointGiving,
                 CategoryIds: categoryId is null ? null : [categoryId.Value],
+                NeedConfirmation: needConfirmation,
                 MatchAnyCategory: true)));
 
-    [ComponentInteraction("ggp_*_*_*_*_*_*_*_*_*")]
+    [ComponentInteraction("ggp_*_*_*_*_*_*_*_*_*_*")]
     public async Task Ggp(
         ContextId contextId, PlayerId playerId, int categoryId, int level, int page,
         EState anyRankedScoreStates,
         EState allRankedScoreStates,
         EState excludeRankedScoreStates,
+        int needConfirmation,
         string search)
     {
         var component = await SearchCommand.GetGgpComponentAsync
@@ -57,17 +62,24 @@ public partial class UserModuleSlash
                 AllRankedScoreStates: allRankedScoreStates,
                 ExcludeRankedScoreStates: excludeRankedScoreStates,
                 CategoryIds: categoryId is 0 ? null : [categoryId],
+                NeedConfirmation: needConfirmation switch
+                {
+                    0 => false,
+                    1 => true,
+                    _ => null
+                },
                 MatchAnyCategory: true));
 
         await ((SocketMessageComponent)Context.Interaction).UpdateAsync(msg => msg.Components = component);
     }
 
-    [ComponentInteraction("ggp_*_*_*_*_*_*_*_*_")]
+    [ComponentInteraction("ggp_*_*_*_*_*_*_*_*_*_")]
     public async Task Ggp(
         ContextId contextId, PlayerId playerId, int categoryId, int level, int page,
         EState anyRankedScoreStates,
         EState allRankedScoreStates,
-        EState excludeRankedScoreStates)
+        EState excludeRankedScoreStates,
+        int needConfirmation)
     {
         var component = await SearchCommand.GetGgpComponentAsync
         (await GetGuildIdAsync(), contextId, playerId, page: page, level, Client.Value, Cache, EmojiSettings,
@@ -76,7 +88,14 @@ public partial class UserModuleSlash
                 AllRankedScoreStates: allRankedScoreStates,
                 ExcludeRankedScoreStates: excludeRankedScoreStates,
                 CategoryIds: categoryId is 0 ? null : [categoryId],
-                MatchAnyCategory: true));
+                MatchAnyCategory: true,
+                NeedConfirmation: needConfirmation switch
+                {
+                    0 => false,
+                    1 => true,
+                    _ => null
+                }
+            ));
 
         await ((SocketMessageComponent)Context.Interaction).UpdateAsync(msg => msg.Components = component);
     }
@@ -134,8 +153,12 @@ file static class SearchCommand
                     $"### [{player.PlayerInfo.Username}'s ggp](https://beatleader.com/u/{player.PlayerLinkedAccounts.BeatLeaderId})\n" +
                     $"For level **{levelOrder}**{(requestFilters.CategoryIds?.FirstOrDefault() is not (null or 0)
                         ? " in **" + categories.First(c => c.Id == requestFilters.CategoryIds[0]).Info.Name + "**"
-                        : string.Empty)}\n" +
-                    $" {(requestFilters.Search is null ? "" : $"> Search term: '{requestFilters.Search}'")}")
+                        : string.Empty)}" + requestFilters.NeedConfirmation switch
+                    {
+                        true => " *with* NeedConfirmation\n",
+                        false => " *without* NeedConfirmation\n",
+                        null => string.Empty
+                    } + $"\n{(requestFilters.Search is null ? "" : $"> Search term: '{requestFilters.Search}'")}")
                 .WithAccessory(new ThumbnailBuilder().WithMedia(player.PlayerInfo.AvatarUrl))));
 
         foreach (var rankedMap in pagedRankedMaps.Data)
@@ -148,20 +171,28 @@ file static class SearchCommand
                   $"({pagedRankedMaps.TotalCount} maps)"
         );
 
+        var needConfirmationValue = requestFilters.NeedConfirmation switch
+        {
+            null => 2,
+            true => 1,
+            false => 0
+        };
+
         var (page, totalPages, playerId) = (pagedRankedMaps.Page, pagedRankedMaps.TotalPages, player.Id);
         var (prevCustomId, nextCustomId, unpassedCustomId, passedCustomId, pendingCustomId) = (
             $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_{page - 1}_{(int)(requestFilters.AnyRankedScoreStates ?? EState.None)}_{(int)EState.None}_" +
-            $"{(int)(requestFilters.ExcludeRankedScoreStates ?? EState.None)}_{requestFilters.Search}",
+            $"{(int)(requestFilters.ExcludeRankedScoreStates ?? EState.None)}_{needConfirmationValue}_{requestFilters.Search}",
             $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_{page + 1}_{(int)(requestFilters.AnyRankedScoreStates ?? EState.None)}_{(int)EState.None}_" +
-            $"{(int)(requestFilters.ExcludeRankedScoreStates ?? EState.None)}_{requestFilters.Search}",
+            $"{(int)(requestFilters.ExcludeRankedScoreStates ?? EState.None)}_{needConfirmationValue}_{requestFilters.Search}",
             $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-2_{(int)EState.NonPointGivingNoPending}_{(int)EState.None}_" +
-            $"{(int)EState.Pending}_{requestFilters.Search}",
+            $"{(int)EState.Pending}_{needConfirmationValue}_{requestFilters.Search}",
             $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-3_{(int)EState.Selected}_{(int)EState.None}_" +
-            $"{(int)EState.NonPointGiving}_{requestFilters.Search}",
+            $"{(int)EState.NonPointGiving}_{needConfirmationValue}_{requestFilters.Search}",
             $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-4_{(int)EState.None}_{(int)(EState.Selected | EState.Pending)}_" +
-            $"{(int)EState.NonPointGivingNoPending}_{requestFilters.Search}"
+            $"{(int)EState.NonPointGivingNoPending}_{(int)EState.NonPointGivingNoPending}_{needConfirmationValue}_{requestFilters.Search}"
         );
-        var searchTermTooLong = prevCustomId.Length > 100 || nextCustomId.Length > 100 || unpassedCustomId.Length > 100
+        var searchTermTooLong = prevCustomId.Length > 100 || nextCustomId.Length > 100 ||
+                                unpassedCustomId.Length > 100
                                 || passedCustomId.Length > 100 || pendingCustomId.Length > 100;
         (prevCustomId, nextCustomId, unpassedCustomId, passedCustomId, pendingCustomId) = searchTermTooLong
             ? (prevCustomId[..100], nextCustomId[..100], unpassedCustomId[..100], passedCustomId[..100],
@@ -326,7 +357,10 @@ file static class SearchCommand
                     sb.Append(" | Mods: ").Append(rankedScore.Score.Modifiers).Append(' ');
 
                 sb.Append(TimestampTag.FormatFromDateTimeOffset(score.SetAt, TimestampTagStyles.ShortDateTime))
-                    .AppendLine(score is RankedScoreResponses.Score.BeatLeaderScore { BeatLeaderScoreId: { } blScoreId }
+                    .AppendLine(score is RankedScoreResponses.Score.BeatLeaderScore
+                    {
+                        BeatLeaderScoreId: { } blScoreId
+                    }
                         ? $" [Replay](https://replay.beatleader.com/?scoreId={blScoreId})"
                         : null);
 
