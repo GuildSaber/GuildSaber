@@ -6,14 +6,14 @@ using UnityEngine;
 
 namespace GuildSaber.Mod.Configurations;
 
-internal class GSConfig
+internal class PluginConfig
 {
     public bool Enabled { get; init; } = true;
     public ApiEnv ApiEnv { get; init; } = ApiEnv.Dev;
     public CardConfig PlayerCard { get; init; } = new();
-
+    
     /// <remarks>Useful when you need to find the original value of a parameter</remarks>
-    public GSConfig Default() => new();
+    public PluginConfig Default() => new();
 }
 
 internal class CardConfig
@@ -33,14 +33,15 @@ internal class CardConfig
 
     public CardColors ColorSettings = new(false, false, Color.white, Color.white, Color.white);
     
-    public TimeConfig TimeData { get; set; } = new TimeConfig();
+    public TimeConfig TimeData = new TimeConfig();
     
     public int GuildId { get; set; } = -1;
 }
 
 internal class TimeConfig
 {
-    public int PlayDurationSec { get; set; } = 0;
+    public long PlayDurationSec { get; set; } = 0;
+    public int Day { get; set; } = -1;
 }
 
 /// <summary>

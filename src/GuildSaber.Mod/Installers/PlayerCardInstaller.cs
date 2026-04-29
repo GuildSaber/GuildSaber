@@ -1,3 +1,4 @@
+using BeatSaberMarkupLanguage.FloatingScreen;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Core.PlayerCard;
 using GuildSaber.Mod.Core.PlayerCard.UI;
@@ -32,8 +33,17 @@ public class PlayerCardInstaller(GuildSaberClient client, SiraLog logger) : Inst
     {
         logger.Info($"Client base api uri: {client.HttpClient.BaseAddress}");
         logger.Info($"Client user agent: {client.HttpClient.DefaultRequestHeaders.UserAgent}");
-
+        
         Container.Bind<PlayerCardResources>().FromFactory<PlayerCardResourcesFactory>().AsSingle();
+        Container.Bind<FloatingScreen>()
+            .WithId(Constants.CardFloatingPanelId)
+            .FromMethod
+                (() => FloatingScreen.CreateFloatingScreen(
+                    new Vector2(10, 10), 
+                    false, 
+                    Vector3.zero, 
+                    Quaternion.Euler(Vector3.zero)))
+            .AsSingle();
         Container.Bind<PlayerCardView>().FromNewComponentAsViewController().AsSingle();
         Container.Bind<PlayerCardSettingsMainView>().FromNewComponentAsViewController().AsSingle();
         Container.Bind<PlayerCardSettingsCoordinator>().FromNewComponentOnNewGameObject().AsSingle();

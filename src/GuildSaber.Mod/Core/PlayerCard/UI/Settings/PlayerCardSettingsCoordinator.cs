@@ -1,13 +1,16 @@
+using GuildSaber.Mod.Core.PlayerCard.UI;
+using GuildSaber.Mod.Core.UI.Common;
 using HMUI;
+using Zenject;
 
 namespace GuildSaber.Mod.Core.PlayerCard;
 
-public class PlayerCardSettingsCoordinator : FlowCoordinator
+public class PlayerCardSettingsCoordinator : CustomFlowCoordinator
 {
-    //[Inject] private readonly PlayerCardSettingsMainView _mainView = null!;
+    [Inject] private readonly PlayerCardSettingsMainView _mainView = null!;
 
-    protected override void DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)
-    {
-        //ProvideInitialViewControllers(_mainView);
-    }
+
+    protected override string Title => "Player card settings";
+
+    protected override ViewController? GetMainViewController() => _mainView;
 }

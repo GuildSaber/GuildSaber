@@ -6,6 +6,7 @@ using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Mod.Core;
 using GuildSaber.Mod.Core.PlayerCard;
+using GuildSaber.Mod.Core.UI.Guild;
 using GuildSaber.Mod.Core.UI.Utils;
 using UnityEngine;
 using Zenject;
@@ -20,6 +21,7 @@ namespace GuildSaber.Mod.PlayerCard.UI.Components;
 
             [Inject] private readonly PlayerCardResources _resources = null!;
             [Inject] private readonly ModData _modData = null!;
+            
             
             protected GuildIconButton(string name, Action? onClick = null) : base(name, null, onClick)
             {
@@ -108,6 +110,7 @@ namespace GuildSaber.Mod.PlayerCard.UI.Components;
 
         [Inject] private readonly ModData _modData = null!;
         [Inject] private readonly PlayerCardResources _cardResources = null!;
+        [Inject] private readonly GuildSelectionFlowCoordinator _guildSelectionFlowCoordinator = null!;
         
         protected void OnCreation(CHLayout x)
         {
@@ -150,8 +153,7 @@ namespace GuildSaber.Mod.PlayerCard.UI.Components;
 
         private void OnArrowButtonClicked()
         {
-            GuildSelectionFlowCoordinator.Instance.SetCallback(OnGuildSelected);
-            GuildSelectionFlowCoordinator.Instance.Present();
+            _guildSelectionFlowCoordinator.Show(OnGuildSelected);
         }
 
         public GuildSelector SetOnGuildSelected(Action<GuildResponses.Guild> callback)

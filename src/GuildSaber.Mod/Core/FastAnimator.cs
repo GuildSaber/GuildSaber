@@ -41,7 +41,7 @@ internal class FastAnimator : MonoBehaviour
         for (var l_I = 0; l_I < m_FloatAnimations.Count; l_I++)
         {
             var l_Item = m_FloatAnimations[l_I];
-            ParseFloatAnimData(l_Item, l_Item.AddDeltaTime, Time.realtimeSinceStartup, l_I);
+            ParseFloatAnimData(l_Item, l_Item.AddDeltaTime, UnityEngine.Time.realtimeSinceStartup, l_I);
         }
 
         if (!m_FloatAnimationsToEnd.Any()) return;
@@ -159,7 +159,7 @@ internal class FastAnimator : MonoBehaviour
             OnFinished   = p_OnFinished;
             NextKey      = new FloatAnimKey(p_Keys[0].Value, 0);
             ActualKey    = NextKey;
-            AddDeltaTime = Time.realtimeSinceStartup;
+            AddDeltaTime = UnityEngine.Time.realtimeSinceStartup;
             LastKey      = p_Keys.Any() ? p_Keys.Last() : default(FloatAnimKey);
         }
     }

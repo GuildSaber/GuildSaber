@@ -7,11 +7,14 @@
         <AssemblyName>GuildSaberMod</AssemblyName>
         <Copyright>Copyright © Kuurama 2026</Copyright>
         <TargetCulture>en</TargetCulture>
-        <TargetFramework>net472</TargetFramework>
+        <TargetFramework>net48</TargetFramework>
         <LangVersion>14</LangVersion>
         <EnableFrameworkPathOverride>true</EnableFrameworkPathOverride>
         <FrameworkPathOverride>$(BeatSaberDir)\Beat Saber_Data\Managed</FrameworkPathOverride>
         <MarkPackageReferencesAsExternallyResolved>false</MarkPackageReferencesAsExternallyResolved>
+        <NeutralLanguage></NeutralLanguage>
+        <AssemblyVersion>0.0.1</AssemblyVersion>
+        <FileVersion>0.0.1</FileVersion>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -43,6 +46,7 @@
         <DefineConstants>DEBUG;TRACE</DefineConstants>
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
+        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
         <Optimize>true</Optimize>
@@ -65,13 +69,13 @@
             <Private>False</Private>
             <SpecificVersion>False</SpecificVersion>
         </Reference>
-        <Reference Include="BSML">
-            <HintPath>$(BeatSaberDir)\Plugins\BSML.dll</HintPath>
+        <Reference Include="BS_Utils">
+            <HintPath>$(BeatSaberDir)\Plugins\BS_Utils.dll</HintPath>
             <Private>False</Private>
             <SpecificVersion>False</SpecificVersion>
         </Reference>
-        <Reference Include="BS_Utils">
-            <HintPath>$(BeatSaberDir)\Plugins\BS_Utils.dll</HintPath>
+        <Reference Include="BSML">
+            <HintPath>$(BeatSaberDir)\Plugins\BSML.dll</HintPath>
             <Private>False</Private>
             <SpecificVersion>False</SpecificVersion>
         </Reference>
@@ -116,7 +120,6 @@
             <Private>False</Private>
             <SpecificVersion>False</SpecificVersion>
         </Reference>
-        <Reference Include="System.Net.Http" />
         <Reference Include="SiraUtil">
             <HintPath>$(BeatSaberDir)/Plugins/SiraUtil.dll</HintPath>
             <Private>false</Private>
@@ -131,7 +134,10 @@
             <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\System.Core.dll</HintPath>
             <Private>false</Private>
         </Reference>
-        <Reference Include="System.Net.Http" />
+        <Reference Include="System.Net.Http">
+            <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\System.Net.Http.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
         <Reference Include="Unity.TextMeshPro">
             <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\Unity.TextMeshPro.dll</HintPath>
             <Private>False</Private>
@@ -189,7 +195,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Core\Common\UI\" />
+      <Content Include="GuildSaber.Mod.csproj.user" />
     </ItemGroup>
 
 </Project>

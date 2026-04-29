@@ -9,4 +9,6 @@ public static class Constants
 
     public static readonly Uri ProdCdnBaseUrl = new("https://cdn.guildsaber.com/");
     public static readonly Uri DevCdnBaseUrl = new("https://cdn-dev.guildsaber.com/");
+
+    public const string CardFloatingPanelId = "GuildSaber.Mod.PlayerCard.FloatingPanel";
 }

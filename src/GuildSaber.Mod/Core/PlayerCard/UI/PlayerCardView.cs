@@ -14,6 +14,7 @@ using GuildSaber.Mod.Configurations;
 using GuildSaber.Mod.Core;
 using GuildSaber.Mod.Core.PlayerCard;
 using GuildSaber.Mod.Core.PlayerCard.UI.Components;
+using GuildSaber.Mod.Core.Time;
 using GuildSaber.Mod.Core.UI.Common;
 using GuildSaber.Mod.Core.UI.Extensions;
 using GuildSaber.Mod.Core.UI.Utils;
@@ -31,11 +32,13 @@ internal class PlayerCardView : ViewController<PlayerCardView>
 {
     [Inject] private readonly SiraLog _logger = null!;
     [Inject] private readonly PlayerCardResources _resources = null!;
-    [Inject] private readonly GSConfig Config = null!;
-    [Inject] private readonly TimeController TimeControl = null!;
-    [Inject] private readonly FloatingScreen _cardFloatingScreen = null!;
+    [Inject] private readonly PluginConfig _config = null!;
+    [Inject] private readonly TimeController _timeControl = null!;
     [Inject] private readonly ModData _modData = null!;
-
+    [Inject] private readonly PlayerCardSettingsCoordinator _cardSettingsCoordinator = null!;
+    [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
+    [Inject(Id = Constants.CardFloatingPanelId)] private readonly FloatingScreen _cardFloatingScreen = null!;
+    
     public enum EDisplayMode
     {
         Normal,
@@ -43,7 +46,7 @@ internal class PlayerCardView : ViewController<PlayerCardView>
         Error
     }
     
-    private ImageView BorderImage = null!;
+    private ImageView _borderImage = null!;
 
     protected GSText GuildWarningMessageText = null!;
     protected GSSecondaryButton ShowSettingsButton = null!;
@@ -87,7 +90,8 @@ internal class PlayerCardView : ViewController<PlayerCardView>
             .BuildUI(transform);
 
         XUIVLayout.Make(
-                GSLoadingIndicator.Make()
+                //GSLoadingIndicator.Make()
+                GSText.Make("Loading... TODO: Replace this text by the loading indicator of the base game")
             ).Bind(ref LoadingLayout)
             .BuildUI(transform);
 
@@ -147,7 +151,7 @@ internal class PlayerCardView : ViewController<PlayerCardView>
                 var l_Image = x.gameObject.GetComponent<ImageView>();
                 l_Image.material = l_Material;
                 l_Image.sprite = l_Sprite;
-                BorderImage = l_Image;
+                _borderImage = l_Image;
             })
             .OnReady(x => x.CSizeFitter.verticalFit =
                 x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained)
@@ -156,19 +160,17 @@ internal class PlayerCardView : ViewController<PlayerCardView>
         GameObject.DontDestroyOnLoad(transform.gameObject);
         GameObject.DontDestroyOnLoad(transform.parent.gameObject);
 
-        TimeControl.EventChange += OnTimeChanged;
+        _timeControl.EventChange += OnTimeChanged;
         Logic.OnSceneChange += OnSceneChanged;
         _cardFloatingScreen.HandleReleased += (ix, x) =>
         {
             if (Logic.ActiveScene != Logic.ESceneType.Playing)
             {
-                Config.PlayerCard.Transforms.Menu = new CardTransform(x.Position, x.Rotation);
-                Config.Save();
+                _config.PlayerCard.Transforms.Menu = new CardTransform(x.Position, x.Rotation);
             }
             else
             {
-                Config.PlayerCard.Transforms.InSong = new CardTransform(x.Position, x.Rotation);
-                Config.Save();
+                _config.PlayerCard.Transforms.InSong = new CardTransform(x.Position, x.Rotation);
             }
         };
     }
@@ -201,19 +203,19 @@ internal class PlayerCardView : ViewController<PlayerCardView>
     {
         if (x != Logic.ESceneType.Playing)
         {
-            GetCardFloatingScreen().transform.position = Config.PlayerCard.Transforms.Menu.Position;
-            GetCardFloatingScreen().transform.rotation = Config.PlayerCard.Transforms.Menu.Rotation;
+            GetCardFloatingScreen().transform.position = _config.PlayerCard.Transforms.Menu.Position;
+            GetCardFloatingScreen().transform.rotation = _config.PlayerCard.Transforms.Menu.Rotation;
         }
         else
         {
-            GetCardFloatingScreen().transform.position = Config.PlayerCard.Transforms.InSong.Position;
-            GetCardFloatingScreen().transform.rotation = Config.PlayerCard.Transforms.InSong.Rotation;
+            GetCardFloatingScreen().transform.position = _config.PlayerCard.Transforms.InSong.Position;
+            GetCardFloatingScreen().transform.rotation = _config.PlayerCard.Transforms.InSong.Rotation;
         }
     }
 
     private void EventGuildSelected(GuildResponses.Guild? x)
     {
-        if (Config.PlayerCard.GuildId == -1)
+        if (_config.PlayerCard.GuildId == -1)
         {
             return;
         }
@@ -225,10 +227,11 @@ internal class PlayerCardView : ViewController<PlayerCardView>
             return;
         }
 
-        Config.PlayerCard.GuildId = (int)x.Id.Value;
-        Config.Save();
-
-        SetGuild(new GuildId(Config.PlayerCard.GuildId), SetPlayer);
+        _config.PlayerCard.GuildId = (int)x.Id.Value;
+        
+        _guildSaberManager.SelectGuild(x.Id, 0);
+        
+        SetGuild(new GuildId(_config.PlayerCard.GuildId), SetPlayer);
     }
 
     public void RefreshCardSize(bool displayCardLevelsDetails)
@@ -279,22 +282,16 @@ internal class PlayerCardView : ViewController<PlayerCardView>
 
     private void DisplaySettings()
     {
-        if (PlayerCardSettingsFlowCoordinator.Instance == null)
-        {
-            PlayerCardSettingsFlowCoordinator.Instance =
-                BeatSaberUI.CreateFlowCoordinator<PlayerCardSettingsFlowCoordinator>();
-        }
-
-        if (!PlayerCardSettingsFlowCoordinator.Instance.IsPresent)
-            PlayerCardSettingsFlowCoordinator.Instance.Present();
+        if (!_cardSettingsCoordinator.IsPresent)
+            _cardSettingsCoordinator.Present();
         
         DisplayCard(EDisplayMode.Normal);
     }
 
     private void ResetTimer()
     {
-        Config.PlayerCard.TimeData.PlayDurationSec = 0;
-        TimeControl.Reset();
+        _config.PlayerCard.TimeData.PlayDurationSec = 0;
+        _timeControl.Reset();
         DisplayCard(EDisplayMode.Normal);
     }
 
@@ -364,7 +361,7 @@ internal class PlayerCardView : ViewController<PlayerCardView>
 
     public void LoadConfig()
     {
-        DisplayLevelsDetails(Config.PlayerCard.CategoryLevelViewEnabled);
+        DisplayLevelsDetails(_config.PlayerCard.CategoryLevelViewEnabled);
 
         if (_modData.Player == null)
         {
@@ -372,18 +369,18 @@ internal class PlayerCardView : ViewController<PlayerCardView>
             return;
         }
         
-        if (PlayerCardLibrary.CanPlayerUseCustomColors(_modData.PlayerLevels, _modData.Player.Player) && Config.PlayerCard.ColorSettings.UseCustomColors)
+        if (PlayerCardLibrary.CanPlayerUseCustomColors(_modData.PlayerLevels, _modData.Player.Player) && _config.PlayerCard.ColorSettings.UseCustomColors)
         {
-            BorderImage.color = Config.PlayerCard.ColorSettings.MainCardColor;
+            _borderImage.color = _config.PlayerCard.ColorSettings.MainCardColor;
 
-            if (Config.PlayerCard.ColorSettings.UseGradient)
+            if (_config.PlayerCard.ColorSettings.UseGradient)
             {
-                BorderImage.color0 = Config.PlayerCard.ColorSettings.GradientColor0;
-                BorderImage.color1 = Config.PlayerCard.ColorSettings.GradientColor1;
+                _borderImage.color0 = _config.PlayerCard.ColorSettings.GradientColor0;
+                _borderImage.color1 = _config.PlayerCard.ColorSettings.GradientColor1;
             }
             else
             {
-                BorderImage.color0 = BorderImage.color1 = Config.PlayerCard.ColorSettings.MainCardColor;
+                _borderImage.color0 = _borderImage.color1 = _config.PlayerCard.ColorSettings.MainCardColor;
             }
         }
         else
@@ -393,9 +390,9 @@ internal class PlayerCardView : ViewController<PlayerCardView>
             
             Color l_Color = PlayerCardLibrary.FromArgb(l_Level.Level.Info.Color);
 
-            BorderImage.color = l_Color;
-            BorderImage.color1 = l_Color;
-            BorderImage.color0 = l_Color;
+            _borderImage.color = l_Color;
+            _borderImage.color1 = l_Color;
+            _borderImage.color0 = l_Color;
         }
     }
 }

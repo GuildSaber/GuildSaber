@@ -15,7 +15,7 @@ public class Plugin
     public Plugin(Zenjector zenjector, IPALogger logger, IPAConfig config)
     {
         zenjector.UseLogger(logger);
-        var pluginConfig = config.Generated<GSConfig>();
+        var pluginConfig = config.Generated<PluginConfig>();
 
         zenjector.Install<AppInstaller>(Location.App, pluginConfig);
         zenjector.Install<ResourcesInstaller>(Location.App, logger);
