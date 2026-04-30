@@ -1,6 +1,6 @@
 using BeatSaberMarkupLanguage.FloatingScreen;
 using GuildSaber.Common.StrongTypes;
-using GuildSaber.Mod.PlayerCard.UI;
+using GuildSaber.Mod.Core.PlayerCard.UI;
 using HMUI;
 using SiraUtil.Logging;
 using Zenject;
