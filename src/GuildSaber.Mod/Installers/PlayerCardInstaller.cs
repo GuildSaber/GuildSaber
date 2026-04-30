@@ -1,5 +1,6 @@
 using BeatSaberMarkupLanguage.FloatingScreen;
 using GuildSaber.CSharpClient;
+using GuildSaber.Mod.Core;
 using GuildSaber.Mod.Core.PlayerCard;
 using GuildSaber.Mod.Core.PlayerCard.UI;
 using GuildSaber.Mod.PlayerCard.UI;
@@ -16,17 +17,23 @@ public class PlayerCardInstaller(GuildSaberClient client, SiraLog logger) : Inst
     internal class PlayerCardResourcesFactory(
         StandardLevelDetailView standardLevelDetailView,
         [Inject(Id = nameof(ResourceMap.DownArrow))] Texture2D downArrowTexture,
-        [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture)
+        [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture,
+        [Inject] ModData modData)
         : IFactory<PlayerCardResources>
     {
-        public PlayerCardResources Create() => new(
-            BorderSprite: standardLevelDetailView.actionButton.transform
-                .Find("Border").GetComponent<ImageView>().sprite,
-            BorderMaterial: standardLevelDetailView.actionButton.transform
-                .Find("BG").GetComponent<ImageView>().material,
-            DownArrowTexture: downArrowTexture,
-            GsWhiteLogoTexture: gsWhiteLogoTexture
-        );
+        public PlayerCardResources Create()
+        {
+            PlayerCardResources resources = new(
+                BorderSprite: standardLevelDetailView.actionButton.transform
+                    .Find("Border").GetComponent<ImageView>().sprite,
+                BorderMaterial: standardLevelDetailView.actionButton.transform
+                    .Find("BG").GetComponent<ImageView>().material,
+                DownArrowTexture: downArrowTexture,
+                GsWhiteLogoTexture: gsWhiteLogoTexture
+            );
+            modData.Resources = resources;
+            return resources;
+        }
     }
 
     public override void InstallBindings()

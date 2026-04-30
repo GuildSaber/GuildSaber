@@ -20,7 +20,8 @@ namespace GuildSaber.Mod.Core;
 public class ModData
 {
     [Inject] protected GuildSaberClient _client = null!;
-    [Inject] protected PlayerCardResources _resources = null!;
+    
+    public PlayerCardResources Resources = null!;
 
     protected Dictionary<int, CategoryResponses.Category[]> CategoriesCache = new Dictionary<int, CategoryResponses.Category[]>();
     
@@ -43,7 +44,7 @@ public class ModData
     public Texture2D GetGuildLogo(int id)
     {
         //var l_Res = await _client.Guilds.GetExtendedByIdAsync(new GuildId(id));
-        return _resources.GsWhiteLogoTexture;
+        return Resources.GsWhiteLogoTexture;
     }
 
     public async Task<CategoryResponses.Category[]> GetAllCategories(int guildId)

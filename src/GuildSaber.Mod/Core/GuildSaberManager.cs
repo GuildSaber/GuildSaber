@@ -1,16 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using BS_Utils.Gameplay;
 using GuildSaber.Api.Features.Guilds;
-using GuildSaber.Api.Features.Guilds.Members.ContextStats;
-using GuildSaber.Api.Features.Players;
-using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
-using IPA.Config.Data;
 using SiraUtil.Logging;
 using Zenject;
 
@@ -40,8 +35,10 @@ public class GuildSaberManager(GuildSaberClient client, SiraLog logger, ModData 
             return;
         }
 
-        var playerIdResult = await client.Players.GetExtendedByIdAsync(new PlayerId(1));
-        if (!playerIdResult.TryGetValue(out var player, out var error))
+        BeatLeaderId.TryParse(userInfo.platformUserId, out BeatLeaderId playerBeatLeaderId);
+        
+        var playerIdResult = await client.Players.LookupPlayerIdByBeatLeaderIdAsync(playerBeatLeaderId);
+        if (!playerIdResult.TryGetValue(out var playerId, out var error))
         {
             logger.Error($"Failed to fetch PlayerId: {error}. " +
                          "Invoking OnPlayerIdFetched with null and terminating Initialize.");
@@ -49,12 +46,21 @@ public class GuildSaberManager(GuildSaberClient client, SiraLog logger, ModData 
             return;
         }
 
-        if (player == null)
+        if (playerId == null) return;
+        
+        var extendedPlayerIdResult = await client.Players.GetExtendedByIdAsync(playerId.Value);
+        if (!extendedPlayerIdResult.TryGetValue(out var extendedPlayer, out error))
+        {
+            logger.Error($"Failed to fetch extended player: {error}");
+            logger.Error("Terminating");
+        }
+        
+        if (extendedPlayer == null)
         {
             return;
         }
 
-        modData.Player = player;
+        modData.Player = extendedPlayer;
 
         List<GuildResponses.Guild> guilds = new List<GuildResponses.Guild>();
         foreach (var member in modData.Player.Members)
