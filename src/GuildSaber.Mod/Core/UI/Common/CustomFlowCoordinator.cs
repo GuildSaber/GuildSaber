@@ -4,24 +4,24 @@ using HMUI;
 
 namespace GuildSaber.Mod.Core.UI.Common;
 
-public abstract class CustomFlowCoordinator : HMUI.FlowCoordinator
+public abstract class CustomFlowCoordinator : FlowCoordinator
 {
-    private HMUI.FlowCoordinator? _lastFlowCoordinator = null;
+    private FlowCoordinator? _lastFlowCoordinator;
 
     protected abstract string Title { get; }
 
-    protected virtual void OnCreation() { }
-
     protected virtual bool ShowBackButton { get; } = true;
 
-    public bool IsPresent { get; private set; } = false;
+    public bool IsPresent { get; private set; }
+
+    public void Awake() => OnCreation();
+
+    protected virtual void OnCreation() { }
 
     protected abstract ViewController? GetMainViewController();
-    protected virtual ViewController? GetLeftViewController() { return null; }
-    protected virtual ViewController? GetRightViewController() { return null; }
-    protected virtual ViewController? GetBottomViewController() { return null; }
-
-    public void Awake() { OnCreation(); }
+    protected virtual ViewController? GetLeftViewController() => null;
+    protected virtual ViewController? GetRightViewController() => null;
+    protected virtual ViewController? GetBottomViewController() => null;
 
     protected override void DidActivate(
         bool firstActivation,
@@ -30,15 +30,14 @@ public abstract class CustomFlowCoordinator : HMUI.FlowCoordinator
     {
         if (!firstActivation)
             return;
-        SetTitle(Title, (ViewController.AnimationType)1);
+        SetTitle(Title);
 
         showBackButton = ShowBackButton;
         ProvideInitialViewControllers(
             GetMainViewController(),
             GetLeftViewController(),
             GetRightViewController(),
-            GetBottomViewController(),
-            null);
+            GetBottomViewController());
     }
 
     protected override void BackButtonWasPressed(ViewController topView)
@@ -51,7 +50,7 @@ public abstract class CustomFlowCoordinator : HMUI.FlowCoordinator
     {
         _lastFlowCoordinator = BeatSaberUI.MainFlowCoordinator.YoungestChildFlowCoordinatorOrSelf();
         if (!_lastFlowCoordinator) return;
-        
+
         _lastFlowCoordinator.PresentFlowCoordinator(this, () => IsPresent = true);
         OnShow();
     }
@@ -73,5 +72,4 @@ public abstract class CustomFlowCoordinator : HMUI.FlowCoordinator
     protected virtual void OnShow() { }
 
     protected virtual void OnHide() { }
-
 }

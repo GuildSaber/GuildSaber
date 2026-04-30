@@ -7,14 +7,17 @@ namespace GuildSaber.Mod.Core.PlayerCard;
 
 public static class PlayerCardLibrary
 {
-    public static bool CanPlayerUseCustomColors(LevelStatResponses.MemberLevelStat[] levels,
-                                                PlayerResponses.Player player)
+    public static bool CanPlayerUseCustomColors(
+        LevelStatResponses.MemberLevelStat[] levels, PlayerResponses.Player player)
     {
-        
-        return levels.Where(x => x.Level.CategoryId == null && !x.IsLocked)
-                .LastOrDefault(x => x.IsCompleted).Level
-            .Order >= 30 || player.PlayerLinkedAccounts.BeatLeaderId == "76561198846350061" 
-                         || player.PlayerLinkedAccounts.BeatLeaderId == "76561198126131670";
+        const int requiredLevel = 30;
+        return levels.Where(x => x.Level.CategoryId is null && !x.IsLocked)
+                .LastOrDefault(x => x.IsCompleted)?.Level.Order switch
+            {
+                _ when player.PlayerLinkedAccounts.BeatLeaderId is "76561198846350061" or "76561198126131670" => true,
+                > requiredLevel => true,
+                _ => false
+            };
     }
 
     public static Color FromArgb(int argb)
@@ -24,5 +27,4 @@ public static class PlayerCardLibrary
         var b = (byte)(argb & 0xFF);
         return new Color(r, g, b);
     }
-    
 }

@@ -1,9 +1,8 @@
-using GuildSaber.Mod.Core.PlayerCard.UI;
 using GuildSaber.Mod.Core.UI.Common;
 using HMUI;
 using Zenject;
 
-namespace GuildSaber.Mod.Core.PlayerCard;
+namespace GuildSaber.Mod.Core.PlayerCard.UI.Settings;
 
 public class PlayerCardSettingsCoordinator : CustomFlowCoordinator
 {

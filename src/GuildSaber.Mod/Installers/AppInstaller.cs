@@ -1,13 +1,10 @@
 using BeatSaberMarkupLanguage;
-using CP_SDK.UI;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Configurations;
 using GuildSaber.Mod.Core;
-using GuildSaber.Mod.Core.PlayerCard;
-using GuildSaber.Mod.Core.PlayerCard.UI;
+using GuildSaber.Mod.Core.PlayerCard.UI.Settings;
 using GuildSaber.Mod.Core.UI.Guild;
 using GuildSaber.Mod.Extensions;
-using GuildSaber.Mod.PlayerCard.UI;
 using SiraUtil.Logging;
 using Zenject;
 
@@ -15,7 +12,6 @@ namespace GuildSaber.Mod.Installers;
 
 internal class AppInstaller(PluginConfig config) : Installer
 {
-
     public override void InstallBindings()
     {
         Container.BindInstance(config);
@@ -24,8 +20,10 @@ internal class AppInstaller(PluginConfig config) : Installer
         Container.BindInterfacesAndSelfTo<GuildSaberManager>().AsSingle();
         Container.Bind<PlayerCardSettingsMainView>().FromNewComponentAsViewController().AsSingle();
         Container.Bind<GuildSelectionViewController>().FromNewComponentAsViewController().AsSingle();
-        Container.Bind<GuildSelectionFlowCoordinator>().FromMethod(BeatSaberUI.CreateFlowCoordinator<GuildSelectionFlowCoordinator>).AsSingle();
-        Container.Bind<PlayerCardSettingsCoordinator>().FromMethod(BeatSaberUI.CreateFlowCoordinator<PlayerCardSettingsCoordinator>).AsSingle();
+        Container.Bind<GuildSelectionFlowCoordinator>()
+            .FromMethod(BeatSaberUI.CreateFlowCoordinator<GuildSelectionFlowCoordinator>).AsSingle();
+        Container.Bind<PlayerCardSettingsCoordinator>()
+            .FromMethod(BeatSaberUI.CreateFlowCoordinator<PlayerCardSettingsCoordinator>).AsSingle();
     }
 }
 

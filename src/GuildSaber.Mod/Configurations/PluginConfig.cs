@@ -11,14 +11,16 @@ internal class PluginConfig
     public bool Enabled { get; init; } = true;
     public ApiEnv ApiEnv { get; init; } = ApiEnv.Dev;
     public CardConfig PlayerCard { get; init; } = new();
-    
+
     /// <remarks>Useful when you need to find the original value of a parameter</remarks>
     public PluginConfig Default() => new();
 }
 
 internal class CardConfig
 {
-    public bool CategoryLevelViewEnabled { get; set; } = true;
+    public CardColors ColorSettings = new(false, false, Color.white, Color.white, Color.white);
+
+    public TimeConfig TimeData = new();
 
     public CardTransforms Transforms = new(
         Menu: new CardTransform(
@@ -31,10 +33,8 @@ internal class CardConfig
         )
     );
 
-    public CardColors ColorSettings = new(false, false, Color.white, Color.white, Color.white);
-    
-    public TimeConfig TimeData = new TimeConfig();
-    
+    public bool CategoryLevelViewEnabled { get; set; } = true;
+
     public int GuildId { get; set; } = -1;
 }
 

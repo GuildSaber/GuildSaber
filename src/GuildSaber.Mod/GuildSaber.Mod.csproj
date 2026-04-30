@@ -12,7 +12,6 @@
         <EnableFrameworkPathOverride>true</EnableFrameworkPathOverride>
         <FrameworkPathOverride>$(BeatSaberDir)\Beat Saber_Data\Managed</FrameworkPathOverride>
         <MarkPackageReferencesAsExternallyResolved>false</MarkPackageReferencesAsExternallyResolved>
-        <NeutralLanguage></NeutralLanguage>
         <AssemblyVersion>0.0.1</AssemblyVersion>
         <FileVersion>0.0.1</FileVersion>
     </PropertyGroup>
@@ -46,8 +45,6 @@
         <DefineConstants>DEBUG;TRACE</DefineConstants>
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <NoWarn>1701;1702;8009</NoWarn>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
         <Optimize>true</Optimize>
@@ -196,7 +193,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="GuildSaber.Mod.csproj.user" />
+        <Content Include="GuildSaber.Mod.csproj.user" />
     </ItemGroup>
 
 </Project>

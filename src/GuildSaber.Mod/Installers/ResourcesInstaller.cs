@@ -12,6 +12,14 @@ namespace GuildSaber.Mod.Installers;
 
 public class ResourcesInstaller(Logger logger) : Installer
 {
+    internal class GSResourcesFactory : IFactory<GsUiResources>
+    {
+        public GsUiResources Create() => new(
+            UnityEngine.Resources.FindObjectsOfTypeAll<TextMeshProUGUI>().Where(x
+                => x.font.name.Contains("Teko-Medium")).ElementAt(1).font
+        );
+    }
+
     public override void InstallBindings()
     {
         Container.Bind<Texture2D>().WithId(nameof(ResourceMap.DownArrow))
@@ -27,14 +35,6 @@ public class ResourcesInstaller(Logger logger) : Installer
             .AsCached();
     }
 
-    internal class GSResourcesFactory : IFactory<GsUiResources>
-    {
-        public GsUiResources Create() => new GsUiResources(
-            UnityEngine.Resources.FindObjectsOfTypeAll<TextMeshProUGUI>().Where(x
-                => x.font.name.Contains("Teko-Medium")).ElementAt(1).font
-        );
-    }
-    
     private static Texture2D LoadTexture2DFromResource(string resourcePath, Logger logger)
     {
         logger.Debug($"[{nameof(ResourcesInstaller)}/{nameof(LoadTexture2DFromResource)}] " +

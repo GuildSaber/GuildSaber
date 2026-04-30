@@ -12,40 +12,36 @@ namespace GuildSaber.Mod.Core.UI.Common;
 
 public class GSSecondaryButton : XUISecondaryButton
 {
-
-    private        int        _height;
-    private        int        _width;
+    private int _height;
+    private int _width;
 
     [Inject] protected GsUiResources GsResources = null!;
-    
-    protected GSSecondaryButton(string label, Action? onClick = null) : base("GuildSaberSecondaryButton", label, onClick)
+
+    protected GSSecondaryButton(string label, Action? onClick = null) : base("GuildSaberSecondaryButton", label,
+        onClick)
+        => OnReady(_SetupStyle);
+
+    protected GSSecondaryButton(string name, string label, int width, int height, Action? onClick = null)
+        : base(name, label, onClick)
     {
         OnReady(_SetupStyle);
-    }
-
-
-    protected GSSecondaryButton(string name, string label, int width, int height, Action? onClick = null) : base(name, label, onClick)
-    {
-        OnReady(_SetupStyle);
-        _width  = width;
+        _width = width;
         _height = height;
     }
 
     public new static GSSecondaryButton Make(string label, Action? onClick = null)
         => new(label, onClick);
 
-    public static GSSecondaryButton Make(string label, int width, int height, string name = "GuildSaberSecondaryButton", Action? onClick = null)
+    public static GSSecondaryButton Make(string label, int width, int height, string name = "GuildSaberSecondaryButton",
+                                         Action? onClick = null)
         => new(name, label, width, height, onClick);
-#nullable disable
+
     public virtual Color GetColor() => Color.black.ColorWithAlpha(0.7f);
 
     //////////////////////////////////////////////////////
     /////////////////////////////////////////////////////
 
-    private void _SetupStyle(CSecondaryButton button)
-    {
-        SetupStyle(button, _width, _height, GetColor());
-    }
+    private void _SetupStyle(CSecondaryButton button) => SetupStyle(button, _width, _height, GetColor());
 
     //////////////////////////////////////////////////////
     /////////////////////////////////////////////////////
@@ -66,19 +62,23 @@ public class GSSecondaryButton : XUISecondaryButton
 
     public static async Task<Sprite> GetBackground(int width, int height)
     {
-        var l_Tex = new Texture2D(width * 7, height * 7);
+        var texture = new Texture2D(width * 7, height * 7);
 
-        for (var l_X = 0; l_X < l_Tex.width; l_X++)
-        {
-            for (var l_Y = 0; l_Y < l_Tex.height; l_Y++)
-            {
-                l_Tex.SetPixel(l_X, l_Y, Color.white);
-            }
-        }
+        for (var x = 0; x < texture.width; x++)
+        for (var y = 0; y < texture.height; y++)
+            texture.SetPixel(x, y, Color.white);
 
-        var l_NewTex = await TextureUtils.CreateRoundedTextureAsync( /*await Utils.TextureUtils.Gradient(l_Tex, new Color(1, 1, 1, 0.7f), new Color(1f, 1f, 1f, 1), p_UseAlpha: true)*/l_Tex, 10);
-        var l_Sprite = Sprite.Create(l_NewTex, new Rect(0, 0, l_Tex.width, l_Tex.height), new Vector2(0, 0), 1000, 0, SpriteMeshType.FullRect);
-        return l_Sprite;
+        var newTexture = await TextureUtils.CreateRoundedTextureAsync(texture, 10);
+        //await Utils.TextureUtils.Gradient(l_Tex, new Color(1, 1, 1, 0.7f), new Color(1f, 1f, 1f, 1), p_UseAlpha: true)
+
+        return Sprite.Create(
+            newTexture,
+            new Rect(0, 0, texture.width, texture.height),
+            pivot: new Vector2(0, 0),
+            pixelsPerUnit: 1000,
+            extrude: 0,
+            meshType: SpriteMeshType.FullRect
+        );
     }
 
     //////////////////////////////////////////////////////
@@ -89,10 +89,7 @@ public class GSSecondaryButton : XUISecondaryButton
         _width = width;
         base.SetWidth(width);
 
-        if (refreshVisuals)
-        {
-            OnReady(_SetupStyle);
-        }
+        if (refreshVisuals) OnReady(_SetupStyle);
 
         return this;
     }
@@ -102,10 +99,7 @@ public class GSSecondaryButton : XUISecondaryButton
         _height = height;
         base.SetHeight(height);
 
-        if (refreshVisuals)
-        {
-            OnReady(_SetupStyle);
-        }
+        if (refreshVisuals) OnReady(_SetupStyle);
 
         return this;
     }

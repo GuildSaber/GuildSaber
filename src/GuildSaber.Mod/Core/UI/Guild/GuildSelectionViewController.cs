@@ -4,38 +4,36 @@ using CP_SDK_BS.UI;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Mod.Core.UI.Guild.Components;
+using UnityEngine;
+using UnityEngine.UI;
 using Zenject;
 
 namespace GuildSaber.Mod.Core.UI.Guild;
 
 internal class GuildSelectionViewController : ViewController<GuildSelectionViewController>
 {
-    protected XUIVScrollView _guildListContainer = null!;
-
-    protected readonly List<GuildButton> _guildButtons = new List<GuildButton>();
+    protected readonly List<GuildButton> _guildButtons = new();
+    [Inject] private readonly GuildSelectionFlowCoordinator _guildSelectionFlowCoordinator = null!;
 
     [Inject] private readonly ModData _modData = null!;
-    [Inject] private readonly GuildSelectionFlowCoordinator _guildSelectionFlowCoordinator = null!;
-    
-    protected override void OnViewCreation()
-    {
-        XUIVLayout.Make(
-                XUIHLayout.Make(
-                        XUIVScrollView.Make()
-                            .Bind(ref _guildListContainer)
-                    )
-                    .SetHeight(80)
-                    .OnReady(x => x.CSizeFitter.verticalFit = x.CSizeFitter.horizontalFit =
-                        UnityEngine.UI.ContentSizeFitter.FitMode.Unconstrained)
-                    .OnReady(x => x.HOrVLayoutGroup.childForceExpandHeight =
-                        x.HOrVLayoutGroup.childForceExpandWidth = true)
-            )
-            .SetWidth(100)
-            .SetHeight(80)
-            .SetBackground(true)
-            .SetBackgroundColor(new UnityEngine.Color(0f, 0f, 0f, 0f))
-            .BuildUI(RTransform);
-    }
+    protected XUIVScrollView _guildListContainer = null!;
+
+    protected override void OnViewCreation() => XUIVLayout.Make(
+            XUIHLayout.Make(
+                    XUIVScrollView.Make()
+                        .Bind(ref _guildListContainer)
+                )
+                .SetHeight(80)
+                .OnReady(x => x.CSizeFitter.verticalFit = x.CSizeFitter.horizontalFit =
+                    ContentSizeFitter.FitMode.Unconstrained)
+                .OnReady(x => x.HOrVLayoutGroup.childForceExpandHeight =
+                    x.HOrVLayoutGroup.childForceExpandWidth = true)
+        )
+        .SetWidth(100)
+        .SetHeight(80)
+        .SetBackground(true)
+        .SetBackgroundColor(new Color(0f, 0f, 0f, 0f))
+        .BuildUI(RTransform);
 
     ///////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
@@ -61,8 +59,5 @@ internal class GuildSelectionViewController : ViewController<GuildSelectionViewC
     ///////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
 
-    private void OnGuildButtonClicked(GuildResponses.Guild x)
-    {
-        _guildSelectionFlowCoordinator.Dismiss(x);
-    }
+    private void OnGuildButtonClicked(GuildResponses.Guild x) => _guildSelectionFlowCoordinator.Dismiss(x);
 }

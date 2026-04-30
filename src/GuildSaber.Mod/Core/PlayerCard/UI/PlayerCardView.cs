@@ -1,73 +1,69 @@
 using System;
-using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
-using BeatSaberMarkupLanguage;
 using BeatSaberMarkupLanguage.FloatingScreen;
 using CP_SDK_BS.Game;
 using CP_SDK_BS.UI;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Common.StrongTypes;
-using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Configurations;
-using GuildSaber.Mod.Core;
-using GuildSaber.Mod.Core.PlayerCard;
 using GuildSaber.Mod.Core.PlayerCard.UI.Components;
+using GuildSaber.Mod.Core.PlayerCard.UI.Settings;
 using GuildSaber.Mod.Core.Time;
 using GuildSaber.Mod.Core.UI.Common;
 using GuildSaber.Mod.Core.UI.Extensions;
 using GuildSaber.Mod.Core.UI.Utils;
-using GuildSaber.Mod.PlayerCard.UI.Components;
 using HMUI;
 using SiraUtil.Logging;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
 using Color = UnityEngine.Color;
 
-namespace GuildSaber.Mod.PlayerCard.UI;
+namespace GuildSaber.Mod.Core.PlayerCard.UI;
 
 internal class PlayerCardView : ViewController<PlayerCardView>
 {
-    [Inject] private readonly SiraLog _logger = null!;
-    [Inject] private readonly PlayerCardResources _resources = null!;
-    [Inject] private readonly PluginConfig _config = null!;
-    [Inject] private readonly TimeController _timeControl = null!;
-    [Inject] private readonly ModData _modData = null!;
-    [Inject] private readonly PlayerCardSettingsCoordinator _cardSettingsCoordinator = null!;
-    [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
-    [Inject(Id = Constants.CardFloatingPanelId)] private readonly FloatingScreen _cardFloatingScreen = null!;
-    
     public enum EDisplayMode
     {
         Normal,
         Settings,
         Error
     }
-    
+
+    [Inject(Id = Constants.CardFloatingPanelId)] private readonly FloatingScreen _cardFloatingScreen = null!;
+    [Inject] private readonly PlayerCardSettingsCoordinator _cardSettingsCoordinator = null!;
+    [Inject] private readonly PluginConfig _config = null!;
+    [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
+    [Inject] private readonly SiraLog _logger = null!;
+    [Inject] private readonly ModData _modData = null!;
+    [Inject] private readonly PlayerCardResources _resources = null!;
+    [Inject] private readonly TimeController _timeControl = null!;
+
     private ImageView _borderImage = null!;
 
     protected GSText GuildWarningMessageText = null!;
-    protected GSSecondaryButton ShowSettingsButton = null!;
     protected XUIVLayout InvalidConfigLayout = null!;
     protected XUIVLayout LoadingLayout = null!;
-
-    protected GSText PlayerNameText = null!;
-    protected GSText PlayerPassesText = null!;
-    protected GSText PlayerLevelText = null!;
-    protected GSText TimeText = null!;
-
-    protected PointList PointsContainer = null!;
-    protected XUIVLayout PlayerDataContainer = null!;
-
-    protected XUIVLayout PlayerImageContainer = null!;
-
-    protected XUIIconButton PlayerImage = null!;
 
     protected XUIHLayout MainLayout = null!;
 
     protected PagedLevelList MainPlayerLevelsContainer = null!;
+    protected XUIVLayout PlayerDataContainer = null!;
+
+    protected XUIIconButton PlayerImage = null!;
+
+    protected XUIVLayout PlayerImageContainer = null!;
+    protected GSText PlayerLevelText = null!;
+
+    protected GSText PlayerNameText = null!;
+    protected GSText PlayerPassesText = null!;
+
+    protected PointList PointsContainer = null!;
+    protected GSSecondaryButton ShowSettingsButton = null!;
+    protected GSText TimeText = null!;
+
     protected override void OnViewCreation()
     {
         XUIVLayout.Make(
@@ -99,7 +95,7 @@ internal class PlayerCardView : ViewController<PlayerCardView>
                 XUIVLayout.Make(
                         GSText.Make(string.Empty)
                             .Bind(ref PlayerNameText)
-                            .SetStyle(TMPro.FontStyles.Underline | TMPro.FontStyles.Bold)
+                            .SetStyle(FontStyles.Underline | FontStyles.Bold)
                             .SetFontSize(5),
                         GSText.Make(string.Empty)
                             .Bind(ref PlayerPassesText)
@@ -157,28 +153,21 @@ internal class PlayerCardView : ViewController<PlayerCardView>
                 x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained)
             .BuildUI(transform);
 
-        GameObject.DontDestroyOnLoad(transform.gameObject);
-        GameObject.DontDestroyOnLoad(transform.parent.gameObject);
+        DontDestroyOnLoad(transform.gameObject);
+        DontDestroyOnLoad(transform.parent.gameObject);
 
         _timeControl.EventChange += OnTimeChanged;
         Logic.OnSceneChange += OnSceneChanged;
         _cardFloatingScreen.HandleReleased += (ix, x) =>
         {
             if (Logic.ActiveScene != Logic.ESceneType.Playing)
-            {
                 _config.PlayerCard.Transforms.Menu = new CardTransform(x.Position, x.Rotation);
-            }
             else
-            {
                 _config.PlayerCard.Transforms.InSong = new CardTransform(x.Position, x.Rotation);
-            }
         };
     }
 
-    private void AskForGuild()
-    {
-        AskForGuild(false);
-    }
+    private void AskForGuild() => AskForGuild(false);
 
     private void AskForGuild(bool withWarning)
     {
@@ -187,19 +176,17 @@ internal class PlayerCardView : ViewController<PlayerCardView>
         FastAnimator.Animate([
             new FastAnimator.FloatAnimKey(0, 0),
             new FastAnimator.FloatAnimKey(1, 0.2f)
-        ], (x) => InvalidConfigLayout.Element.transform.localScale = new Vector3(x, x, 1));
-        
+        ], x => InvalidConfigLayout.Element.transform.localScale = new Vector3(x, x, 1));
+
         ShowSettingsButton.SetActive(!withWarning);
 
         _cardFloatingScreen.ScreenSize = new Vector2(50, 40);
     }
 
     public void OnTimeChanged(int hours, int minutes, int seconds)
-    {
-        TimeText.SetText($"{hours:00}:{minutes:00}:{seconds:00}");
-    }
+        => TimeText.SetText($"{hours:00}:{minutes:00}:{seconds:00}");
 
-    private void OnSceneChanged(CP_SDK_BS.Game.Logic.ESceneType x)
+    private void OnSceneChanged(Logic.ESceneType x)
     {
         if (x != Logic.ESceneType.Playing)
         {
@@ -215,10 +202,7 @@ internal class PlayerCardView : ViewController<PlayerCardView>
 
     private void EventGuildSelected(GuildResponses.Guild? x)
     {
-        if (_config.PlayerCard.GuildId == -1)
-        {
-            return;
-        }
+        if (_config.PlayerCard.GuildId == -1) return;
 
         if (x == null)
         {
@@ -227,10 +211,10 @@ internal class PlayerCardView : ViewController<PlayerCardView>
             return;
         }
 
-        _config.PlayerCard.GuildId = (int)x.Id.Value;
-        
+        _config.PlayerCard.GuildId = x.Id.Value;
+
         _guildSaberManager.SelectGuild(x.Id, 0);
-        
+
         SetGuild(new GuildId(_config.PlayerCard.GuildId), SetPlayer);
     }
 
@@ -247,10 +231,8 @@ internal class PlayerCardView : ViewController<PlayerCardView>
             l_Width += 30;
 
         if (_modData.Player != null)
-        {
             GetCardFloatingScreen().ScreenSize =
                 new Vector2(l_Width + _modData.Player.Player.PlayerInfo.Username.Length, 40);
-        }
     }
 
     public async void RefreshCard()
@@ -258,19 +240,13 @@ internal class PlayerCardView : ViewController<PlayerCardView>
         try
         {
             if (_modData.Player == null)
-            {
                 return;
-            }
-        
-            var l_ImageResult = await TextureUtils.GetImage(_modData.Player.Player.PlayerInfo.AvatarUrl, _resources);
-            if (l_ImageResult != null)
-            {
-                PlayerImage.SetSprite(Sprite.Create(l_ImageResult,
-                    new Rect(0, 0, l_ImageResult.width, l_ImageResult.height), new Vector2()));
-            }
+
+            var image = await TextureUtils.FetchImageFromUrl(_modData.Player.Player.PlayerInfo.AvatarUrl, _resources);
+            if (image != null)
+                PlayerImage.SetSprite(Sprite.Create(image, new Rect(0, 0, image.width, image.height), new Vector2()));
 
             DisplayCard(EDisplayMode.Normal);
-
             LoadConfig();
         }
         catch (Exception e)
@@ -284,7 +260,7 @@ internal class PlayerCardView : ViewController<PlayerCardView>
     {
         if (!_cardSettingsCoordinator.IsPresent)
             _cardSettingsCoordinator.Present();
-        
+
         DisplayCard(EDisplayMode.Normal);
     }
 
@@ -295,11 +271,8 @@ internal class PlayerCardView : ViewController<PlayerCardView>
         DisplayCard(EDisplayMode.Normal);
     }
 
-    public void DisplayCard(EDisplayMode displayMode)
-    {
-        
-    }
-    
+    public void DisplayCard(EDisplayMode displayMode) { }
+
     public void DisplayLevelsDetails(bool display)
     {
         if (_modData.PlayerLevels.Length == 0 && display)
@@ -326,36 +299,28 @@ internal class PlayerCardView : ViewController<PlayerCardView>
         }
     }
 
-    public void RefreshLevelsDetails()
-    {
-        MainPlayerLevelsContainer.Refresh(_modData);
-    }
+    public void RefreshLevelsDetails() => MainPlayerLevelsContainer.Refresh(_modData);
 
-    public FloatingScreen GetCardFloatingScreen()
-    {
-        return _cardFloatingScreen;
-    }
+    public FloatingScreen GetCardFloatingScreen() => _cardFloatingScreen;
 
     public void SetGuild(GuildId guildId, Action? callback)
     {
         var l_Guild = _modData.GetGuild(guildId.Value);
         if (l_Guild == null) return;
-        
+
         RefreshCard();
-        
-        if (callback != null)
-        {
-            callback.Invoke();
-        }
+
+        if (callback != null) callback.Invoke();
     }
 
     public void SetPlayer()
     {
-        var l_Level = _modData.PlayerLevels.Where(x => x.Level.CategoryId == null && !x.IsLocked)
+        var level = _modData.PlayerLevels
+            .Where(x => x.Level.CategoryId == null && !x.IsLocked)
             .LastOrDefault(x => x.IsCompleted);
 
-        PlayerNameText.SetText($"Level: {l_Level?.Level.Info.Name ?? ""}");
-        PlayerPassesText.SetText($"Pass count: {l_Level?.PassCount ?? 0}");
+        PlayerNameText.SetText($"Level: {level?.Level.Info.Name ?? ""}");
+        PlayerPassesText.SetText($"Pass count: {level?.PassCount ?? 0}");
         PointsContainer.Refresh(_modData);
     }
 
@@ -363,13 +328,11 @@ internal class PlayerCardView : ViewController<PlayerCardView>
     {
         DisplayLevelsDetails(_config.PlayerCard.CategoryLevelViewEnabled);
 
-        if (_modData.Player == null)
-        {
-            
+        if (_modData.Player is null)
             return;
-        }
-        
-        if (PlayerCardLibrary.CanPlayerUseCustomColors(_modData.PlayerLevels, _modData.Player.Player) && _config.PlayerCard.ColorSettings.UseCustomColors)
+
+        if (_config.PlayerCard.ColorSettings.UseCustomColors
+            && PlayerCardLibrary.CanPlayerUseCustomColors(_modData.PlayerLevels, _modData.Player.Player))
         {
             _borderImage.color = _config.PlayerCard.ColorSettings.MainCardColor;
 
@@ -380,19 +343,28 @@ internal class PlayerCardView : ViewController<PlayerCardView>
             }
             else
             {
-                _borderImage.color0 = _borderImage.color1 = _config.PlayerCard.ColorSettings.MainCardColor;
+                _borderImage.color0 = _config.PlayerCard.ColorSettings.MainCardColor;
+                _borderImage.color1 = _config.PlayerCard.ColorSettings.MainCardColor;
             }
-        }
-        else
-        {
-            var l_Level = _modData.PlayerLevels.Where(x => x.Level.CategoryId == null && !x.IsLocked)
-                .LastOrDefault(x => x.IsCompleted);
-            
-            Color l_Color = PlayerCardLibrary.FromArgb(l_Level.Level.Info.Color);
 
-            _borderImage.color = l_Color;
-            _borderImage.color1 = l_Color;
-            _borderImage.color0 = l_Color;
+            return;
         }
+
+        var level = _modData.PlayerLevels
+            .Where(x => x.Level.CategoryId == null && !x.IsLocked)
+            .LastOrDefault(x => x.IsCompleted);
+
+        if (level == null)
+        {
+            _borderImage.color = Color.white;
+            _borderImage.color0 = Color.white;
+            _borderImage.color1 = Color.white;
+            return;
+        }
+
+        var color = PlayerCardLibrary.FromArgb(level.Level.Info.Color);
+        _borderImage.color = color;
+        _borderImage.color1 = color;
+        _borderImage.color0 = color;
     }
 }
