@@ -17,7 +17,8 @@ internal class PlayerCardManager(
     public void Initialize()
     {
         manager.OnInitializationError += error => { logger.Warn($"GuildSaberManager initialization error: {error}"); };
-
+        manager.OnInitializationFinished += () => { playerCardView.RefreshCard(); };
+        
         cardFloatingScreen.name = "PlayerCardFloatingScreen";
         cardFloatingScreen.SetRootViewController(playerCardView, ViewController.AnimationType.In);
     }

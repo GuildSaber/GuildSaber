@@ -10,9 +10,12 @@ using GuildSaber.Mod.Configurations;
 using GuildSaber.Mod.Core.PlayerCard.UI.Components;
 using GuildSaber.Mod.Core.PlayerCard.UI.Settings;
 using GuildSaber.Mod.Core.Time;
+using GuildSaber.Mod.Core.UI;
 using GuildSaber.Mod.Core.UI.Common;
 using GuildSaber.Mod.Core.UI.Extensions;
+using GuildSaber.Mod.Core.UI.Guild;
 using GuildSaber.Mod.Core.UI.Utils;
+using GuildSaber.Mod.Resources;
 using HMUI;
 using SiraUtil.Logging;
 using TMPro;
@@ -32,7 +35,9 @@ internal class PlayerCardView : ViewController<PlayerCardView>
         Error
     }
 
-    [Inject(Id = Constants.CardFloatingPanelId)] private readonly FloatingScreen _cardFloatingScreen = null!;
+    [Inject(Id = Constants.CardFloatingPanelId)]
+    private readonly FloatingScreen _cardFloatingScreen = null!;
+
     [Inject] private readonly PlayerCardSettingsCoordinator _cardSettingsCoordinator = null!;
     [Inject] private readonly PluginConfig _config = null!;
     [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
@@ -40,6 +45,14 @@ internal class PlayerCardView : ViewController<PlayerCardView>
     [Inject] private readonly ModData _modData = null!;
     [Inject] private readonly PlayerCardResources _resources = null!;
     [Inject] private readonly TimeController _timeControl = null!;
+    [Inject] private readonly UIFactory _uiFactory = null!;
+    [Inject] private readonly GuildSelectionFlowCoordinator _guildSelectionFlowCoordinator = null!;
+
+    [Inject(Id = nameof(ResourceMap.DownArrow))]
+    private readonly Texture2D _downArrowTexture = null!;
+
+    [Inject(Id = nameof(ResourceMap.GsWhiteLogo))]
+    private readonly Texture2D _whiteLogoTexture = null!;
 
     private ImageView _borderImage = null!;
 
@@ -67,17 +80,19 @@ internal class PlayerCardView : ViewController<PlayerCardView>
     protected override void OnViewCreation()
     {
         XUIVLayout.Make(
-                GSText.Make("Please select a guild to use the Player Card")
+                _uiFactory.Text("Please select a guild to use the Player Card")
                     .Bind(ref GuildWarningMessageText)
                     .SetColor(Color.yellow),
-                GuildSelector.Make()
+                GuildSelector.Make(new GuildSelector.GuildSelectorParams(_guildSelectionFlowCoordinator,
+                        DownArrowTexture: _downArrowTexture,
+                        WhiteArrowTexture: _whiteLogoTexture, _modData))
                     .SetOnGuildSelected(EventGuildSelected),
-                GSSecondaryButton.Make("Show settings")
+                _uiFactory.SecondaryButton("Show settings")
                     .Bind(ref ShowSettingsButton)
                     .SetWidth(20)
                     .SetHeight(5)
                     .OnClick(DisplaySettings),
-                GSSecondaryButton.Make("Reset timer")
+                _uiFactory.SecondaryButton("Reset timer")
                     .SetWidth(20)
                     .SetHeight(5)
                     .OnClick(ResetTimer)
@@ -93,22 +108,22 @@ internal class PlayerCardView : ViewController<PlayerCardView>
 
         XUIHLayout.Make(
                 XUIVLayout.Make(
-                        GSText.Make(string.Empty)
+                        _uiFactory.Text(string.Empty)
                             .Bind(ref PlayerNameText)
                             .SetStyle(FontStyles.Underline | FontStyles.Bold)
                             .SetFontSize(5),
-                        GSText.Make(string.Empty)
+                        _uiFactory.Text(string.Empty)
                             .Bind(ref PlayerPassesText)
                             .SetFontSize(3.7f),
-                        GSText.Make(string.Empty)
+                        _uiFactory.Text(string.Empty)
                             .Bind(ref PlayerLevelText)
                             .SetFontSize(4.5f),
-                        PointList.Make()
+                        PointList.Make(_modData, _uiFactory)
                             .Bind(ref PointsContainer)
                             .SetSpacing(0),
-                        GSText.Make("______")
+                        _uiFactory.Text("______")
                             .SetFontSize(3),
-                        GSText.Make("00:00:00")
+                        _uiFactory.Text("00:00:00")
                             .Bind(ref TimeText)
                     )
                     .SetPadding(2, 2, 2, 6)
@@ -122,7 +137,7 @@ internal class PlayerCardView : ViewController<PlayerCardView>
                     )
                     .SetPadding(2, 2, 2, 7)
                     .Bind(ref PlayerImageContainer),
-                PagedLevelList.Make()
+                PagedLevelList.Make(_uiFactory)
                     .Bind(ref MainPlayerLevelsContainer)
                     .SetPadding(2, 2, 2, 12)
                     .SetSpacing(-0.5f)
@@ -200,7 +215,7 @@ internal class PlayerCardView : ViewController<PlayerCardView>
         }
     }
 
-    private void EventGuildSelected(GuildResponses.Guild? x)
+    private void EventGuildSelected(GuildResponses.GuildExtended? x)
     {
         if (_config.PlayerCard.GuildId == -1) return;
 
@@ -211,9 +226,8 @@ internal class PlayerCardView : ViewController<PlayerCardView>
             return;
         }
 
-        _config.PlayerCard.GuildId = x.Id.Value;
-
-        _guildSaberManager.SelectGuild(x.Id, 0);
+        _config.PlayerCard.GuildId = x.Guild.Id;
+        _guildSaberManager.SelectGuild(x.Contexts.First().Id);
 
         SetGuild(new GuildId(_config.PlayerCard.GuildId), SetPlayer);
     }
@@ -271,7 +285,9 @@ internal class PlayerCardView : ViewController<PlayerCardView>
         DisplayCard(EDisplayMode.Normal);
     }
 
-    public void DisplayCard(EDisplayMode displayMode) { }
+    public void DisplayCard(EDisplayMode displayMode)
+    {
+    }
 
     public void DisplayLevelsDetails(bool display)
     {
@@ -305,7 +321,7 @@ internal class PlayerCardView : ViewController<PlayerCardView>
 
     public void SetGuild(GuildId guildId, Action? callback)
     {
-        var l_Guild = _modData.GetGuild(guildId.Value);
+        var l_Guild = _modData.GetGuild(guildId);
         if (l_Guild == null) return;
 
         RefreshCard();

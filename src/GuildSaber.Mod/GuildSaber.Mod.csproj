@@ -45,6 +45,8 @@
         <DefineConstants>DEBUG;TRACE</DefineConstants>
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
+        <WarningsAsErrors>;NU1605</WarningsAsErrors>
+        <NoWarn>1701;1702;8009</NoWarn>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
         <Optimize>true</Optimize>
@@ -135,6 +137,9 @@
         <Reference Include="System.Net.Http">
             <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\System.Net.Http.dll</HintPath>
             <Private>false</Private>
+        </Reference>
+        <Reference Include="System.ValueTuple">
+          <HintPath>..\..\..\..\..\.nuget\packages\netstandard.library\2.0.3\build\netstandard2.0\ref\System.ValueTuple.dll</HintPath>
         </Reference>
         <Reference Include="Unity.TextMeshPro">
             <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\Unity.TextMeshPro.dll</HintPath>

@@ -1,7 +1,6 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using GuildSaber.Mod.Core.UI;
 using GuildSaber.Mod.Resources;
 using TMPro;
 using UnityEngine;
@@ -12,14 +11,6 @@ namespace GuildSaber.Mod.Installers;
 
 public class ResourcesInstaller(Logger logger) : Installer
 {
-    internal class GSResourcesFactory : IFactory<GsUiResources>
-    {
-        public GsUiResources Create() => new(
-            UnityEngine.Resources.FindObjectsOfTypeAll<TextMeshProUGUI>().Where(x
-                => x.font.name.Contains("Teko-Medium")).ElementAt(1).font
-        );
-    }
-
     public override void InstallBindings()
     {
         Container.Bind<Texture2D>().WithId(nameof(ResourceMap.DownArrow))
@@ -30,9 +21,14 @@ public class ResourcesInstaller(Logger logger) : Installer
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.GsWhiteLogo, logger))
             .AsCached();
 
-        Container.Bind<GsUiResources>()
-            .FromFactory<GSResourcesFactory>()
-            .AsCached();
+        Container.Bind<TMP_FontAsset>().WithId(nameof(ResourceMap.TekoMedium))
+            .FromMethod(() =>
+            {
+                var font = UnityEngine.Resources.FindObjectsOfTypeAll<TextMeshProUGUI>().Where(x
+                    => x.font.name.Contains(ResourceMap.TekoMedium)).ElementAt(1).font;
+                logger.Debug($"[{nameof(ResourcesInstaller)}/TMP_FontAsset] Loaded TekoFont: {font.name}");
+                return font;
+            }).AsCached();
     }
 
     private static Texture2D LoadTexture2DFromResource(string resourcePath, Logger logger)

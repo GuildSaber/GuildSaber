@@ -1,17 +1,26 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using CP_SDK.XUI;
+using GuildSaber.Mod.Core.UI;
+using GuildSaber.Mod.Core.UI.Common;
+using UnityEngine;
 
 namespace GuildSaber.Mod.Core.PlayerCard.UI.Components;
 
 public class PointList : XUIVLayout
 {
-    protected readonly List<CardPoints> _pointTexts = new();
+    protected readonly List<GSText> _pointTexts = new();
 
-    protected ModData _modData = null!;
-    protected PointList(string name, params IXUIElement[] childs) : base(name, childs) { }
+    protected ModData _modData;
+    protected UIFactory _uiFactory;
 
-    public static PointList Make() => new("PointList");
+    protected PointList(ModData modData, UIFactory factory) : base("PointList", [])
+    {
+        _uiFactory = factory;
+        _modData = modData;
+    }
+
+    public static PointList Make(ModData modData, UIFactory factory) => new(modData, factory);
 
     public PointList Bind(ref PointList x)
     {
@@ -33,12 +42,15 @@ public class PointList : XUIVLayout
         {
             if (_pointTexts.Count - 1 < l_i)
             {
-                var l_Point = CardPoints.Make();
+                var l_Point = _uiFactory.Text("");
                 l_Point.BuildUI(Element.transform);
                 _pointTexts.Add(l_Point);
             }
 
-            _pointTexts[l_i].SetPoints(l_Points.ElementAt(l_i), _modData.CardUsedColor);
+            var point = l_Points.ElementAt(l_i);
+            var htmlColor = ColorUtility.ToHtmlStringRGB(_modData.CardUsedColor);
+            _pointTexts[l_i].SetText($"<color=#{htmlColor}>{point.Name}</color>#<color=#{htmlColor}>{point.Rank:0}</color>");
+
             _pointTexts[l_i].SetActive(true);
         }
     }

@@ -4,70 +4,94 @@ using System.Linq;
 using CP_SDK.UI.Components;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.Mod.Core.UI.Guild;
 using GuildSaber.Mod.Core.UI.Utils;
+using GuildSaber.Mod.Resources;
 using UnityEngine;
 using Zenject;
 
 namespace GuildSaber.Mod.Core.PlayerCard.UI.Components;
 
-internal class GuildSelector : XUIHLayout
+public class GuildSelector : XUIHLayout
 {
-    [Inject] private readonly PlayerCardResources _cardResources = null!;
-    [Inject] private readonly GuildSelectionFlowCoordinator _guildSelectionFlowCoordinator = null!;
-
-    [Inject] private readonly ModData _modData = null!;
+    private readonly GuildSelectionFlowCoordinator _guildSelectionFlowCoordinator;
+    private readonly Texture2D _whiteLogoTexture;
+    private readonly Texture2D _downArrowTexture;
 
     protected XUIIconButton ArrowButton = null!;
+    private readonly ModData _guildSaberData;
 
     ///////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
 
     protected GuildIconButton Guild1 = null!;
     protected GuildIconButton Guild2 = null!;
-    protected GuildIconButton Guild3 = null!;
 
-    protected Action<GuildResponses.Guild> OnGuildSelected = null!;
+    protected Action<GuildResponses.GuildExtended> OnGuildSelected = null!;
 
-    protected GuildSelector(string name, params IXUIElement[] childs) : base(name, childs) => OnReady(OnCreation);
 
-    internal class GuildIconButton : XUIIconButton
+    public readonly record struct GuildSelectorParams(
+        GuildSelectionFlowCoordinator GuildSelectionFlowCoordinator,
+        Texture2D DownArrowTexture,
+        Texture2D WhiteArrowTexture,
+        ModData ModData
+        
+    );
+
+    public GuildSelector(
+        GuildSelectorParams selectorParams)
+        : base("GuildSelector", [])
     {
-        [Inject] private readonly ModData _modData = null!;
+        _whiteLogoTexture = selectorParams.WhiteArrowTexture;
+        _downArrowTexture = selectorParams.DownArrowTexture;
+        _guildSelectionFlowCoordinator = selectorParams.GuildSelectionFlowCoordinator;
+        _guildSaberData = selectorParams.ModData;
+        OnReady(OnCreation);
+    }
+
+    public class GuildIconButton : XUIIconButton
+    {
+        private readonly List<Action<GuildId>> _onGuildSelected = [];
+        private readonly Texture2D _whiteLogo;
+        private ModData _guildSaberData;
 
         //////////////////////////////////////////////////////
         /////////////////////////////////////////////////////
 
-        private readonly List<Action<int>> _onGuildSelected = [];
-        [Inject] private readonly PlayerCardResources _resources = null!;
+        private GuildId _guildID;
 
-        //////////////////////////////////////////////////////
-        /////////////////////////////////////////////////////
+        public static GuildIconButton
+            Make(ModData guildSaberData, Texture2D whiteLogo, Action<GuildId>? onGuildSelected) =>
+            new(guildSaberData, whiteLogo, onGuildSelected);
 
-        private int _guildID;
-
-
-        protected GuildIconButton(string name, Action? onClick = null) : base(name, null, onClick)
+        public GuildIconButton(ModData guildSaberData, Texture2D whiteLogo, Action<GuildId>? onGuildSelected) :
+            base("GuildIconButton", null, null)
         {
-            var sprite = Sprite.Create(_resources.GsWhiteLogoTexture,
-                new Rect(0, 0, _resources.GsWhiteLogoTexture.width, _resources.GsWhiteLogoTexture.width),
+            _whiteLogo = whiteLogo;
+
+            var sprite = Sprite.Create(_whiteLogo,
+                new Rect(0, 0, _whiteLogo.width, _whiteLogo.width),
                 Vector2.zero);
 
+            _guildSaberData = guildSaberData;
             SetSprite(sprite);
             OnClick(OnButtonClicked);
+            if (onGuildSelected != null)
+            {
+                OnGuildSelected(onGuildSelected);
+            }
         }
 
 
         //////////////////////////////////////////////////////
         /////////////////////////////////////////////////////
 
-        public static GuildIconButton Make() => new("GuildIcon");
-
-        public async void SetGuild(int guildId)
+        public async void SetGuild(GuildId guildId)
         {
             _guildID = guildId;
 
-            var guildLogo = _modData.GetGuildLogo(guildId);
+            var guildLogo = _guildSaberData.GetGuildLogo(guildId);
             if (guildLogo == null)
                 return;
 
@@ -81,7 +105,7 @@ internal class GuildSelector : XUIHLayout
         //////////////////////////////////////////////////////
         /////////////////////////////////////////////////////
 
-        public GuildIconButton OnClick(Action<int> x)
+        public GuildIconButton OnGuildSelected(Action<GuildId> x)
         {
             _onGuildSelected.Add(x);
             return this;
@@ -89,28 +113,31 @@ internal class GuildSelector : XUIHLayout
 
         private void OnButtonClicked()
         {
-            foreach (var l_Item in _onGuildSelected) l_Item.Invoke(_guildID);
+            foreach (var item in _onGuildSelected) item.Invoke(_guildID);
         }
     }
 
     // R:26 G:28 B:30
 
-    public static GuildSelector Make() => new("GuildSelector");
+    public static GuildSelector Make(GuildSelectorParams param) => new(param);
 
     protected void OnCreation(CHLayout x)
     {
-        Guild1 = GuildIconButton.Make();
-        Guild2 = GuildIconButton.Make();
-        Guild3 = GuildIconButton.Make();
+// Je vais manger. Je re après. 
+// mais je suppose que ici t'auras un truc qui fait que t'arrête de passer toutes les data (une boucle sur les guilds), juste le logo et le guildId que tu veux non?
+// Bah je me sers du data parce que j'avais prévu de pouvoir changer la guilde du bouton à certains moment, ce sera galère sans les fonctions de la data
+// Bon app sinon
+// ća me parait comme un drôle de comportement X), perso jdirais même que il connais rien à part l'icone a afficher et lui il trigger juste l'action que t'as bind avec le bon id, et pis c'est tout
+        Guild1 = new GuildIconButton(_guildSaberData, _whiteLogoTexture, OnIconGuildSelected);
+        Guild2 = new GuildIconButton(_guildSaberData, _whiteLogoTexture, OnIconGuildSelected);
 
         Make(
-            Guild1.OnClick(OnIconGuildSelected),
-            Guild2.OnClick(OnIconGuildSelected),
-            Guild3.OnClick(OnIconGuildSelected),
+            Guild1,
+            Guild2,
             XUIIconButton.Make()
                 .Bind(ref ArrowButton)
-                .SetSprite(Sprite.Create(_cardResources.DownArrowTexture,
-                    new Rect(0, 0, _cardResources.DownArrowTexture.width, _cardResources.DownArrowTexture.height),
+                .SetSprite(Sprite.Create(_downArrowTexture,
+                    new Rect(0, 0, _downArrowTexture.width, _downArrowTexture.height),
                     Vector2.zero))
                 .OnClick(OnArrowButtonClicked)
                 .SetWidth(10)
@@ -122,9 +149,8 @@ internal class GuildSelector : XUIHLayout
 
         try
         {
-            Guild1.SetGuild(_modData.Guilds.ElementAt(0).Id.Value);
-            Guild2.SetGuild(_modData.Guilds.ElementAt(1).Id.Value);
-            Guild3.SetGuild(_modData.Guilds.ElementAt(2).Id.Value);
+            Guild1.SetGuild(_guildSaberData.Guilds.ElementAt(0).Guild.Id);
+            Guild2.SetGuild(_guildSaberData.Guilds.ElementAt(1).Guild.Id);
         }
         catch
         {
@@ -132,15 +158,15 @@ internal class GuildSelector : XUIHLayout
         }
     }
 
-    private void OnIconGuildSelected(int guildID)
+    private void OnIconGuildSelected(GuildId guildID)
     {
-        var guild = _modData.GetGuild(guildID);
+        var guild = _guildSaberData.GetGuild(guildID);
         if (guild is not null) OnGuildSelected.Invoke(guild);
     }
 
     private void OnArrowButtonClicked() => _guildSelectionFlowCoordinator.Show(OnGuildSelected);
 
-    public GuildSelector SetOnGuildSelected(Action<GuildResponses.Guild> callback)
+    public GuildSelector SetOnGuildSelected(Action<GuildResponses.GuildExtended> callback)
     {
         OnGuildSelected = callback;
         return this;

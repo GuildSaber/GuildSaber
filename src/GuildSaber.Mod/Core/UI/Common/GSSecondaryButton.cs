@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Threading.Tasks;
 using CP_SDK.UI.Components;
 using CP_SDK.XUI;
+using System.Threading.Tasks;
 using GuildSaber.Mod.Core.UI.Extensions;
 using GuildSaber.Mod.Core.UI.Utils;
 using TMPro;
 using UnityEngine;
-using Zenject;
 
 namespace GuildSaber.Mod.Core.UI.Common;
 
@@ -14,27 +13,25 @@ public class GSSecondaryButton : XUISecondaryButton
 {
     private int _height;
     private int _width;
+    protected readonly TMP_FontAsset Font;
 
-    [Inject] protected GsUiResources GsResources = null!;
-
-    protected GSSecondaryButton(string label, Action? onClick = null) : base("GuildSaberSecondaryButton", label,
-        onClick)
-        => OnReady(_SetupStyle);
-
-    protected GSSecondaryButton(string name, string label, int width, int height, Action? onClick = null)
-        : base(name, label, onClick)
+    public GSSecondaryButton(string label, TMP_FontAsset font, Action? onClick = null)
+        : base("GuildSaberSecondaryButton", label, onClick)
     {
+        Font = font;
         OnReady(_SetupStyle);
-        _width = width;
-        _height = height;
     }
 
-    public new static GSSecondaryButton Make(string label, Action? onClick = null)
-        => new(label, onClick);
+    public GSSecondaryButton(string label, int width, int height, TMP_FontAsset font, Action? onClick = null)
+        : base("GuildSaberSecondaryButton", label, onClick)
+    {
+        Font = font;
+        _width = width;
+        _height = height;
 
-    public static GSSecondaryButton Make(string label, int width, int height, string name = "GuildSaberSecondaryButton",
-                                         Action? onClick = null)
-        => new(name, label, width, height, onClick);
+        OnReady(_SetupStyle);
+    }
+
 
     public virtual Color GetColor() => Color.black.ColorWithAlpha(0.7f);
 
@@ -54,7 +51,7 @@ public class GSSecondaryButton : XUISecondaryButton
         var l_Sprite = await GetBackground(width, height);
         button.SetBackgroundColor(color);
         button.SetBackgroundSprite(l_Sprite);
-        button.gameObject.GetComponentInChildren<TextMeshProUGUI>().font = GsResources.TekoFont;
+        button.gameObject.GetComponentInChildren<TextMeshProUGUI>().font = Font;
     }
 
     //////////////////////////////////////////////////////

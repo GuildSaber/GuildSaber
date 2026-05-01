@@ -17,25 +17,24 @@ namespace GuildSaber.Mod.Core;
 
 public class ModData
 {
-    [Inject] protected GuildSaberClient _client = null!;
+    [Inject] protected readonly GuildSaberClient Client = null!;
 
-    public PlayerCardResources _resources = null!;
+    public PlayerCardResources CardResources = null!;
 
-    protected Dictionary<int, CategoryResponses.Category[]> CategoriesCache = new();
+    protected readonly Dictionary<int, CategoryResponses.Category[]> CategoriesCache = new();
 
-    public List<GuildResponses.Guild> Guilds = [];
+    public List<GuildResponses.GuildExtended> Guilds = [];
     public PlayerResponses.PlayerExtended? Player = null!;
     public LevelStatResponses.MemberLevelStat[] PlayerLevels = null!;
     public ContextStatResponses.SimplePointWithRank[] PlayerPoints = null!;
     public Color CardUsedColor = Color.white;
 
-
-    public GuildResponses.Guild? GetGuild(int id) => Guilds.FirstOrDefault(x => x.Id.Value == id);
-
+    public GuildResponses.GuildExtended? GetGuild(GuildId id)
+        => Guilds.FirstOrDefault(x => x.Guild.Id == id);
 
     public Texture2D GetGuildLogo(int id) =>
         //var l_Res = await _client.Guilds.GetExtendedByIdAsync(new GuildId(id));
-        _resources.GsWhiteLogoTexture;
+        CardResources.GsWhiteLogoTexture;
 
     public async Task<CategoryResponses.Category[]> GetAllCategories(GuildId guildId)
     {
@@ -47,8 +46,8 @@ public class ModData
             CategoriesCache.Remove(guildId);
         }
 
-        var l_ApiRes = await _client.Categories.GetAllByGuildIdAsync(guildId);
-        if (l_ApiRes.TryGetValue(out var value)) return [];
+        var apiRes = await Client.Categories.GetAllByGuildIdAsync(guildId);
+        if (apiRes.TryGetValue(out var value)) return [];
 
         CategoriesCache.Add(guildId, value);
         return value;

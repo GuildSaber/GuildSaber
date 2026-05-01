@@ -10,12 +10,17 @@ public class GuildSelectionFlowCoordinator : CustomFlowCoordinator
 {
     [Inject] private readonly GuildSelectionViewController _mainView = null!;
 
-    protected Action<GuildResponses.Guild>? DismissCallback;
+    protected Action<GuildResponses.GuildExtended>? DismissCallback;
 
     protected override string Title => "Select guild";
     protected override ViewController? GetMainViewController() => _mainView;
 
-    public void Show(Action<GuildResponses.Guild> callback) => DismissCallback = callback;
+    public void Show(Action<GuildResponses.GuildExtended> callback)
+    {
+        DismissCallback = callback;
+        _mainView.GuildSelectionFlowCoordinator = this;
+        Present();
+    }
 
-    public void Dismiss(GuildResponses.Guild guildId) => DismissCallback?.Invoke(guildId);
+    public void Dismiss(GuildResponses.GuildExtended guildExtended) => DismissCallback?.Invoke(guildExtended);
 }

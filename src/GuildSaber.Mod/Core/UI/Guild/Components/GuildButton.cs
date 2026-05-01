@@ -5,37 +5,48 @@ using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Mod.Core.PlayerCard.UI.Components;
 using GuildSaber.Mod.Core.UI.Common;
 using GuildSaber.Mod.Core.UI.Extensions;
+using TMPro;
 using UnityEngine;
 
 namespace GuildSaber.Mod.Core.UI.Guild.Components;
 
-internal class GuildButton : GSSecondaryButton
+public class GuildButton : GSSecondaryButton
 {
-    protected GuildResponses.Guild _currentGuild = null!;
+    protected GuildResponses.GuildExtended _currentGuild = null!;
     protected GSText _guildName = null!;
+    private readonly ModData _guildSaberData;
+    private readonly UIFactory _uiFactory;
+    private readonly Texture2D _guildSaberWhiteLogo;
 
     ///////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
 
     protected GuildSelector.GuildIconButton guildIcon = null!;
 
-    protected GuildButton(string label, Action? onClick = null) : base(label, onClick)
+    public static GuildButton Make(ModData guildSaberData, UIFactory factory, Texture2D guildSaberWhiteLogo,
+        TMP_FontAsset font)
+        => new(guildSaberData, factory, guildSaberWhiteLogo, font);
+
+    public GuildButton(ModData guildSaberData, UIFactory uiFactory, Texture2D guildSaberWhiteLogo, TMP_FontAsset font,
+        Action? onClick = null)
+        : base("GuildButton", font, onClick)
     {
+        _guildSaberData = guildSaberData;
+        _guildSaberWhiteLogo = guildSaberWhiteLogo;
+        _uiFactory = uiFactory;
         OnReady(OnCreation);
         OnClick(OnGuildSelected);
     }
 
     public override Color GetColor() => Color.black.ColorWithAlpha(0.7f);
 
-    public static GuildButton Make() => new(string.Empty);
+    public event Action<GuildResponses.GuildExtended> OnClicked = null!;
 
-    public event Action<GuildResponses.Guild> OnClicked = null!;
-
-    protected void OnCreation(CSecondaryButton x)
+    protected void OnCreation(CSecondaryButton c)
     {
-        guildIcon = GuildSelector.GuildIconButton.Make();
+        guildIcon = GuildSelector.GuildIconButton.Make(_guildSaberData, _guildSaberWhiteLogo, null);
 
-        _guildName = GSText.Make(string.Empty);
+        _guildName = _uiFactory.Text("");
         _guildName.SetMargins(0, 1, 0, 0);
         _guildName.OnReady(x => x.LElement.ignoreLayout = true);
         _guildName.OnReady(x => x.RTransform.sizeDelta = Vector2.zero);
@@ -58,23 +69,21 @@ internal class GuildButton : GSSecondaryButton
     ///////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
 
-    public void SetGuild(GuildResponses.Guild? guild)
+    public void SetGuild(GuildResponses.GuildExtended? guild)
     {
         if (guild == null)
         {
             SetActive(false);
+            return;
         }
-        else
-        {
-            guildIcon.SetGuild(guild.Id);
 
-            var shortName = guild.Info.Name.Substring(0, 18);
+        guildIcon.SetGuild(guild.Guild.Id);
 
-            if (guild.Info.Name.Length != shortName.Length) shortName += "...";
+        var shortName = guild.Guild.Info.Name[..18];
+        if (guild.Guild.Info.Name.Length != shortName.Length) shortName += "...";
 
-            _guildName.SetText(shortName);
-            _currentGuild = guild;
-        }
+        _guildName.SetText(shortName);
+        _currentGuild = guild;
     }
 
     private void OnGuildSelected() => OnClicked.Invoke(_currentGuild);

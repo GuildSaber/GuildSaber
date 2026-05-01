@@ -4,6 +4,8 @@ using CP_SDK_BS.UI;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Mod.Core.UI.Guild.Components;
+using GuildSaber.Mod.Resources;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
@@ -13,9 +15,17 @@ namespace GuildSaber.Mod.Core.UI.Guild;
 internal class GuildSelectionViewController : ViewController<GuildSelectionViewController>
 {
     protected readonly List<GuildButton> _guildButtons = new();
-    [Inject] private readonly GuildSelectionFlowCoordinator _guildSelectionFlowCoordinator = null!;
+    public GuildSelectionFlowCoordinator GuildSelectionFlowCoordinator = null!;
 
     [Inject] private readonly ModData _modData = null!;
+
+    [Inject(Id = nameof(ResourceMap.GsWhiteLogo))]
+   private readonly Texture2D _whiteLogoTexture = null!;
+
+    [Inject] private readonly UIFactory _uiFactory = null!;
+    [Inject(Id = nameof(ResourceMap.TekoMedium))] private readonly TMP_FontAsset _tekoFont = null!;
+
+
     protected XUIVScrollView _guildListContainer = null!;
 
     protected override void OnViewCreation() => XUIVLayout.Make(
@@ -46,18 +56,18 @@ internal class GuildSelectionViewController : ViewController<GuildSelectionViewC
         {
             //if (x == null) continue;
 
-            var l_Button = GuildButton.Make();
-            l_Button.SetWidth(70);
-            l_Button.SetHeight(10);
-            l_Button.OnClicked += OnGuildButtonClicked;
-            _guildButtons.Add(l_Button);
-            l_Button.BuildUI(_guildListContainer.Element.Container);
-            l_Button.SetGuild(x);
+            var button = GuildButton.Make(_modData, _uiFactory, _whiteLogoTexture, _tekoFont);
+            button.SetWidth(70);
+            button.SetHeight(10);
+            button.OnClicked += OnGuildButtonClicked;
+            _guildButtons.Add(button);
+            button.BuildUI(_guildListContainer.Element.Container);
+            button.SetGuild(x);
         }
     }
 
     ///////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
 
-    private void OnGuildButtonClicked(GuildResponses.Guild x) => _guildSelectionFlowCoordinator.Dismiss(x);
+    private void OnGuildButtonClicked(GuildResponses.GuildExtended x) => GuildSelectionFlowCoordinator.Dismiss(x);
 }

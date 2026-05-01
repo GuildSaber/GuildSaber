@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using BS_Utils.Gameplay;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
@@ -36,7 +37,7 @@ public class GuildSaberManager(GuildSaberClient client, SiraLog logger, ModData 
         }
 
         BeatLeaderId.TryParse(userInfo.platformUserId, out BeatLeaderId playerBeatLeaderId);
-        
+
         var playerIdResult = await client.Players.LookupPlayerIdByBeatLeaderIdAsync(playerBeatLeaderId);
         if (!playerIdResult.TryGetValue(out var playerId, out var error))
         {
@@ -47,14 +48,15 @@ public class GuildSaberManager(GuildSaberClient client, SiraLog logger, ModData 
         }
 
         if (playerId == null) return;
-        
+
         var extendedPlayerIdResult = await client.Players.GetExtendedByIdAsync(playerId.Value);
         if (!extendedPlayerIdResult.TryGetValue(out var extendedPlayer, out error))
         {
             logger.Error($"Failed to fetch extended player: {error}");
             logger.Error("Terminating");
+            return;
         }
-        
+
         if (extendedPlayer == null)
         {
             return;
@@ -62,10 +64,10 @@ public class GuildSaberManager(GuildSaberClient client, SiraLog logger, ModData 
 
         modData.Player = extendedPlayer;
 
-        List<GuildResponses.Guild> guilds = new List<GuildResponses.Guild>();
+        List<GuildResponses.GuildExtended> guilds = [];
         foreach (var member in modData.Player.Members)
         {
-            var guildResponse = await client.Guilds.GetByIdAsync(new GuildId(member.GuildId));
+            var guildResponse = await client.Guilds.GetExtendedByIdAsync(new GuildId(member.GuildId));
 
             if (!guildResponse.TryGetValue(out var guild, out error))
             {
@@ -74,20 +76,25 @@ public class GuildSaberManager(GuildSaberClient client, SiraLog logger, ModData 
             }
 
             if (guild == null) return;
-                
+
             guilds.Add(guild);
         }
 
         modData.Guilds = guilds;
+
+        SelectGuild(modData.Guilds[0].Contexts[0].Id);    
+    
+        
     }
 
     //public event Action<PlayerId?> OnPlayerIdFetched = _ => { };
     public event Action<string> OnInitializationError = _ => { };
+    public event Action OnInitializationFinished = () => { };
 
-    public async void SelectGuild(int guildId, int contextId)
+    public async void SelectGuild(ContextId contextId)
     {
         if (modData.Player == null) return;
-        
+
         var levelsResponse = await client.LevelStats.GetByPlayerIdAsync(modData.Player.Player.Id, contextId);
         if (!levelsResponse.TryGetValue(out var levels, out var error))
         {
@@ -107,7 +114,9 @@ public class GuildSaberManager(GuildSaberClient client, SiraLog logger, ModData 
         }
 
         if (contextStats == null) return;
-        
+
         modData.PlayerPoints = contextStats.Value.SimplePointsWithRank;
+
+        OnInitializationFinished.Invoke();
     }
 }

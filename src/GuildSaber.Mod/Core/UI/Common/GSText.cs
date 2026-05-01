@@ -1,18 +1,18 @@
 ﻿using CP_SDK.UI.Components;
 using CP_SDK.XUI;
 using TMPro;
-using Zenject;
 
 namespace GuildSaber.Mod.Core.UI.Common;
 
 public class GSText : XUIText
 {
-    [Inject] protected GsUiResources Resources = null!;
+    protected readonly TMP_FontAsset Font;
 
-    protected GSText(string name, string text) : base(name, text) => OnReady(PatchText);
-
-    public new static GSText Make(string text)
-        => new("GuildSaberText", text);
+    public GSText(string text, TMP_FontAsset font) : base("GuildSaberText", text)
+    {
+        Font = font;
+        OnReady(PatchText);
+    }
 
     public GSText Bind(ref GSText value)
     {
@@ -21,11 +21,10 @@ public class GSText : XUIText
     }
 
     public void PatchText(CText text) => PatchText(text.GetComponentInChildren<TextMeshProUGUI>());
-
-    public void PatchText(TextMeshProUGUI text) => text.font = Resources.TekoFont;
+    public void PatchText(TextMeshProUGUI text) => text.font = Font;
 
     ////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
 
     public new GSText SetMargins(float left, float top, float right, float bottom)
     {

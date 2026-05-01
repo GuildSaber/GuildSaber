@@ -1,10 +1,25 @@
+using TMPro;
 using UnityEngine;
 
 namespace GuildSaber.Mod.Core.PlayerCard;
 
-public record PlayerCardResources(
-    Sprite BorderSprite,
-    Material BorderMaterial,
-    Texture2D DownArrowTexture,
-    Texture2D GsWhiteLogoTexture
-);
+public class PlayerCardResources : MonoBehaviour
+{
+    public void SetValues(Sprite borderSprite, Material borderMaterial, Texture2D downArrowTexture,
+        Texture2D gsWhiteLogoTexture, TMP_FontAsset tekoFont)
+    {
+        BorderSprite = borderSprite;
+        BorderMaterial = borderMaterial;
+        DownArrowTexture = downArrowTexture;
+        GsWhiteLogoTexture = gsWhiteLogoTexture;
+        TekoFont = tekoFont;
+    }
+
+    public TMP_FontAsset TekoFont = null!;
+    public Sprite BorderSprite = null!;
+    public Material BorderMaterial = null!;
+
+
+    public Texture2D DownArrowTexture = null!;
+    public Texture2D GsWhiteLogoTexture = null!;
+};
