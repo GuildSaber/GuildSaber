@@ -29,7 +29,7 @@ using Logger = IPA.Logging.Logger;
 
 namespace GuildSaber.Mod.Core.PlayerCard.UI;
 
-internal class PlayerCardView : ViewController<PlayerCardView>
+public class PlayerCardView : ViewController<PlayerCardView>
 {
     public enum EDisplayMode
     {
@@ -185,10 +185,11 @@ internal class PlayerCardView : ViewController<PlayerCardView>
             .OnReady(x => x.CSizeFitter.verticalFit =
                 x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained)
             .BuildUI(transform);
-
-        DontDestroyOnLoad(transform.gameObject);
+        
+        
+        // So the component persists when scene changes.
         DontDestroyOnLoad(transform.parent.gameObject);
-
+        
         _timeControl.EventChange += OnTimeChanged;
         Logic.OnSceneChange += OnSceneChanged;
         _cardFloatingScreen.HandleReleased += (ix, x) =>
@@ -249,7 +250,7 @@ internal class PlayerCardView : ViewController<PlayerCardView>
         }
 
         _config.PlayerCard.GuildId = x.Guild.Id;
-        _guildSaberManager.SelectGuild(x.Guild.Id, x.Contexts.First().Id);
+        _guildSaberManager.SetGuild(x);
 
         SetGuild(new GuildId(_config.PlayerCard.GuildId), UpdatePlayer);
     }

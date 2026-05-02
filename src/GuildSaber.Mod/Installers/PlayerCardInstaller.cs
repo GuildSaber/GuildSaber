@@ -1,13 +1,18 @@
 using System.Linq;
 using BeatSaberMarkupLanguage.FloatingScreen;
+using CP_SDK.XUI;
 using GuildSaber.CSharpClient;
+using GuildSaber.Mod.Configurations;
 using GuildSaber.Mod.Core;
 using GuildSaber.Mod.Core.PlayerCard;
 using GuildSaber.Mod.Core.PlayerCard.UI;
 using GuildSaber.Mod.Core.PlayerCard.UI.Settings;
 using GuildSaber.Mod.Core.Time;
+using GuildSaber.Mod.Core.UI;
+using GuildSaber.Mod.Core.UI.RankedMap;
 using GuildSaber.Mod.Resources;
 using HMUI;
+using IPA.Utilities;
 using SiraUtil.Logging;
 using TMPro;
 using UnityEngine;
@@ -15,12 +20,42 @@ using Zenject;
 
 namespace GuildSaber.Mod.Installers;
 
-public class PlayerCardInstaller(GuildSaberManager guildSaberManager, GuildSaberClient client, SiraLog logger) : Installer
+public class PlayerCardInstaller(GuildSaberClient client, SiraLog logger) : Installer
 {
+    public static void testMethod(StandardLevelDetailView view)
+    {
+        foreach (var x in MapRankedStat.Shitpoost)
+        {
+            //x.BeatmapDifficultyChanged(view);
+        }
+    }
+    
+    public class MapRankedStatFactory(
+        [Inject] SiraLog logger, [Inject] ModData modData, [Inject] UIFactory uiFactory, [Inject] PluginConfig config) 
+        : IFactory<MapRankedStat>
+    {
+        public MapRankedStat Create()
+        {
+            var standardLevelDetailView = UnityEngine.Resources.FindObjectsOfTypeAll<StandardLevelDetailView>().First();
+            var levelParamsPanel = standardLevelDetailView.GetField<LevelParamsPanel, StandardLevelDetailView>("_levelParamsPanel");
+            var standardLevelDetailViewController =
+                UnityEngine.Resources.FindObjectsOfTypeAll<StandardLevelDetailViewController>().First();
+            
+            var mapRankedStat = new MapRankedStat(modData, uiFactory, config, logger);
+            standardLevelDetailViewController.didChangeContentEvent += mapRankedStat.BeatmapDifficultyChanged;
+            mapRankedStat.BuildUI(levelParamsPanel.GetComponent<RectTransform>());
+        
+            
+            
+            return mapRankedStat;
+        }
+    }
+    
     internal class PlayerCardResourcesFactory(
         [Inject(Id = nameof(ResourceMap.DownArrow))] Texture2D downArrowTexture,
         [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture,
-        [Inject] ModData modData)
+        [Inject] ModData modData
+        )
         : IFactory<PlayerCardResources>
     {
         public PlayerCardResources Create()
@@ -37,8 +72,6 @@ public class PlayerCardInstaller(GuildSaberManager guildSaberManager, GuildSaber
                 gsWhiteLogoTexture: gsWhiteLogoTexture,
                 tekoFont: UnityEngine.Resources.FindObjectsOfTypeAll<TextMeshProUGUI>().Where(x => x.font.name.Contains("Teko-Medium")).ElementAt(1).font
             );
-            
-            UnityEngine.Object.DontDestroyOnLoad(resources);
                 
             modData.CardResources = resources;
             return resources;
@@ -50,8 +83,7 @@ public class PlayerCardInstaller(GuildSaberManager guildSaberManager, GuildSaber
         logger.Info($"Client base api uri: {client.HttpClient.BaseAddress}");
         logger.Info($"Client user agent: {client.HttpClient.DefaultRequestHeaders.UserAgent}");
 
-        if (guildSaberManager.Initialized) return;
-        
+        Container.Bind<MapRankedStat>().FromFactory<MapRankedStatFactory>().AsSingle().NonLazy();
         Container.Bind<PlayerCardResources>().FromFactory<PlayerCardResourcesFactory>().AsSingle();
         Container.Bind<TimeController>().FromNewComponentOnNewGameObject().AsSingle();
         Container.Bind<FloatingScreen>()

@@ -27,7 +27,7 @@ public class GuildSelectionFlowCoordinator : CustomFlowCoordinator
 
     public void Dismiss(GuildResponses.GuildExtended guildExtended)
     {
-        _guildSaberManager.SelectGuild(guildExtended.Guild.Id, guildExtended.Contexts[0].Id);
+        _guildSaberManager.SetGuild(guildExtended);
         DismissCallback?.Invoke(guildExtended);
         Dismiss();
     }

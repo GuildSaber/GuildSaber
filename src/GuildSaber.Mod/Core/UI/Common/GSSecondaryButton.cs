@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Threading.Tasks;
 using CP_SDK.UI.Components;
 using CP_SDK.XUI;
-using System.Threading.Tasks;
 using GuildSaber.Mod.Core.UI.Extensions;
 using GuildSaber.Mod.Core.UI.Utils;
 using TMPro;
@@ -11,9 +11,9 @@ namespace GuildSaber.Mod.Core.UI.Common;
 
 public class GSSecondaryButton : XUISecondaryButton
 {
+    protected readonly TMP_FontAsset Font;
     private int _height;
     private int _width;
-    protected readonly TMP_FontAsset Font;
 
     public GSSecondaryButton(string label, TMP_FontAsset font, Action? onClick = null)
         : base("GuildSaberSecondaryButton", label, onClick)
@@ -65,11 +65,10 @@ public class GSSecondaryButton : XUISecondaryButton
         for (var y = 0; y < texture.height; y++)
             texture.SetPixel(x, y, Color.white);
 
-        var newTexture = await TextureUtils.CreateRoundedTextureAsync(texture, 10);
-        //await Utils.TextureUtils.Gradient(l_Tex, new Color(1, 1, 1, 0.7f), new Color(1f, 1f, 1f, 1), p_UseAlpha: true)
+        await TextureUtils.RoundTextureAsync(texture, 10);
 
         return Sprite.Create(
-            newTexture,
+            texture,
             new Rect(0, 0, texture.width, texture.height),
             pivot: new Vector2(0, 0),
             pixelsPerUnit: 1000,

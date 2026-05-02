@@ -10,8 +10,7 @@ namespace GuildSaber.Mod.Core.PlayerCard;
 internal class PlayerCardManager(
     GuildSaberManager manager,
     PlayerCardView playerCardView,
-    [Inject(Id = Constants.CardFloatingPanelId)]
-    FloatingScreen cardFloatingScreen,
+    [Inject(Id = Constants.CardFloatingPanelId)] FloatingScreen cardFloatingScreen,
     SiraLog logger
 ) : IInitializable
 {
@@ -26,6 +25,9 @@ internal class PlayerCardManager(
 
         cardFloatingScreen.name = "PlayerCardFloatingScreen";
         cardFloatingScreen.SetRootViewController(playerCardView, ViewController.AnimationType.In);
+        
+        // In case GuildSaberManager is already initialized before PlayerCardManager, we directly refresh the card.
+        playerCardView.RefreshCard();
     }
 
     private void OnPlayerIdFetched(PlayerId? playerId)

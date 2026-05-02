@@ -123,6 +123,12 @@ internal static class TextureUtils
         return result;
     }
 
+    public static async Task RoundTextureAsync(Texture2D self, float radius)
+    {
+        await Task.Run(() => RoundTexture(self, radius));
+        self.Apply();
+    }
+
     public static void RoundTexture(Texture2D self, float radius)
     {
         for (var corner = 0; corner < 4; corner++)
@@ -162,14 +168,6 @@ internal static class TextureUtils
 
             self.SetPixel((int)newX, (int)newY, pixelColor.ColorWithAlpha(1));
         }
-    }
-
-    public static async Task<Texture2D> CreateRoundedTextureAsync(Texture2D origin, float radius)
-    {
-        var texture = origin.GetCopy();
-        await Task.Run(() => RoundTexture(texture, radius));
-        texture.Apply();
-        return texture;
     }
 
     public static Texture2D GetCopy(this Texture2D texture)

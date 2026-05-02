@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using GuildSaber.Common.StrongTypes;
 using IPA.Config.Stores;
 using UnityEngine;
 
@@ -6,7 +7,7 @@ using UnityEngine;
 
 namespace GuildSaber.Mod.Configurations;
 
-internal class PluginConfig
+public class PluginConfig
 {
     public bool Enabled { get; init; } = true;
     public ApiEnv ApiEnv { get; init; } = ApiEnv.Dev;
@@ -16,7 +17,7 @@ internal class PluginConfig
     public PluginConfig Default() => new();
 }
 
-internal class CardConfig
+public class CardConfig
 {
     public CardColors ColorSettings = new(false, false, Color.white, Color.white, Color.white);
 
@@ -35,10 +36,10 @@ internal class CardConfig
 
     public bool CategoryLevelViewEnabled { get; set; } = true;
 
-    public int GuildId { get; set; } = -1;
+    public GuildId GuildId { get; set; } = new GuildId(-1);
 }
 
-internal class TimeConfig
+public class TimeConfig
 {
     public long PlayDurationSec { get; set; } = 0;
     public int Day { get; set; } = -1;
@@ -47,7 +48,7 @@ internal class TimeConfig
 /// <summary>
 /// Card positions and rotations depending on the context (in menu or in song)
 /// </summary>
-internal record struct CardTransforms(
+public record struct CardTransforms(
     CardTransform Menu,
     CardTransform InSong
 );
@@ -55,12 +56,12 @@ internal record struct CardTransforms(
 /// <summary>
 /// Card position and rotation
 /// </summary>
-internal record struct CardTransform(
+public record struct CardTransform(
     Vector3 Position,
     Quaternion Rotation
 );
 
-internal record struct CardColors(
+public record struct CardColors(
     bool UseCustomColors,
     bool UseGradient,
     Color MainCardColor,

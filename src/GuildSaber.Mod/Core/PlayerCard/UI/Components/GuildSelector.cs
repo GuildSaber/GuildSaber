@@ -1,27 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using CP_SDK.UI.Components;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.Mod.Core.UI.Guild;
 using GuildSaber.Mod.Core.UI.Utils;
-using GuildSaber.Mod.Resources;
 using UnityEngine;
-using Zenject;
 
 namespace GuildSaber.Mod.Core.PlayerCard.UI.Components;
 
 public class GuildSelector : XUIHLayout
 {
+    private readonly Texture2D _downArrowTexture;
+    private readonly ModData _guildSaberData;
+    private readonly GuildSaberManager _guildSaberManager;
     private readonly GuildSelectionFlowCoordinator _guildSelectionFlowCoordinator;
     private readonly Texture2D _whiteLogoTexture;
-    private readonly Texture2D _downArrowTexture;
-    private readonly GuildSaberManager _guildSaberManager;
-    
+
     protected XUIIconButton ArrowButton = null!;
-    private readonly ModData _guildSaberData;
 
     ///////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
@@ -30,6 +29,18 @@ public class GuildSelector : XUIHLayout
     protected GuildIconButton Guild2 = null!;
 
     protected Action<GuildResponses.GuildExtended> OnGuildSelected = null!;
+
+    public GuildSelector(
+        GuildSelectorParams selectorParams)
+        : base("GuildSelector")
+    {
+        _whiteLogoTexture = selectorParams.WhiteArrowTexture;
+        _downArrowTexture = selectorParams.DownArrowTexture;
+        _guildSelectionFlowCoordinator = selectorParams.GuildSelectionFlowCoordinator;
+        _guildSaberData = selectorParams.ModData;
+        _guildSaberManager = selectorParams.GuildSaberManager;
+        OnReady(OnCreation);
+    }
 
 
     public readonly record struct GuildSelectorParams(
@@ -40,37 +51,20 @@ public class GuildSelector : XUIHLayout
         GuildSaberManager GuildSaberManager
     );
 
-    public GuildSelector(
-        GuildSelectorParams selectorParams)
-        : base("GuildSelector", [])
-    {
-        _whiteLogoTexture = selectorParams.WhiteArrowTexture;
-        _downArrowTexture = selectorParams.DownArrowTexture;
-        _guildSelectionFlowCoordinator = selectorParams.GuildSelectionFlowCoordinator;
-        _guildSaberData = selectorParams.ModData;
-        _guildSaberManager = selectorParams.GuildSaberManager;
-        OnReady(OnCreation);
-    }
 
-    
-    
     public class GuildIconButton : XUIIconButton
     {
+        private readonly ModData _guildSaberData;
         private readonly List<Action<GuildId>> _onGuildSelected = [];
         private readonly Texture2D _whiteLogo;
-        private ModData _guildSaberData;
 
         //////////////////////////////////////////////////////
         /////////////////////////////////////////////////////
 
         private GuildId _guildID;
 
-        public static GuildIconButton
-            Make(ModData guildSaberData, Texture2D whiteLogo, Action<GuildId>? onGuildSelected) =>
-            new(guildSaberData, whiteLogo, onGuildSelected);
-
         public GuildIconButton(ModData guildSaberData, Texture2D whiteLogo, Action<GuildId>? onGuildSelected) :
-            base("GuildIconButton", null, null)
+            base("GuildIconButton", null)
         {
             _whiteLogo = whiteLogo;
 
@@ -81,11 +75,12 @@ public class GuildSelector : XUIHLayout
             _guildSaberData = guildSaberData;
             SetSprite(sprite);
             OnClick(OnButtonClicked);
-            if (onGuildSelected != null)
-            {
-                OnGuildSelected(onGuildSelected);
-            }
+            if (onGuildSelected != null) OnGuildSelected(onGuildSelected);
         }
+
+        public static GuildIconButton
+            Make(ModData guildSaberData, Texture2D whiteLogo, Action<GuildId>? onGuildSelected) =>
+            new(guildSaberData, whiteLogo, onGuildSelected);
 
 
         //////////////////////////////////////////////////////
@@ -94,16 +89,16 @@ public class GuildSelector : XUIHLayout
         public async void SetGuild(GuildId guildId)
         {
             SetActive(true);
-            
+
             _guildID = guildId;
 
             var guildLogo = await _guildSaberData.GetGuildLogo(guildId);
             if (guildLogo == null)
                 return;
 
-            var roundedLogo = await TextureUtils.CreateRoundedTextureAsync(guildLogo, guildLogo.width * 0.1f);
+            await TextureUtils.RoundTextureAsync(guildLogo, guildLogo.width * 0.1f);
 
-            SetSprite(Sprite.Create(roundedLogo, new Rect(0, 0, roundedLogo.width, roundedLogo.height), Vector2.zero));
+            SetSprite(Sprite.Create(guildLogo, new Rect(0, 0, guildLogo.width, guildLogo.height), Vector2.zero));
             SetWidth(8);
             SetHeight(8);
         }
@@ -170,13 +165,13 @@ public class GuildSelector : XUIHLayout
             Guild1.SetGuild(_guildSaberData.Guilds[0].Guild.Id);
         else
             Guild1.SetActive(false);
-        
+
         if (_guildSaberData.Guilds.Count >= 2)
             Guild2.SetGuild(_guildSaberData.Guilds[1].Guild.Id);
         else
             Guild2.SetActive(false);
     }
-    
+
     private void OnIconGuildSelected(GuildId guildId)
     {
         var guild = _guildSaberData.GetGuild(guildId);

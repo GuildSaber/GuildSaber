@@ -9,13 +9,14 @@ using GuildSaber.Api.Features.Guilds.Members.LevelStats;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
+using GuildSaber.Mod.Configurations;
 using SiraUtil.Logging;
 using Zenject;
 
 namespace GuildSaber.Mod.Core;
 
 [SuppressMessage("ReSharper", "AsyncVoidMethod")]
-public class GuildSaberManager(GuildSaberClient client, SiraLog logger, ModData modData) : IInitializable
+public class GuildSaberManager(GuildSaberClient client, SiraLog logger, ModData modData, PluginConfig config) : IInitializable
 {
     public bool Initialized = false;
     
@@ -87,15 +88,30 @@ public class GuildSaberManager(GuildSaberClient client, SiraLog logger, ModData 
 
         modData.Guilds = guilds;
 
-        SelectGuild(modData.Guilds[0].Guild.Id, modData.Guilds[0].Contexts[0].Id);
+        var selectedGuildArray 
+            = modData.Guilds.Where(x => x.Guild.Id == config.PlayerCard.GuildId);
 
         
+        if (!selectedGuildArray.Any())
+        {
+            config.PlayerCard.GuildId = modData.Guilds[0].Guild.Id;
+            selectedGuildArray = [guilds.First()];
+        }
+        
+        SelectGuild(config.PlayerCard.GuildId, selectedGuildArray.First().Contexts[0].Id);
     }
 
     //public event Action<PlayerId?> OnPlayerIdFetched = _ => { };
     public event Action<string> OnInitializationError = _ => { };
     public event Action OnInitializationFinished = () => { };
 
+    public void SetGuild(GuildResponses.GuildExtended guild)
+    {
+        config.PlayerCard.GuildId = guild.Guild.Id;
+        
+        SelectGuild(guild.Guild.Id, guild.Contexts[0].Id);
+    }
+    
     public async void SelectGuild(GuildId guildId, ContextId contextId)
     {
         if (modData.Player == null) return;
