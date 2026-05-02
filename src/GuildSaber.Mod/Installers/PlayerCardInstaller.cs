@@ -15,7 +15,7 @@ using Zenject;
 
 namespace GuildSaber.Mod.Installers;
 
-public class PlayerCardInstaller(GuildSaberClient client, SiraLog logger) : Installer
+public class PlayerCardInstaller(GuildSaberManager guildSaberManager, GuildSaberClient client, SiraLog logger) : Installer
 {
     internal class PlayerCardResourcesFactory(
         [Inject(Id = nameof(ResourceMap.DownArrow))] Texture2D downArrowTexture,
@@ -50,13 +50,15 @@ public class PlayerCardInstaller(GuildSaberClient client, SiraLog logger) : Inst
         logger.Info($"Client base api uri: {client.HttpClient.BaseAddress}");
         logger.Info($"Client user agent: {client.HttpClient.DefaultRequestHeaders.UserAgent}");
 
+        if (guildSaberManager.Initialized) return;
+        
         Container.Bind<PlayerCardResources>().FromFactory<PlayerCardResourcesFactory>().AsSingle();
         Container.Bind<TimeController>().FromNewComponentOnNewGameObject().AsSingle();
         Container.Bind<FloatingScreen>()
             .WithId(Constants.CardFloatingPanelId)
             .FromMethod
             (() => FloatingScreen.CreateFloatingScreen(
-                screenSize: new Vector2(10, 10),
+                screenSize: new Vector2(50, 20),
                 createHandle: false,
                 position: Vector3.zero,
                 rotation: Quaternion.Euler(Vector3.zero)))

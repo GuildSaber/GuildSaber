@@ -10,6 +10,7 @@ using GuildSaber.Api.Features.Players;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Core.PlayerCard;
+using GuildSaber.Mod.Core.UI.Utils;
 using UnityEngine;
 using Zenject;
 
@@ -22,19 +23,40 @@ public class ModData
     public PlayerCardResources CardResources = null!;
 
     protected readonly Dictionary<int, CategoryResponses.Category[]> CategoriesCache = new();
-
+    protected readonly Dictionary<GuildId, Texture2D> GuildIconCache = new();
+    
     public List<GuildResponses.GuildExtended> Guilds = [];
     public PlayerResponses.PlayerExtended? Player = null!;
     public LevelStatResponses.MemberLevelStat[] PlayerLevels = null!;
     public ContextStatResponses.SimplePointWithRank[] PlayerPoints = null!;
+    public CategoryResponses.Category[] Categories = null!;
     public Color CardUsedColor = Color.white;
 
     public GuildResponses.GuildExtended? GetGuild(GuildId id)
         => Guilds.FirstOrDefault(x => x.Guild.Id == id);
 
-    public Texture2D GetGuildLogo(int id) =>
-        //var l_Res = await _client.Guilds.GetExtendedByIdAsync(new GuildId(id));
-        CardResources.GsWhiteLogoTexture;
+    public async Task<Texture2D> GetGuildLogo(GuildId id)
+    {
+        if (GuildIconCache.ContainsKey(id))
+        {
+            var found = GuildIconCache.TryFind(id);
+            if (found.HasValue)
+                return found.Value;
+
+            GuildIconCache.Remove(id);
+        }
+        
+        var guildUri = Client.Guilds.GetLogoUrl(id);
+
+        var guildLogo = await TextureUtils.FetchImageFromUrl(guildUri.AbsoluteUri, CardResources);
+        if (guildLogo != null)
+        {
+            GuildIconCache.Add(id, guildLogo);
+            return guildLogo;
+        }
+
+        return CardResources.GsWhiteLogoTexture;
+    }
 
     public async Task<CategoryResponses.Category[]> GetAllCategories(GuildId guildId)
     {

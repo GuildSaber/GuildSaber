@@ -31,7 +31,7 @@ public class ResourcesInstaller(Logger logger) : Installer
             }).AsCached();
     }
 
-    private static Texture2D LoadTexture2DFromResource(string resourcePath, Logger logger)
+    public static Texture2D LoadTexture2DFromResource(string resourcePath, Logger logger)
     {
         logger.Debug($"[{nameof(ResourcesInstaller)}/{nameof(LoadTexture2DFromResource)}] " +
                      $"Loading Texture2D from resource: {resourcePath}");

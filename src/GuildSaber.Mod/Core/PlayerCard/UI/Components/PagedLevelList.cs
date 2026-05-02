@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using CP_SDK.XUI;
+using GuildSaber.Api.Features.Guilds.Categories;
 using GuildSaber.Api.Features.Guilds.Levels;
 using GuildSaber.Api.Features.Guilds.Members.LevelStats;
 using GuildSaber.Mod.Core.UI;
@@ -10,22 +12,24 @@ namespace GuildSaber.Mod.Core.PlayerCard.UI.Components;
 
 public class PagedLevelList : XUIVLayout
 {
-    private static readonly int LevelsCountByPage = 5;
+    private static readonly int LevelsCountByPage = 4;
 
     private int _maxPage;
     private ModData _modData = null!;
     private int _page;
     private readonly List<GSText> _levels = [];
-
+    private int _totalLevelCount = 0;
+        
     private GSSecondaryButton _pageLeftButton = null!;
     private GSSecondaryButton _pageRightButton = null!;
     private XUIGLayout _playerLevelsContainer = null!;
 
     private readonly UIFactory _uiFactory;
 
-    public PagedLevelList(UIFactory factory) : base("PagedLevelList", [])
+    public PagedLevelList(UIFactory factory, ModData modData) : base("PagedLevelList", [])
     {
         _uiFactory = factory;
+        _modData = modData;
 
         OnReady(x =>
         {
@@ -47,7 +51,7 @@ public class PagedLevelList : XUIVLayout
         });
     }
 
-    public static PagedLevelList Make(UIFactory factory) => new(factory);
+    public static PagedLevelList Make(UIFactory factory, ModData modData) => new(factory, modData); 
 
     public PagedLevelList Bind(ref PagedLevelList target)
     {
@@ -58,8 +62,7 @@ public class PagedLevelList : XUIVLayout
     public void Refresh(ModData targetData)
     {
         _modData = targetData;
-
-        _maxPage = _modData.PlayerLevels.Length / LevelsCountByPage;
+        
         _page = 0;
 
         Refresh();
@@ -84,17 +87,56 @@ public class PagedLevelList : XUIVLayout
 
         var page = _page;
 
-        var allCategories = _modData.PlayerLevels;
-        var displayedCategories = new List<LevelStatResponses.MemberLevelStat>();
-        for (var l_i = 0; l_i < allCategories.Length; l_i++)
-            if (l_i >= LevelsCountByPage * page && l_i < LevelsCountByPage * (page + 1))
-                displayedCategories.Add(allCategories[l_i]);
+        LevelStatResponses.MemberLevelStat[] allLevels = [];
+        CategoryResponses.Category[] allCategories = _modData.Categories;
+        
+        foreach (var category in _modData.Categories)
+        {
+            var levelArray = _modData.PlayerLevels.Where(x => 
+                (x.Level.CategoryId == category.Id) && (x.Level.CategoryId != null) && x.IsCompleted);
+            
+            LevelStatResponses.MemberLevelStat? toAppend = null;
+            
+            if (levelArray.Any())
+            {
+                toAppend = levelArray.Last();
+            }
+            else
+            {
+                levelArray = allLevels.Where(x => x.Level.CategoryId == category.Id);
 
-        for (var i = 0; i < displayedCategories.Count; i++)
+                if (levelArray.Any())
+                {
+                    toAppend = levelArray.First();
+                }
+            }
+
+            if (toAppend != null)
+            {
+                allLevels = allLevels.Append(toAppend).ToArray();
+            }
+            else
+            {
+                allCategories = allCategories.Where(x => x.Id != category.Id).ToArray();
+            }
+        }
+
+        _totalLevelCount = allLevels.Length;
+        _maxPage = _totalLevelCount / LevelsCountByPage;
+        
+        var displayedLevels = new List<LevelStatResponses.MemberLevelStat>();
+        var displayedCategories = new List<CategoryResponses.Category>();
+        for (var i = 0; i < allLevels.Length; i++)
+            if (i >= LevelsCountByPage * page && i < LevelsCountByPage * (page + 1))
+            {
+                displayedLevels.Add(allLevels[i]);
+                displayedCategories.Add(allCategories[i]);
+            }
+
+        for (var i = 0; i < displayedLevels.Count; i++)
         {
             
-            
-            var category = displayedCategories[i];
+            var category = displayedLevels[i];
             if (category == null)
             {
                 //Logger.Instance.Error($"Could not get category with id {l_DisplayedCategories[l_i].CategoryID}");
@@ -102,17 +144,11 @@ public class PagedLevelList : XUIVLayout
                 continue;
             }
 
-            if (category.Level is not LevelResponses.Level.RankedMapListLevel)
-            {
-                _levels[i].SetActive(false);
-                continue;
-            }
-
-            _levels[i].SetText($"{displayedCategories[i].Level.Info.Name}\n{displayedCategories[i].Level.Order}");
+            _levels[i].SetText($"{displayedCategories[i].Info.Name}\n{displayedLevels[i].Level.Order}");
         }
 
-        _pageLeftButton.SetActive(_modData.PlayerLevels.Length > LevelsCountByPage && _page != 0);
-        _pageRightButton.SetActive(_modData.PlayerLevels.Length > LevelsCountByPage * (_page + 1));
+        _pageLeftButton.SetActive(_totalLevelCount > LevelsCountByPage && _page != 0);
+        _pageRightButton.SetActive(_totalLevelCount > LevelsCountByPage * (_page + 1));
     }
 
     public void PageLeft()
@@ -125,7 +161,7 @@ public class PagedLevelList : XUIVLayout
     public void PageRight()
     {
         if (_page < _maxPage) _page++;
-
+        
         Refresh();
     }
 

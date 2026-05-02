@@ -28,30 +28,34 @@ public class PointList : XUIVLayout
         return this;
     }
 
-    public void Refresh(ModData modData) => _modData = modData;
+    public void Refresh(ModData modData)
+    {
+        _modData = modData;
+        Refresh();
+    }
 
     public void Refresh()
     {
-        var l_Points = _modData.PlayerPoints;
+        var points = _modData.PlayerPoints;
 
-        //Logger.Instance.Info(l_Points.Count.ToString());
-        foreach (var l_Item in _pointTexts)
-            l_Item.SetActive(false);
+        //Logger.Instance.Info(points.Count.ToString());
+        foreach (var item in _pointTexts)
+            item.SetActive(false);
 
-        for (var l_i = 0; l_i < l_Points.Count(); l_i++)
+        for (var i = 0; i < points.Count(); i++)
         {
-            if (_pointTexts.Count - 1 < l_i)
+            if (_pointTexts.Count - 1 < i)
             {
-                var l_Point = _uiFactory.Text("");
-                l_Point.BuildUI(Element.transform);
-                _pointTexts.Add(l_Point);
+                var pointText = _uiFactory.Text("");
+                pointText.BuildUI(Element.transform);
+                _pointTexts.Add(pointText);
             }
 
-            var point = l_Points.ElementAt(l_i);
+            var point = points.ElementAt(i);
             var htmlColor = ColorUtility.ToHtmlStringRGB(_modData.CardUsedColor);
-            _pointTexts[l_i].SetText($"<color=#{htmlColor}>{point.Name}</color>#<color=#{htmlColor}>{point.Rank:0}</color>");
+            _pointTexts[i].SetText($"<color=#{htmlColor}>{point.Name}</color>#<color=#{htmlColor}>{point.Rank:0}</color>");
 
-            _pointTexts[l_i].SetActive(true);
+            _pointTexts[i].SetActive(true);
         }
     }
 }

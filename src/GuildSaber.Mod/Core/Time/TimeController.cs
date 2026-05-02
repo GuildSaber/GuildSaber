@@ -14,16 +14,16 @@ public class TimeController : MonoBehaviour
 
     private DateTime _currentTime = new(2026, 4, 17, 10, 7, 37);
 
-    private float LastSaveTime;
+    private float _lastSaveTime;
 
     //////////////////////////////////////////////////////
     /////////////////////////////////////////////////////
 
-    private long LastSessionTime;
+    private long _lastSessionTime;
 
-    private float LastTime;
+    private float _lastTime;
 
-    private float TimeToRemove;
+    private float _timeToRemove;
 
     //////////////////////////////////////////////////////
     /////////////////////////////////////////////////////
@@ -32,23 +32,25 @@ public class TimeController : MonoBehaviour
     {
         _currentTime = DateTime.Now;
 
-        ref var l_TimeData = ref _config.PlayerCard.TimeData;
-        if (l_TimeData.Day == -1)
+        ref var timeData = ref _config.PlayerCard.TimeData;
+        if (timeData.Day == -1)
         {
-            l_TimeData.Day = _currentTime.Day;
-            l_TimeData.PlayDurationSec = 0;
+            timeData.Day = _currentTime.Day;
+            timeData.PlayDurationSec = 0;
             return;
         }
 
-        if (l_TimeData.Day == _currentTime.Day)
+        if (timeData.Day == _currentTime.Day)
         {
-            LastSessionTime = l_TimeData.PlayDurationSec;
+            _lastSessionTime = timeData.PlayDurationSec;
         }
         else
         {
-            l_TimeData.Day = _currentTime.Day;
-            l_TimeData.PlayDurationSec = 0;
+            timeData.Day = _currentTime.Day;
+            timeData.PlayDurationSec = 0;
         }
+        
+        //GameObject.DontDestroyOnLoad(this);
     }
 
     //////////////////////////////////////////////////////
@@ -56,8 +58,8 @@ public class TimeController : MonoBehaviour
 
     public void Reset()
     {
-        TimeToRemove = UnityEngine.Time.realtimeSinceStartup + LastSessionTime;
-        LastTime = 0;
+        _timeToRemove = UnityEngine.Time.realtimeSinceStartup + _lastSessionTime;
+        _lastTime = 0;
     }
 
     //////////////////////////////////////////////////////
@@ -65,23 +67,23 @@ public class TimeController : MonoBehaviour
 
     public void Update()
     {
-        var l_Time = UnityEngine.Time.realtimeSinceStartup + LastSessionTime - TimeToRemove;
-        if (l_Time - LastTime < 1) return;
+        var time = UnityEngine.Time.realtimeSinceStartup + _lastSessionTime - _timeToRemove;
+        if (time - _lastTime < 1) return;
 
-        var l_Hours = (int)(l_Time / 3600);
-        var l_Minutes = (int)(l_Time / 60) - l_Hours * 60;
-        var l_Seconds = (int)(l_Time - l_Hours * 3600 - l_Minutes * 60);
+        var hours = (int)(time / 3600);
+        var minutes = (int)(time / 60) - hours * 60;
+        var seconds = (int)(time - hours * 3600 - minutes * 60);
 
-        EventChange?.Invoke(l_Hours, l_Minutes, l_Seconds);
+        EventChange?.Invoke(hours, minutes, seconds);
 
-        LastTime = l_Time;
+        _lastTime = time;
 
         // ReSharper disable once CompareOfFloatsByEqualityOperator
-        if ((float)l_Seconds / 20 == l_Seconds / 20)
+        if ((float)seconds / 20 == seconds / 20)
         {
             _config.PlayerCard.TimeData.PlayDurationSec +=
-                (int)UnityEngine.Time.realtimeSinceStartup - (int)LastSaveTime - (int)TimeToRemove;
-            LastSaveTime = (int)UnityEngine.Time.realtimeSinceStartup - TimeToRemove;
+                (int)UnityEngine.Time.realtimeSinceStartup - (int)_lastSaveTime - (int)_timeToRemove;
+            _lastSaveTime = (int)UnityEngine.Time.realtimeSinceStartup - _timeToRemove;
         }
     }
 

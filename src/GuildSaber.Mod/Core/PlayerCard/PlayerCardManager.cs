@@ -8,17 +8,22 @@ using Zenject;
 namespace GuildSaber.Mod.Core.PlayerCard;
 
 internal class PlayerCardManager(
-    GuildSaberManager manager, 
+    GuildSaberManager manager,
     PlayerCardView playerCardView,
-    [Inject(Id = Constants.CardFloatingPanelId)] FloatingScreen cardFloatingScreen,
+    [Inject(Id = Constants.CardFloatingPanelId)]
+    FloatingScreen cardFloatingScreen,
     SiraLog logger
-    ) : IInitializable
+) : IInitializable
 {
     public void Initialize()
     {
-        manager.OnInitializationError += error => { logger.Warn($"GuildSaberManager initialization error: {error}"); };
-        manager.OnInitializationFinished += () => { playerCardView.RefreshCard(); };
-        
+        manager.OnInitializationError += error =>
+        {
+            logger.Warn($"GuildSaberManager initialization error: {error}");
+            playerCardView.DisplayCard(PlayerCardView.EDisplayMode.Error);
+        };
+        manager.OnInitializationFinished += playerCardView.RefreshCard;
+
         cardFloatingScreen.name = "PlayerCardFloatingScreen";
         cardFloatingScreen.SetRootViewController(playerCardView, ViewController.AnimationType.In);
     }

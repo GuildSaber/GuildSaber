@@ -15,9 +15,6 @@ internal class AppInstaller(PluginConfig config) : Installer
     public override void InstallBindings()
     {
         Container.BindInstance(config);
-        Container.Bind<GuildSaberClient>().FromFactory<GuildSaberClientFactory>().AsSingle();
-        Container.Bind<ModData>().AsSingle();
-        Container.BindInterfacesAndSelfTo<GuildSaberManager>().AsSingle();
         Container.Bind<PlayerCardSettingsMainView>().FromNewComponentAsViewController().AsSingle();
         Container.Bind<GuildSelectionViewController>().FromNewComponentAsViewController().AsSingle();
         Container.Bind<GuildSelectionFlowCoordinator>()
@@ -27,14 +24,3 @@ internal class AppInstaller(PluginConfig config) : Installer
     }
 }
 
-internal class GuildSaberClientFactory(PluginConfig config, SiraLog logger) : IFactory<GuildSaberClient>
-{
-    public GuildSaberClient Create()
-    {
-        var apiUri = config.ApiEnv.ToApiUri;
-        var cdnUri = config.ApiEnv.ToCdnUri;
-        logger.Debug($"Creating GuildSaberClient for: {apiUri}, CDN: {cdnUri}");
-
-        return new GuildSaberClient(apiUri, cdnUri, authentication: null);
-    }
-}

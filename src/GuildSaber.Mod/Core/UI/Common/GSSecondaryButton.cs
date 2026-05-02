@@ -48,9 +48,9 @@ public class GSSecondaryButton : XUISecondaryButton
         button.SetWidth(width);
         button.SetHeight(height);
 
-        var l_Sprite = await GetBackground(width, height);
+        var sprite = await GetBackground(width, height);
         button.SetBackgroundColor(color);
-        button.SetBackgroundSprite(l_Sprite);
+        button.SetBackgroundSprite(sprite);
         button.gameObject.GetComponentInChildren<TextMeshProUGUI>().font = Font;
     }
 

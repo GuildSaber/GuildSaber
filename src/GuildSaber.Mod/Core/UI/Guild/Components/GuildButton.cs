@@ -29,7 +29,7 @@ public class GuildButton : GSSecondaryButton
 
     public GuildButton(ModData guildSaberData, UIFactory uiFactory, Texture2D guildSaberWhiteLogo, TMP_FontAsset font,
         Action? onClick = null)
-        : base("GuildButton", font, onClick)
+        : base(string.Empty, font, onClick)
     {
         _guildSaberData = guildSaberData;
         _guildSaberWhiteLogo = guildSaberWhiteLogo;
@@ -79,9 +79,12 @@ public class GuildButton : GSSecondaryButton
 
         guildIcon.SetGuild(guild.Guild.Id);
 
-        var shortName = guild.Guild.Info.Name[..18];
-        if (guild.Guild.Info.Name.Length != shortName.Length) shortName += "...";
-
+        var shortName = guild.Guild.Info.Name switch
+        {
+            { Length: > 32 } val => val[..30] + "...", 
+            var val => val
+        };
+        
         _guildName.SetText(shortName);
         _currentGuild = guild;
     }

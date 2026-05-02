@@ -4,6 +4,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using BS_Utils.Gameplay;
 using GuildSaber.Api.Features.Guilds;
+using GuildSaber.Api.Features.Guilds.Levels;
+using GuildSaber.Api.Features.Guilds.Members.LevelStats;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
@@ -15,6 +17,8 @@ namespace GuildSaber.Mod.Core;
 [SuppressMessage("ReSharper", "AsyncVoidMethod")]
 public class GuildSaberManager(GuildSaberClient client, SiraLog logger, ModData modData) : IInitializable
 {
+    public bool Initialized = false;
+    
     public async void Initialize()
     {
         logger.Info("Initializing GuildSaberManager...");
@@ -54,6 +58,7 @@ public class GuildSaberManager(GuildSaberClient client, SiraLog logger, ModData 
         {
             logger.Error($"Failed to fetch extended player: {error}");
             logger.Error("Terminating");
+            OnInitializationError.Invoke(error);
             return;
         }
 
@@ -82,8 +87,8 @@ public class GuildSaberManager(GuildSaberClient client, SiraLog logger, ModData 
 
         modData.Guilds = guilds;
 
-        SelectGuild(modData.Guilds[0].Contexts[0].Id);    
-    
+        SelectGuild(modData.Guilds[0].Guild.Id, modData.Guilds[0].Contexts[0].Id);
+
         
     }
 
@@ -91,32 +96,45 @@ public class GuildSaberManager(GuildSaberClient client, SiraLog logger, ModData 
     public event Action<string> OnInitializationError = _ => { };
     public event Action OnInitializationFinished = () => { };
 
-    public async void SelectGuild(ContextId contextId)
+    public async void SelectGuild(GuildId guildId, ContextId contextId)
     {
         if (modData.Player == null) return;
 
+        var categoryResponse = await client.Categories.GetAllByGuildIdAsync(guildId);
+        if (!categoryResponse.TryGetValue(out var categories, out var error))
+        {
+            logger.Error($"Failed to fetch categories: {error}");
+            OnInitializationError.Invoke(error);
+            return;
+        }
+
+        modData.Categories = categories;
+        
         var levelsResponse = await client.LevelStats.GetByPlayerIdAsync(modData.Player.Player.Id, contextId);
-        if (!levelsResponse.TryGetValue(out var levels, out var error))
+        if (!levelsResponse.TryGetValue(out var levels, out error))
         {
             logger.Error($"Failed to fetch levels: {error}.");
+            OnInitializationError.Invoke(error);
             return;
         }
 
         if (levels == null) return;
-
+        
         modData.PlayerLevels = levels;
 
         var pointsResponse = await client.ContextStats.GetByPlayerIdAsync(modData.Player.Player.Id, contextId);
         if (!pointsResponse.TryGetValue(out var contextStats, out error))
         {
             logger.Error($"Failed to fetch context stats: {error}.");
+            OnInitializationError.Invoke(error);
             return;
         }
-
+        
         if (contextStats == null) return;
 
-        modData.PlayerPoints = contextStats.Value.SimplePointsWithRank;
-
+        modData.PlayerPoints = contextStats.Value.SimplePointsWithRank.Where(x => x.CategoryId == null).ToArray();
+        
+        Initialized = true;
         OnInitializationFinished.Invoke();
     }
 }
