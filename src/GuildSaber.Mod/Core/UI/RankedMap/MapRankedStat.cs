@@ -51,7 +51,6 @@ public class MapRankedStat : XUIVLayout
                     .SetWidth(5),
                 factory.Text(string.Empty)
                     .Bind(ref _mapLevel)
-                    .SetStyle(FontStyles.Italic)
                     .SetFontSize(4)
                     .SetAlpha(0.55f)
             ).BuildUI(x.transform);
