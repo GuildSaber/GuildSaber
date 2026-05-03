@@ -16,4 +16,7 @@ public class UIFactory(
 
     public GSSecondaryButton SecondaryButton(string text, int width, int height, Action? onClick = null)
         => new(text, width, height, font, onClick);
+
+    public GSDropdown Dropdown()
+        => new(font);
 }

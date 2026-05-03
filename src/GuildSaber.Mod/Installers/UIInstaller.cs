@@ -1,9 +1,55 @@
-﻿using GuildSaber.Mod.Core.UI;
+﻿using System.Linq;
+using GuildSaber.CSharpClient;
+using GuildSaber.Mod.Configurations;
+using GuildSaber.Mod.Core;
+using GuildSaber.Mod.Core.UI;
+using GuildSaber.Mod.Core.UI.RankedMap;
+using GuildSaber.Mod.Resources;
+using HMUI;
+using IPA.Utilities;
+using SiraUtil.Logging;
+using UnityEngine;
 using Zenject;
 
 namespace GuildSaber.Mod.Installers;
 
 public class UIInstaller : Installer
 {
-    public override void InstallBindings() => Container.Bind<UIFactory>().AsSingle();
+    public class MapRankedStatFactory(
+        [Inject] SiraLog logger,
+        [Inject] GuildSaberCache guildSaberCache,
+        [Inject] UIFactory uiFactory,
+        [Inject] PluginConfig config,
+        [Inject] GuildSaberClient client,
+        [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture
+    ) : IFactory<MapRankedStat>
+    {
+        public MapRankedStat Create()
+        {
+            var standardLevelDetailView = UnityEngine.Resources.FindObjectsOfTypeAll<StandardLevelDetailView>().First();
+            var standardLevelDetailViewController =
+                UnityEngine.Resources.FindObjectsOfTypeAll<StandardLevelDetailViewController>().First();
+            
+            var levelParamsPanel =
+                standardLevelDetailView.GetField<LevelParamsPanel, StandardLevelDetailView>("_levelParamsPanel");
+
+            var mapRankedStat = new MapRankedStat(
+                guildSaberCache, uiFactory, config, logger, client, gsWhiteLogoTexture);
+            mapRankedStat.BuildUI(levelParamsPanel.transform);
+            mapRankedStat.RTransform.offsetMin = new Vector2(0, 0);
+            var rectTransform = levelParamsPanel.GetComponent<RectTransform>();
+            rectTransform.offsetMax += new Vector2(70, 0);
+            
+            standardLevelDetailViewController.didChangeContentEvent += mapRankedStat.BeatmapContentChanged;
+            standardLevelDetailView.didChangeDifficultyBeatmapEvent += mapRankedStat.BeatmapDifficultyChanged;
+            
+            return mapRankedStat;
+        }
+    }
+    
+    public override void InstallBindings()
+    {
+        Container.Bind<MapRankedStat>().FromFactory<MapRankedStatFactory>().AsSingle().NonLazy();
+        
+    }
 }

@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using BeatSaberMarkupLanguage.FloatingScreen;
 using CP_SDK_BS.Game;
 using CP_SDK_BS.UI;
+using CP_SDK.UI.DefaultComponents;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Common.StrongTypes;
@@ -19,6 +21,7 @@ using GuildSaber.Mod.Core.UI.Guild;
 using GuildSaber.Mod.Extensions;
 using GuildSaber.Mod.Resources;
 using HMUI;
+using IPA.Config.Data;
 using SiraUtil.Logging;
 using TMPro;
 using UnityEngine;
@@ -86,8 +89,11 @@ public class PlayerCardView : ViewController<PlayerCardView>
     protected GSSecondaryButton ShowSettingsButton = null!;
     protected GSText TimeText = null!;
 
+    protected XUIDropdown ContextDropdown = null!;
+    
     protected override void OnViewCreation()
     {
+        
         XUIVLayout.Make(
                 _uiFactory.Text("Please select a guild to use the Player Card")
                     .Bind(ref GuildWarningMessageText)
@@ -101,19 +107,25 @@ public class PlayerCardView : ViewController<PlayerCardView>
                         whiteArrowTexture: _whiteLogoTexture)
                     .Bind(ref GuildSelector)
                     .SetOnGuildSelected(EventGuildSelected),
-                _uiFactory.SecondaryButton("Show settings")
-                    .Bind(ref ShowSettingsButton)
-                    .SetWidth(20)
-                    .SetHeight(5)
-                    .OnClick(DisplaySettings),
-                _uiFactory.SecondaryButton("Reset timer")
-                    .SetWidth(20)
-                    .SetHeight(5)
-                    .OnClick(ResetTimer)
+                XUIHLayout.Make(
+                    _uiFactory.SecondaryButton("Show settings")
+                        .Bind(ref ShowSettingsButton)
+                        .SetWidth(20)
+                        .SetHeight(5)
+                        .OnClick(DisplaySettings),
+                    _uiFactory.SecondaryButton("Reset timer")
+                        .SetWidth(20)
+                        .SetHeight(5)
+                        .OnClick(ResetTimer)
+                ),
+                _uiFactory.Dropdown()
+                    .Bind(ref ContextDropdown)
+                    .OnValueChanged(ContextSelected)
             )
             .Bind(ref InvalidConfigLayout)
             .BuildUI(transform);
 
+        ModalContainerRTransform.localScale *= 0.6f;
         XUIVLayout.Make(
                 _uiFactory.Text("Server unreachable.\nOr you're not registered on the website")
                     .SetColor(new Color(1, 0.5f, 0)),
@@ -258,6 +270,15 @@ public class PlayerCardView : ViewController<PlayerCardView>
         SetGuild(new GuildId(_config.PlayerCard.GuildId), UpdatePlayer);
     }
 
+    private void ContextSelected(int index, string name)
+    {
+        var contextId = _guildSaberCache.GuildsExtended.Values
+            .First(x => x.Guild.Id == _config.PlayerCard.GuildId)
+            .Contexts[index].Id;
+        
+        _guildSaberManager.SelectGuild(_config.PlayerCard.GuildId, contextId);
+    }
+
     public void RefreshCardSize(bool displayCardLevelsDetails)
     {
         var memberLevelStats = _guildSaberCache.MemberLevelStats[_config.PlayerCard.ContextId];
@@ -298,6 +319,17 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
             PlayerImage.SetSprite(Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2()));
 
+            List<string> contextNames = new List<string>();
+            var contexts = _guildSaberCache.GuildsExtended[_config.PlayerCard.GuildId].Contexts;
+            for (int x = 0; x < contexts.Length;x++) {
+                            
+                _logger.Info($"Context name: {contexts[x].Info.Name}");
+                contextNames.Add(contexts[x].Info.Name);
+            }
+            
+            ContextDropdown.SetOptions(contextNames, false);
+            ContextDropdown.SetValue(contextNames[0], false);
+            
             DisplayCard(EDisplayMode.Normal);
             LoadConfig();
             UpdatePlayer();

@@ -21,31 +21,7 @@ namespace GuildSaber.Mod.Installers;
 
 public class PlayerCardInstaller(GuildSaberClient client, SiraLog logger) : Installer
 {
-    public class MapRankedStatFactory(
-        [Inject] SiraLog logger,
-        [Inject] GuildSaberCache guildSaberCache,
-        [Inject] UIFactory uiFactory,
-        [Inject] PluginConfig config,
-        [Inject] GuildSaberClient client,
-        [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture
-    ) : IFactory<MapRankedStat>
-    {
-        public MapRankedStat Create()
-        {
-            var standardLevelDetailView = UnityEngine.Resources.FindObjectsOfTypeAll<StandardLevelDetailView>().First();
-            var levelParamsPanel =
-                standardLevelDetailView.GetField<LevelParamsPanel, StandardLevelDetailView>("_levelParamsPanel");
-            var standardLevelDetailViewController =
-                UnityEngine.Resources.FindObjectsOfTypeAll<StandardLevelDetailViewController>().First();
-
-            var mapRankedStat = new MapRankedStat(
-                guildSaberCache, uiFactory, config, logger, client, gsWhiteLogoTexture);
-            standardLevelDetailViewController.didChangeContentEvent += mapRankedStat.BeatmapDifficultyChanged;
-            mapRankedStat.BuildUI(levelParamsPanel.GetComponent<RectTransform>());
-
-            return mapRankedStat;
-        }
-    }
+    
 
     internal class PlayerCardResourcesFactory(
         [Inject(Id = nameof(ResourceMap.DownArrow))] Texture2D downArrowTexture,
@@ -77,8 +53,7 @@ public class PlayerCardInstaller(GuildSaberClient client, SiraLog logger) : Inst
     {
         logger.Info($"Client base api uri: {client.HttpClient.BaseAddress}");
         logger.Info($"Client user agent: {client.HttpClient.DefaultRequestHeaders.UserAgent}");
-
-        Container.Bind<MapRankedStat>().FromFactory<MapRankedStatFactory>().AsSingle().NonLazy();
+        
         Container.Bind<PlayerCardResources>().FromFactory<PlayerCardResourcesFactory>().AsSingle();
         Container.Bind<TimeController>().FromNewComponentOnNewGameObject().AsSingle();
         Container.Bind<FloatingScreen>()

@@ -22,7 +22,8 @@ public class Plugin
         zenjector.Install<CoreInstaller>(Location.App);
         zenjector.Install<AppInstaller>(Location.App, pluginConfig);
         zenjector.Install<ResourcesInstaller>(Location.App, logger);
-        zenjector.Install<UIInstaller>(Location.App);
+        zenjector.Install<UIFactoryInstaller>(Location.App);
+        zenjector.Install<UIInstaller>(Location.Menu);
         zenjector.Install<PlayerCardInstaller>(Location.Menu);
     }
 

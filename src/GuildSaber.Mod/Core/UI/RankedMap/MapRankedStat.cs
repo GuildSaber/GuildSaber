@@ -7,10 +7,13 @@ using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Configurations;
 using GuildSaber.Mod.Core.UI.Common;
 using GuildSaber.Mod.Core.UI.Extensions;
+using GuildSaber.Mod.Core.UI.Utils;
 using GuildSaber.Mod.Resources;
 using SiraUtil.Logging;
 using SongCore.Utilities;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
+using UnityEngine.UI;
 using Zenject;
 
 namespace GuildSaber.Mod.Core.UI.RankedMap;
@@ -27,6 +30,8 @@ public class MapRankedStat : XUIHLayout
     private XUIImage _guildIcon = null!;
     private GSText _mapLevel = null!;
 
+    private BeatmapLevel? _beatmapLevel = null;
+    
     public MapRankedStat(
         GuildSaberCache guildSaberCache, UIFactory factory, PluginConfig config, SiraLog logger,
         GuildSaberClient client,
@@ -41,8 +46,9 @@ public class MapRankedStat : XUIHLayout
         OnReady(x =>
         {
             XUIImage.Make()
-                .SetHeight(7)
-                .SetWidth(7)
+                .SetHeight(5)
+                .SetWidth(5)
+                .SetActive(false)
                 .Bind(ref _guildIcon)
                 .BuildUI(Element.transform);
 
@@ -51,26 +57,29 @@ public class MapRankedStat : XUIHLayout
                 .BuildUI(Element.transform);
 
             x.HLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
+            x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         });
+        
+        
     }
 
-
-    public async void BeatmapDifficultyChanged(
-        StandardLevelDetailViewController standardLevelDetailView,
-        StandardLevelDetailViewController.ContentType contentType)
+    protected async void UpdateRankedStats(BeatmapLevel? beatmapLevel, BeatmapKey? beatmapKeyHolder)
     {
-        var beatmapKey = standardLevelDetailView.beatmapKey;
-        var beatmapLevel = standardLevelDetailView.beatmapLevel;
-        var hash = Hashing.ComputeCustomLevelHash(beatmapLevel);
-
-        _logger.Error(
-            $"{hash} ; ; ; ;C4EST LES HASH UWU, {beatmapKey.beatmapCharacteristic.serializedName} ; {beatmapKey.difficulty.ToEDifficulty()}");
-
         if (beatmapLevel == null)
         {
             SetActive(false);
             return;
         }
+
+        if (!beatmapKeyHolder.HasValue) return;
+        
+        var beatmapKey = beatmapKeyHolder.Value;
+        
+        var hash = Hashing.ComputeCustomLevelHash(beatmapLevel);
+        
+        _logger.Error(
+            $"{hash} ; ; ; ;C4EST LES HASH UWU, {beatmapKey.beatmapCharacteristic.serializedName} ; {beatmapKey.difficulty.ToEDifficulty()}");
 
         var rankedMapLevel = await FetchRankedMapLevel(
             _config.PlayerCard.ContextId,
@@ -92,16 +101,38 @@ public class MapRankedStat : XUIHLayout
 
         var guildIconTexture = await _guildSaberCache.FetchGuildIconTexture(_config.PlayerCard.GuildId, _client)
                                ?? _gsWhiteLogoTexture;
-
+        var rounded = await TextureUtils.RoundTextureAsync(guildIconTexture, guildIconTexture.width * 0.2f);
+        
         _logger.Error($"GUILD ICON TEXTURE: {guildIconTexture.width}");
         _guildIcon.SetSprite(Sprite.Create(
-            guildIconTexture,
+            rounded,
             new Rect(0, 0, guildIconTexture.width, guildIconTexture.height),
             Vector2.zero)
         );
+        _guildIcon.SetActive(true);
         _logger.Error($"SETTING MAP LEVEL TEXT: {rankedMapLevel}:0");
-        _mapLevel.SetText($"{rankedMapLevel}:0");
+        _mapLevel.SetText($"{(int)rankedMapLevel}");
         SetActive(true);
+    }
+    
+    public void BeatmapContentChanged(
+        StandardLevelDetailViewController standardLevelDetailView,
+        StandardLevelDetailViewController.ContentType contentType)
+    {
+        if (standardLevelDetailView == null) return;
+        
+        var beatmapKey = standardLevelDetailView.beatmapKey;
+        var beatmapLevel = standardLevelDetailView.beatmapLevel;
+        _beatmapLevel = beatmapLevel;
+        
+        UpdateRankedStats(beatmapLevel, beatmapKey);
+    }
+
+    public void BeatmapDifficultyChanged(StandardLevelDetailView standardLevelDetailView)
+    {
+        if (standardLevelDetailView == null) return;
+        
+        UpdateRankedStats(_beatmapLevel, standardLevelDetailView.beatmapKey);
     }
 
     public async Task<float?> FetchRankedMapLevel(

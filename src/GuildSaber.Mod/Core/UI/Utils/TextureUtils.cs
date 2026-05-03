@@ -103,10 +103,16 @@ internal static class TextureUtils
         return result;
     }
 
-    public static async Task RoundTextureAsync(Texture2D self, float radius)
+    public static async Task<Texture2D> RoundTextureAsync(Texture2D self, float radius)
     {
-        await Task.Run(() => RoundTexture(self, radius));
-        self.Apply();
+        var newTexture = self.GetCopy();
+        await Task.Run(() =>
+        {
+            RoundTexture(newTexture, radius);
+        });
+        newTexture.Apply();
+        
+        return newTexture;
     }
 
     public static void RoundTexture(Texture2D self, float radius)
@@ -131,22 +137,9 @@ internal static class TextureUtils
                 3 => new Vector2(self.width - radius, self.height - radius) /* Corner Top Right */,
                 _ => throw new ArgumentOutOfRangeException(nameof(corner), corner, null)
             };
-            var pixelColor = self.GetPixel((int)point.x, (int)point.y);
+            
             if (Vector2.Distance(point, pointRadius) > radius)
                 self.SetPixel((int)point.x, (int)point.y, _transparentColor);
-
-            // This logic seems weird but if it works, then it works.
-            var (newX, newY) = corner switch
-            {
-                0 => (point.x + radius, point.y + radius) /* Corner Bottom Left */,
-                1 => (self.width - 2f * radius + point.x, 2f * radius - point.y) /* Corner Bottom Right */,
-                2 => (2f * radius - point.x, self.height - 2f * radius + point.y) /* Corner Top Left */,
-                3 => (self.width - 2f * radius + point.x,
-                    self.height - 2f * radius + point.y) /* Corner Top Right */,
-                _ => throw new ArgumentOutOfRangeException(nameof(corner), corner, null)
-            };
-
-            self.SetPixel((int)newX, (int)newY, pixelColor.ColorWithAlpha(1));
         }
     }
 

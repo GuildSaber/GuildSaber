@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using BS_Utils.Gameplay;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
@@ -88,7 +89,15 @@ public class GuildSaberManager(GuildSaberClient client, SiraLog logger, GuildSab
             config.PlayerCard.ContextId = guilds[0].Contexts[0].Id;
             selectedGuild = guilds[0];
         }
-
+        else
+        {
+            var guildExtended = cache.GuildsExtended[config.PlayerCard.GuildId];
+            if (!guildExtended.Contexts.Any(x => x.Id == config.PlayerCard.ContextId))
+            {
+                config.PlayerCard.ContextId = guildExtended.Contexts[0].Id;
+            }
+        }
+        
         SelectGuild(config.PlayerCard.GuildId, selectedGuild.Contexts[0].Id);
     }
 
