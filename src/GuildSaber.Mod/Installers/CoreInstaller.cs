@@ -24,8 +24,7 @@ public class CoreInstaller : Installer
     public override void InstallBindings()
     {
         Container.Bind<GuildSaberClient>().FromFactory<GuildSaberClientFactory>().AsSingle();
-        Container.Bind<ModData>().AsSingle();
+        Container.Bind<GuildSaberCache>().AsSingle();
         Container.BindInterfacesAndSelfTo<GuildSaberManager>().AsSingle();
-        
     }
 }

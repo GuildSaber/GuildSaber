@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Net;
 using System.Threading.Tasks;
-using GuildSaber.Mod.Core.PlayerCard;
 using GuildSaber.Mod.Core.UI.Extensions;
 using UnityEngine;
 
@@ -23,24 +21,6 @@ internal static class TextureUtils
         public int NewHeight;
         public int Position;
         public int TextureOffset;
-    }
-
-    public static async Task<Texture2D?> FetchImageFromUrl(string url, PlayerCardResources resources)
-    {
-        var newTexture = new Texture2D(100, 100);
-
-        try
-        {
-            using var client = new WebClient();
-            var bytes = await client.DownloadDataTaskAsync(new Uri(url));
-            newTexture.LoadImage(bytes, false);
-        }
-        catch
-        {
-            newTexture = resources.GsWhiteLogoTexture;
-        }
-
-        return newTexture;
     }
 
     //TODO: This function sucks because it creates a new texture instance only when the rect is out of bounds, so the

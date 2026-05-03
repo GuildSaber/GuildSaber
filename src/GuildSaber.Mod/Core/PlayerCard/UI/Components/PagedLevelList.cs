@@ -2,8 +2,8 @@
 using System.Linq;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds.Categories;
-using GuildSaber.Api.Features.Guilds.Levels;
 using GuildSaber.Api.Features.Guilds.Members.LevelStats;
+using GuildSaber.Mod.Configurations;
 using GuildSaber.Mod.Core.UI;
 using GuildSaber.Mod.Core.UI.Common;
 using UnityEngine;
@@ -13,23 +13,26 @@ namespace GuildSaber.Mod.Core.PlayerCard.UI.Components;
 public class PagedLevelList : XUIVLayout
 {
     private static readonly int LevelsCountByPage = 4;
-
-    private int _maxPage;
-    private ModData _modData = null!;
-    private int _page;
+    private readonly PluginConfig _config = null!;
+    private readonly GuildSaberCache _guildSaberCache;
     private readonly List<GSText> _levels = [];
-    private int _totalLevelCount = 0;
-        
-    private GSSecondaryButton _pageLeftButton = null!;
-    private GSSecondaryButton _pageRightButton = null!;
-    private XUIGLayout _playerLevelsContainer = null!;
 
     private readonly UIFactory _uiFactory;
 
-    public PagedLevelList(UIFactory factory, ModData modData) : base("PagedLevelList", [])
+    private int _maxPage;
+    private int _page;
+
+    private GSSecondaryButton _pageLeftButton = null!;
+    private GSSecondaryButton _pageRightButton = null!;
+    private XUIGLayout _playerLevelsContainer = null!;
+    private int _totalLevelCount;
+
+    public PagedLevelList(UIFactory factory, GuildSaberCache guildSaberCache, PluginConfig config) : base(
+        "PagedLevelList")
     {
         _uiFactory = factory;
-        _modData = modData;
+        _guildSaberCache = guildSaberCache;
+        _config = config;
 
         OnReady(x =>
         {
@@ -51,7 +54,8 @@ public class PagedLevelList : XUIVLayout
         });
     }
 
-    public static PagedLevelList Make(UIFactory factory, ModData modData) => new(factory, modData); 
+    public static PagedLevelList Make(UIFactory factory, GuildSaberCache guildSaberCache, PluginConfig config)
+        => new(factory, guildSaberCache, config);
 
     public PagedLevelList Bind(ref PagedLevelList target)
     {
@@ -59,10 +63,11 @@ public class PagedLevelList : XUIVLayout
         return this;
     }
 
-    public void Refresh(ModData targetData)
+    public void Refresh(GuildSaberCache targetData)
     {
-        _modData = targetData;
-        
+        // Same instance, I don't think we need to set again the instance.
+        //_guildSaberCache = targetData;
+
         _page = 0;
 
         Refresh();
@@ -70,7 +75,7 @@ public class PagedLevelList : XUIVLayout
 
     public void Refresh()
     {
-        if (_modData.PlayerLevels.Length == 0)
+        if (_guildSaberCache.MemberLevelStats.Count == 0)
             //_logger.Warn("No levels ???");
             //DisplayLevelsDetails(false);
             return;
@@ -88,15 +93,15 @@ public class PagedLevelList : XUIVLayout
         var page = _page;
 
         LevelStatResponses.MemberLevelStat[] allLevels = [];
-        CategoryResponses.Category[] allCategories = _modData.Categories;
-        
-        foreach (var category in _modData.Categories)
+        var allCategories = _guildSaberCache.GuildsExtended[_config.PlayerCard.GuildId].Categories;
+
+        foreach (var category in allCategories)
         {
-            var levelArray = _modData.PlayerLevels.Where(x => 
-                (x.Level.CategoryId == category.Id) && (x.Level.CategoryId != null) && x.IsCompleted);
-            
+            var levelArray = _guildSaberCache.MemberLevelStats[_config.PlayerCard.ContextId].Where(x =>
+                x.Level.CategoryId == category.Id && x.Level.CategoryId != null && x.IsCompleted);
+
             LevelStatResponses.MemberLevelStat? toAppend = null;
-            
+
             if (levelArray.Any())
             {
                 toAppend = levelArray.Last();
@@ -105,25 +110,18 @@ public class PagedLevelList : XUIVLayout
             {
                 levelArray = allLevels.Where(x => x.Level.CategoryId == category.Id);
 
-                if (levelArray.Any())
-                {
-                    toAppend = levelArray.First();
-                }
+                if (levelArray.Any()) toAppend = levelArray.First();
             }
 
             if (toAppend != null)
-            {
                 allLevels = allLevels.Append(toAppend).ToArray();
-            }
             else
-            {
                 allCategories = allCategories.Where(x => x.Id != category.Id).ToArray();
-            }
         }
 
         _totalLevelCount = allLevels.Length;
         _maxPage = _totalLevelCount / LevelsCountByPage;
-        
+
         var displayedLevels = new List<LevelStatResponses.MemberLevelStat>();
         var displayedCategories = new List<CategoryResponses.Category>();
         for (var i = 0; i < allLevels.Length; i++)
@@ -135,7 +133,6 @@ public class PagedLevelList : XUIVLayout
 
         for (var i = 0; i < displayedLevels.Count; i++)
         {
-            
             var category = displayedLevels[i];
             if (category == null)
             {
@@ -161,7 +158,7 @@ public class PagedLevelList : XUIVLayout
     public void PageRight()
     {
         if (_page < _maxPage) _page++;
-        
+
         Refresh();
     }
 

@@ -25,7 +25,8 @@ public class ResourcesInstaller(Logger logger) : Installer
             .FromMethod(() =>
             {
                 var font = UnityEngine.Resources.FindObjectsOfTypeAll<TextMeshProUGUI>().Where(x
-                    => x.font.name.Contains(ResourceMap.TekoMedium) && x.font.name.Contains("Curved")).ElementAt(0).font;
+                        => x.font.name.Contains(ResourceMap.TekoMedium) && x.font.name.Contains("Curved")).ElementAt(0)
+                    .font;
                 logger.Debug($"[{nameof(ResourcesInstaller)}/TMP_FontAsset] Loaded TekoFont: {font.name}");
                 return font;
             }).AsCached();

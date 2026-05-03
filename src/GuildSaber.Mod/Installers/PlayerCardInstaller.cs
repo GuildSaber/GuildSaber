@@ -1,6 +1,5 @@
 using System.Linq;
 using BeatSaberMarkupLanguage.FloatingScreen;
-using CP_SDK.XUI;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Configurations;
 using GuildSaber.Mod.Core;
@@ -22,58 +21,54 @@ namespace GuildSaber.Mod.Installers;
 
 public class PlayerCardInstaller(GuildSaberClient client, SiraLog logger) : Installer
 {
-    public static void testMethod(StandardLevelDetailView view)
-    {
-        foreach (var x in MapRankedStat.Shitpoost)
-        {
-            //x.BeatmapDifficultyChanged(view);
-        }
-    }
-    
     public class MapRankedStatFactory(
-        [Inject] SiraLog logger, [Inject] ModData modData, [Inject] UIFactory uiFactory, [Inject] PluginConfig config) 
-        : IFactory<MapRankedStat>
+        [Inject] SiraLog logger,
+        [Inject] GuildSaberCache guildSaberCache,
+        [Inject] UIFactory uiFactory,
+        [Inject] PluginConfig config,
+        [Inject] GuildSaberClient client,
+        [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture
+    ) : IFactory<MapRankedStat>
     {
         public MapRankedStat Create()
         {
             var standardLevelDetailView = UnityEngine.Resources.FindObjectsOfTypeAll<StandardLevelDetailView>().First();
-            var levelParamsPanel = standardLevelDetailView.GetField<LevelParamsPanel, StandardLevelDetailView>("_levelParamsPanel");
+            var levelParamsPanel =
+                standardLevelDetailView.GetField<LevelParamsPanel, StandardLevelDetailView>("_levelParamsPanel");
             var standardLevelDetailViewController =
                 UnityEngine.Resources.FindObjectsOfTypeAll<StandardLevelDetailViewController>().First();
-            
-            var mapRankedStat = new MapRankedStat(modData, uiFactory, config, logger);
+
+            var mapRankedStat = new MapRankedStat(
+                guildSaberCache, uiFactory, config, logger, client, gsWhiteLogoTexture);
             standardLevelDetailViewController.didChangeContentEvent += mapRankedStat.BeatmapDifficultyChanged;
             mapRankedStat.BuildUI(levelParamsPanel.GetComponent<RectTransform>());
-        
-            
-            
+
             return mapRankedStat;
         }
     }
-    
+
     internal class PlayerCardResourcesFactory(
         [Inject(Id = nameof(ResourceMap.DownArrow))] Texture2D downArrowTexture,
-        [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture,
-        [Inject] ModData modData
-        )
+        [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture
+    )
         : IFactory<PlayerCardResources>
     {
         public PlayerCardResources Create()
         {
             var standardLevelDetailView = UnityEngine.Resources.FindObjectsOfTypeAll<StandardLevelDetailView>().First();
 
-            PlayerCardResources resources = new GameObject("PlayerCardResources").AddComponent<PlayerCardResources>();
-                resources.SetValues(
+            var resources = new GameObject("PlayerCardResources").AddComponent<PlayerCardResources>();
+            resources.SetValues(
                 borderSprite: standardLevelDetailView.actionButton.transform
                     .Find("Border").GetComponent<ImageView>().sprite,
                 borderMaterial: standardLevelDetailView.actionButton.transform
                     .Find("BG").GetComponent<ImageView>().material,
                 downArrowTexture: downArrowTexture,
                 gsWhiteLogoTexture: gsWhiteLogoTexture,
-                tekoFont: UnityEngine.Resources.FindObjectsOfTypeAll<TextMeshProUGUI>().Where(x => x.font.name.Contains("Teko-Medium")).ElementAt(1).font
+                tekoFont: UnityEngine.Resources.FindObjectsOfTypeAll<TextMeshProUGUI>()
+                    .Where(x => x.font.name.Contains("Teko-Medium")).ElementAt(1).font
             );
-                
-            modData.CardResources = resources;
+
             return resources;
         }
     }

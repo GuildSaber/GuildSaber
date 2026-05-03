@@ -49,7 +49,7 @@ public class TimeController : MonoBehaviour
             timeData.Day = _currentTime.Day;
             timeData.PlayDurationSec = 0;
         }
-        
+
         //GameObject.DontDestroyOnLoad(this);
     }
 

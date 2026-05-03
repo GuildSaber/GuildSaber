@@ -10,27 +10,27 @@ namespace GuildSaber.Mod.Core.PlayerCard.UI.Settings;
 
 public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainView>
 {
-    [Inject] private readonly PluginConfig _config = null!;
-    [Inject] private readonly PlayerCardView _cardView = null!;
-    [Inject] private readonly UIFactory _uiFactory = null!;
-
     [Inject(Id = Constants.CardFloatingPanelId)]
     private readonly FloatingScreen _cardScreen = null!;
 
-    [Inject] private readonly ModData _modData = null!;
+    [Inject] private readonly PlayerCardView _cardView = null!;
+    [Inject] private readonly PluginConfig _config = null!;
+
+    [Inject] private readonly GuildSaberCache _guildSaberCache = null!;
+    [Inject] private readonly UIFactory _uiFactory = null!;
+    private XUIColorInput _color0Input = null!;
+    private XUIColorInput _color1Input = null!;
+    private XUIVLayout _customColorsLayout = null!;
 
     private XUIToggle _displayLevelDetailsToggle = null!;
-    private XUIToggle _useCustomColorsToggle = null!;
-    private XUIToggle _useGradientToggle = null!;
+
+    private XUIColorInput _mainColorInput = null!;
     private XUIToggle _showHandleToggle = null!;
 
     private XUIHLayout _useCustomColorsLayout = null!;
+    private XUIToggle _useCustomColorsToggle = null!;
     private XUIHLayout _useGradientLayout = null!;
-    private XUIVLayout _customColorsLayout = null!;
-
-    private XUIColorInput _mainColorInput = null!;
-    private XUIColorInput _color0Input = null!;
-    private XUIColorInput _color1Input = null!;
+    private XUIToggle _useGradientToggle = null!;
 
     protected override void OnViewCreation()
     {
@@ -82,13 +82,13 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
                 )
             ).Bind(ref _customColorsLayout),
             XUIHLayout.Make(
-            _uiFactory.SecondaryButton("Reset menu position", 40 , 5)
-                .OnClick(ResetMenuPosition),
-            _uiFactory.SecondaryButton("Reset in song position", 40, 5)
-                .OnClick(ResetInSongPosition)
+                _uiFactory.SecondaryButton("Reset menu position", 40, 5)
+                    .OnClick(ResetMenuPosition),
+                _uiFactory.SecondaryButton("Reset in song position", 40, 5)
+                    .OnClick(ResetInSongPosition)
             )
         ).BuildUI(transform);
-        
+
         LoadConfig();
     }
 
@@ -98,17 +98,14 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
         _cardView.SetCardToMenuTransform();
     }
 
-    private void ResetInSongPosition()
-    {
-        _config.PlayerCard.Transforms.InSong = new CardConfig().Transforms.InSong;
-    }
-    
+    private void ResetInSongPosition() => _config.PlayerCard.Transforms.InSong = new CardConfig().Transforms.InSong;
+
     private void OnToggleChanged(bool value)
     {
         _config.PlayerCard.CategoryLevelViewEnabled = _displayLevelDetailsToggle.Element.GetValue();
         _config.PlayerCard.ColorSettings.UseCustomColors = _useCustomColorsToggle.Element.GetValue();
         _config.PlayerCard.ColorSettings.UseGradient = _useGradientToggle.Element.GetValue();
-        
+
         UpdateUI();
         UpdateCard();
     }
@@ -118,7 +115,7 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
         _config.PlayerCard.ColorSettings.MainCardColor = _mainColorInput.Element.GetValue();
         _config.PlayerCard.ColorSettings.GradientColor0 = _color0Input.Element.GetValue();
         _config.PlayerCard.ColorSettings.GradientColor1 = _color1Input.Element.GetValue();
-        
+
         UpdateUI();
         UpdateCard();
     }
@@ -131,15 +128,18 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
         _color0Input.SetValue(_config.PlayerCard.ColorSettings.GradientColor0, false);
         _color1Input.SetValue(_config.PlayerCard.ColorSettings.GradientColor1, false);
         _displayLevelDetailsToggle.SetValue(_config.PlayerCard.CategoryLevelViewEnabled, false);
-        
+
         UpdateUI();
     }
 
     private void UpdateUI()
     {
-        if (_modData.Player != null)
+        if (_guildSaberCache.PlayerExtended is not null
+            && _guildSaberCache.MemberLevelStats.TryGetValue(_config.PlayerCard.ContextId, out var memberLevelStat))
         {
-            var canPlayerUseColors = PlayerCardLibrary.CanPlayerUseCustomColors(_modData.PlayerLevels, _modData.Player);
+            var canPlayerUseColors = PlayerCardLibrary.CanPlayerUseCustomColors(
+                memberLevelStat,
+                _guildSaberCache.PlayerExtended.Player);
 
             if (canPlayerUseColors)
             {

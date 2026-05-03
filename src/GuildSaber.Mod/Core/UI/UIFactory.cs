@@ -7,8 +7,7 @@ using Zenject;
 namespace GuildSaber.Mod.Core.UI;
 
 public class UIFactory(
-    [Inject(Id = nameof(ResourceMap.TekoMedium))]
-    TMP_FontAsset font
+    [Inject(Id = nameof(ResourceMap.TekoMedium))] TMP_FontAsset font
 )
 {
     public GSText Text(string text) => new(text, font);

@@ -66,6 +66,8 @@ public class RankedMapEndpoints : IEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesValidationProblem()
             .RequireGuildPermission(EPermission.RankingTeam);
+
+        //TODO: Make an optimized version to search by SongHash.
     }
 
     /// <remarks>

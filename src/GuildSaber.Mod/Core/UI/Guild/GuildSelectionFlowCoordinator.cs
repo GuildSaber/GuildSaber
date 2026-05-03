@@ -8,9 +8,9 @@ namespace GuildSaber.Mod.Core.UI.Guild;
 
 public class GuildSelectionFlowCoordinator : CustomFlowCoordinator
 {
-    [Inject] private readonly GuildSelectionViewController _mainView = null!;
     [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
-    
+    [Inject] private readonly GuildSelectionViewController _mainView = null!;
+
     protected Action<GuildResponses.GuildExtended>? DismissCallback;
 
     protected override string Title => "Select guild";
@@ -20,7 +20,7 @@ public class GuildSelectionFlowCoordinator : CustomFlowCoordinator
     {
         DismissCallback = callback;
         if (IsPresent) return;
-        
+
         _mainView.GuildSelectionFlowCoordinator = this;
         Present();
     }

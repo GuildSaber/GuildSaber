@@ -23,7 +23,7 @@ public class GameReloadPatch
         var card = cardArray.SingleOrDefault();
         if (card == null)
             return;
-        
+
         SceneManager.MoveGameObjectToScene(card.transform.parent.gameObject, SceneManager.GetActiveScene());
     }
 }

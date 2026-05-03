@@ -1,9 +1,7 @@
 ﻿using GuildSaber.Mod.Configurations;
 using GuildSaber.Mod.Installers;
-using HarmonyLib;
 using IPA;
 using IPA.Config.Stores;
-using ModestTree;
 using SiraUtil.Zenject;
 using IPALogger = IPA.Logging.Logger;
 using IPAConfig = IPA.Config.Config;
@@ -13,8 +11,8 @@ namespace GuildSaber.Mod;
 [Plugin(RuntimeOptions.SingleStartInit)]
 public class Plugin
 {
-    private readonly HarmonyLib.Harmony _guildSaberHarmony = new HarmonyLib.Harmony("guildsaber.mod.sheepvand");
-    
+    private readonly HarmonyLib.Harmony _guildSaberHarmony = new("guildsaber.mod.sheepvand");
+
     [Init]
     public Plugin(Zenjector zenjector, IPALogger logger, IPAConfig config)
     {
@@ -29,15 +27,9 @@ public class Plugin
     }
 
     [OnEnable]
-    public void OnEnable()
-    {
-        _guildSaberHarmony.PatchAll();
-    }
-        
+    public void OnEnable() => _guildSaberHarmony.PatchAll();
+
 
     [OnDisable]
-    public void OnDisable()
-    {
-        _guildSaberHarmony.UnpatchSelf();
-    }
+    public void OnDisable() => _guildSaberHarmony.UnpatchSelf();
 }

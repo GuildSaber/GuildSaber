@@ -36,7 +36,8 @@ public class CardConfig
 
     public bool CategoryLevelViewEnabled { get; set; } = true;
 
-    public GuildId GuildId { get; set; } = new GuildId(-1);
+    public GuildId GuildId { get; set; } = new(-1);
+    public ContextId ContextId { get; set; } = new(-1);
 }
 
 public class TimeConfig

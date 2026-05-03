@@ -3,6 +3,7 @@ using System.Linq;
 using CP_SDK_BS.UI;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds;
+using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Core.UI.Guild.Components;
 using GuildSaber.Mod.Resources;
 using TMPro;
@@ -14,16 +15,18 @@ namespace GuildSaber.Mod.Core.UI.Guild;
 
 internal class GuildSelectionViewController : ViewController<GuildSelectionViewController>
 {
-    protected readonly List<GuildButton> _guildButtons = new();
     public GuildSelectionFlowCoordinator GuildSelectionFlowCoordinator = null!;
 
-    [Inject] private readonly ModData _modData = null!;
+    [Inject] private readonly GuildSaberClient _client = null!;
+    [Inject(Id = nameof(ResourceMap.TekoMedium))] private readonly TMP_FontAsset _font = null!;
+    protected readonly List<GuildButton> _guildButtons = new();
 
-    [Inject(Id = nameof(ResourceMap.GsWhiteLogo))]
-   private readonly Texture2D _whiteLogoTexture = null!;
+    [Inject] private readonly GuildSaberCache _guildSaberCache = null!;
 
     [Inject] private readonly UIFactory _uiFactory = null!;
-    [Inject(Id = nameof(ResourceMap.TekoMedium))] private readonly TMP_FontAsset _tekoFont = null!;
+
+    [Inject(Id = nameof(ResourceMap.GsWhiteLogo))]
+    private readonly Texture2D _whiteLogoTexture = null!;
 
 
     protected XUIVScrollView _guildListContainer = null!;
@@ -52,17 +55,16 @@ internal class GuildSelectionViewController : ViewController<GuildSelectionViewC
     {
         if (_guildButtons.Any()) return;
 
-        foreach (var x in _modData.Guilds)
+        foreach (var (_, guildExtended) in _guildSaberCache.GuildsExtended)
         {
-            //if (x == null) continue;
-
-            var button = GuildButton.Make(_modData, _uiFactory, _whiteLogoTexture, _tekoFont);
+            var button = GuildButton.Make(_guildSaberCache, _uiFactory, _whiteLogoTexture, _font, _client);
+            button.OnClicked += OnGuildButtonClicked;
             button.SetWidth(70);
             button.SetHeight(10);
-            button.OnClicked += OnGuildButtonClicked;
+
             _guildButtons.Add(button);
             button.BuildUI(_guildListContainer.Element.Container);
-            button.SetGuild(x);
+            button.SetGuild(guildExtended);
         }
     }
 

@@ -1,11 +1,7 @@
 using BeatSaberMarkupLanguage;
-using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Configurations;
-using GuildSaber.Mod.Core;
 using GuildSaber.Mod.Core.PlayerCard.UI.Settings;
 using GuildSaber.Mod.Core.UI.Guild;
-using GuildSaber.Mod.Extensions;
-using SiraUtil.Logging;
 using Zenject;
 
 namespace GuildSaber.Mod.Installers;
@@ -23,4 +19,3 @@ internal class AppInstaller(PluginConfig config) : Installer
             .FromMethod(BeatSaberUI.CreateFlowCoordinator<PlayerCardSettingsCoordinator>).AsSingle();
     }
 }
-

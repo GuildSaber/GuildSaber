@@ -35,6 +35,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="System.Text.Json" />
         <PackageReference Include="System.ValueTuple" />
     </ItemGroup>
 
@@ -58,12 +59,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="System.Text.Json" />
         <Reference Include="0Harmony">
-          <HintPath>$(BeatSaberDir)\Libs\0Harmony.dll</HintPath>
+            <HintPath>$(BeatSaberDir)\Libs\0Harmony.dll</HintPath>
         </Reference>
         <Reference Include="BeatmapCore">
-          <HintPath>..\..\..\..\..\BSManager\BSInstances\1.40.3\Beat Saber_Data\Managed\BeatmapCore.dll</HintPath>
+            <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BeatmapCore.dll</HintPath>
         </Reference>
         <Reference Include="BeatSaber.ViewSystem">
             <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BeatSaber.ViewSystem.dll</HintPath>
@@ -143,9 +143,6 @@
         <Reference Include="System.Net.Http">
             <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\System.Net.Http.dll</HintPath>
             <Private>false</Private>
-        </Reference>
-        <Reference Include="System.ValueTuple">
-          <HintPath>..\..\..\..\..\.nuget\packages\netstandard.library\2.0.3\build\netstandard2.0\ref\System.ValueTuple.dll</HintPath>
         </Reference>
         <Reference Include="Unity.TextMeshPro">
             <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\Unity.TextMeshPro.dll</HintPath>

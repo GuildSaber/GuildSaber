@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using CP_SDK.XUI;
+using GuildSaber.Mod.Configurations;
 using GuildSaber.Mod.Core.UI;
 using GuildSaber.Mod.Core.UI.Common;
 using UnityEngine;
@@ -10,17 +11,20 @@ namespace GuildSaber.Mod.Core.PlayerCard.UI.Components;
 public class PointList : XUIVLayout
 {
     protected readonly List<GSText> _pointTexts = new();
-
-    protected ModData _modData;
+    protected PluginConfig _config = null!;
     protected UIFactory _uiFactory;
 
-    protected PointList(ModData modData, UIFactory factory) : base("PointList", [])
+    protected GuildSaberCache GuildSaberCache;
+
+    protected PointList(GuildSaberCache guildSaberCache, PluginConfig config, UIFactory factory) : base("PointList")
     {
         _uiFactory = factory;
-        _modData = modData;
+        _config = config;
+        GuildSaberCache = guildSaberCache;
     }
 
-    public static PointList Make(ModData modData, UIFactory factory) => new(modData, factory);
+    public static PointList Make(GuildSaberCache guildSaberCache, PluginConfig config, UIFactory factory)
+        => new(guildSaberCache, config, factory);
 
     public PointList Bind(ref PointList x)
     {
@@ -28,21 +32,21 @@ public class PointList : XUIVLayout
         return this;
     }
 
-    public void Refresh(ModData modData)
+    public void Refresh(GuildSaberCache guildSaberCache)
     {
-        _modData = modData;
+        GuildSaberCache = guildSaberCache;
         Refresh();
     }
 
     public void Refresh()
     {
-        var points = _modData.PlayerPoints;
+        var points = GuildSaberCache.MemberContextStats[_config.PlayerCard.ContextId].SimplePointsWithRank
+            .Where(x => x.CategoryId is null).ToArray();
 
-        //Logger.Instance.Info(points.Count.ToString());
         foreach (var item in _pointTexts)
             item.SetActive(false);
 
-        for (var i = 0; i < points.Count(); i++)
+        for (var i = 0; i < points.Length; i++)
         {
             if (_pointTexts.Count - 1 < i)
             {
@@ -52,8 +56,9 @@ public class PointList : XUIVLayout
             }
 
             var point = points.ElementAt(i);
-            var htmlColor = ColorUtility.ToHtmlStringRGB(_modData.CardUsedColor);
-            _pointTexts[i].SetText($"<color=#{htmlColor}>{point.Name}</color>#<color=#{htmlColor}>{point.Rank:0}</color>");
+            var htmlColor = ColorUtility.ToHtmlStringRGB(_config.PlayerCard.ColorSettings.MainCardColor);
+            _pointTexts[i]
+                .SetText($"<color=#{htmlColor}>{point.Name}</color>#<color=#{htmlColor}>{point.Rank:0}</color>");
 
             _pointTexts[i].SetActive(true);
         }

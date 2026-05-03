@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using GuildSaber.Api.Features.Guilds.Members.LevelStats;
 using GuildSaber.Api.Features.Players;
 using UnityEngine;
@@ -8,13 +9,14 @@ namespace GuildSaber.Mod.Core.PlayerCard;
 public static class PlayerCardLibrary
 {
     public static bool CanPlayerUseCustomColors(
-        LevelStatResponses.MemberLevelStat[] levels, PlayerResponses.PlayerExtended player)
+        IEnumerable<LevelStatResponses.MemberLevelStat> memberLevelStats, PlayerResponses.Player player)
     {
         const int requiredLevel = 30;
-        return levels.Where(x => x.Level.CategoryId is null && !x.IsLocked)
+        return memberLevelStats.Where(x => x.Level.CategoryId is null && !x.IsLocked)
                 .LastOrDefault(x => x.IsCompleted)?.Level.Order switch
             {
-                _ when player.Player.PlayerLinkedAccounts.BeatLeaderId is "76561198846350061" or "76561198126131670" => true,
+                _ when player.PlayerLinkedAccounts.BeatLeaderId is "76561198846350061" or "76561198126131670" =>
+                    true,
                 > requiredLevel => true,
                 _ => false
             };
