@@ -32,7 +32,7 @@ public class UIInstaller : Installer
 
             var mapRankedStat = new MapRankedStat(guildSaberCache, uiFactory, config, client, gsWhiteLogoTexture);
             mapRankedStat.BuildUI(levelParamsPanel.transform);
-            mapRankedStat.RTransform.offsetMin = new Vector2(80, -4);
+            mapRankedStat.RTransform.offsetMin = new Vector2(80, -5);
             var rectTransform = levelParamsPanel.GetComponent<RectTransform>();
             rectTransform.offsetMax += new Vector2(0, 0);
 

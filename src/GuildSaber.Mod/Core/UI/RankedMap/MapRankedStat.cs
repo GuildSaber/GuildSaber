@@ -28,6 +28,7 @@ public class MapRankedStat : XUIVLayout
     private BeatmapLevel? _beatmapLevel;
 
     private XUIImage _guildIcon = null!;
+    private XUIImage _categoryIcon = null!;
     private GSText _mapLevel = null!;
     private GSText _mapCategories = null!;
 
@@ -44,24 +45,32 @@ public class MapRankedStat : XUIVLayout
         OnReady(x =>
         {
             XUIHLayout.Make(
-                XUIImage.Make()
-                    .Bind(ref _guildIcon)
-                    .SetActive(false)
-                    .SetHeight(5)
-                    .SetWidth(5),
-                factory.Text(string.Empty)
-                    .Bind(ref _mapLevel)
-                    .SetFontSize(4)
-                    .SetAlpha(0.55f)
-            ).BuildUI(x.transform);
-
-            factory.Text(string.Empty)
-                .Bind(ref _mapCategories)
-                .SetFontSize(4)
-                .SetAlpha(0.55f)
+                    XUIImage.Make()
+                        .Bind(ref _guildIcon)
+                        .SetActive(false)
+                        .SetHeight(6)
+                        .SetWidth(6),
+                    factory.Text(string.Empty)
+                        .Bind(ref _mapLevel)
+                        .SetFontSize(5)
+                        .SetAlpha(0.55f))
+                .SetSpacing(2)
                 .BuildUI(x.transform);
 
-            x.SetSpacing(-2);
+            XUIHLayout.Make(
+                factory.Text(string.Empty)
+                    .Bind(ref _mapCategories)
+                    .SetFontSize(4)
+                    .SetAlpha(0.55f)
+                    .SetActive(false),
+                XUIImage.Make()
+                    .Bind(ref _categoryIcon)
+                    .SetActive(false)
+                    .SetHeight(8)
+                    .SetWidth(8)
+            ).BuildUI(x.transform);
+
+            x.SetSpacing(2);
             x.VLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
             x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.MinSize;
@@ -97,16 +106,49 @@ public class MapRankedStat : XUIVLayout
         var roundedIcon = await TextureUtils.CreateRoundedTextureAsync(
             guildIconTexture, guildIconTexture.width * 0.2f);
 
-        var categoryNames = string.Join("\n",
-            _guildSaberCache.GuildsExtended[_config.PlayerCard.GuildId]
-                .Categories
-                .Where(x => rankedMap.CategoryIds.Contains(x.Id))
-                .Select(x => x.Info.Name));
+        if (rankedMap.CategoryIds.Length == 0)
+        {
+            _categoryIcon.SetActive(false);
+            _mapCategories.SetActive(false);
+        }
+        else
+        {
+            var categories = _guildSaberCache.GuildsExtended[_config.PlayerCard.GuildId].Categories
+                .Where(x => rankedMap.CategoryIds.Contains(x.Id)).ToArray();
+
+            var hasCategoryIcon = false;
+            if (categories.Length == 1)
+            {
+                var categoryIconTexture = await _guildSaberCache.FetchCategoryIconTexture(categories[0].Id, _client);
+                if (categoryIconTexture != null)
+                {
+                    var roundedCategoryIcon = await TextureUtils.CreateRoundedTextureAsync(
+                        categoryIconTexture, categoryIconTexture.width * 0.2f);
+                    _categoryIcon.SetSprite(Sprite.Create(
+                        roundedCategoryIcon,
+                        new Rect(0, 0, roundedCategoryIcon.width, roundedCategoryIcon.height),
+                        Vector2.zero));
+
+                    hasCategoryIcon = true;
+                }
+            }
+
+            if (!hasCategoryIcon)
+            {
+                var categoryNames = string.Join("\n", categories.Select(x => x.Info.Name));
+
+                _mapCategories.SetText(categoryNames);
+                _mapCategories.SetActive(!string.IsNullOrEmpty(categoryNames));
+                _categoryIcon.SetActive(false);
+            }
+            else
+            {
+                _mapCategories.SetActive(false);
+                _categoryIcon.SetActive(true);
+            }
+        }
 
         _mapLevel.SetText($"{(int)rankedMap.Rating.DiffStar}");
-        _mapCategories.SetText(categoryNames);
-        _mapCategories.SetActive(!string.IsNullOrEmpty(categoryNames));
-
         _guildIcon.SetSprite(Sprite.Create(
             roundedIcon,
             new Rect(0, 0, roundedIcon.width, roundedIcon.height),

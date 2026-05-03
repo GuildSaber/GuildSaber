@@ -125,7 +125,7 @@ public class GuildSaberClient : IDisposable
     /// Gets the category client for interacting with category endpoints.
     /// </summary>
     public CategoryClient Categories
-        => field ??= new CategoryClient(HttpClient, _authenticationHeader, _jsonOptions);
+        => field ??= new CategoryClient(HttpClient, _cdnBaseUri, _authenticationHeader, _jsonOptions);
 
     /// <summary>
     /// Gets the level stat client for interacting with member level stat endpoints.

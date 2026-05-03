@@ -14,6 +14,7 @@ namespace GuildSaber.CSharpClient.Routes.Guilds.Categories;
 /// </summary>
 public sealed class CategoryClient(
     HttpClient httpClient,
+    Uri cdnBaseUri,
     AuthenticationHeaderValue? authenticationHeader,
     JsonSerializerOptions jsonOptions)
 {
@@ -138,4 +139,6 @@ public sealed class CategoryClient(
                         $"Failed to delete category {categoryId} for guild {guildId}: {(int)statusCode} ({reasonPhrase})"),
                 _ => Success(true)
             };
+
+    public Uri GetLogoUrl(int id) => new(cdnBaseUri, $"categories/{id}/logo.png");
 }

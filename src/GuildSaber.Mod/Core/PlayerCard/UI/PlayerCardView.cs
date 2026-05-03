@@ -277,7 +277,9 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
     public void RefreshCardSize(bool displayCardLevelsDetails)
     {
-        var memberLevelStats = _guildSaberCache.MemberLevelStats[_config.PlayerCard.ContextId];
+        if (!_guildSaberCache.MemberLevelStats.TryGetValue(_config.PlayerCard.ContextId, out var memberLevelStats))
+            return;
+        
         if (memberLevelStats.Length == 0 && displayCardLevelsDetails)
         {
             RefreshCardSize(false);

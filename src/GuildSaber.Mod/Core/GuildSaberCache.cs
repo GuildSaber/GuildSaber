@@ -21,6 +21,7 @@ public class GuildSaberCache
     public Dictionary<ContextId, MemberLevelStat[]> MemberLevelStats { get; init; } = [];
     public Dictionary<ContextId, MemberContextStat> MemberContextStats { get; init; } = [];
     public Dictionary<GuildId, Texture2D> GuildIcons { get; init; } = [];
+    public Dictionary<int, Texture2D> CategoryIcons { get; init; } = [];
     public Dictionary<(SongHash, ContextId), RankedMap[]> RankedMaps { get; init; } = [];
 }
 
@@ -50,6 +51,31 @@ public static class GuildSaberCacheExtensions
                 return null;
 
             self.GuildIcons[guildId] = texture;
+            return texture;
+        }
+        
+        public async Task<Texture2D?> FetchCategoryIconTexture(int categoryId, GuildSaberClient client)
+        {
+            if (self.CategoryIcons.TryGetValue(categoryId, out var cachedIcon) && cachedIcon != null)
+                return cachedIcon;
+
+            var uri = client.Categories.GetLogoUrl(categoryId);
+
+            var texture = new Texture2D(100, 100);
+            try
+            {
+                var bytes = await client.HttpClient.GetByteArrayAsync(uri);
+                texture.LoadImage(bytes, false);
+            }
+            catch
+            {
+                return null;
+            }
+
+            if (texture == null)
+                return null;
+
+            self.CategoryIcons[categoryId] = texture;
             return texture;
         }
 
