@@ -108,7 +108,9 @@ public class Song
     public required string DownloadUrl { get; init; }
     public required double Bpm { get; init; }
     public required double Duration { get; init; }
+
     public string? Tags { get; init; }
+
     //public required SongCreator MapCreator { get; init; }
     public required int UploadTime { get; init; }
     public required ICollection<DifficultyDescription> Difficulties { get; init; }

@@ -82,27 +82,6 @@ public class RankedScore : IComparable<RankedScore>
         }
     };
 
-    public int PreferBlScore(RankedScore other) => Score switch
-    {
-        { Type: AbstractScore.EScoreType.BeatLeader } => other.Score switch
-        {
-            { Type: AbstractScore.EScoreType.BeatLeader } => (((BeatLeaderScore)Score).BeatLeaderScoreId,
-                    ((BeatLeaderScore)other.Score).BeatLeaderScoreId) switch
-                {
-                    (null, null) => ScoreId.Value.CompareTo(other.ScoreId.Value),
-                    (not null, null) => 1,
-                    (null, not null) => -1,
-                    ({ } blId, { } otherBlId) => ((int)blId).CompareTo(otherBlId)
-                },
-            _ => 1
-        },
-        _ => other.Score switch
-        {
-            { Type: AbstractScore.EScoreType.BeatLeader } => -1,
-            _ => ScoreId.Value.CompareTo(other.ScoreId.Value)
-        }
-    };
-
     public readonly record struct RankedScoreId(long Value) : IEFStrongTypedId<RankedScoreId, long>
     {
         public static bool TryParse(string from, out RankedScoreId value)
@@ -186,6 +165,27 @@ public class RankedScore : IComparable<RankedScore>
         [Description("Score was missing trackers.")]
         MissingTrackers = 1 << 5
     }
+
+    public int PreferBlScore(RankedScore other) => Score switch
+    {
+        { Type: AbstractScore.EScoreType.BeatLeader } => other.Score switch
+        {
+            { Type: AbstractScore.EScoreType.BeatLeader } => (((BeatLeaderScore)Score).BeatLeaderScoreId,
+                    ((BeatLeaderScore)other.Score).BeatLeaderScoreId) switch
+                {
+                    (null, null) => ScoreId.Value.CompareTo(other.ScoreId.Value),
+                    (not null, null) => 1,
+                    (null, not null) => -1,
+                    ({ } blId, { } otherBlId) => ((int)blId).CompareTo(otherBlId)
+                },
+            _ => 1
+        },
+        _ => other.Score switch
+        {
+            { Type: AbstractScore.EScoreType.BeatLeader } => -1,
+            _ => ScoreId.Value.CompareTo(other.ScoreId.Value)
+        }
+    };
 }
 
 public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>

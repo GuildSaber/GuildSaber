@@ -9,10 +9,9 @@ using GuildSaber.Mod.Core.UI.Common;
 using GuildSaber.Mod.Core.UI.Extensions;
 using GuildSaber.Mod.Core.UI.Utils;
 using GuildSaber.Mod.Resources;
-using SiraUtil.Logging;
 using SongCore.Utilities;
+using TMPro;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 using UnityEngine.UI;
 using Zenject;
 
@@ -23,21 +22,18 @@ public class MapRankedStat : XUIHLayout
     private readonly GuildSaberClient _client;
     private readonly PluginConfig _config;
     private readonly Texture2D _gsWhiteLogoTexture;
-
     private readonly GuildSaberCache _guildSaberCache;
-    private readonly SiraLog _logger;
+
+    private BeatmapLevel? _beatmapLevel;
 
     private XUIImage _guildIcon = null!;
     private GSText _mapLevel = null!;
 
-    private BeatmapLevel? _beatmapLevel = null;
-    
     public MapRankedStat(
-        GuildSaberCache guildSaberCache, UIFactory factory, PluginConfig config, SiraLog logger,
+        GuildSaberCache guildSaberCache, UIFactory factory, PluginConfig config,
         GuildSaberClient client,
         [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture) : base("MapRankedStats")
     {
-        _logger = logger;
         _guildSaberCache = guildSaberCache;
         _config = config;
         _client = client;
@@ -54,85 +50,73 @@ public class MapRankedStat : XUIHLayout
 
             factory.Text(string.Empty)
                 .Bind(ref _mapLevel)
+                .SetStyle(FontStyles.Italic)
+                .SetFontSize(4)
+                .SetAlpha(0.55f)
                 .BuildUI(Element.transform);
 
             x.HLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
             x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         });
-        
-        
     }
 
-    protected async void UpdateRankedStats(BeatmapLevel? beatmapLevel, BeatmapKey? beatmapKeyHolder)
+    protected async Task UpdateRankedStats(BeatmapLevel? beatmapLevel, BeatmapKey? beatmapKeyHolder)
     {
-        if (beatmapLevel == null)
+        if (beatmapLevel == null
+            || beatmapKeyHolder is not { } beatmapKey
+            || !SongHash.TryCreate(Hashing.ComputeCustomLevelHash(beatmapLevel)).TryGetValue(out var songHash))
         {
             SetActive(false);
             return;
         }
 
-        if (!beatmapKeyHolder.HasValue) return;
-        
-        var beatmapKey = beatmapKeyHolder.Value;
-        
-        var hash = Hashing.ComputeCustomLevelHash(beatmapLevel);
-        
-        _logger.Error(
-            $"{hash} ; ; ; ;C4EST LES HASH UWU, {beatmapKey.beatmapCharacteristic.serializedName} ; {beatmapKey.difficulty.ToEDifficulty()}");
-
         var rankedMapLevel = await FetchRankedMapLevel(
             _config.PlayerCard.ContextId,
-            SongHash.CreateUnsafe(hash).Value,
+            songHash,
             beatmapKey.beatmapCharacteristic.serializedName,
             beatmapKey.difficulty.ToEDifficulty(),
             _client
         );
 
-        _logger.Error($"RANKED MAP LEVEL: {rankedMapLevel ?? -8}");
-
-        if (rankedMapLevel == null)
+        if (rankedMapLevel is null)
         {
             SetActive(false);
             return;
         }
 
-        _logger.Error($"FETCHING GUILD ICON FOR GUILD ID: {_config.PlayerCard.GuildId}");
-
         var guildIconTexture = await _guildSaberCache.FetchGuildIconTexture(_config.PlayerCard.GuildId, _client)
                                ?? _gsWhiteLogoTexture;
-        var rounded = await TextureUtils.RoundTextureAsync(guildIconTexture, guildIconTexture.width * 0.2f);
-        
-        _logger.Error($"GUILD ICON TEXTURE: {guildIconTexture.width}");
-        _guildIcon.SetSprite(Sprite.Create(
-            rounded,
-            new Rect(0, 0, guildIconTexture.width, guildIconTexture.height),
-            Vector2.zero)
-        );
-        _guildIcon.SetActive(true);
-        _logger.Error($"SETTING MAP LEVEL TEXT: {rankedMapLevel}:0");
+        var roundedIcon = await TextureUtils.CreateRoundedTextureAsync(
+            guildIconTexture, guildIconTexture.width * 0.2f);
+
         _mapLevel.SetText($"{(int)rankedMapLevel}");
+        _guildIcon.SetSprite(Sprite.Create(
+            roundedIcon,
+            new Rect(0, 0, roundedIcon.width, roundedIcon.height),
+            Vector2.zero));
+        _guildIcon.SetActive(true);
+
         SetActive(true);
     }
-    
+
     public void BeatmapContentChanged(
         StandardLevelDetailViewController standardLevelDetailView,
         StandardLevelDetailViewController.ContentType contentType)
     {
         if (standardLevelDetailView == null) return;
-        
+
         var beatmapKey = standardLevelDetailView.beatmapKey;
         var beatmapLevel = standardLevelDetailView.beatmapLevel;
         _beatmapLevel = beatmapLevel;
-        
-        UpdateRankedStats(beatmapLevel, beatmapKey);
+
+        _ = UpdateRankedStats(beatmapLevel, beatmapKey);
     }
 
     public void BeatmapDifficultyChanged(StandardLevelDetailView standardLevelDetailView)
     {
         if (standardLevelDetailView == null) return;
-        
-        UpdateRankedStats(_beatmapLevel, standardLevelDetailView.beatmapKey);
+        _ = UpdateRankedStats(_beatmapLevel, standardLevelDetailView.beatmapKey);
     }
 
     public async Task<float?> FetchRankedMapLevel(

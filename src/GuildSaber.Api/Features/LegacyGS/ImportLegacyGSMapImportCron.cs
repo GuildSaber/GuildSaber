@@ -25,7 +25,7 @@ public class ImportLegacyGSMapImportCron(
                 .Select(x => new GuildIdWithContextIds(x.Id, x.Contexts.Select(y => y.Id).ToArray()))
                 .ToArrayAsync(token);
         }
-        
+
         foreach (var guildWithContextIds in guildIdsWithContextIds)
         foreach (var contextId in guildWithContextIds.ContextIds)
         {

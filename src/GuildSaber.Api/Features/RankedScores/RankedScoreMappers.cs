@@ -11,59 +11,7 @@ public static class RankedScoreMappers
 {
     private static Func<AbstractScore, RankedScoreResponses.Score>? _mapScoreImpl;
 
-    [Expandable(nameof(MapScoreExpression))]
-    public static RankedScoreResponses.Score Map(this AbstractScore self)
-        => (_mapScoreImpl ??= MapScoreExpression().Compile())(self);
-
-    private static Expression<Func<AbstractScore, RankedScoreResponses.Score>> MapScoreExpression()
-        => score => score.Type == AbstractScore.EScoreType.BeatLeader
-            ? new RankedScoreResponses.Score.BeatLeaderScore(
-                score.Id,
-                score.SongDifficultyId,
-                score.BaseScore,
-                score.Modifiers.Map(),
-                score.SetAt,
-                score.MaxCombo,
-                score.IsFullCombo,
-                score.MissedNotes,
-                score.BadCuts,
-                score.HMD.Map(),
-                ((BeatLeaderScore)score).BeatLeaderScoreId)
-            : new RankedScoreResponses.Score.ScoreSaberScore(
-                score.Id,
-                score.SongDifficultyId,
-                score.BaseScore,
-                score.Modifiers.Map(),
-                score.SetAt,
-                score.MaxCombo,
-                score.IsFullCombo,
-                score.MissedNotes,
-                score.BadCuts,
-                score.HMD.Map(),
-                ((ScoreSaberScore)score).ScoreSaberScoreId,
-                ((ScoreSaberScore)score).DeviceHmd,
-                ((ScoreSaberScore)score).DeviceControllerLeft,
-                ((ScoreSaberScore)score).DeviceControllerRight);
-
     private static Func<RankedScore, RankedScoreResponses.RankedScore>? _mapRankedScoreImpl;
-
-    [Expandable(nameof(MapRankedScoreExpression))]
-    public static RankedScoreResponses.RankedScore Map(this RankedScore self)
-        => (_mapRankedScoreImpl ??= MapRankedScoreExpression().Compile())(self);
-
-    public static Expression<Func<RankedScore, RankedScoreResponses.RankedScore>> MapRankedScoreExpression()
-        => rankedScore => new RankedScoreResponses.RankedScore(
-            rankedScore.Id,
-            rankedScore.PointId,
-            rankedScore.RankedMapId,
-            rankedScore.EditedAt,
-            rankedScore.Score.Map(),
-            rankedScore.PrevScore == null ? null : rankedScore.PrevScore.Map(),
-            rankedScore.State.Map(),
-            rankedScore.Rank,
-            rankedScore.RawPoints,
-            rankedScore.EffectiveScore
-        );
 
     public static Expression<Func<RankedScore, RankedScoreResponses.RankedScoreWithPlayer>>
         MapRankedScoreWithPlayerExpression => rankedScore => new RankedScoreResponses.RankedScoreWithPlayer(
@@ -98,6 +46,58 @@ public static class RankedScoreMappers
         ),
         rankedScore.RankedMap.Map()
     );
+
+    [Expandable(nameof(MapScoreExpression))]
+    public static RankedScoreResponses.Score Map(this AbstractScore self)
+        => (_mapScoreImpl ??= MapScoreExpression().Compile())(self);
+
+    private static Expression<Func<AbstractScore, RankedScoreResponses.Score>> MapScoreExpression()
+        => score => score.Type == AbstractScore.EScoreType.BeatLeader
+            ? new RankedScoreResponses.Score.BeatLeaderScore(
+                score.Id,
+                score.SongDifficultyId,
+                score.BaseScore,
+                score.Modifiers.Map(),
+                score.SetAt,
+                score.MaxCombo,
+                score.IsFullCombo,
+                score.MissedNotes,
+                score.BadCuts,
+                score.HMD.Map(),
+                ((BeatLeaderScore)score).BeatLeaderScoreId)
+            : new RankedScoreResponses.Score.ScoreSaberScore(
+                score.Id,
+                score.SongDifficultyId,
+                score.BaseScore,
+                score.Modifiers.Map(),
+                score.SetAt,
+                score.MaxCombo,
+                score.IsFullCombo,
+                score.MissedNotes,
+                score.BadCuts,
+                score.HMD.Map(),
+                ((ScoreSaberScore)score).ScoreSaberScoreId,
+                ((ScoreSaberScore)score).DeviceHmd,
+                ((ScoreSaberScore)score).DeviceControllerLeft,
+                ((ScoreSaberScore)score).DeviceControllerRight);
+
+    [Expandable(nameof(MapRankedScoreExpression))]
+    public static RankedScoreResponses.RankedScore Map(this RankedScore self)
+        => (_mapRankedScoreImpl ??= MapRankedScoreExpression().Compile())(self);
+
+    public static Expression<Func<RankedScore, RankedScoreResponses.RankedScore>> MapRankedScoreExpression()
+        => rankedScore => new RankedScoreResponses.RankedScore(
+            rankedScore.Id,
+            rankedScore.PointId,
+            rankedScore.RankedMapId,
+            rankedScore.EditedAt,
+            rankedScore.Score.Map(),
+            rankedScore.PrevScore == null ? null : rankedScore.PrevScore.Map(),
+            rankedScore.State.Map(),
+            rankedScore.Rank,
+            rankedScore.RawPoints,
+            rankedScore.EffectiveScore
+        );
 
     public static RankedScoreResponses.EState Map(this RankedScore.EState self) =>
         Enum.GetValues<RankedScore.EState>()

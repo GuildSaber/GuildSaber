@@ -113,6 +113,9 @@ public class DebugEndpoints : IEndpoints
             .RequireManager();
     }
 
+
+    private readonly record struct PlayerIdWithGuildIds(PlayerId PlayerId, GuildId[] GuildIds);
+
     private static async Task<Ok> RecalculatePlayerScores(
         PlayerId playerId, ServerDbContext dbContext,
         IBackgroundTaskQueue taskQueue,
@@ -147,9 +150,6 @@ public class DebugEndpoints : IEndpoints
 
         return TypedResults.Ok();
     }
-
-
-    private readonly record struct PlayerIdWithGuildIds(PlayerId PlayerId, GuildId[] GuildIds);
 
     private static async Task<Ok> ImportAllAdminConf(
         ServerDbContext dbContext,

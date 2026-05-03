@@ -128,9 +128,9 @@ public class GuildSelector : XUIHLayout
             if (guildLogo == null)
                 return;
 
-            await TextureUtils.RoundTextureAsync(guildLogo, guildLogo.width * 0.1f);
+            var roundedLogo = await TextureUtils.CreateRoundedTextureAsync(guildLogo, guildLogo.width * 0.1f);
 
-            SetSprite(Sprite.Create(guildLogo, new Rect(0, 0, guildLogo.width, guildLogo.height), Vector2.zero));
+            SetSprite(Sprite.Create(roundedLogo, new Rect(0, 0, guildLogo.width, guildLogo.height), Vector2.zero));
             SetWidth(8);
             SetHeight(8);
         }

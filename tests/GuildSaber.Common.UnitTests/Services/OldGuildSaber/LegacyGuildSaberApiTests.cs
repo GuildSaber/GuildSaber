@@ -9,8 +9,8 @@ namespace GuildSaber.Common.UnitTests.Services.OldGuildSaber;
 
 public class LegacyGuildSaberApiTests
 {
-    private readonly GuildId _validGuildId = new(1);
     private readonly LegacyGuildSaberApi _legacyGuildSaberApi;
+    private readonly GuildId _validGuildId = new(1);
 
     public LegacyGuildSaberApiTests()
     {

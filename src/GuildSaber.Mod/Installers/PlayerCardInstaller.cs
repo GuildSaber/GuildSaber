@@ -1,17 +1,12 @@
 using System.Linq;
 using BeatSaberMarkupLanguage.FloatingScreen;
 using GuildSaber.CSharpClient;
-using GuildSaber.Mod.Configurations;
-using GuildSaber.Mod.Core;
 using GuildSaber.Mod.Core.PlayerCard;
 using GuildSaber.Mod.Core.PlayerCard.UI;
 using GuildSaber.Mod.Core.PlayerCard.UI.Settings;
 using GuildSaber.Mod.Core.Time;
-using GuildSaber.Mod.Core.UI;
-using GuildSaber.Mod.Core.UI.RankedMap;
 using GuildSaber.Mod.Resources;
 using HMUI;
-using IPA.Utilities;
 using SiraUtil.Logging;
 using TMPro;
 using UnityEngine;
@@ -21,8 +16,6 @@ namespace GuildSaber.Mod.Installers;
 
 public class PlayerCardInstaller(GuildSaberClient client, SiraLog logger) : Installer
 {
-    
-
     internal class PlayerCardResourcesFactory(
         [Inject(Id = nameof(ResourceMap.DownArrow))] Texture2D downArrowTexture,
         [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture
@@ -53,7 +46,7 @@ public class PlayerCardInstaller(GuildSaberClient client, SiraLog logger) : Inst
     {
         logger.Info($"Client base api uri: {client.HttpClient.BaseAddress}");
         logger.Info($"Client user agent: {client.HttpClient.DefaultRequestHeaders.UserAgent}");
-        
+
         Container.Bind<PlayerCardResources>().FromFactory<PlayerCardResourcesFactory>().AsSingle();
         Container.Bind<TimeController>().FromNewComponentOnNewGameObject().AsSingle();
         Container.Bind<FloatingScreen>()

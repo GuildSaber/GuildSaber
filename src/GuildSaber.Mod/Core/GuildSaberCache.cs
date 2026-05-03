@@ -55,11 +55,8 @@ public static class GuildSaberCacheExtensions
 
         public async Task<RankedMap[]> FetchRankedMaps(ContextId contextId, SongHash hash, GuildSaberClient client)
         {
-            if (self.RankedMaps.TryGetValue((hash, contextId), out var rankedMap))
-            {
-                return rankedMap;
-            }
-            
+            if (self.RankedMaps.TryGetValue((hash, contextId), out var rankedMap)) return rankedMap;
+
             var searchResult = await client.RankedMaps.GetAsync(
                 contextId,
                 new RankedMapRequests.Filters(Search: hash),

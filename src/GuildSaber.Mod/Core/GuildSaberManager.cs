@@ -93,11 +93,9 @@ public class GuildSaberManager(GuildSaberClient client, SiraLog logger, GuildSab
         {
             var guildExtended = cache.GuildsExtended[config.PlayerCard.GuildId];
             if (!guildExtended.Contexts.Any(x => x.Id == config.PlayerCard.ContextId))
-            {
                 config.PlayerCard.ContextId = guildExtended.Contexts[0].Id;
-            }
         }
-        
+
         SelectGuild(config.PlayerCard.GuildId, selectedGuild.Contexts[0].Id);
     }
 

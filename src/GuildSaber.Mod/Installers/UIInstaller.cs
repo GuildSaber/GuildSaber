@@ -5,9 +5,6 @@ using GuildSaber.Mod.Core;
 using GuildSaber.Mod.Core.UI;
 using GuildSaber.Mod.Core.UI.RankedMap;
 using GuildSaber.Mod.Resources;
-using HMUI;
-using IPA.Utilities;
-using SiraUtil.Logging;
 using UnityEngine;
 using Zenject;
 
@@ -16,7 +13,6 @@ namespace GuildSaber.Mod.Installers;
 public class UIInstaller : Installer
 {
     public class MapRankedStatFactory(
-        [Inject] SiraLog logger,
         [Inject] GuildSaberCache guildSaberCache,
         [Inject] UIFactory uiFactory,
         [Inject] PluginConfig config,
@@ -26,30 +22,27 @@ public class UIInstaller : Installer
     {
         public MapRankedStat Create()
         {
-            var standardLevelDetailView = UnityEngine.Resources.FindObjectsOfTypeAll<StandardLevelDetailView>().First();
-            var standardLevelDetailViewController =
-                UnityEngine.Resources.FindObjectsOfTypeAll<StandardLevelDetailViewController>().First();
-            
-            var levelParamsPanel =
-                standardLevelDetailView.GetField<LevelParamsPanel, StandardLevelDetailView>("_levelParamsPanel");
+            var standardLevelDetailView = UnityEngine.Resources
+                .FindObjectsOfTypeAll<StandardLevelDetailView>()
+                .First();
+            var levelParamsPanel = standardLevelDetailView._levelParamsPanel;
+            var standardLevelDetailViewController = UnityEngine.Resources
+                .FindObjectsOfTypeAll<StandardLevelDetailViewController>()
+                .First();
 
-            var mapRankedStat = new MapRankedStat(
-                guildSaberCache, uiFactory, config, logger, client, gsWhiteLogoTexture);
+            var mapRankedStat = new MapRankedStat(guildSaberCache, uiFactory, config, client, gsWhiteLogoTexture);
             mapRankedStat.BuildUI(levelParamsPanel.transform);
-            mapRankedStat.RTransform.offsetMin = new Vector2(0, 0);
+            mapRankedStat.RTransform.offsetMin = new Vector2(75, -5);
             var rectTransform = levelParamsPanel.GetComponent<RectTransform>();
-            rectTransform.offsetMax += new Vector2(70, 0);
-            
+            rectTransform.offsetMax += new Vector2(0, 0);
+
             standardLevelDetailViewController.didChangeContentEvent += mapRankedStat.BeatmapContentChanged;
             standardLevelDetailView.didChangeDifficultyBeatmapEvent += mapRankedStat.BeatmapDifficultyChanged;
-            
+
             return mapRankedStat;
         }
     }
-    
+
     public override void InstallBindings()
-    {
-        Container.Bind<MapRankedStat>().FromFactory<MapRankedStatFactory>().AsSingle().NonLazy();
-        
-    }
+        => Container.Bind<MapRankedStat>().FromFactory<MapRankedStatFactory>().AsSingle().NonLazy();
 }

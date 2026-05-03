@@ -65,10 +65,10 @@ public class GSSecondaryButton : XUISecondaryButton
         for (var y = 0; y < texture.height; y++)
             texture.SetPixel(x, y, Color.white);
 
-        await TextureUtils.RoundTextureAsync(texture, 10);
+        var roundedTexture = await TextureUtils.CreateRoundedTextureAsync(texture, 10);
 
         return Sprite.Create(
-            texture,
+            roundedTexture,
             new Rect(0, 0, texture.width, texture.height),
             pivot: new Vector2(0, 0),
             pixelsPerUnit: 1000,

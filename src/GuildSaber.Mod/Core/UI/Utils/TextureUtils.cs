@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using GuildSaber.Mod.Core.UI.Extensions;
 using UnityEngine;
 
 namespace GuildSaber.Mod.Core.UI.Utils;
@@ -23,10 +22,6 @@ internal static class TextureUtils
         public int TextureOffset;
     }
 
-    //TODO: This function sucks because it creates a new texture instance only when the rect is out of bounds, so the
-    // caller might get the same instance of the texture back. Ngl, mutating the original or explicitly returning a copy might be better.
-    // I kinda prefer mutating the original as the caller can decide when to create copies and when not to.
-    // Note: The original name was: "MakeCorrespondHeight", but it's cropping essentially. I guess this should just be removed altogether if unneeded anyway.
     public static Texture2D CropToHeight(Texture2D origin, Rect rect)
     {
         if (rect.y >= origin.height)
@@ -80,7 +75,7 @@ internal static class TextureUtils
         return origin;
     }
 
-    public static async Task<Texture2D> AddOffset(Texture2D origin, int offset)
+    public static async Task<Texture2D> CreateWithOffsetAsync(Texture2D origin, int offset)
     {
         var height = origin.height - offset * 2;
         if (height <= 0) height = origin.height;
@@ -103,16 +98,12 @@ internal static class TextureUtils
         return result;
     }
 
-    public static async Task<Texture2D> RoundTextureAsync(Texture2D self, float radius)
+    public static async Task<Texture2D> CreateRoundedTextureAsync(Texture2D origin, float radius)
     {
-        var newTexture = self.GetCopy();
-        await Task.Run(() =>
-        {
-            RoundTexture(newTexture, radius);
-        });
-        newTexture.Apply();
-        
-        return newTexture;
+        var texture = origin.GetCopy();
+        await Task.Run(() => RoundTexture(texture, radius));
+        texture.Apply();
+        return texture;
     }
 
     public static void RoundTexture(Texture2D self, float radius)
@@ -137,7 +128,7 @@ internal static class TextureUtils
                 3 => new Vector2(self.width - radius, self.height - radius) /* Corner Top Right */,
                 _ => throw new ArgumentOutOfRangeException(nameof(corner), corner, null)
             };
-            
+
             if (Vector2.Distance(point, pointRadius) > radius)
                 self.SetPixel((int)point.x, (int)point.y, _transparentColor);
         }
