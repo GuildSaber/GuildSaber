@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using CP_SDK.XUI;
+using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
@@ -17,7 +18,7 @@ using Zenject;
 
 namespace GuildSaber.Mod.Core.UI.RankedMap;
 
-public class MapRankedStat : XUIHLayout
+public class MapRankedStat : XUIVLayout
 {
     private readonly GuildSaberClient _client;
     private readonly PluginConfig _config;
@@ -28,6 +29,7 @@ public class MapRankedStat : XUIHLayout
 
     private XUIImage _guildIcon = null!;
     private GSText _mapLevel = null!;
+    private GSText _mapCategories = null!;
 
     public MapRankedStat(
         GuildSaberCache guildSaberCache, UIFactory factory, PluginConfig config,
@@ -41,23 +43,29 @@ public class MapRankedStat : XUIHLayout
 
         OnReady(x =>
         {
-            XUIImage.Make()
-                .SetHeight(5)
-                .SetWidth(5)
-                .SetActive(false)
-                .Bind(ref _guildIcon)
-                .BuildUI(Element.transform);
+            XUIHLayout.Make(
+                XUIImage.Make()
+                    .Bind(ref _guildIcon)
+                    .SetActive(false)
+                    .SetHeight(5)
+                    .SetWidth(5),
+                factory.Text(string.Empty)
+                    .Bind(ref _mapLevel)
+                    .SetStyle(FontStyles.Italic)
+                    .SetFontSize(4)
+                    .SetAlpha(0.55f)
+            ).BuildUI(x.transform);
 
             factory.Text(string.Empty)
-                .Bind(ref _mapLevel)
-                .SetStyle(FontStyles.Italic)
+                .Bind(ref _mapCategories)
                 .SetFontSize(4)
                 .SetAlpha(0.55f)
-                .BuildUI(Element.transform);
+                .BuildUI(x.transform);
 
-            x.HLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
+            x.SetSpacing(-2);
+            x.VLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
             x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.MinSize;
         });
     }
 
@@ -71,7 +79,7 @@ public class MapRankedStat : XUIHLayout
             return;
         }
 
-        var rankedMapLevel = await FetchRankedMapLevel(
+        var rankedMap = await FetchRankedMap(
             _config.PlayerCard.ContextId,
             songHash,
             beatmapKey.beatmapCharacteristic.serializedName,
@@ -79,7 +87,7 @@ public class MapRankedStat : XUIHLayout
             _client
         );
 
-        if (rankedMapLevel is null)
+        if (rankedMap is null)
         {
             SetActive(false);
             return;
@@ -90,7 +98,16 @@ public class MapRankedStat : XUIHLayout
         var roundedIcon = await TextureUtils.CreateRoundedTextureAsync(
             guildIconTexture, guildIconTexture.width * 0.2f);
 
-        _mapLevel.SetText($"{(int)rankedMapLevel}");
+        var categoryNames = string.Join("\n",
+            _guildSaberCache.GuildsExtended[_config.PlayerCard.GuildId]
+                .Categories
+                .Where(x => rankedMap.CategoryIds.Contains(x.Id))
+                .Select(x => x.Info.Name));
+
+        _mapLevel.SetText($"{(int)rankedMap.Rating.DiffStar}");
+        _mapCategories.SetText(categoryNames);
+        _mapCategories.SetActive(!string.IsNullOrEmpty(categoryNames));
+
         _guildIcon.SetSprite(Sprite.Create(
             roundedIcon,
             new Rect(0, 0, roundedIcon.width, roundedIcon.height),
@@ -119,11 +136,9 @@ public class MapRankedStat : XUIHLayout
         _ = UpdateRankedStats(_beatmapLevel, standardLevelDetailView.beatmapKey);
     }
 
-    public async Task<float?> FetchRankedMapLevel(
+    public async Task<RankedMapResponses.RankedMap?> FetchRankedMap(
         ContextId contextId, SongHash hash, string mode, EDifficulty difficulty, GuildSaberClient client)
         => (await _guildSaberCache.FetchRankedMaps(contextId, hash, client))
-            .FirstOrDefault(x => x
-                .Versions
-                .Any(v => v.Difficulty.GameMode == mode && v.Difficulty.Difficulty == difficulty))
-            ?.Rating.DiffStar;
+            .FirstOrDefault(x => x.Versions
+                .Any(v => v.Difficulty.GameMode == mode && v.Difficulty.Difficulty == difficulty));
 }
