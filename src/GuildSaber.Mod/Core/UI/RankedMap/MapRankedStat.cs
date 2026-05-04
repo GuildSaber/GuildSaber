@@ -24,7 +24,7 @@ public class MapRankedStat : XUIVLayout
     private readonly PluginConfig _config;
     private readonly Texture2D _gsWhiteLogoTexture;
     private readonly GuildSaberCache _guildSaberCache;
-
+    
     private BeatmapLevel? _beatmapLevel;
 
     private XUIImage _guildIcon = null!;
@@ -79,6 +79,8 @@ public class MapRankedStat : XUIVLayout
 
     protected async Task UpdateRankedStats(BeatmapLevel? beatmapLevel, BeatmapKey? beatmapKeyHolder)
     {
+        if (!_config.MapStats.DisplayMapRankedStats) return;
+        
         if (beatmapLevel == null
             || beatmapKeyHolder is not { } beatmapKey
             || !SongHash.TryCreate(Hashing.ComputeCustomLevelHash(beatmapLevel)).TryGetValue(out var songHash))

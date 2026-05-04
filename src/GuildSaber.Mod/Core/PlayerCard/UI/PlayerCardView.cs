@@ -321,7 +321,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
                 .Contexts.Select(t => t.Info.Name)
                 .ToList();
 
-            ContextDropdown.SetOptions(contextNames, false);
+            ContextDropdown.SetOptions(contextNames);
             ContextDropdown.SetValue(contextNames[0], false);
 
             DisplayCard(EDisplayMode.Normal);
@@ -349,6 +349,8 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
     private void DisplaySettings()
     {
+        if (!GameObject.Find("MainScreen")) return;
+        
         if (!_cardSettingsCoordinator.IsPresent)
             _cardSettingsCoordinator.Present();
 

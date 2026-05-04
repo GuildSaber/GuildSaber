@@ -1,9 +1,15 @@
 ﻿using System.Linq;
+using BeatSaberMarkupLanguage.MenuButtons;
+using CP_SDK.UI;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Configurations;
 using GuildSaber.Mod.Core;
+using GuildSaber.Mod.Core.PlayerCard.UI;
+using GuildSaber.Mod.Core.PlayerCard.UI.Settings;
 using GuildSaber.Mod.Core.UI;
 using GuildSaber.Mod.Core.UI.RankedMap;
+using GuildSaber.Mod.Core.UI.Settings;
+using GuildSaber.Mod.Module;
 using GuildSaber.Mod.Resources;
 using UnityEngine;
 using Zenject;
@@ -43,6 +49,25 @@ public class UIInstaller : Installer
         }
     }
 
+    public class GuildSaberSettingsFactory(
+        [Inject] PlayerCardView cardView, 
+        [Inject] PluginConfig config,
+        [Inject] GuildSaberManager guildSaberManager,
+        [Inject] UIFactory uiFactory,
+        [Inject] MapRankedStat mapRankedStat) : IFactory<GuildSaberSettingsView>
+    {
+        public GuildSaberSettingsView Create()
+        {
+            var view = UISystem.CreateViewController<GuildSaberSettingsView>();
+            view.Inject(cardView, config, guildSaberManager, uiFactory, mapRankedStat);
+            GSModule.SettingsView = view;
+            return view;
+        }
+    }
+    
     public override void InstallBindings()
-        => Container.Bind<MapRankedStat>().FromFactory<MapRankedStatFactory>().AsSingle().NonLazy();
+    {
+        Container.Bind<MapRankedStat>().FromFactory<MapRankedStatFactory>().AsSingle().NonLazy();
+        Container.Bind<GuildSaberSettingsView>().FromFactory<GuildSaberSettingsFactory>().AsSingle().NonLazy();
+    }
 }
