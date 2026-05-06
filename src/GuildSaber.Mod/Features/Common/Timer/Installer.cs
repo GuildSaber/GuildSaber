@@ -2,7 +2,7 @@
 
 namespace GuildSaber.Mod.Features.Common.Timer;
 
-public class TimeControllerInstaller : Installer
+public class TimerInstaller : Installer
 {
     public override void InstallBindings() => Container
         .Bind<Timer>()

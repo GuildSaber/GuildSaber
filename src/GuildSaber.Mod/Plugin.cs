@@ -23,7 +23,7 @@ public class Plugin
     public Plugin(Zenjector zenjector, IPALogger logger, IPAConfig config)
     {
         zenjector.UseLogger(logger);
-        var pluginConfig = config.Generated<Config>();
+        var pluginConfig = config.Generated<GuildSaberConfig>();
 
         zenjector.Install<GuildSaberInstaller>(Location.App);
         zenjector.Install<AppInstaller>(Location.App, pluginConfig);
@@ -31,7 +31,7 @@ public class Plugin
         zenjector.Install<UIInstaller>(Location.App);
 
         zenjector.Install<GuildSaberSettingsInstaller>(Location.Menu);
-        zenjector.Install<TimeControllerInstaller>(Location.Menu);
+        zenjector.Install<TimerInstaller>(Location.Menu);
 
         zenjector.Install<PlayerCardInstaller>(Location.Menu);
         zenjector.Install<MapRankedStatsInstaller>(Location.Menu);

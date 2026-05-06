@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using CP_SDK.UI.Components;
 using CP_SDK.XUI;
@@ -8,53 +9,37 @@ using UnityEngine;
 
 namespace GuildSaber.Mod.Features.Common.UI.Components;
 
-public class GSSecondaryButton : XUISecondaryButton
+[SuppressMessage("ReSharper", "AsyncVoidMethod")]
+public class GSSecondaryButton(string label, TMP_FontAsset font, Action? onClick = null)
+    : XUISecondaryButton("GuildSaberSecondaryButton", label, onClick)
 {
-    protected readonly TMP_FontAsset Font;
-    private int _height;
-    private int _width;
+    public float Width => Element.LElement.preferredWidth;
+    public float Height => Element.LElement.preferredHeight;
 
-    public GSSecondaryButton(string label, TMP_FontAsset font, Action? onClick = null)
-        : base("GuildSaberSecondaryButton", label, onClick)
+    public override void BuildUI(Transform parent)
     {
-        Font = font;
-        OnReady(_SetupStyle);
+        OnReady(SetupStyle);
+        base.BuildUI(parent);
     }
 
-    public GSSecondaryButton(string label, int width, int height, TMP_FontAsset font, Action? onClick = null)
-        : base("GuildSaberSecondaryButton", label, onClick)
+    private void SetupStyle(CSecondaryButton button) => _SetupStyle(button, GetColor());
+
+    private async void _SetupStyle(CSecondaryButton button, Color color)
     {
-        Font = font;
-        _width = width;
-        _height = height;
+        var width = (int)Width;
+        var height = (int)Height;
 
-        OnReady(_SetupStyle);
+        if (width <= 0 || height <= 0)
+            return;
+
+        var sprite = await GetBackground((int)Width, (int)Height);
+        button.SetBackgroundColor(color);
+        button.SetBackgroundSprite(sprite);
+        button.gameObject.GetComponentInChildren<TextMeshProUGUI>().font = font;
     }
-
 
     public virtual Color GetColor() => Color.black.ColorWithAlpha(0.7f);
 
-    //////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////
-
-    private void _SetupStyle(CSecondaryButton button) => SetupStyle(button, _width, _height, GetColor());
-
-    //////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////
-
-    public async void SetupStyle(CSecondaryButton button, int width, int height, Color color)
-    {
-        button.SetWidth(width);
-        button.SetHeight(height);
-
-        var sprite = await GetBackground(width, height);
-        button.SetBackgroundColor(color);
-        button.SetBackgroundSprite(sprite);
-        button.gameObject.GetComponentInChildren<TextMeshProUGUI>().font = Font;
-    }
-
-    //////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////
 
     public static async Task<Sprite> GetBackground(int width, int height)
     {
@@ -76,32 +61,6 @@ public class GSSecondaryButton : XUISecondaryButton
         );
     }
 
-    //////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////
 
-    public GSSecondaryButton SetWidth(int width, bool refreshVisuals = false)
-    {
-        _width = width;
-        base.SetWidth(width);
-
-        if (refreshVisuals) OnReady(_SetupStyle);
-
-        return this;
-    }
-
-    public GSSecondaryButton SetHeight(int height, bool refreshVisuals = false)
-    {
-        _height = height;
-        base.SetHeight(height);
-
-        if (refreshVisuals) OnReady(_SetupStyle);
-
-        return this;
-    }
-
-    public GSSecondaryButton Bind(ref GSSecondaryButton x)
-    {
-        x = this;
-        return this;
-    }
+    public GSSecondaryButton Bind(ref GSSecondaryButton x) => x = this;
 }

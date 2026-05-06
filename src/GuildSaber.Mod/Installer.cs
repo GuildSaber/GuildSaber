@@ -1,12 +1,12 @@
 using BeatSaberMarkupLanguage;
+using GuildSaber.Mod.Features.GuildSaber;
 using GuildSaber.Mod.Features.PlayerCard.UI.Components.GuildSelector;
 using GuildSaber.Mod.Features.PlayerCard.UI.Settings;
 using Zenject;
-using Config = GuildSaber.Mod.Features.GuildSaber.Config;
 
 namespace GuildSaber.Mod;
 
-internal class AppInstaller(Config config) : Installer
+internal class AppInstaller(GuildSaberConfig config) : Installer
 {
     public override void InstallBindings()
     {

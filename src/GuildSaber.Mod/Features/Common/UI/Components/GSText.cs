@@ -9,39 +9,28 @@ public class GSText : XUIText
     protected readonly TMP_FontAsset Font;
 
     public GSText(string text, TMP_FontAsset font) : base("GuildSaberText", text)
+        => (Font, _) = (font, OnReady(PatchText));
+
+    public GSText Bind(ref GSText value) => value = this;
+
+    private void PatchText(CText text) => PatchText(text.GetComponentInChildren<TextMeshProUGUI>());
+    private void PatchText(TextMeshProUGUI text) => text.font = Font;
+
+    public GSText SetGradiantEnabled(bool value)
     {
-        Font = font;
-        OnReady(PatchText);
-    }
-
-    public GSText Bind(ref GSText value)
-    {
-        value = this;
-        return this;
-    }
-
-    public void PatchText(CText text) => PatchText(text.GetComponentInChildren<TextMeshProUGUI>());
-    public void PatchText(TextMeshProUGUI text) => text.font = Font;
-
-    ////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////
-
-    public new GSText SetMargins(float left, float top, float right, float bottom)
-    {
-        base.SetMargins(left, top, right, bottom);
-        return this;
-    }
-
-    public GSText SetUseGradient(bool value)
-    {
-        OnReady(x => { x.GetComponentInChildren<TextMeshProUGUI>().enableVertexGradient = value; });
+        OnReady(x => x.GetComponentInChildren<TextMeshProUGUI>().enableVertexGradient = value);
         return this;
     }
 
     public GSText SetGradient(VertexGradient gradient)
     {
-        SetUseGradient(true);
-        OnReady(x => { x.GetComponentInChildren<TextMeshProUGUI>().colorGradient = gradient; });
+        OnReady(x =>
+        {
+            var textComponent = x.GetComponentInChildren<TextMeshProUGUI>();
+
+            textComponent.enableVertexGradient = true;
+            textComponent.colorGradient = gradient;
+        });
         return this;
     }
 }

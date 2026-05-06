@@ -10,7 +10,7 @@ public abstract class CustomFlowCoordinator : FlowCoordinator
 
     protected abstract string Title { get; }
 
-    protected virtual bool ShowBackButton { get; } = true;
+    protected virtual bool ShowBackButton => true;
 
     public bool IsPresent { get; private set; }
 

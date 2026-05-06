@@ -21,7 +21,7 @@ namespace GuildSaber.Mod.Features.RankedMapStats;
 public class MapRankedStats : XUIVLayout
 {
     private readonly GuildSaberClient _client;
-    private readonly Config _config;
+    private readonly GuildSaberConfig _config;
     private readonly Texture2D _gsWhiteLogoTexture;
     private readonly GuildSaberCache _guildSaberCache;
 
@@ -35,7 +35,7 @@ public class MapRankedStats : XUIVLayout
     public MapRankedStats(
         [Inject] GuildSaberCache guildSaberCache,
         [Inject] UIFactory factory,
-        [Inject] Config config,
+        [Inject] GuildSaberConfig config,
         [Inject] GuildSaberClient client,
         [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture,
         [Inject] StandardLevelDetailViewController standardLevelDetailViewController) : base("MapRankedStats")
@@ -95,7 +95,7 @@ public class MapRankedStats : XUIVLayout
 
     protected async Task UpdateRankedStats(BeatmapLevel? beatmapLevel, BeatmapKey? beatmapKeyHolder)
     {
-        if (!_config.MapStats.DisplayMapRankedStats) return;
+        if (!_config.RankedMapStats.Enabled) return;
 
         if (beatmapLevel == null
             || beatmapKeyHolder is not { } beatmapKey

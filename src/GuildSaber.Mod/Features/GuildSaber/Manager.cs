@@ -12,7 +12,7 @@ using Zenject;
 namespace GuildSaber.Mod.Features.GuildSaber;
 
 [SuppressMessage("ReSharper", "AsyncVoidMethod")]
-public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSaberCache cache, Config config)
+public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSaberCache cache, GuildSaberConfig config)
     : IInitializable
 {
     public bool Initialized;

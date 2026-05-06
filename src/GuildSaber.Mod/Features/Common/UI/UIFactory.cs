@@ -6,15 +6,13 @@ using Zenject;
 
 namespace GuildSaber.Mod.Features.Common.UI;
 
+/// <summary>
+/// Factory for creating UI components with the correct font and styling.
+/// </summary>
+/// <param name="font"></param>
 public class UIFactory([Inject(Id = nameof(ResourceMap.TekoMedium))] TMP_FontAsset font)
 {
     public GSText Text(string text) => new(text, font);
-
+    public GSDropdown Dropdown() => new(font);
     public GSSecondaryButton SecondaryButton(string text, Action? onClick = null) => new(text, font, onClick);
-
-    public GSSecondaryButton SecondaryButton(string text, int width, int height, Action? onClick = null)
-        => new(text, width, height, font, onClick);
-
-    public GSDropdown Dropdown()
-        => new(font);
 }

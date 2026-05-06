@@ -15,7 +15,7 @@ public class GuildSelectorFlowCoordinator : CustomFlowCoordinator
     protected Action<GuildResponses.GuildExtended>? DismissCallback;
 
     protected override string Title => "Select guild";
-    protected override ViewController? GetMainViewController() => _mainView;
+    protected override ViewController GetMainViewController() => _mainView;
 
     public void Show(Action<GuildResponses.GuildExtended> callback)
     {

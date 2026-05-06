@@ -12,8 +12,9 @@ namespace GuildSaber.Mod.Features.PlayerCard.UI.Components;
 
 public class PagedLevelList : XUIVLayout
 {
-    private static readonly int LevelsCountByPage = 4;
-    private readonly Config _config = null!;
+    private const int LevelsCountByPage = 4;
+
+    private readonly GuildSaberConfig _config;
     private readonly GuildSaberCache _guildSaberCache;
     private readonly List<GSText> _levels = [];
 
@@ -27,7 +28,7 @@ public class PagedLevelList : XUIVLayout
     private XUIGLayout _playerLevelsContainer = null!;
     private int _totalLevelCount;
 
-    public PagedLevelList(UIFactory factory, GuildSaberCache guildSaberCache, Config config) : base(
+    public PagedLevelList(UIFactory factory, GuildSaberCache guildSaberCache, GuildSaberConfig config) : base(
         "PagedLevelList")
     {
         _uiFactory = factory;
@@ -41,20 +42,20 @@ public class PagedLevelList : XUIVLayout
 
             XUIHLayout.Make(
                     factory.SecondaryButton("<", PageLeft)
+                        .Bind(ref _pageLeftButton)
                         .SetWidth(5)
-                        .SetHeight(5)
-                        .Bind(ref _pageLeftButton),
+                        .SetHeight(5),
                     factory.SecondaryButton(">", PageRight)
+                        .Bind(ref _pageRightButton)
                         .SetWidth(5)
                         .SetHeight(5)
-                        .Bind(ref _pageRightButton)
                 ).SetSpacing(10)
                 .SetPadding(new RectOffset(-5, 2, 2, 2))
                 .BuildUI(x.transform);
         });
     }
 
-    public static PagedLevelList Make(UIFactory factory, GuildSaberCache guildSaberCache, Config config)
+    public static PagedLevelList Make(UIFactory factory, GuildSaberCache guildSaberCache, GuildSaberConfig config)
         => new(factory, guildSaberCache, config);
 
     public PagedLevelList Bind(ref PagedLevelList target)
@@ -65,19 +66,13 @@ public class PagedLevelList : XUIVLayout
 
     public void Refresh(GuildSaberCache targetData)
     {
-        // Same instance, I don't think we need to set again the instance.
-        //_guildSaberCache = targetData;
-
         _page = 0;
-
         Refresh();
     }
 
     public void Refresh()
     {
         if (_guildSaberCache.MemberLevelStats.Count == 0)
-            //_logger.Warn("No levels ???");
-            //DisplayLevelsDetails(false);
             return;
 
         if (_levels.Count == 0)
@@ -97,20 +92,20 @@ public class PagedLevelList : XUIVLayout
 
         foreach (var category in allCategories)
         {
-            var levelArray = _guildSaberCache.MemberLevelStats[_config.PlayerCard.ContextId].Where(x =>
-                x.Level.CategoryId == category.Id && x.Level.CategoryId != null && x.IsCompleted);
+            var levelArray = _guildSaberCache.MemberLevelStats[_config.PlayerCard.ContextId]
+                .Where(x => x.Level.CategoryId == category.Id && x.Level.CategoryId != null && x.IsCompleted)
+                .ToArray();
 
             LevelStatResponses.MemberLevelStat? toAppend = null;
 
-            if (levelArray.Any())
+            if (levelArray.Length > 0)
             {
                 toAppend = levelArray.Last();
             }
             else
             {
-                levelArray = allLevels.Where(x => x.Level.CategoryId == category.Id);
-
-                if (levelArray.Any()) toAppend = levelArray.First();
+                levelArray = allLevels.Where(x => x.Level.CategoryId == category.Id).ToArray();
+                if (levelArray.Length > 0) toAppend = levelArray.First();
             }
 
             if (toAppend != null)
@@ -136,7 +131,6 @@ public class PagedLevelList : XUIVLayout
             var category = displayedLevels[i];
             if (category == null)
             {
-                //Logger.Instance.Error($"Could not get category with id {l_DisplayedCategories[l_i].CategoryID}");
                 _levels[i].SetActive(false);
                 continue;
             }
@@ -150,14 +144,16 @@ public class PagedLevelList : XUIVLayout
 
     public void PageLeft()
     {
-        if (_page > 0) _page--;
+        if (_page > 0)
+            _page--;
 
         Refresh();
     }
 
     public void PageRight()
     {
-        if (_page < _maxPage) _page++;
+        if (_page < _maxPage)
+            _page++;
 
         Refresh();
     }

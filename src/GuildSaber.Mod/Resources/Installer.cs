@@ -27,7 +27,11 @@ public class ResourcesInstaller(IPALogger logger) : Installer
                     .FindObjectsOfTypeAll<TextMeshProUGUI>()
                     .First(x => x.font.name.Contains(ResourceMap.TekoMedium) && x.font.name.Contains("Curved"))
                     .font;
-                logger.Debug($"[{nameof(ResourcesInstaller)}/TMP_FontAsset] Loaded TekoFont: {font.name}");
+
+                logger.Debug(
+                    $"[{nameof(ResourcesInstaller)}/TMP_FontAsset] Loaded {nameof(ResourceMap.TekoMedium)}: {font.name}"
+                );
+
                 return font;
             }).AsCached();
     }

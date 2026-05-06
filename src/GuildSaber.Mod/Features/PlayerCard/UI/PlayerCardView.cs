@@ -40,7 +40,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
     [Inject] private readonly PlayerCardSettingsCoordinator _cardSettingsCoordinator = null!;
     [Inject] private readonly GuildSaberClient _client = null!;
-    [Inject] private readonly Config _config = null!;
+    [Inject] private readonly GuildSaberConfig _config = null!;
     [Inject] private readonly GuildSaberCache _guildSaberCache = null!;
 
     [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
@@ -115,7 +115,9 @@ public class PlayerCardView : ViewController<PlayerCardView>
         XUIVLayout.Make(
                 _uiFactory.Text("Server unreachable.\nOr you're not registered on the website")
                     .SetColor(new Color(1, 0.5f, 0)),
-                _uiFactory.SecondaryButton("Open in browser", 40, 4)
+                _uiFactory.SecondaryButton("Open in browser")
+                    .SetWidth(40)
+                    .SetHeight(4)
                     .OnClick(() =>
                         Process.Start(_config.ApiEnv.ToWebsiteUri.ToString())
                     )
@@ -125,7 +127,8 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
         XUIVLayout.Make(
                 _uiFactory.Text("Loading... TODO: Replace this text by the loading indicator of the base game")
-            ).Bind(ref LoadingLayout)
+            )
+            .Bind(ref LoadingLayout)
             .BuildUI(transform);
 
         XUIHLayout.Make(
@@ -228,7 +231,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
     public void OnTimeInit()
     {
         var currentTime = DateTime.Now;
-        var savedTime = _config.PlayerCard.TimeData;
+        var savedTime = _config.PlayerCard.TimerConfig;
 
         if (savedTime.Day == currentTime.Day)
         {
@@ -245,7 +248,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
         TimeText.SetText($"{time.Hours:00}:{time.Minutes:00}:{time.Seconds:00}");
         if (time.Seconds % 20 != 0) return;
 
-        _config.PlayerCard.TimeData.PlayDurationSec += 20;
+        _config.PlayerCard.TimerConfig.PlayDurationSec += 20;
     }
 
     private void OnSceneChanged(Logic.ESceneType x)
@@ -265,24 +268,25 @@ public class PlayerCardView : ViewController<PlayerCardView>
         }
     }
 
-    private void EventGuildSelected(GuildResponses.GuildExtended? x)
+    private void EventGuildSelected(GuildResponses.GuildExtended? guildExtended)
     {
-        if (_config.PlayerCard.GuildId == -1) return;
+        if (_config.PlayerCard.GuildId == -1)
+            return;
 
-        if (x == null)
+        if (guildExtended == null)
         {
             DisplayCard(EDisplayMode.Normal);
             LoadConfig();
             return;
         }
 
-        _config.PlayerCard.GuildId = x.Guild.Id;
-        _guildSaberManager.SetGuild(x);
+        _config.PlayerCard.GuildId = guildExtended.Guild.Id;
+        _guildSaberManager.SetGuild(guildExtended);
 
         SetGuild(new GuildId(_config.PlayerCard.GuildId), UpdatePlayer);
     }
 
-    private void ContextSelected(int index, string name)
+    private void ContextSelected(int index, string _)
     {
         var contextId = _guildSaberCache
             .GuildsExtended[_config.PlayerCard.GuildId]
@@ -293,22 +297,29 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
     public void RefreshCardSize(bool displayCardLevelsDetails)
     {
-        if (!_guildSaberCache.MemberLevelStats.TryGetValue(_config.PlayerCard.ContextId, out var memberLevelStats))
-            return;
-
-        if (memberLevelStats.Length == 0 && displayCardLevelsDetails)
+        while (true)
         {
-            RefreshCardSize(false);
-            return;
+            if (!_guildSaberCache.MemberLevelStats.TryGetValue(_config.PlayerCard.ContextId, out var memberLevelStats))
+                return;
+
+            if (memberLevelStats.Length == 0 && displayCardLevelsDetails)
+            {
+                displayCardLevelsDetails = false;
+                continue;
+            }
+
+            float width = 55;
+            if (displayCardLevelsDetails && memberLevelStats.Length > 0)
+                width += 30;
+
+            if (_guildSaberCache.PlayerExtended != null)
+                GetCardFloatingScreen().ScreenSize = new Vector2(
+                    width + _guildSaberCache.PlayerExtended.Player.PlayerInfo.Username.Length,
+                    40
+                );
+
+            break;
         }
-
-        float width = 55;
-        if (displayCardLevelsDetails && memberLevelStats.Length > 0)
-            width += 30;
-
-        if (_guildSaberCache.PlayerExtended != null)
-            GetCardFloatingScreen().ScreenSize = new Vector2(
-                width + _guildSaberCache.PlayerExtended.Player.PlayerInfo.Username.Length, 40);
     }
 
     public async void RefreshCard()
@@ -375,7 +386,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
     private void ResetTimer()
     {
-        _config.PlayerCard.TimeData.PlayDurationSec = 0;
+        _config.PlayerCard.TimerConfig.PlayDurationSec = 0;
         _timer.Reset();
         DisplayCard(EDisplayMode.Normal);
     }

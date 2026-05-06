@@ -4,7 +4,7 @@ using Zenject;
 
 namespace GuildSaber.Mod.Features.GuildSaber;
 
-internal class GuildSaberClientFactory(Config config, Logger logger) : IFactory<GuildSaberClient>
+internal class GuildSaberClientFactory(GuildSaberConfig config, Logger logger) : IFactory<GuildSaberClient>
 {
     public GuildSaberClient Create()
     {

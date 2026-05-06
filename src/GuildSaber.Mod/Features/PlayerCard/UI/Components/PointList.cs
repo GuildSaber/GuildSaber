@@ -11,19 +11,19 @@ namespace GuildSaber.Mod.Features.PlayerCard.UI.Components;
 public class PointList : XUIVLayout
 {
     protected readonly List<GSText> _pointTexts = new();
-    protected Config _config = null!;
+    protected GuildSaberConfig _config = null!;
     protected UIFactory _uiFactory;
 
     protected GuildSaberCache GuildSaberCache;
 
-    protected PointList(GuildSaberCache guildSaberCache, Config config, UIFactory factory) : base("PointList")
+    protected PointList(GuildSaberCache guildSaberCache, GuildSaberConfig config, UIFactory factory) : base("PointList")
     {
         _uiFactory = factory;
         _config = config;
         GuildSaberCache = guildSaberCache;
     }
 
-    public static PointList Make(GuildSaberCache guildSaberCache, Config config, UIFactory factory)
+    public static PointList Make(GuildSaberCache guildSaberCache, GuildSaberConfig config, UIFactory factory)
         => new(guildSaberCache, config, factory);
 
     public PointList Bind(ref PointList x)

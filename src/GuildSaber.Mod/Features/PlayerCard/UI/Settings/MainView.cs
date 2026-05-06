@@ -14,7 +14,7 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
     private readonly FloatingScreen _cardScreen = null!;
 
     [Inject] private readonly PlayerCardView _cardView = null!;
-    [Inject] private readonly Config _config = null!;
+    [Inject] private readonly GuildSaberConfig _config = null!;
 
     [Inject] private readonly GuildSaberCache _guildSaberCache = null!;
     [Inject] private readonly UIFactory _uiFactory = null!;
@@ -82,9 +82,13 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
                 )
             ).Bind(ref _customColorsLayout),
             XUIHLayout.Make(
-                _uiFactory.SecondaryButton("Reset menu position", 40, 5)
+                _uiFactory.SecondaryButton("Reset menu position")
+                    .SetWidth(40)
+                    .SetHeight(5)
                     .OnClick(ResetMenuPosition),
-                _uiFactory.SecondaryButton("Reset in song position", 40, 5)
+                _uiFactory.SecondaryButton("Reset in song position")
+                    .SetWidth(40)
+                    .SetHeight(5)
                     .OnClick(ResetInSongPosition)
             )
         ).BuildUI(transform);
