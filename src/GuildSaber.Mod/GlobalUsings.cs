@@ -1,0 +1,1 @@
+﻿global using Logger = SiraUtil.Logging.SiraLog;

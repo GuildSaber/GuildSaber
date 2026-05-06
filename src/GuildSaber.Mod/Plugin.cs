@@ -1,5 +1,11 @@
-﻿using GuildSaber.Mod.Configurations;
-using GuildSaber.Mod.Installers;
+﻿using GuildSaber.Mod.Features.Common.Timer;
+using GuildSaber.Mod.Features.Common.UI;
+using GuildSaber.Mod.Features.GuildSaber;
+using GuildSaber.Mod.Features.GuildSaber.Settings;
+using GuildSaber.Mod.Features.PlayerCard;
+using GuildSaber.Mod.Features.RankedMapStats;
+using GuildSaber.Mod.Resources;
+using HarmonyLib;
 using IPA;
 using IPA.Config.Stores;
 using SiraUtil.Zenject;
@@ -11,20 +17,24 @@ namespace GuildSaber.Mod;
 [Plugin(RuntimeOptions.SingleStartInit)]
 public class Plugin
 {
-    private readonly HarmonyLib.Harmony _guildSaberHarmony = new("guildsaber.mod.sheepvand");
+    private readonly Harmony _guildSaberHarmony = new("guildsaber.mod.sheepvand");
 
     [Init]
     public Plugin(Zenjector zenjector, IPALogger logger, IPAConfig config)
     {
         zenjector.UseLogger(logger);
-        var pluginConfig = config.Generated<PluginConfig>();
+        var pluginConfig = config.Generated<Config>();
 
-        zenjector.Install<CoreInstaller>(Location.App);
+        zenjector.Install<GuildSaberInstaller>(Location.App);
         zenjector.Install<AppInstaller>(Location.App, pluginConfig);
         zenjector.Install<ResourcesInstaller>(Location.App, logger);
-        zenjector.Install<UIFactoryInstaller>(Location.App);
-        zenjector.Install<UIInstaller>(Location.Menu);
+        zenjector.Install<UIInstaller>(Location.App);
+
+        zenjector.Install<GuildSaberSettingsInstaller>(Location.Menu);
+        zenjector.Install<TimeControllerInstaller>(Location.Menu);
+
         zenjector.Install<PlayerCardInstaller>(Location.Menu);
+        zenjector.Install<MapRankedStatsInstaller>(Location.Menu);
     }
 
     [OnEnable]
