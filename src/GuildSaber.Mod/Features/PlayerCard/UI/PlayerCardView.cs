@@ -15,6 +15,7 @@ using GuildSaber.Mod.Features.GuildSaber;
 using GuildSaber.Mod.Features.PlayerCard.UI.Components;
 using GuildSaber.Mod.Features.PlayerCard.UI.Components.GuildSelector;
 using GuildSaber.Mod.Features.PlayerCard.UI.Settings;
+using GuildSaber.Mod.Features.PlaylistDownloader.UI;
 using GuildSaber.Mod.Helpers;
 using HMUI;
 using TMPro;
@@ -45,11 +46,12 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
     [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
     [Inject] private readonly GuildSelectorFlowCoordinator _guildSelectorFlowCoordinator = null!;
+    [Inject] private readonly PlaylistDownloaderCoordinator _playlistDownloaderCoordinator = null!;
     [Inject] private readonly Logger _logger = null!;
     [Inject] private readonly PlayerCardResources _resources = null!;
     [Inject] private readonly Timer _timer = null!;
     [Inject] private readonly UIFactory _uiFactory = null!;
-
+    
     private ImageView _borderImage = null!;
 
     protected XUIDropdown ContextDropdown = null!;
@@ -102,7 +104,11 @@ public class PlayerCardView : ViewController<PlayerCardView>
                     _uiFactory.SecondaryButton("Reset timer")
                         .SetWidth(20)
                         .SetHeight(5)
-                        .OnClick(ResetTimer)
+                        .OnClick(ResetTimer),
+                    _uiFactory.SecondaryButton("Playlists downloader")
+                        .SetWidth(20)
+                        .SetHeight(5)
+                        .OnClick(OpenPlaylistsDownloader)
                 ),
                 _uiFactory.Dropdown()
                     .Bind(ref ContextDropdown)
@@ -311,7 +317,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
             float width = 55;
             if (displayCardLevelsDetails && memberLevelStats.Length > 0)
                 width += 30;
-
+            
             if (_guildSaberCache.PlayerExtended != null)
                 GetCardFloatingScreen().ScreenSize = new Vector2(
                     width + _guildSaberCache.PlayerExtended.Player.PlayerInfo.Username.Length,
@@ -351,8 +357,8 @@ public class PlayerCardView : ViewController<PlayerCardView>
             ContextDropdown.SetOptions(contextNames);
             ContextDropdown.SetValue(contextNames[0], false);
 
-            DisplayCard(EDisplayMode.Normal);
             LoadConfig();
+            DisplayCard(EDisplayMode.Normal);
             UpdatePlayer();
         }
         catch (Exception e)
@@ -391,6 +397,11 @@ public class PlayerCardView : ViewController<PlayerCardView>
         DisplayCard(EDisplayMode.Normal);
     }
 
+    private void OpenPlaylistsDownloader()
+    {
+        _playlistDownloaderCoordinator.Present();
+    }
+    
     public void DisplayCard(EDisplayMode displayMode)
     {
         MainLayout.SetActive(displayMode == EDisplayMode.Normal);
@@ -399,7 +410,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
         ServerUnreachableLayout.SetActive(displayMode == EDisplayMode.Error);
 
         if (displayMode == EDisplayMode.Error) return;
-
+        
         LoadConfig();
 
         GuildSelector.UpdateGuildButtons();

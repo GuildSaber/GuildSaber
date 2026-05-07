@@ -38,7 +38,8 @@ public class MapRankedStats : XUIVLayout
         [Inject] GuildSaberConfig config,
         [Inject] GuildSaberClient client,
         [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture,
-        [Inject] StandardLevelDetailViewController standardLevelDetailViewController) : base("MapRankedStats")
+        [Inject] StandardLevelDetailViewController standardLevelDetailViewController
+        ) : base("MapRankedStats")
     {
         _guildSaberCache = guildSaberCache;
         _config = config;
@@ -61,7 +62,7 @@ public class MapRankedStats : XUIVLayout
                         .SetAlpha(0.55f))
                 .SetSpacing(2)
                 .BuildUI(x.transform);
-
+            
             XUIHLayout.Make(
                 factory.Text(string.Empty)
                     .Bind(ref _mapCategories)

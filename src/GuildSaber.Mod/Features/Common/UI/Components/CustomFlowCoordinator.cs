@@ -1,6 +1,7 @@
 ﻿using System;
 using BeatSaberMarkupLanguage;
 using HMUI;
+using UnityEngine;
 
 namespace GuildSaber.Mod.Features.Common.UI.Components;
 
@@ -48,6 +49,8 @@ public abstract class CustomFlowCoordinator : FlowCoordinator
 
     public void Present()
     {
+        if (GameObject.Find("MainScreen") == null) return;
+        
         _lastFlowCoordinator = BeatSaberUI.MainFlowCoordinator.YoungestChildFlowCoordinatorOrSelf();
         if (!_lastFlowCoordinator) return;
 
@@ -55,7 +58,9 @@ public abstract class CustomFlowCoordinator : FlowCoordinator
         OnShow();
     }
 
-    public void Dismiss(Action? finishedCallback = null)
+    public void Dismiss() => Dismiss(null);
+    
+    public void Dismiss(Action? finishedCallback)
     {
         if (_lastFlowCoordinator == null)
             return;

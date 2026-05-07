@@ -3,6 +3,7 @@ using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.GuildSaber;
 using GuildSaber.Mod.Features.GuildSaber.Settings;
 using GuildSaber.Mod.Features.PlayerCard;
+using GuildSaber.Mod.Features.PlaylistDownloader;
 using GuildSaber.Mod.Features.RankedMapStats;
 using GuildSaber.Mod.Resources;
 using HarmonyLib;
@@ -32,7 +33,8 @@ public class Plugin
 
         zenjector.Install<GuildSaberSettingsInstaller>(Location.Menu);
         zenjector.Install<TimerInstaller>(Location.Menu);
-
+        
+        zenjector.Install<PlaylistDownloaderInstaller>(Location.Menu);
         zenjector.Install<PlayerCardInstaller>(Location.Menu);
         zenjector.Install<MapRankedStatsInstaller>(Location.Menu);
     }
