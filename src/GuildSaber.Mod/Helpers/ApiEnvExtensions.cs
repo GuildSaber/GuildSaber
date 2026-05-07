@@ -7,14 +7,14 @@ public static class ApiEnvExtensions
 {
     extension(ApiEnv self)
     {
-        public Uri ToApiUri => self switch
+        public Uri ToApiUri() => self switch
         {
             ApiEnv.Prod => Constants.ProdApiBaseUrl,
             ApiEnv.Dev => Constants.DevApiBaseUrl,
             _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
         };
 
-        public Uri ToCdnUri => self switch
+        public Uri ToCdnUri() => self switch
         {
             ApiEnv.Prod => Constants.ProdCdnBaseUrl,
             ApiEnv.Dev => Constants.DevCdnBaseUrl,
@@ -22,7 +22,7 @@ public static class ApiEnvExtensions
         };
 
 
-        public Uri ToWebsiteUri => self switch
+        public Uri ToWebsiteUri() => self switch
         {
             ApiEnv.Prod => Constants.ProdWebsiteBaseUrl,
             ApiEnv.Dev => Constants.DevWebsiteBaseUrl,

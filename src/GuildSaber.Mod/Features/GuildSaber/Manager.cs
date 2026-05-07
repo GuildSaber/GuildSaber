@@ -81,20 +81,20 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
             cache.GuildsExtended[guild.Guild.Id] = guild;
         }
 
-        if (!cache.GuildsExtended.TryGetValue(config.PlayerCard.GuildId, out var selectedGuild))
+        if (!cache.GuildsExtended.TryGetValue(config.GuildId, out var selectedGuild))
         {
-            config.PlayerCard.GuildId = guilds[0].Guild.Id;
-            config.PlayerCard.ContextId = guilds[0].Contexts[0].Id;
+            config.GuildId = guilds[0].Guild.Id;
+            config.ContextId = guilds[0].Contexts[0].Id;
             selectedGuild = guilds[0];
         }
         else
         {
-            var guildExtended = cache.GuildsExtended[config.PlayerCard.GuildId];
-            if (guildExtended.Contexts.All(x => x.Id != config.PlayerCard.ContextId))
-                config.PlayerCard.ContextId = guildExtended.Contexts[0].Id;
+            var guildExtended = cache.GuildsExtended[config.GuildId];
+            if (guildExtended.Contexts.All(x => x.Id != config.ContextId))
+                config.ContextId = guildExtended.Contexts[0].Id;
         }
 
-        SelectGuild(config.PlayerCard.GuildId, selectedGuild.Contexts[0].Id);
+        SelectGuild(config.GuildId, selectedGuild.Contexts[0].Id);
     }
 
     public event Action<string> OnInitializationError = _ => { };
@@ -102,8 +102,8 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
 
     public void SetGuild(GuildResponses.GuildExtended guild)
     {
-        config.PlayerCard.GuildId = guild.Guild.Id;
-        config.PlayerCard.ContextId = guild.Contexts[0].Id;
+        config.GuildId = guild.Guild.Id;
+        config.ContextId = guild.Contexts[0].Id;
 
         SelectGuild(guild.Guild.Id, guild.Contexts[0].Id);
     }

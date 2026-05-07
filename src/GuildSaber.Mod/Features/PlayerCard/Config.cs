@@ -1,10 +1,9 @@
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.Mod.Features.Common.Timer;
 using UnityEngine;
 
 namespace GuildSaber.Mod.Features.PlayerCard;
 
-public class CardConfig
+public class PlayerCardConfig
 {
     public CardColors ColorSettings = new(false, false, Color.white, Color.white, Color.white);
 
@@ -22,9 +21,6 @@ public class CardConfig
     );
 
     public bool CategoryLevelViewEnabled { get; set; } = true;
-
-    public GuildId GuildId { get; set; } = new(-1);
-    public ContextId ContextId { get; set; } = new(-1);
 }
 
 /// <summary>

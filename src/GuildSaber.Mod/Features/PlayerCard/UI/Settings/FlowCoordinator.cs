@@ -1,10 +1,10 @@
-using GuildSaber.Mod.Features.Common.UI.Components;
+using GuildSaber.Mod.Features.Common.UI;
 using HMUI;
 using Zenject;
 
 namespace GuildSaber.Mod.Features.PlayerCard.UI.Settings;
 
-public class PlayerCardSettingsCoordinator : CustomFlowCoordinator
+public class PlayerCardSettingsCoordinator : SimpleFlowCoordinator
 {
     [Inject] private readonly PlayerCardSettingsMainView _mainView = null!;
 

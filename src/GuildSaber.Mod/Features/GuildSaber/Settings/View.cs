@@ -5,7 +5,6 @@ using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;
 using GuildSaber.Mod.Features.PlayerCard;
 using GuildSaber.Mod.Features.PlayerCard.UI;
-using GuildSaber.Mod.Features.RankedMapStats;
 
 namespace GuildSaber.Mod.Features.GuildSaber.Settings;
 
@@ -22,20 +21,20 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
     private GuildSaberManager _guildSaberManager = null!;
 
     private XUIVLayout _mainLayout = null!;
-    private MapRankedStats _mapRankedStats = null!;
 
     private PlayerCardView _playerCardView = null!;
+    private RankedMapStats.RankedMapStats _rankedMapStats = null!;
     private UIFactory _uiFactory = null!;
 
     public void Inject(
         PlayerCardView cardView, GuildSaberConfig config, GuildSaberManager guildSaberManager, UIFactory uiFactory,
-        MapRankedStats mapRankedStats)
+        RankedMapStats.RankedMapStats rankedMapStats)
     {
         _playerCardView = cardView;
         _config = config;
         _guildSaberManager = guildSaberManager;
         _uiFactory = uiFactory;
-        _mapRankedStats = mapRankedStats;
+        _rankedMapStats = rankedMapStats;
 
         CreateUI();
     }
@@ -67,18 +66,18 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
     private void OnApiEnvChanged(int index, string value)
     {
         _config.ApiEnv = (ApiEnv)index;
-        _guildSaberManager.SelectGuild(_config.PlayerCard.GuildId, _config.PlayerCard.ContextId);
+        _guildSaberManager.SelectGuild(_config.GuildId, _config.ContextId);
     }
 
     private void OnDisplayMapRankedStatsChanged(bool value)
     {
         _config.RankedMapStats.Enabled = value;
-        _mapRankedStats.SetActive(value);
+        _rankedMapStats.SetActive(value);
     }
 
     private void ResetCardPosition()
     {
-        _config.PlayerCard.Transforms.Menu = new CardConfig().Transforms.Menu;
+        _config.PlayerCard.Transforms.Menu = new PlayerCardConfig().Transforms.Menu;
         _playerCardView.SetCardToMenuTransform();
     }
 }

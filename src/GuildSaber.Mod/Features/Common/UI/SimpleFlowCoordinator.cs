@@ -3,9 +3,12 @@ using BeatSaberMarkupLanguage;
 using HMUI;
 using UnityEngine;
 
-namespace GuildSaber.Mod.Features.Common.UI.Components;
+namespace GuildSaber.Mod.Features.Common.UI;
 
-public abstract class CustomFlowCoordinator : FlowCoordinator
+/// <summary>
+/// A simple ple-implemented FlowCoordinator that provides fixes for some common ui issues with BS+.
+/// </summary>
+public abstract class SimpleFlowCoordinator : FlowCoordinator
 {
     private FlowCoordinator? _lastFlowCoordinator;
 
@@ -20,6 +23,7 @@ public abstract class CustomFlowCoordinator : FlowCoordinator
     protected virtual void OnCreation() { }
 
     protected abstract ViewController? GetMainViewController();
+
     protected virtual ViewController? GetLeftViewController() => null;
     protected virtual ViewController? GetRightViewController() => null;
     protected virtual ViewController? GetBottomViewController() => null;
@@ -49,8 +53,9 @@ public abstract class CustomFlowCoordinator : FlowCoordinator
 
     public void Present()
     {
-        if (GameObject.Find("MainScreen") == null) return;
-        
+        //BUG: The "MainScreen" workaround doesn't work and opening a flow coordinator while bsplus menu is open soft lock the game.
+        if (IsPresent || GameObject.Find("MainScreen") == null) return;
+
         _lastFlowCoordinator = BeatSaberUI.MainFlowCoordinator.YoungestChildFlowCoordinatorOrSelf();
         if (!_lastFlowCoordinator) return;
 
@@ -59,7 +64,7 @@ public abstract class CustomFlowCoordinator : FlowCoordinator
     }
 
     public void Dismiss() => Dismiss(null);
-    
+
     public void Dismiss(Action? finishedCallback)
     {
         if (_lastFlowCoordinator == null)

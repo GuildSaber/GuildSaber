@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.Mod.Features.PlayerCard;
 using GuildSaber.Mod.Features.RankedMapStats;
 using IPA.Config.Stores;
@@ -12,7 +13,10 @@ public class GuildSaberConfig
     public bool Enabled { get; init; } = true;
     public ApiEnv ApiEnv { get; set; } = ApiEnv.Dev;
 
-    public CardConfig PlayerCard { get; init; } = new();
+    public GuildId GuildId { get; set; } = new(-1);
+    public ContextId ContextId { get; set; } = new(-1);
+
+    public PlayerCardConfig PlayerCard { get; init; } = new();
     public RankedMapStatsConfig RankedMapStats { get; init; } = new();
 }
 

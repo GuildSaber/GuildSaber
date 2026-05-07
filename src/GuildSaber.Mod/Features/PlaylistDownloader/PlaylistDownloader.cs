@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -10,63 +11,67 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace GuildSaber.Mod.Features.PlaylistDownloader;
 
-public class PlaylistDownloader([Inject] Logger logger, [Inject] GuildSaberClient client, [Inject] GuildSaberConfig config, [Inject] GuildSaberCache cache)
+[SuppressMessage("ReSharper", "AsyncVoidMethod")]
+public class PlaylistDownloader(
+    [Inject] Logger logger,
+    [Inject] GuildSaberClient client,
+    [Inject] GuildSaberConfig config,
+    [Inject] GuildSaberCache cache)
 {
-
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true
     };
-    
+
     /// <summary>
     /// Event called when the whole download is completed
     /// </summary>
     public event Action<int, int> EventPlaylistsDownloadCompleted = null!;
-    
+
     /// <summary>
     /// Event called for every unique playlists
     /// </summary>
     public event Action<string, string, bool> EventUniquePlaylistDownloadCompleted = null!;
-    
+
+    //TODO: Make the playlist download something shared between the bot and the mod in GuildSaber.Common.
     public async void DownloadPlaylists()
     {
-        var selectedGuild = cache.GuildsExtended[config.PlayerCard.GuildId];
+        var (guild, _, _, categories) = cache.GuildsExtended[config.GuildId];
 
-        string guildName = selectedGuild.Guild.Info.Name;
-        var categories = selectedGuild.Categories;
-        var levels = cache.MemberLevelStats[config.PlayerCard.ContextId];
+        var guildName = guild.Info.Name;
+        var levels = cache.MemberLevelStats[config.ContextId];
 
-        int successfulPlaylists = 0;
-        int failedPlaylists = 0;
-        
+        var (successfulPlaylists, failedPlaylists) = (0, 0);
         foreach (var category in categories)
         {
-            string playlistsPath = "./Playlists/GuildSaber/" + guildName + "/" + category.Info.Name + "/";
+            var playlistsPath = "./Playlists/GuildSaber/" + guildName + "/" + category.Info.Name + "/";
             if (!Directory.Exists(playlistsPath))
                 Directory.CreateDirectory(playlistsPath);
 
-            int levelCount = 0;
+            var levelCount = 0;
             foreach (var level in levels.Where(x => x.Level.CategoryId == category.Id))
             {
-                var response =
-                    await client.Playlists.GetByLevelIdAsync(level.Level.Id, PlaylistRequests.PlaylistFilter.None, null);
-                
+                var response = await client.Playlists
+                    .GetByLevelIdAsync(level.Level.Id, PlaylistRequests.PlaylistFilter.None, null);
+
                 if (!response.TryGetValue(out var resultPlaylist, out var error))
                 {
-                    logger.Error($"[GuildSaber/PlaylistDownloader] Failed to download playlist for {level.Level.Info.Name}: {error}");
+                    logger.Error(
+                        $"[GuildSaber/PlaylistDownloader] Failed to download playlist for {level.Level.Info.Name}: {error}"
+                    );
                     failedPlaylists += 1;
                     EventUniquePlaylistDownloadCompleted.Invoke(category.Info.Name, level.Level.Info.Name, false);
                     levelCount += 1;
                     continue;
                 }
-                
-                string serialized = JsonSerializer.Serialize(resultPlaylist, _jsonOptions);
-                string playlistFilename = levelCount.ToString("000") + " " + level.Level.Info.Name + ".bplist";
-                string path = playlistsPath + playlistFilename;
-                
+
+                var serialized = JsonSerializer.Serialize(resultPlaylist, _jsonOptions);
+                var playlistFilename = levelCount.ToString("000") + " " + level.Level.Info.Name + ".bplist";
+                var path = playlistsPath + playlistFilename;
+
                 if (File.Exists(path)) File.Delete(path);
-                
+
                 await File.WriteAllTextAsync(path, serialized);
 
                 levelCount += 1;
@@ -74,8 +79,7 @@ public class PlaylistDownloader([Inject] Logger logger, [Inject] GuildSaberClien
                 EventUniquePlaylistDownloadCompleted.Invoke(category.Info.Name, level.Level.Info.Name, true);
             }
         }
-        
+
         EventPlaylistsDownloadCompleted.Invoke(successfulPlaylists, failedPlaylists);
     }
-    
 }

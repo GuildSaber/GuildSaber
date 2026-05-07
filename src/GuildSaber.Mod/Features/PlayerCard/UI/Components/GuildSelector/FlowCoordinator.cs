@@ -1,13 +1,13 @@
 ﻿using System;
 using GuildSaber.Api.Features.Guilds;
-using GuildSaber.Mod.Features.Common.UI.Components;
+using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.GuildSaber;
 using HMUI;
 using Zenject;
 
 namespace GuildSaber.Mod.Features.PlayerCard.UI.Components.GuildSelector;
 
-public class GuildSelectorFlowCoordinator : CustomFlowCoordinator
+public class GuildSelectorFlowCoordinator : SimpleFlowCoordinator
 {
     [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
     [Inject] private readonly GuildSelectorViewController _mainView = null!;

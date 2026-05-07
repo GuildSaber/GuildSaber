@@ -88,11 +88,11 @@ public class PagedLevelList : XUIVLayout
         var page = _page;
 
         LevelStatResponses.MemberLevelStat[] allLevels = [];
-        var allCategories = _guildSaberCache.GuildsExtended[_config.PlayerCard.GuildId].Categories;
+        var allCategories = _guildSaberCache.GuildsExtended[_config.GuildId].Categories;
 
         foreach (var category in allCategories)
         {
-            var levelArray = _guildSaberCache.MemberLevelStats[_config.PlayerCard.ContextId]
+            var levelArray = _guildSaberCache.MemberLevelStats[_config.ContextId]
                 .Where(x => x.Level.CategoryId == category.Id && x.Level.CategoryId != null && x.IsCompleted)
                 .ToArray();
 

@@ -16,9 +16,9 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
 
     [Inject] private readonly PlayerCardView _cardView = null!;
     [Inject] private readonly GuildSaberConfig _config = null!;
-    [Inject] private readonly Timer _timer = null!;
-    
+
     [Inject] private readonly GuildSaberCache _guildSaberCache = null!;
+    [Inject] private readonly Timer _timer = null!;
     [Inject] private readonly UIFactory _uiFactory = null!;
     private XUIColorInput _color0Input = null!;
     private XUIColorInput _color1Input = null!;
@@ -104,18 +104,19 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
 
     private void ResetMenuPosition()
     {
-        _config.PlayerCard.Transforms.Menu = new CardConfig().Transforms.Menu;
+        _config.PlayerCard.Transforms.Menu = new PlayerCardConfig().Transforms.Menu;
         _cardView.SetCardToMenuTransform();
     }
 
-    private void ResetInSongPosition() => _config.PlayerCard.Transforms.InSong = new CardConfig().Transforms.InSong;
+    private void ResetInSongPosition()
+        => _config.PlayerCard.Transforms.InSong = new PlayerCardConfig().Transforms.InSong;
 
     private void ResetTimer()
     {
         _config.PlayerCard.TimerConfig.PlayDurationSec = 0;
         _timer.Reset();
     }
-    
+
     private void OnToggleChanged(bool value)
     {
         _config.PlayerCard.CategoryLevelViewEnabled = _displayLevelDetailsToggle.Element.GetValue();
@@ -151,7 +152,7 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
     private void UpdateUI()
     {
         if (_guildSaberCache.PlayerExtended is not null
-            && _guildSaberCache.MemberLevelStats.TryGetValue(_config.PlayerCard.ContextId, out var memberLevelStat))
+            && _guildSaberCache.MemberLevelStats.TryGetValue(_config.ContextId, out var memberLevelStat))
         {
             var canPlayerUseColors = PlayerCardLibrary.CanPlayerUseCustomColors(
                 memberLevelStat,

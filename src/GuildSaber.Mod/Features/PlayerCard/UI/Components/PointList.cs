@@ -40,7 +40,7 @@ public class PointList : XUIVLayout
 
     public void Refresh()
     {
-        var points = GuildSaberCache.MemberContextStats[_config.PlayerCard.ContextId].SimplePointsWithRank
+        var points = GuildSaberCache.MemberContextStats[_config.ContextId].SimplePointsWithRank
             .Where(x => x.CategoryId is null).ToArray();
 
         foreach (var item in _pointTexts)

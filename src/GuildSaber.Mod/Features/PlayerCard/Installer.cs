@@ -1,6 +1,7 @@
 using BeatSaberMarkupLanguage.FloatingScreen;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Features.PlayerCard.UI;
+using GuildSaber.Mod.Features.PlayerCard.UI.Components.GuildSelector;
 using GuildSaber.Mod.Features.PlayerCard.UI.Settings;
 using GuildSaber.Mod.Resources;
 using HMUI;
@@ -49,5 +50,8 @@ public class PlayerCardInstaller(GuildSaberClient client, Logger logger) : Insta
         Container.Bind<PlayerCardSettingsCoordinator>().FromNewComponentOnNewGameObject().AsSingle();
         Container.BindInterfacesTo<PlayerCardManager>().AsSingle();
         Container.Bind<StandardLevelDetailView>().FromComponentInHierarchy().AsCached();
+
+        Container.Bind<GuildSelectorViewController>().FromNewComponentAsViewController().AsSingle();
+        Container.Bind<GuildSelectorFlowCoordinator>().FromNewComponentOnNewGameObject().AsSingle();
     }
 }

@@ -21,19 +21,18 @@ public class Plugin
     private readonly Harmony _guildSaberHarmony = new("guildsaber.mod.sheepvand");
 
     [Init]
-    public Plugin(Zenjector zenjector, IPALogger logger, IPAConfig config)
+    public Plugin(Zenjector zenjector, IPALogger logger, IPAConfig ipaConfig)
     {
         zenjector.UseLogger(logger);
-        var pluginConfig = config.Generated<GuildSaberConfig>();
+        var config = ipaConfig.Generated<GuildSaberConfig>();
 
-        zenjector.Install<GuildSaberInstaller>(Location.App);
-        zenjector.Install<AppInstaller>(Location.App, pluginConfig);
+        zenjector.Install<GuildSaberInstaller>(Location.App, config);
         zenjector.Install<ResourcesInstaller>(Location.App, logger);
         zenjector.Install<UIInstaller>(Location.App);
 
         zenjector.Install<GuildSaberSettingsInstaller>(Location.Menu);
         zenjector.Install<TimerInstaller>(Location.Menu);
-        
+
         zenjector.Install<PlaylistDownloaderInstaller>(Location.Menu);
         zenjector.Install<PlayerCardInstaller>(Location.Menu);
         zenjector.Install<MapRankedStatsInstaller>(Location.Menu);

@@ -8,20 +8,22 @@ internal class GuildSaberClientFactory(GuildSaberConfig config, Logger logger) :
 {
     public GuildSaberClient Create()
     {
-        var apiUri = config.ApiEnv.ToApiUri;
-        var cdnUri = config.ApiEnv.ToCdnUri;
+        var apiUri = config.ApiEnv.ToApiUri();
+        var cdnUri = config.ApiEnv.ToCdnUri();
         logger.Debug($"Creating GuildSaberClient for: {apiUri}, CDN: {cdnUri}");
 
         return new GuildSaberClient(apiUri, cdnUri, authentication: null);
     }
 }
 
-public class GuildSaberInstaller : Installer
+public class GuildSaberInstaller(GuildSaberConfig config) : Installer
 {
     public override void InstallBindings()
     {
         Container.Bind<GuildSaberClient>().FromFactory<GuildSaberClientFactory>().AsSingle();
         Container.Bind<GuildSaberCache>().AsSingle();
         Container.BindInterfacesAndSelfTo<GuildSaberManager>().AsSingle();
+
+        Container.BindInstance(config);
     }
 }

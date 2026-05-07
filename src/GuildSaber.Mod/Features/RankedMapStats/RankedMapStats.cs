@@ -18,7 +18,7 @@ using Zenject;
 
 namespace GuildSaber.Mod.Features.RankedMapStats;
 
-public class MapRankedStats : XUIVLayout
+public class RankedMapStats : XUIVLayout
 {
     private readonly GuildSaberClient _client;
     private readonly GuildSaberConfig _config;
@@ -32,14 +32,14 @@ public class MapRankedStats : XUIVLayout
     private GSText _mapCategories = null!;
     private GSText _mapLevel = null!;
 
-    public MapRankedStats(
+    public RankedMapStats(
         [Inject] GuildSaberCache guildSaberCache,
         [Inject] UIFactory factory,
         [Inject] GuildSaberConfig config,
         [Inject] GuildSaberClient client,
         [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture,
         [Inject] StandardLevelDetailViewController standardLevelDetailViewController
-        ) : base("MapRankedStats")
+    ) : base("MapRankedStats")
     {
         _guildSaberCache = guildSaberCache;
         _config = config;
@@ -62,7 +62,7 @@ public class MapRankedStats : XUIVLayout
                         .SetAlpha(0.55f))
                 .SetSpacing(2)
                 .BuildUI(x.transform);
-            
+
             XUIHLayout.Make(
                 factory.Text(string.Empty)
                     .Bind(ref _mapCategories)
@@ -96,7 +96,7 @@ public class MapRankedStats : XUIVLayout
 
     protected async Task UpdateRankedStats(BeatmapLevel? beatmapLevel, BeatmapKey? beatmapKeyHolder)
     {
-        if (!_config.RankedMapStats.Enabled) return;
+        if (!_config.Enabled) return;
 
         if (beatmapLevel == null
             || beatmapKeyHolder is not { } beatmapKey
@@ -107,7 +107,7 @@ public class MapRankedStats : XUIVLayout
         }
 
         var rankedMap = await FetchRankedMap(
-            _config.PlayerCard.ContextId,
+            _config.ContextId,
             songHash,
             beatmapKey.beatmapCharacteristic.serializedName,
             beatmapKey.difficulty.ToEDifficulty(),
@@ -120,8 +120,9 @@ public class MapRankedStats : XUIVLayout
             return;
         }
 
-        var guildIconTexture = await _guildSaberCache.FetchGuildIconTexture(_config.PlayerCard.GuildId, _client)
-                               ?? _gsWhiteLogoTexture;
+        var guildIconTexture =
+            await _guildSaberCache.FetchGuildIconTexture(_config.GuildId, _client)
+            ?? _gsWhiteLogoTexture;
         var roundedIcon = await TextureUtils.CreateRoundedTextureAsync(
             guildIconTexture, guildIconTexture.width * 0.2f);
 
@@ -132,7 +133,7 @@ public class MapRankedStats : XUIVLayout
         }
         else
         {
-            var categories = _guildSaberCache.GuildsExtended[_config.PlayerCard.GuildId].Categories
+            var categories = _guildSaberCache.GuildsExtended[_config.GuildId].Categories
                 .Where(x => rankedMap.CategoryIds.Contains(x.Id)).ToArray();
 
             var hasCategoryIcon = false;
