@@ -4,6 +4,7 @@ using CP_SDK.XUI;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;
 using GuildSaber.Mod.Features.GuildSaber;
+using UnityEngine.UI;
 using Zenject;
 
 namespace GuildSaber.Mod.Features.PlaylistDownloader.UI;
@@ -32,7 +33,10 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
                 .OnClick(DownloadClicked),
             _uiFactory.Text(string.Empty)
                 .Bind(ref _uniquePlaylistDownloadedText)
-            ).BuildUI(transform);
+            )
+            .SetSpacing(2)
+            .OnReady(x => x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.MinSize)
+            .BuildUI(transform);
 
         _playlistDownloader.EventUniquePlaylistDownloadCompleted += UniquePlaylistsDownloadFinished;
         _playlistDownloader.EventPlaylistsDownloadCompleted += DownloadFinished;

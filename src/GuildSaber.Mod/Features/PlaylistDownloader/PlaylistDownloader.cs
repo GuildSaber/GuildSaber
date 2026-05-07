@@ -1,18 +1,24 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using GuildSaber.Api.Features.Guilds.Levels.Playlists;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Features.GuildSaber;
-using GuildSaber.Mod.Features.PlaylistDownloader.Types;
-using SongCore.OverrideClasses;
 using Zenject;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace GuildSaber.Mod.Features.PlaylistDownloader;
 
 public class PlaylistDownloader([Inject] Logger logger, [Inject] GuildSaberClient client, [Inject] GuildSaberConfig config, [Inject] GuildSaberCache cache)
 {
 
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+    
     /// <summary>
     /// Event called when the whole download is completed
     /// </summary>
@@ -55,9 +61,7 @@ public class PlaylistDownloader([Inject] Logger logger, [Inject] GuildSaberClien
                     continue;
                 }
                 
-                var serializable = new SerializablePlaylist(resultPlaylist!.Value);
-                
-                string serialized = Newtonsoft.Json.JsonConvert.SerializeObject(serializable);
+                string serialized = JsonSerializer.Serialize(resultPlaylist, _jsonOptions);
                 string playlistFilename = levelCount.ToString("000") + " " + level.Level.Info.Name + ".bplist";
                 string path = playlistsPath + playlistFilename;
                 

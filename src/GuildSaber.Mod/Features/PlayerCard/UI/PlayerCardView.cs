@@ -101,11 +101,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
                         .SetWidth(20)
                         .SetHeight(5)
                         .OnClick(DisplaySettings),
-                    _uiFactory.SecondaryButton("Reset timer")
-                        .SetWidth(20)
-                        .SetHeight(5)
-                        .OnClick(ResetTimer),
-                    _uiFactory.SecondaryButton("Playlists downloader")
+                    _uiFactory.SecondaryButton("Playlists")
                         .SetWidth(20)
                         .SetHeight(5)
                         .OnClick(OpenPlaylistsDownloader)
@@ -153,7 +149,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
                             .Bind(ref PointsContainer)
                             .SetSpacing(0),
                         _uiFactory.Text("______")
-                            .SetFontSize(3),
+                            .SetFontSize(3), 
                         _uiFactory.Text("00:00:00")
                             .Bind(ref TimeText)
                     )
@@ -207,7 +203,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
         _timer.OnTimeUpdate += OnTimerChanged;
         Logic.OnSceneChange += OnSceneChanged;
-        _cardFloatingScreen.HandleReleased += (ix, x) =>
+        _cardFloatingScreen.HandleReleased += (_, x) =>
         {
             if (Logic.ActiveScene != Logic.ESceneType.Playing)
                 _config.PlayerCard.Transforms.Menu = new CardTransform(x.Position, x.Rotation);
@@ -387,13 +383,6 @@ public class PlayerCardView : ViewController<PlayerCardView>
         if (!_cardSettingsCoordinator.IsPresent)
             _cardSettingsCoordinator.Present();
 
-        DisplayCard(EDisplayMode.Normal);
-    }
-
-    private void ResetTimer()
-    {
-        _config.PlayerCard.TimerConfig.PlayDurationSec = 0;
-        _timer.Reset();
         DisplayCard(EDisplayMode.Normal);
     }
 

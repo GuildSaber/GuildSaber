@@ -1,6 +1,7 @@
 using BeatSaberMarkupLanguage.FloatingScreen;
 using CP_SDK_BS.UI;
 using CP_SDK.XUI;
+using GuildSaber.Mod.Features.Common.Timer;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.GuildSaber;
 using UnityEngine;
@@ -15,7 +16,8 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
 
     [Inject] private readonly PlayerCardView _cardView = null!;
     [Inject] private readonly GuildSaberConfig _config = null!;
-
+    [Inject] private readonly Timer _timer = null!;
+    
     [Inject] private readonly GuildSaberCache _guildSaberCache = null!;
     [Inject] private readonly UIFactory _uiFactory = null!;
     private XUIColorInput _color0Input = null!;
@@ -81,6 +83,10 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
                     )
                 )
             ).Bind(ref _customColorsLayout),
+            _uiFactory.SecondaryButton("Reset timer")
+                .SetWidth(40)
+                .SetHeight(5)
+                .OnClick(ResetTimer),
             XUIHLayout.Make(
                 _uiFactory.SecondaryButton("Reset menu position")
                     .SetWidth(40)
@@ -104,6 +110,12 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
 
     private void ResetInSongPosition() => _config.PlayerCard.Transforms.InSong = new CardConfig().Transforms.InSong;
 
+    private void ResetTimer()
+    {
+        _config.PlayerCard.TimerConfig.PlayDurationSec = 0;
+        _timer.Reset();
+    }
+    
     private void OnToggleChanged(bool value)
     {
         _config.PlayerCard.CategoryLevelViewEnabled = _displayLevelDetailsToggle.Element.GetValue();
