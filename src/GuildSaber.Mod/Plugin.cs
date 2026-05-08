@@ -18,7 +18,7 @@ namespace GuildSaber.Mod;
 [Plugin(RuntimeOptions.SingleStartInit)]
 public class Plugin
 {
-    private readonly Harmony _guildSaberHarmony = new("guildsaber.mod.sheepvand");
+    private readonly Harmony _guildSaberHarmony = new("guildsaber.mod");
 
     [Init]
     public Plugin(Zenjector zenjector, IPALogger logger, IPAConfig ipaConfig)

@@ -14,7 +14,6 @@
         <PackageVersion Include="Bogus" Version="35.6.5" />
         <PackageVersion Include="BeatSaberModdingTools.Tasks" Version="2.0.0-beta7" />
         <PackageVersion Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3" />
-        <PackageVersion Include="ricaun.ILRepack" Version="1.1.0" />
         <PackageVersion Include="LinqKit.Microsoft.EntityFrameworkCore" Version="10.0.11" />
         <PackageVersion Include="Microsoft.AspNetCore.JsonPatch.SystemTextJson" Version="10.0.7" />
         <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
@@ -47,6 +46,18 @@
         <PackageVersion Include="System.Net.Http.Json" Version="10.0.7" />
         <PackageVersion Include="System.Text.Json" Version="10.0.7" />
         <PackageVersion Include="System.ValueTuple" Version="4.6.2" />
+        <PackageVersion Include="System.IO.Pipelines" Version="10.0.7" />
+        <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.7" />
+        <PackageVersion Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
+        <PackageVersion Include="System.Text.Encodings.Web" Version="10.0.7" />
+        <PackageVersion Include="System.Reflection.Metadata" Version="10.0.7" />
+        <PackageVersion Include="System.Threading.Tasks.Dataflow" Version="10.0.0" />
+        <PackageVersion Include="System.Collections.Immutable" Version="10.0.7" />
+        <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="10.0.7" />
+        <PackageVersion Include="System.Buffers" Version="4.6.1" />
+        <PackageVersion Include="System.Memory" Version="4.6.3" />
+        <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
+        <PackageVersion Include="System.Numerics.Vectors" Version="4.6.1" />
         <PackageVersion Include="TickerQ" Version="10.3.0" />
         <PackageVersion Include="TickerQ.Dashboard" Version="10.3.0" />
         <PackageVersion Include="TickerQ.EntityFrameworkCore" Version="10.3.0" />
