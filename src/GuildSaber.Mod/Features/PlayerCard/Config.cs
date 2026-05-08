@@ -15,7 +15,7 @@ public class PlayerCardConfig
             Quaternion.Euler(90.0f, 0.0f, 0.0f)
         ),
         InSong: new CardTransform(
-            new Vector3(-3.0f, 0.8f, 0),
+            new Vector3(-2.8f, 0.5f, 0),
             Quaternion.Euler(20, 270, 0)
         )
     );
