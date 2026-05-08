@@ -21,6 +21,11 @@ internal class PlayerCardManager(
             logger.Warn($"GuildSaberManager initialization error: {error}");
             playerCardView.DisplayCard(PlayerCardView.EDisplayMode.Error);
         };
+        manager.OnNoGuildError += () =>
+        {
+            logger.Warn("GuildSaberManager initialization error: User is not in a guild.");
+            playerCardView.DisplayCard(PlayerCardView.EDisplayMode.DidntJoinGuild);
+        };
 
         cardFloatingScreen.name = "PlayerCardFloatingScreen";
         cardFloatingScreen.SetRootViewController(playerCardView, ViewController.AnimationType.In);

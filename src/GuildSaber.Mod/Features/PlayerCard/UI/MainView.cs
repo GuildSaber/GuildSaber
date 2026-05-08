@@ -33,7 +33,8 @@ public class PlayerCardView : ViewController<PlayerCardView>
         Normal,
         Settings,
         Loading,
-        Error
+        Error,
+        DidntJoinGuild
     }
 
     [Inject(Id = Constants.CardFloatingPanelId)]
@@ -77,6 +78,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
     protected PointList PointsContainer = null!;
     protected XUIVLayout ServerUnreachableLayout = null!;
+    protected XUIVLayout DidntJoinGuildLayout = null!;
     protected GSSecondaryButton ShowSettingsButton = null!;
     protected GSText TimeText = null!;
 
@@ -115,7 +117,8 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
         ModalContainerRTransform.localScale *= 0.6f;
         XUIVLayout.Make(
-                _uiFactory.Text("Server unreachable.\nOr you're not registered on the website")
+                _uiFactory.Text(
+                        "Server unreachable,\nor you're not registered on the website.\nYou will need to restard your game.")
                     .SetColor(new Color(1, 0.5f, 0)),
                 _uiFactory.SecondaryButton("Open in browser")
                     .SetWidth(40)
@@ -125,6 +128,20 @@ public class PlayerCardView : ViewController<PlayerCardView>
                     )
             )
             .Bind(ref ServerUnreachableLayout)
+            .BuildUI(transform);
+
+        XUIVLayout.Make(
+                _uiFactory.Text(
+                        "You didn't join any guild yet,\nplease join a guild to use this mod.\nYou will need to restart your game.")
+                    .SetColor(new Color(1, 0.5f, 0)),
+                _uiFactory.SecondaryButton("Open in browser")
+                    .SetWidth(40)
+                    .SetHeight(4)
+                    .OnClick(() =>
+                        Process.Start(_config.ApiEnv.ToWebsiteUri().ToString())
+                    )
+            )
+            .Bind(ref DidntJoinGuildLayout)
             .BuildUI(transform);
 
         XUIVLayout.Make(
@@ -394,6 +411,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
         InvalidConfigLayout.SetActive(displayMode == EDisplayMode.Settings);
         LoadingLayout.SetActive(displayMode == EDisplayMode.Loading);
         ServerUnreachableLayout.SetActive(displayMode == EDisplayMode.Error);
+        DidntJoinGuildLayout.SetActive(displayMode == EDisplayMode.DidntJoinGuild);
 
         if (displayMode == EDisplayMode.Error) return;
 

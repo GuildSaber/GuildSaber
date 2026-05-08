@@ -49,7 +49,14 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
             return;
         }
 
-        if (playerId == null) return;
+
+        if (playerId == null)
+        {
+            logger.Warn("PlayerId is null, user does not have an account on GuildSaber. " +
+                        "Invoking OnPlayerIdFetched with null and terminating Initialize.");
+            OnInitializationError("User does not have an account on GuildSaber.");
+            return;
+        }
 
         var extendedPlayerIdResult = await client.Players.GetExtendedByIdAsync(playerId.Value);
         if (!extendedPlayerIdResult.TryGetValue(out var extendedPlayer, out error))
@@ -60,12 +67,10 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
             return;
         }
 
-        if (extendedPlayer == null) return;
-
         cache.PlayerExtended = extendedPlayer;
 
         List<GuildResponses.GuildExtended> guilds = [];
-        foreach (var member in cache.PlayerExtended.Members)
+        foreach (var member in cache.PlayerExtended!.Members)
         {
             var guildResponse = await client.Guilds.GetExtendedByIdAsync(new GuildId(member.GuildId));
 
@@ -79,6 +84,14 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
 
             guilds.Add(guild);
             cache.GuildsExtended[guild.Guild.Id] = guild;
+        }
+
+        if (guilds.Count == 0)
+        {
+            logger.Warn("Player is not a member of any guild. " +
+                        "Invoking OnPlayerIdFetched with null and terminating Initialize.");
+            OnNoGuildError();
+            return;
         }
 
         if (!cache.GuildsExtended.TryGetValue(config.GuildId, out var selectedGuild))
@@ -98,6 +111,7 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
     }
 
     public event Action<string> OnInitializationError = _ => { };
+    public event Action OnNoGuildError = () => { };
     public event Action OnInitializationFinished = () => { };
 
     public void SetGuild(GuildResponses.GuildExtended guild)
