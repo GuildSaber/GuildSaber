@@ -7,14 +7,20 @@
         <AssemblyName>GuildSaberMod</AssemblyName>
         <Copyright>Copyright © Kuurama 2026</Copyright>
         <TargetCulture>en</TargetCulture>
-        <TargetFramework>net48</TargetFramework>
+        <TargetFramework>netstandard2.1</TargetFramework>
         <LangVersion>14</LangVersion>
         <EnableFrameworkPathOverride>true</EnableFrameworkPathOverride>
         <FrameworkPathOverride>$(BeatSaberDir)\Beat Saber_Data\Managed</FrameworkPathOverride>
         <MarkPackageReferencesAsExternallyResolved>false</MarkPackageReferencesAsExternallyResolved>
         <AssemblyVersion>0.0.1</AssemblyVersion>
         <FileVersion>0.0.1</FileVersion>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <Platforms>AnyCPU</Platforms>
     </PropertyGroup>
+
+    <!-- <ItemGroup>
+         <ILRepackIgnoreReferences Include="BeatSaberModdingTools;BepInEx.AssemblyPublicizer;0Harmony;AsmResolver;Microsoft.Build;Microsoft.VisualStudio" />
+     </ItemGroup>-->
 
     <PropertyGroup>
         <Nullable>enable</Nullable>
@@ -37,6 +43,10 @@
         </PackageReference>
         <PackageReference Include="System.Text.Json" />
         <PackageReference Include="System.ValueTuple" />
+        <!-- <PackageReference Include="ricaun.ILRepack">
+             <PrivateAssets>all</PrivateAssets>
+             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+         </PackageReference>-->
     </ItemGroup>
 
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -117,10 +127,10 @@
             <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\mscorlib.dll</HintPath>
             <Private>false</Private>
         </Reference>
-        <Reference Include="netstandard">
-            <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\netstandard.dll</HintPath>
-            <Private>false</Private>
-        </Reference>
+        <!--  <Reference Include="netstandard">
+              <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\netstandard.dll</HintPath>
+              <Private>false</Private>
+          </Reference>-->
         <Reference Include="PlatformUserModel">
             <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\PlatformUserModel.dll</HintPath>
             <Private>False</Private>
@@ -202,6 +212,10 @@
 
     <ItemGroup>
         <Content Include="GuildSaber.Mod.csproj.user" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="obj\Debug\" />
     </ItemGroup>
 
 </Project>
