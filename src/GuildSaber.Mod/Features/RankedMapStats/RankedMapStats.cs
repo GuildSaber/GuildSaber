@@ -96,7 +96,7 @@ public class RankedMapStats : XUIVLayout
 
     protected async Task UpdateRankedStats(BeatmapLevel? beatmapLevel, BeatmapKey? beatmapKeyHolder)
     {
-        if (!_config.Enabled) return;
+        if (!_config.RankedMapStats.Enabled) return;
 
         if (beatmapLevel == null
             || beatmapKeyHolder is not { } beatmapKey

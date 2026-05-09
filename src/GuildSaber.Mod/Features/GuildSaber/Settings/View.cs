@@ -45,7 +45,7 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
             .Bind(ref _apiDropdown)
             .SetOptions(_apiEnvironments)
             .OnValueChanged(OnApiEnvChanged),
-        _uiFactory.Text("Display map ranked stat:"),
+        _uiFactory.Text("Display RankedMap Stats:"),
         XUIToggle.Make()
             .OnValueChanged(OnDisplayMapRankedStatsChanged)
             .Bind(ref _displayMapRankedStatsToggle),
