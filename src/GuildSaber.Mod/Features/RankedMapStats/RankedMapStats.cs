@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using CP_SDK.XUI;
@@ -92,6 +93,20 @@ public class RankedMapStats : XUIVLayout
         BuildUI(standardLevelDetailView._levelParamsPanel.transform);
     }
 
+    /// <remarks>
+    /// As of SongCore v15.0.0, the `Hashing.GetCustomLevelHash` method got obsolete in favor of the new
+    /// `Hashing.ComputeCustomLevelHash`.
+    /// In case the obsolete `Hashing.GetCustomLevelHash` method is removed in future versions of SongCore,
+    /// just replace the method name check in the LINQ query with it's string literal "GetCustomLevelHash"
+    /// </remarks>
+    [field: MaybeNull, AllowNull]
+    private Func<BeatmapLevel, string> GetCustomHashMethodVersionAgnostic => field ??= typeof(Hashing).GetMethods()
+        .Where(m => m.Name is "ComputeCustomLevelHash" or "GetCustomLevelHash" &&
+                    m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(BeatmapLevel))
+        .OrderBy(m => m.Name == "ComputeCustomLevelHash")
+        .First(m => m.ReturnType == typeof(string))
+        .ToDelegate<Func<BeatmapLevel, string>>();
+
     public sealed override void BuildUI(Transform parent) => base.BuildUI(parent);
 
     protected async Task UpdateRankedStats(BeatmapLevel? beatmapLevel, BeatmapKey? beatmapKeyHolder)
@@ -100,7 +115,8 @@ public class RankedMapStats : XUIVLayout
 
         if (beatmapLevel == null
             || beatmapKeyHolder is not { } beatmapKey
-            || !SongHash.TryCreate(Hashing.ComputeCustomLevelHash(beatmapLevel)).TryGetValue(out var songHash))
+            || !SongHash.TryCreate(GetCustomHashMethodVersionAgnostic.Invoke(beatmapLevel))
+                .TryGetValue(out var songHash))
         {
             SetActive(false);
             return;

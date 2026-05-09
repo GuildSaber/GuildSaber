@@ -8,17 +8,17 @@
         <PluginHint>GuildSaber.Mod.Plugin</PluginHint>
         <Authors>SheepVand,Kuurama</Authors>
         <Version>0.6.0</Version>
-        <GameVersion>1.40.0</GameVersion>
+        <GameVersion>&gt;=1.39.1&lt;1.43.0</GameVersion>
         <Description>The official GuildSaber mod for Beat Saber</Description>
         <ProjectHome>https://github.com/GuildSaber/GuildSaber</ProjectHome>
         <RepositoryUrl>https://github.com/GuildSaber/GuildSaber</RepositoryUrl>
     </PropertyGroup>
 
     <ItemGroup>
-        <DependsOn Include="BSIPA" Version="^4.2.0" />
+        <DependsOn Include="BSIPA" Version="^4.3.6" />
         <DependsOn Include="BS Utils" Version="^1.14.2" />
-        <DependsOn Include="BeatLeader" Version="^0.9.33" />
-        <DependsOn Include="ChatPlexSDK_BS" Version="^6.0.0" />
+        <DependsOn Include="BeatLeader" Version=">=0.9.33" />
+        <DependsOn Include="ChatPlexSDK_BS" Version=">=6.4.0" />
     </ItemGroup>
 
     <PropertyGroup>

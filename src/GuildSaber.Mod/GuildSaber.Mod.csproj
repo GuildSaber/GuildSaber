@@ -19,6 +19,7 @@
     <PropertyGroup>
         <Nullable>enable</Nullable>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <NoWarn>1701;1702;8009</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -79,8 +80,6 @@
         <DefineConstants>DEBUG;TRACE</DefineConstants>
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
-        <WarningsAsErrors>;NU1605</WarningsAsErrors>
-        <NoWarn>1701;1702;8009</NoWarn>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
         <Optimize>true</Optimize>

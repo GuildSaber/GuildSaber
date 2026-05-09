@@ -1,5 +1,4 @@
-﻿using CP_SDK.XUI;
-using HMUI;
+﻿using HMUI;
 using TMPro;
 using UnityEngine;
 
