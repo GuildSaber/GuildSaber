@@ -19,36 +19,52 @@ using Zenject;
 
 namespace GuildSaber.Mod.Features.RankedMapStats;
 
-public class RankedMapStats : XUIVLayout
+public class RankedMapStats : XUIVLayout, IDisposable
 {
+    private readonly GuildSaberCache _cache;
     private readonly GuildSaberClient _client;
     private readonly GuildSaberConfig _config;
-    private readonly Texture2D _gsWhiteLogoTexture;
-    private readonly GuildSaberCache _guildSaberCache;
-
-    private BeatmapLevel? _beatmapLevel;
-    private XUIImage _categoryIcon = null!;
+    private readonly StandardLevelDetailViewController _levelDetailViewController;
+    private readonly Texture2D _placeHolderIcon;
+    private readonly Logger _logger;
 
     private XUIImage _guildIcon = null!;
+    private XUIImage _categoryIcon = null!;
     private GSText _mapCategories = null!;
     private GSText _mapLevel = null!;
 
+    /// <remarks>
+    /// As of SongCore v15.0.0, the `Hashing.GetCustomLevelHash` method got obsolete in favor of the new
+    /// `Hashing.ComputeCustomLevelHash`.
+    /// In case the obsolete `Hashing.GetCustomLevelHash` method is removed in future versions of SongCore,
+    /// just replace the method name check in the LINQ query with it's string literal "GetCustomLevelHash"
+    /// </remarks>
+    [field: MaybeNull, AllowNull]
+    private Func<BeatmapLevel, string> GetCustomHashMethodVersionAgnostic => field ??= typeof(Hashing).GetMethods()
+        .Where(m => m.Name is "ComputeCustomLevelHash" or "GetCustomLevelHash" &&
+                    m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(BeatmapLevel))
+        .OrderBy(m => m.Name == "ComputeCustomLevelHash")
+        .First(m => m.ReturnType == typeof(string))
+        .ToDelegate<Func<BeatmapLevel, string>>();
+
     public RankedMapStats(
-        [Inject] GuildSaberCache guildSaberCache,
+        [Inject] GuildSaberCache cache,
         [Inject] UIFactory factory,
         [Inject] GuildSaberConfig config,
         [Inject] GuildSaberClient client,
-        [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture,
-        [Inject] StandardLevelDetailViewController standardLevelDetailViewController
+        [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D placeHolderIcon,
+        [Inject] StandardLevelDetailViewController levelDetailViewController,
+        [Inject] Logger logger
     ) : base("MapRankedStats")
     {
-        _guildSaberCache = guildSaberCache;
+        _cache = cache;
         _config = config;
         _client = client ?? throw new ArgumentNullException(nameof(client));
-        _gsWhiteLogoTexture = gsWhiteLogoTexture;
+        _placeHolderIcon = placeHolderIcon;
+        _levelDetailViewController = levelDetailViewController;
+        _logger = logger;
 
-        var standardLevelDetailView = standardLevelDetailViewController._standardLevelDetailView;
-
+        _logger.Info("Preparing UI");
         OnReady(x =>
         {
             XUIHLayout.Make(
@@ -82,40 +98,34 @@ public class RankedMapStats : XUIVLayout
             x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.MinSize;
 
+            _levelDetailViewController.didChangeDifficultyBeatmapEvent -= OnDifficultyChanged;
+            _levelDetailViewController.didChangeDifficultyBeatmapEvent += OnDifficultyChanged;
+            _levelDetailViewController.didChangeContentEvent -= OnContentChanged;
+            _levelDetailViewController.didChangeContentEvent += OnContentChanged;
+
             // Move the ranked stats UI to the right of the levelParamsPanel.
             RTransform.offsetMin = new Vector2(80, -5);
-
-            standardLevelDetailViewController.didChangeContentEvent += BeatmapContentChanged;
-            standardLevelDetailView.didChangeDifficultyBeatmapEvent += BeatmapDifficultyChanged;
         });
 
-        // Attach the ranked stats UI to the level params panel.
-        BuildUI(standardLevelDetailView._levelParamsPanel.transform);
+        BuildUI(_levelDetailViewController._standardLevelDetailView._levelParamsPanel.transform);
+        _logger.Info("UI created and attached to levelParamsPanel");
     }
 
-    /// <remarks>
-    /// As of SongCore v15.0.0, the `Hashing.GetCustomLevelHash` method got obsolete in favor of the new
-    /// `Hashing.ComputeCustomLevelHash`.
-    /// In case the obsolete `Hashing.GetCustomLevelHash` method is removed in future versions of SongCore,
-    /// just replace the method name check in the LINQ query with it's string literal "GetCustomLevelHash"
-    /// </remarks>
-    [field: MaybeNull, AllowNull]
-    private Func<BeatmapLevel, string> GetCustomHashMethodVersionAgnostic => field ??= typeof(Hashing).GetMethods()
-        .Where(m => m.Name is "ComputeCustomLevelHash" or "GetCustomLevelHash" &&
-                    m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(BeatmapLevel))
-        .OrderBy(m => m.Name == "ComputeCustomLevelHash")
-        .First(m => m.ReturnType == typeof(string))
-        .ToDelegate<Func<BeatmapLevel, string>>();
+    private void OnDifficultyChanged(StandardLevelDetailViewController controller)
+        => _ = UpdateUI(controller.beatmapKey, controller.beatmapLevel);
 
-    public sealed override void BuildUI(Transform parent) => base.BuildUI(parent);
-
-    protected async Task UpdateRankedStats(BeatmapLevel? beatmapLevel, BeatmapKey? beatmapKeyHolder)
+    private void OnContentChanged(
+        StandardLevelDetailViewController controller, StandardLevelDetailViewController.ContentType contentType)
     {
-        if (!_config.RankedMapStats.Enabled) return;
+        if (contentType != StandardLevelDetailViewController.ContentType.OwnedAndReady) return;
+        _ = UpdateUI(controller.beatmapKey, controller.beatmapLevel);
+    }
 
-        if (beatmapLevel == null
-            || beatmapKeyHolder is not { } beatmapKey
-            || !SongHash.TryCreate(GetCustomHashMethodVersionAgnostic.Invoke(beatmapLevel))
+    protected async Task UpdateUI(BeatmapKey beatmapKey, BeatmapLevel? beatmap)
+    {
+        _logger.Info($"Updating ranked map stats for beatmap {beatmapKey}");
+        if (!_config.RankedMapStats.Enabled || beatmap == null || !SongHash
+                .TryCreate(GetCustomHashMethodVersionAgnostic.Invoke(beatmap))
                 .TryGetValue(out var songHash))
         {
             SetActive(false);
@@ -136,11 +146,8 @@ public class RankedMapStats : XUIVLayout
             return;
         }
 
-        var guildIconTexture =
-            await _guildSaberCache.FetchGuildIconTexture(_config.GuildId, _client)
-            ?? _gsWhiteLogoTexture;
-        var roundedIcon = await TextureUtils.CreateRoundedTextureAsync(
-            guildIconTexture, guildIconTexture.width * 0.2f);
+        var guildIconTexture = await _cache.FetchGuildIconTexture(_config.GuildId, _client) ?? _placeHolderIcon;
+        var roundedIcon = await TextureUtils.CreateRoundedTextureAsync(guildIconTexture, guildIconTexture.width * 0.2f);
 
         if (rankedMap.CategoryIds.Length == 0)
         {
@@ -149,13 +156,13 @@ public class RankedMapStats : XUIVLayout
         }
         else
         {
-            var categories = _guildSaberCache.GuildsExtended[_config.GuildId].Categories
+            var categories = _cache.GuildsExtended[_config.GuildId].Categories
                 .Where(x => rankedMap.CategoryIds.Contains(x.Id)).ToArray();
 
             var hasCategoryIcon = false;
             if (categories.Length == 1)
             {
-                var categoryIconTexture = await _guildSaberCache.FetchCategoryIconTexture(categories[0].Id, _client);
+                var categoryIconTexture = await _cache.FetchCategoryIconTexture(categories[0].Id, _client);
                 if (categoryIconTexture != null)
                 {
                     var roundedCategoryIcon = await TextureUtils.CreateRoundedTextureAsync(
@@ -185,37 +192,25 @@ public class RankedMapStats : XUIVLayout
         }
 
         _mapLevel.SetText($"{(int)rankedMap.Rating.DiffStar}");
-        _guildIcon.SetSprite(Sprite.Create(
-            roundedIcon,
-            new Rect(0, 0, roundedIcon.width, roundedIcon.height),
+        _guildIcon.SetSprite(Sprite.Create(roundedIcon, new Rect(0, 0, roundedIcon.width, roundedIcon.height),
             Vector2.zero));
         _guildIcon.SetActive(true);
 
         SetActive(true);
     }
 
-    public void BeatmapContentChanged(
-        StandardLevelDetailViewController standardLevelDetailView,
-        StandardLevelDetailViewController.ContentType contentType)
-    {
-        if (standardLevelDetailView == null) return;
-
-        var beatmapKey = standardLevelDetailView.beatmapKey;
-        var beatmapLevel = standardLevelDetailView.beatmapLevel;
-        _beatmapLevel = beatmapLevel;
-
-        _ = UpdateRankedStats(beatmapLevel, beatmapKey);
-    }
-
-    public void BeatmapDifficultyChanged(StandardLevelDetailView standardLevelDetailView)
-    {
-        if (standardLevelDetailView == null) return;
-        _ = UpdateRankedStats(_beatmapLevel, standardLevelDetailView.beatmapKey);
-    }
-
     public async Task<RankedMapResponses.RankedMap?> FetchRankedMap(
         ContextId contextId, SongHash hash, string mode, EDifficulty difficulty, GuildSaberClient client)
-        => (await _guildSaberCache.FetchRankedMaps(contextId, hash, client))
+        => (await _cache.FetchRankedMaps(contextId, hash, client))
             .FirstOrDefault(x => x.Versions
                 .Any(v => v.Difficulty.GameMode == mode && v.Difficulty.Difficulty == difficulty));
+
+    public sealed override void BuildUI(Transform parent) => base.BuildUI(parent);
+
+    public void Dispose()
+    {
+        _logger.Info("Disposing..");
+        _levelDetailViewController.didChangeDifficultyBeatmapEvent -= OnDifficultyChanged;
+        _levelDetailViewController.didChangeContentEvent -= OnContentChanged;
+    }
 }
