@@ -9,6 +9,7 @@
         <PackageVersion Include="Aspire.Hosting.Redis" Version="13.2.4" />
         <PackageVersion Include="Aspire.Hosting.Valkey" Version="13.2.4" />
         <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.2.4" />
+        <PackageVersion Include="ILRepack.Lib.MSBuild.Task" Version="2.0.44.2" />
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
         <PackageVersion Include="AspNet.Security.OAuth.Discord" Version="10.0.0" />
         <PackageVersion Include="Bogus" Version="35.6.5" />

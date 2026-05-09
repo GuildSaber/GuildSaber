@@ -17,7 +17,7 @@
     <ItemGroup>
         <DependsOn Include="BSIPA" Version="^4.2.0" />
         <DependsOn Include="BS Utils" Version="^1.14.2" />
-        <DependsOs Include="BeatLeader" Version="^0.9.33" />
+        <DependsOn Include="BeatLeader" Version="^0.9.33" />
         <DependsOn Include="ChatPlexSDK_BS" Version="^6.0.0" />
     </ItemGroup>
 
@@ -30,25 +30,8 @@
         <DisableZipRelease>true</DisableZipRelease>
     </PropertyGroup>
 
-    <!-- Use generated package-root properties so we ship the exact restored DLLs without hardcoding NuGet version folders. -->
     <ItemGroup>
         <OutputCopy Include="$(OutputPath)\$(TargetFileName)" OutputPath="Plugins\$(TargetFileName)" />
-        <OutputCopy Include="$(PkgSystem_Text_Json)\lib\netstandard2.0\System.Text.Json.dll" OutputPath="Libs\%(Filename)%(Extension)" Condition="Exists('$(PkgSystem_Text_Json)\lib\netstandard2.0\System.Text.Json.dll')" />
-        <OutputCopy Include="$(PkgSystem_Net_Http_Json)\lib\netstandard2.0\System.Net.Http.Json.dll" OutputPath="Libs\%(Filename)%(Extension)" Condition="Exists('$(PkgSystem_Net_Http_Json)\lib\netstandard2.0\System.Net.Http.Json.dll')" />
-        <OutputCopy Include="$(PkgSystem_Text_Encodings_Web)\lib\netstandard2.0\System.Text.Encodings.Web.dll" OutputPath="Libs\%(Filename)%(Extension)" Condition="Exists('$(PkgSystem_Text_Encodings_Web)\lib\netstandard2.0\System.Text.Encodings.Web.dll')" />
-        <OutputCopy Include="$(PkgSystem_IO_Pipelines)\lib\netstandard2.0\System.IO.Pipelines.dll" OutputPath="Libs\%(Filename)%(Extension)" Condition="Exists('$(PkgSystem_IO_Pipelines)\lib\netstandard2.0\System.IO.Pipelines.dll')" />
-        <OutputCopy Include="$(PkgMicrosoft_Bcl_AsyncInterfaces)\lib\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll" OutputPath="Libs\%(Filename)%(Extension)" Condition="Exists('$(PkgMicrosoft_Bcl_AsyncInterfaces)\lib\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll')" />
-        <OutputCopy Include="$(PkgSystem_Runtime_CompilerServices_Unsafe)\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll" OutputPath="Libs\%(Filename)%(Extension)" Condition="Exists('$(PkgSystem_Runtime_CompilerServices_Unsafe)\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll')" />
-        <OutputCopy Include="$(PkgSystem_Buffers)\lib\netstandard2.0\System.Buffers.dll" OutputPath="Libs\%(Filename)%(Extension)" Condition="Exists('$(PkgSystem_Buffers)\lib\netstandard2.0\System.Buffers.dll')" />
-        <OutputCopy Include="$(PkgSystem_Memory)\lib\netstandard2.0\System.Memory.dll" OutputPath="Libs\%(Filename)%(Extension)" Condition="Exists('$(PkgSystem_Memory)\lib\netstandard2.0\System.Memory.dll')" />
-        <OutputCopy Include="$(PkgSystem_Threading_Tasks_Extensions)\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll" OutputPath="Libs\%(Filename)%(Extension)" Condition="Exists('$(PkgSystem_Threading_Tasks_Extensions)\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll')" />
-        <OutputCopy Include="$(MSBuildProjectDirectory)\bin\$(Configuration)\netstandard2.1\GuildSaber.Common.dll" OutputPath="Libs\GuildSaber.Common.dll" Condition="Exists('$(MSBuildProjectDirectory)\bin\$(Configuration)\netstandard2.1\GuildSaber.Common.dll')" />
-        <OutputCopy Include="$(MSBuildProjectDirectory)\bin\$(Configuration)\netstandard2.1\GuildSaber.CSharpClient.dll" OutputPath="Libs\GuildSaber.CSharpClient.dll" Condition="Exists('$(MSBuildProjectDirectory)\bin\$(Configuration)\netstandard2.1\GuildSaber.CSharpClient.dll')" />
-        <OutputCopy Include="$(MSBuildProjectDirectory)\bin\$(Configuration)\netstandard2.1\CSharpFunctionalExtensions.dll" OutputPath="Libs\CSharpFunctionalExtensions.dll" Condition="Exists('$(MSBuildProjectDirectory)\bin\$(Configuration)\netstandard2.1\CSharpFunctionalExtensions.dll')" />
-        <OutputCopy Include="$(PkgSystem_Numerics_Vectors)\lib\netstandard2.0\System.Numerics.Vectors.dll" OutputPath="Libs\System.Numerics.Vectors.dll" Condition="Exists('$(PkgSystem_Numerics_Vectors)\lib\netstandard2.0\System.Numerics.Vectors.dll')" />
-        <OutputCopy Include="$(MSBuildProjectDirectory)\bin\$(Configuration)\netstandard2.1\System.Collections.Immutable.dll" OutputPath="Libs\System.Collections.Immutable.dll" />
-        <OutputCopy Include="$(MSBuildProjectDirectory)\bin\$(Configuration)\netstandard2.1\System.Reflection.Metadata.dll" OutputPath="Libs\System.Reflection.Metadata.dll" />
-        <OutputCopy Include="$(MSBuildProjectDirectory)\bin\$(Configuration)\netstandard2.1\System.Threading.Tasks.Dataflow.dll" OutputPath="Libs\System.Threading.Tasks.Dataflow.dll" />
     </ItemGroup>
 
 </Project>

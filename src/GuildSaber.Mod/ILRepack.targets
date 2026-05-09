@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+    <PropertyGroup>
+        <ILRepackOutputFile>$(OutputPath)\$(TargetFileName)</ILRepackOutputFile>
+        <ILRepackLibraryPath>$(OutputPath);$(BeatSaberDir)\Libs;$(BeatSaberDir)\Plugins;$(BeatSaberDir)\Beat Saber_Data\Managed</ILRepackLibraryPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- GuildSaberMod.dll -->
+        <ILRepackInput Include="$(OutputPath)\$(TargetFileName)" />
+
+        <!-- Dependencies (enforced to be the latest pkgs instead of using other referenced mod dependences) -->
+        <ILRepackInput Include="$(PkgSystem_Text_Json)\lib\netstandard2.0\System.Text.Json.dll" />
+        <ILRepackInput Include="$(PkgSystem_Net_Http_Json)\lib\netstandard2.0\System.Net.Http.Json.dll" />
+        <ILRepackInput Include="$(PkgSystem_Text_Encodings_Web)\lib\netstandard2.0\System.Text.Encodings.Web.dll" />
+        <ILRepackInput Include="$(PkgSystem_IO_Pipelines)\lib\netstandard2.0\System.IO.Pipelines.dll" />
+        <ILRepackInput Include="$(PkgMicrosoft_Bcl_AsyncInterfaces)\lib\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll" />
+        <ILRepackInput Include="$(PkgSystem_Runtime_CompilerServices_Unsafe)\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll" />
+        <ILRepackInput Include="$(PkgSystem_Buffers)\lib\netstandard2.0\System.Buffers.dll" />
+        <ILRepackInput Include="$(PkgSystem_Memory)\lib\netstandard2.0\System.Memory.dll" />
+        <ILRepackInput Include="$(PkgSystem_Threading_Tasks_Extensions)\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll" />
+        <ILRepackInput Include="$(PkgSystem_Numerics_Vectors)\lib\netstandard2.0\System.Numerics.Vectors.dll" />
+
+        <!-- Other non-game dependencies -->
+        <ILRepackInput Include="$(MSBuildProjectDirectory)\bin\$(Configuration)\netstandard2.1\GuildSaber.Common.dll" />
+        <ILRepackInput Include="$(MSBuildProjectDirectory)\bin\$(Configuration)\netstandard2.1\GuildSaber.CSharpClient.dll" />
+        <ILRepackInput Include="$(MSBuildProjectDirectory)\bin\$(Configuration)\netstandard2.1\CSharpFunctionalExtensions.dll" />
+
+        <ILRepackInput Include="$(MSBuildProjectDirectory)\bin\$(Configuration)\netstandard2.1\System.Collections.Immutable.dll" />
+        <ILRepackInput Include="$(MSBuildProjectDirectory)\bin\$(Configuration)\netstandard2.1\System.Reflection.Metadata.dll" />
+        <ILRepackInput Include="$(MSBuildProjectDirectory)\bin\$(Configuration)\netstandard2.1\System.Threading.Tasks.Dataflow.dll" />
+    </ItemGroup>
+
+    <Target Name="ILRepackGuildSaberMod" AfterTargets="Build">
+        <ILRepack
+                Parallel="true"
+                Internalize="true"
+                LibraryPath="$(ILRepackLibraryPath)"
+                InputAssemblies="@(ILRepackInput)"
+                TargetKind="Dll"
+                OutputFile="$(ILRepackOutputFile)"
+        />
+    </Target>
+</Project>
+
