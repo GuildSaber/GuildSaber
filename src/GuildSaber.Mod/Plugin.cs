@@ -28,14 +28,15 @@ public class Plugin
 
         zenjector.Install<GuildSaberInstaller>(Location.App, config);
         zenjector.Install<ResourcesInstaller>(Location.App, logger);
+        
         zenjector.Install<UIInstaller>(Location.App);
-
-        zenjector.Install<GuildSaberSettingsInstaller>(Location.Menu);
         zenjector.Install<TimerInstaller>(Location.Menu);
 
         zenjector.Install<PlaylistDownloaderInstaller>(Location.Menu);
         zenjector.Install<PlayerCardInstaller>(Location.Menu);
         zenjector.Install<MapRankedStatsInstaller>(Location.Menu);
+        
+        zenjector.Install<GuildSaberSettingsInstaller>(Location.Menu);
     }
 
     [OnEnable]

@@ -31,6 +31,6 @@ internal class PlayerCardManager(
         cardFloatingScreen.SetRootViewController(playerCardView, ViewController.AnimationType.In);
 
         // In case GuildSaberManager is already initialized before PlayerCardManager, we directly refresh the card.
-        playerCardView.RefreshCard();
+        //playerCardView.RefreshCard();
     }
 }

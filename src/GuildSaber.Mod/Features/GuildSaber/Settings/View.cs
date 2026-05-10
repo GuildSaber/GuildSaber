@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
-using CP_SDK.UI;
+using CP_SDK_BS.UI;
 using CP_SDK.XUI;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;
 using GuildSaber.Mod.Features.PlayerCard;
 using GuildSaber.Mod.Features.PlayerCard.UI;
+using Zenject;
 
 namespace GuildSaber.Mod.Features.GuildSaber.Settings;
 
@@ -15,29 +16,17 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
     /// </remarks>
     private readonly List<string> _apiEnvironments = [nameof(ApiEnv.Prod), nameof(ApiEnv.Dev)];
 
+    
+    [Inject] private GuildSaberConfig _config = null!;
+    [Inject] private GuildSaberManager _guildSaberManager = null!;
+    [Inject] private PlayerCardView _playerCardView = null!;
+    [Inject] private RankedMapStats.RankedMapStats _rankedMapStats = null!;
+    [Inject] private UIFactory _uiFactory = null!;
+    
     private GSDropdown _apiDropdown = null!;
-    private GuildSaberConfig _config = null!;
     private XUIToggle _displayMapRankedStatsToggle = null!;
-    private GuildSaberManager _guildSaberManager = null!;
-
     private XUIVLayout _mainLayout = null!;
 
-    private PlayerCardView _playerCardView = null!;
-    private RankedMapStats.RankedMapStats _rankedMapStats = null!;
-    private UIFactory _uiFactory = null!;
-
-    public void Inject(
-        PlayerCardView cardView, GuildSaberConfig config, GuildSaberManager guildSaberManager, UIFactory uiFactory,
-        RankedMapStats.RankedMapStats rankedMapStats)
-    {
-        _playerCardView = cardView;
-        _config = config;
-        _guildSaberManager = guildSaberManager;
-        _uiFactory = uiFactory;
-        _rankedMapStats = rankedMapStats;
-
-        CreateUI();
-    }
 
     private void CreateUI() => _mainLayout = Templates.FullRectLayoutMainView(
         _uiFactory.Text("Api environment:"),
@@ -55,7 +44,13 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
             .OnClick(ResetCardPosition)
     ).OnReady(_ => UpdateValues());
 
-    protected override void OnViewCreation() => _mainLayout.BuildUI(transform);
+    protected override void OnViewCreation()
+    {
+        CreateUI();
+        _mainLayout.BuildUI(transform);
+        
+        UpdateValues();
+    }
 
     public void UpdateValues()
     {
