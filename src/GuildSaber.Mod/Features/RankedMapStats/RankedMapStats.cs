@@ -130,7 +130,6 @@ public class RankedMapStats : XUIVLayout, IDisposable
 
     protected async Task UpdateUI(BeatmapKey beatmapKey, BeatmapLevel? beatmap)
     {
-        _logger.Info($"Updating ranked map stats for beatmap {beatmapKey}");
         if (!_config.RankedMapStats.Enabled || beatmap == null || !SongHash
                 .TryCreate(GetCustomHashMethodVersionAgnostic.Invoke(beatmap))
                 .TryGetValue(out var songHash))
