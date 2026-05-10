@@ -3,13 +3,13 @@ using Zenject;
 
 namespace GuildSaber.Mod.Features.GuildSaber.Settings;
 
-public class GuildSaberMenuButton : BeatSaberMarkupLanguage.MenuButtons.MenuButton
+public class GuildSaberMenuButton : MenuButton
 {
-    public GuildSaberMenuButton([Inject] GuildSaberSettingsFlowCoordinator guildSaberSettingsFlowCoordinator) 
+    public GuildSaberMenuButton([Inject] GuildSaberSettingsFlowCoordinator guildSaberSettingsFlowCoordinator)
         : base("Guild Saber", null)
     {
         OnClick += guildSaberSettingsFlowCoordinator.Present;
-        
+
         MenuButtons.Instance.RegisterButton(this);
     }
 }

@@ -126,14 +126,15 @@ file static class SearchCommand
             SortBy = RankedMapRequests.ERankedMapSorter.RankedScoreTime
         };
 
-        var categoriesTask = cache.GetGuildCategoriesAsync(guildId, client).AsTask();
-        var rankedMapsTask = client.RankedMaps.GetWithScoreAsync(contextId, playerId, requestFilters, pageOption);
-        var playerTask = client.Players.GetByIdAsync(playerId);
+        var (categories, rankedMaps, playerResult) = await (
+                cache.GetGuildCategoriesAsync(guildId, client).AsTask(),
+                client.RankedMaps.GetWithScoreAsync(contextId, playerId, requestFilters, pageOption),
+                client.Players.GetByIdAsync(playerId))
+            .WhenAll();
 
-        await Task.WhenAll(categoriesTask, rankedMapsTask, playerTask);
-        var (categories, rankedMaps, player) = (categoriesTask.Result, rankedMapsTask.Result, playerTask.Result
+        var player = playerResult
             .UnwrapOrCurrentPlayerDidNotJoinGuildContextException()
-            .ValueOrCurrentPlayerNotRegisteredException());
+            .ValueOrCurrentPlayerNotRegisteredException();
 
         return !rankedMaps.TryGetValue(out var pagedRankedMaps, out var error)
             ? new ComponentBuilderV2().WithTextDisplay($"Error fetching ranked maps: {error}").Build()

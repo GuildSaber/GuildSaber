@@ -9,12 +9,12 @@ namespace GuildSaber.Mod.Features.Common.UI.BackwardCompatibility;
 /// </summary>
 public class XUIDropdownVersionAgnostic : CP_SDK.XUI.XUIDropdown
 {
+    private readonly MethodInfo _setOptionsVersionAgnostic = typeof(CP_SDK.XUI.XUIDropdown)
+        .GetMethod("SetOptions", BindingFlags.Instance | BindingFlags.Public)!;
+
     protected XUIDropdownVersionAgnostic(string name, List<string> options) : base(name, options) { }
 
     private bool? HasTwoParameterSetOptions => field ??= _setOptionsVersionAgnostic.GetParameters().Length == 2;
-
-    private readonly MethodInfo _setOptionsVersionAgnostic = typeof(CP_SDK.XUI.XUIDropdown)
-        .GetMethod("SetOptions", BindingFlags.Instance | BindingFlags.Public)!;
 
     public XUIDropdown SetOptions(List<string> options) => SetOptions(options, true);
 

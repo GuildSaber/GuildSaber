@@ -56,6 +56,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
     private ImageView _borderImage = null!;
 
     protected XUIDropdown ContextDropdown = null!;
+    protected XUIVLayout DidntJoinGuildLayout = null!;
 
     protected GuildSelector GuildSelector = null!;
 
@@ -78,7 +79,6 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
     protected PointList PointsContainer = null!;
     protected XUIVLayout ServerUnreachableLayout = null!;
-    protected XUIVLayout DidntJoinGuildLayout = null!;
     protected GSSecondaryButton ShowSettingsButton = null!;
     protected GSText TimeText = null!;
 

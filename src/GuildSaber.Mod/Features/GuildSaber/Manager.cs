@@ -1,7 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading.Tasks;
 using BS_Utils.Gameplay;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
@@ -68,25 +68,23 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
         }
 
         cache.PlayerExtended = extendedPlayer;
-
-        List<GuildResponses.GuildExtended> guilds = [];
-        foreach (var member in cache.PlayerExtended!.Members)
+        var guildExtendeds = await Task.WhenAll(cache.PlayerExtended!.Members.Select(async member =>
         {
             var guildResponse = await client.Guilds.GetExtendedByIdAsync(new GuildId(member.GuildId));
-
-            if (!guildResponse.TryGetValue(out var guild, out error))
+            if (!guildResponse.TryGetValue(out var guild, out var guildError))
             {
-                logger.Error($"Failed to fetch guild: {error}. ");
+                logger.Error($"Failed to fetch guild: {guildError}. ");
                 OnInitializationError("Failed to fetch PlayerId from GuildSaber.");
+                return null;
             }
 
-            if (guild == null) return;
+            return guild;
+        }));
 
-            guilds.Add(guild);
-            cache.GuildsExtended[guild.Guild.Id] = guild;
-        }
+        foreach (var guildExtended in guildExtendeds.OfType<GuildResponses.GuildExtended>())
+            cache.GuildsExtended[guildExtended.Guild.Id] = guildExtended;
 
-        if (guilds.Count == 0)
+        if (guildExtendeds.Length == 0)
         {
             logger.Warn("Player is not a member of any guild. " +
                         "Invoking OnPlayerIdFetched with null and terminating Initialize.");
@@ -94,11 +92,13 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
             return;
         }
 
+        // Make sure the config selected guild and context exists, if not select the first one.
         if (!cache.GuildsExtended.TryGetValue(config.GuildId, out var selectedGuild))
         {
-            config.GuildId = guilds[0].Guild.Id;
-            config.ContextId = guilds[0].Contexts[0].Id;
-            selectedGuild = guilds[0];
+            var guildExtended = cache.GuildsExtended.First().Value;
+            config.GuildId = guildExtended.Guild.Id;
+            config.ContextId = guildExtended.Contexts[0].Id;
+            selectedGuild = guildExtended;
         }
         else
         {
@@ -126,16 +126,8 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
     {
         if (cache.PlayerExtended == null) return;
 
-        var categoryResponse = await client.Categories.GetAllByGuildIdAsync(guildId);
-        if (!categoryResponse.TryGetValue(out var categories, out var error))
-        {
-            logger.Error($"Failed to fetch categories: {error}");
-            OnInitializationError.Invoke(error);
-            return;
-        }
-
         var levelsResponse = await client.LevelStats.GetByPlayerIdAsync(cache.PlayerExtended.Player.Id, contextId);
-        if (!levelsResponse.TryGetValue(out var levels, out error))
+        if (!levelsResponse.TryGetValue(out var levels, out var error))
         {
             logger.Error($"Failed to fetch levels: {error}.");
             OnInitializationError.Invoke(error);

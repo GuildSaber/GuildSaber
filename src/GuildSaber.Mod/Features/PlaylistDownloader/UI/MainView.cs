@@ -18,6 +18,7 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
     [Inject] private readonly UIFactory _uiFactory = null!;
 
     private GSText _uniquePlaylistDownloadedText = null!;
+    private GSSecondaryButton _downloadButton = null!;
 
     public event Action OnResultsModalClosed = null!;
 
@@ -28,6 +29,7 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
         Templates.FullRectLayoutMainView(
                 _uiFactory.Text($"Download or update {guildName} playlists:"),
                 _uiFactory.SecondaryButton("Download")
+                    .Bind(ref _downloadButton)
                     .SetWidth(30)
                     .SetHeight(5)
                     .OnClick(DownloadClicked),
@@ -64,10 +66,15 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
                 message += $"Failed to download {failCount} playlist{(failCount == 1 ? "" : "s")}";
         }
 
+        _downloadButton.SetInteractable(true);
         ShowMessageModal(message, DownloadFinished);
     }
 
-    private void DownloadClicked() => _playlistDownloader.DownloadPlaylists();
+    private void DownloadClicked()
+    {
+        _playlistDownloader.DownloadPlaylists();
+        _downloadButton.SetInteractable(false);
+    }
 
     private void DownloadFinished()
     {

@@ -16,13 +16,13 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
     /// </remarks>
     private readonly List<string> _apiEnvironments = [nameof(ApiEnv.Prod), nameof(ApiEnv.Dev)];
 
-    
-    [Inject] private GuildSaberConfig _config = null!;
-    [Inject] private GuildSaberManager _guildSaberManager = null!;
-    [Inject] private PlayerCardView _playerCardView = null!;
-    [Inject] private RankedMapStats.RankedMapStats _rankedMapStats = null!;
-    [Inject] private UIFactory _uiFactory = null!;
-    
+
+    [Inject] private readonly GuildSaberConfig _config = null!;
+    [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
+    [Inject] private readonly PlayerCardView _playerCardView = null!;
+    [Inject] private readonly RankedMapStats.RankedMapStats _rankedMapStats = null!;
+    [Inject] private readonly UIFactory _uiFactory = null!;
+
     private GSDropdown _apiDropdown = null!;
     private XUIToggle _displayMapRankedStatsToggle = null!;
     private XUIVLayout _mainLayout = null!;
@@ -48,7 +48,7 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
     {
         CreateUI();
         _mainLayout.BuildUI(transform);
-        
+
         UpdateValues();
     }
 

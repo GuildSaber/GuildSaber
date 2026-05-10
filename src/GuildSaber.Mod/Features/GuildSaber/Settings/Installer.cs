@@ -1,5 +1,4 @@
-﻿using BeatSaberMarkupLanguage.MenuButtons;
-using Zenject;
+﻿using Zenject;
 
 namespace GuildSaber.Mod.Features.GuildSaber.Settings;
 

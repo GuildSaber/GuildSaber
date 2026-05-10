@@ -2,6 +2,7 @@ using System.Text;
 using Discord;
 using Discord.Interactions;
 using GuildSaber.Api.Features.Guilds;
+using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Result;
 using GuildSaber.DiscordBot.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Extensions;
@@ -25,20 +26,19 @@ public partial class UserModuleSlash
     {
         await DeferAsync(ephemeral: displayChoice.ToEphemeral());
 
-        var guildTask = GetGuildAsync().AsTask();
-        var playerTask = user is null
-            ? GetPlayerAtMeAsync().AsTask()
-            : GetPlayerAsync(user.DiscordId).AsTask();
-
-        var categoryNameTask = categoryId is not null
-            ? Cache.GetCategoryByIdAsync(categoryId.Value, Client.Value).AsTask()
-            : Task.FromResult<Category?>(null);
-
-        await Task.WhenAll(guildTask, playerTask, categoryNameTask);
+        var (guild, player, category) = await (
+                GetGuildAsync().AsTask(),
+                user is null
+                    ? GetPlayerAtMeAsync().AsTask()
+                    : GetPlayerAsync(user.DiscordId).AsTask(),
+                categoryId is not null
+                    ? Cache.GetCategoryByIdAsync(categoryId.Value, Client.Value).AsTask()
+                    : Task.FromResult<Category?>(null))
+            .WhenAll();
 
         var stats = user is null
             ? (await Client.Value.LevelStats.GetAtMeAsync(contextId)).Unwrap()
-            : (await Client.Value.LevelStats.GetByPlayerIdAsync(playerTask.Result.Id, contextId)).Unwrap();
+            : (await Client.Value.LevelStats.GetByPlayerIdAsync(player.Id, contextId)).Unwrap();
 
         if (stats.Length == 0)
             throw user is null
@@ -46,11 +46,11 @@ public partial class UserModuleSlash
                 : new InteractionHandler.PlayerIsNotInGuildContextException();
 
         var progressData = new ProgressCommand.ProgressData(
-            Guild: guildTask.Result,
-            Player: playerTask.Result,
+            Guild: guild,
+            Player: player,
             Stats: stats,
             CategoryId: categoryId,
-            CategoryName: categoryId is not null ? categoryNameTask.Result!.Value.Info.Name : "map",
+            CategoryName: category?.Info.Name ?? "map",
             EmojiSettings.Value.Trophies
         );
 

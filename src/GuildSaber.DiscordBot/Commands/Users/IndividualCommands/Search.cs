@@ -5,6 +5,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using GuildSaber.Api.Features.Internal;
 using GuildSaber.Api.Features.RankedMaps;
+using GuildSaber.Common.Helpers;
 using GuildSaber.CSharpClient;
 using GuildSaber.DiscordBot.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Extensions;
@@ -72,11 +73,10 @@ file static class SearchCommand
             SortBy = RankedMapRequests.ERankedMapSorter.Name
         };
 
-        var categoriesTask = cache.GetGuildCategoriesAsync(guildId, client).AsTask();
-        var rankedMapsTask = client.RankedMaps.GetAsync(contextId, requestFilters, pageOption);
-
-        await Task.WhenAll(categoriesTask, rankedMapsTask);
-        var (categories, rankedMaps) = (categoriesTask.Result, rankedMapsTask.Result);
+        var (categories, rankedMaps) = await (
+                cache.GetGuildCategoriesAsync(guildId, client).AsTask(),
+                client.RankedMaps.GetAsync(contextId, requestFilters, pageOption))
+            .WhenAll();
 
         return !rankedMaps.TryGetValue(out var pagedRankedMaps, out var error)
             ? new ComponentBuilderV2().WithTextDisplay($"Error fetching ranked maps: {error}")

@@ -74,6 +74,9 @@ public partial class UserModuleSlash : InteractionModuleBase<SocketInteractionCo
         (await Client.Value.Guilds.GetExtendedByIdAsync(await GetGuildIdAsync()))
         .Unwrap().ValueOrGuildMissingException();
 
+    public async ValueTask<PlayerResponses.Player> GetPlayerAsync(IUser? user = null) =>
+        user is null ? await GetPlayerAtMeAsync() : await GetPlayerAsync(user.DiscordId);
+
     public async ValueTask<PlayerResponses.Player> GetPlayerAtMeAsync() =>
         (await Client.Value.Players.GetAtMeAsync())
         .UnwrapOrCurrentPlayerDidNotJoinGuildContextException()

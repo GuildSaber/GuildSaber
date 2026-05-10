@@ -25,27 +25,13 @@ public class RankedMapStats : XUIVLayout, IDisposable
     private readonly GuildSaberClient _client;
     private readonly GuildSaberConfig _config;
     private readonly StandardLevelDetailViewController _levelDetailViewController;
-    private readonly Texture2D _placeHolderIcon;
     private readonly Logger _logger;
+    private readonly Texture2D _placeHolderIcon;
+    private XUIImage _categoryIcon = null!;
 
     private XUIImage _guildIcon = null!;
-    private XUIImage _categoryIcon = null!;
     private GSText _mapCategories = null!;
     private GSText _mapLevel = null!;
-
-    /// <remarks>
-    /// As of SongCore v15.0.0, the `Hashing.GetCustomLevelHash` method got obsolete in favor of the new
-    /// `Hashing.ComputeCustomLevelHash`.
-    /// In case the obsolete `Hashing.GetCustomLevelHash` method is removed in future versions of SongCore,
-    /// just replace the method name check in the LINQ query with it's string literal "GetCustomLevelHash"
-    /// </remarks>
-    [field: MaybeNull, AllowNull]
-    private Func<BeatmapLevel, string> GetCustomHashMethodVersionAgnostic => field ??= typeof(Hashing).GetMethods()
-        .Where(m => m.Name is "ComputeCustomLevelHash" or "GetCustomLevelHash" &&
-                    m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(BeatmapLevel))
-        .OrderBy(m => m.Name == "ComputeCustomLevelHash")
-        .First(m => m.ReturnType == typeof(string))
-        .ToDelegate<Func<BeatmapLevel, string>>();
 
     public RankedMapStats(
         [Inject] GuildSaberCache cache,
@@ -109,6 +95,27 @@ public class RankedMapStats : XUIVLayout, IDisposable
 
         BuildUI(_levelDetailViewController._standardLevelDetailView._levelParamsPanel.transform);
         _logger.Info("UI created and attached to levelParamsPanel");
+    }
+
+    /// <remarks>
+    /// As of SongCore v15.0.0, the `Hashing.GetCustomLevelHash` method got obsolete in favor of the new
+    /// `Hashing.ComputeCustomLevelHash`.
+    /// In case the obsolete `Hashing.GetCustomLevelHash` method is removed in future versions of SongCore,
+    /// just replace the method name check in the LINQ query with it's string literal "GetCustomLevelHash"
+    /// </remarks>
+    [field: MaybeNull, AllowNull]
+    private Func<BeatmapLevel, string> GetCustomHashMethodVersionAgnostic => field ??= typeof(Hashing).GetMethods()
+        .Where(m => m.Name is "ComputeCustomLevelHash" or "GetCustomLevelHash" &&
+                    m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(BeatmapLevel))
+        .OrderBy(m => m.Name == "ComputeCustomLevelHash")
+        .First(m => m.ReturnType == typeof(string))
+        .ToDelegate<Func<BeatmapLevel, string>>();
+
+    public void Dispose()
+    {
+        _logger.Info("Disposing..");
+        _levelDetailViewController.didChangeDifficultyBeatmapEvent -= OnDifficultyChanged;
+        _levelDetailViewController.didChangeContentEvent -= OnContentChanged;
     }
 
     private void OnDifficultyChanged(StandardLevelDetailViewController controller)
@@ -206,11 +213,4 @@ public class RankedMapStats : XUIVLayout, IDisposable
                 .Any(v => v.Difficulty.GameMode == mode && v.Difficulty.Difficulty == difficulty));
 
     public sealed override void BuildUI(Transform parent) => base.BuildUI(parent);
-
-    public void Dispose()
-    {
-        _logger.Info("Disposing..");
-        _levelDetailViewController.didChangeDifficultyBeatmapEvent -= OnDifficultyChanged;
-        _levelDetailViewController.didChangeContentEvent -= OnContentChanged;
-    }
 }

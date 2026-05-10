@@ -6,7 +6,7 @@ public static class Constants
 {
     public const string CardFloatingPanelId = "GuildSaber.Mod.PlayerCard.FloatingPanel";
     public const string MenuButtonId = "GuildSaber.Mod.MenuButton";
-    
+
     public static readonly Uri ProdApiBaseUrl = new("https://api.guildsaber.com/");
     public static readonly Uri DevApiBaseUrl = new("https://api-dev.guildsaber.com/");
 
