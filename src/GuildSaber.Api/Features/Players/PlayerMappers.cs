@@ -10,12 +10,6 @@ public static class PlayerMappers
 {
     private static Func<Player, PlayerResponses.Player>? _mapPlayerImpl;
 
-    public static PlayerResponses.Player Map(this Player self)
-    {
-        _mapPlayerImpl ??= MapPlayerExpression.Compile();
-        return _mapPlayerImpl(self);
-    }
-    
     public static Expression<Func<Player, PlayerResponses.Player>> MapPlayerExpression
         => self => new PlayerResponses.Player(
             self.Id,
@@ -71,6 +65,12 @@ public static class PlayerMappers
                 x.JoinState.Map(),
                 x.Priority
             )).ToArray());
+
+    public static PlayerResponses.Player Map(this Player self)
+    {
+        _mapPlayerImpl ??= MapPlayerExpression.Compile();
+        return _mapPlayerImpl(self);
+    }
 
     public static PlayerResponses.ESubscriptionTier Map(this PlayerSubscriptionInfo.ESubscriptionTier self) =>
         self switch

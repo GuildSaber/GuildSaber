@@ -6,8 +6,8 @@ using GuildSaber.Api.Features.Guilds.Levels;
 using GuildSaber.Api.Features.Guilds.Members.ContextStats;
 using GuildSaber.Api.Features.Guilds.Members.LevelStats;
 using GuildSaber.Api.Features.Players;
+using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Result;
-using GuildSaber.Common.Settings;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using GuildSaber.DiscordBot.AutocompleteHandlers;
@@ -33,29 +33,22 @@ public partial class UserModuleSlash
         [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Visible)
     {
         await DeferAsync(ephemeral: displayChoice.ToEphemeral());
+        var (guildId, player) = await (GetGuildIdAsync().AsTask(), GetPlayerAsync(user).AsTask())
+            .WhenAll();
 
-        var guildIdTask = GetGuildIdAsync().AsTask();
-        var playerTask = user is null
-            ? GetPlayerAtMeAsync().AsTask()
-            : GetPlayerAsync(user.DiscordId).AsTask();
-        await Task.WhenAll(guildIdTask, playerTask);
-
-        var (guildId, player, playerId) = (guildIdTask.Result, playerTask.Result, playerTask.Result.Id);
         var client = Client.Value;
+        var (levelStats, categories, contextStats, cardResources) = await (
+                client.LevelStats.GetByPlayerIdAsync(player.Id, contextId),
+                client.Categories.GetAllByGuildIdAsync(guildId),
+                client.ContextStats.GetByPlayerIdAsync(player.Id, contextId),
+                CardResources.LoadAsync(client, guildId, player))
+            .WhenAll();
 
-        var (levelStatsTask, categoriesTask, contextStatsTask, resourcesTask) = (
-            client.LevelStats.GetByPlayerIdAsync(playerId, contextId),
-            client.Categories.GetAllByGuildIdAsync(guildId),
-            client.ContextStats.GetByPlayerIdAsync(playerId, contextId),
-            CardResources.LoadAsync(client, guildId, player, LinkSettings.Value));
-        await Task.WhenAll(levelStatsTask, categoriesTask, contextStatsTask, resourcesTask);
-
-        var cardResources = resourcesTask.Result;
         var cardData = CardData.Build(
             player,
-            categoriesTask.Result.Unwrap(),
-            levelStatsTask.Result.Unwrap(),
-            contextStatsTask.Result.Unwrap() ?? (user is null
+            categories.Unwrap(),
+            levelStats.Unwrap(),
+            contextStats.Unwrap() ?? (user is null
                 ? throw new InteractionHandler.CurrentPlayerDidNotJoinGuildContextException()
                 : throw new InteractionHandler.PlayerIsNotInGuildContextException())
         );
@@ -288,7 +281,7 @@ file record struct CategoryLevelData(string CategoryName, string LevelName, Colo
 file record struct CardResources(Image<Rgba32> Avatar, Image<Rgba32> GuildLogo, CardFonts Fonts)
 {
     public static async Task<CardResources> LoadAsync(
-        GuildSaberClient client, GuildId guildId, PlayerResponses.Player player, LinkSettings linkSettings)
+        GuildSaberClient client, GuildId guildId, PlayerResponses.Player player)
     {
         var fontFamily = MeCommand.FontCollection.Get("JetBrainsMonoNL NF");
         var fonts = new CardFonts(
@@ -298,12 +291,12 @@ file record struct CardResources(Image<Rgba32> Avatar, Image<Rgba32> GuildLogo, 
             fontFamily.CreateFont(48, FontStyle.BoldItalic)
         );
 
-        var avatarTask = LoadAvatarAsync(client, player.PlayerInfo.AvatarUrl);
-        var guildLogoTask = LoadGuildLogoAsync(client, guildId, fontFamily, linkSettings);
+        var (avatar, guildLogo) = await (
+                LoadAvatarAsync(client, player.PlayerInfo.AvatarUrl),
+                LoadGuildLogoAsync(client, guildId, fontFamily))
+            .WhenAll();
 
-        await Task.WhenAll(avatarTask, guildLogoTask);
-
-        return new CardResources(avatarTask.Result, guildLogoTask.Result, fonts);
+        return new CardResources(avatar, guildLogo, fonts);
     }
 
     private static async Task<Image<Rgba32>> LoadAvatarAsync(GuildSaberClient client, string avatarUrl)
@@ -315,13 +308,13 @@ file record struct CardResources(Image<Rgba32> Avatar, Image<Rgba32> GuildLogo, 
     }
 
     private static async Task<Image<Rgba32>> LoadGuildLogoAsync(
-        GuildSaberClient client, GuildId guildId, FontFamily fonts, LinkSettings linkSettings)
+        GuildSaberClient client, GuildId guildId, FontFamily fonts)
     {
         try
         {
-            await using var guildLogoStream = await client.HttpClient
-                .GetStreamAsync($"{linkSettings.CdnBaseUri}guilds/{guildId}/logo.jpg");
+            await using var guildLogoStream = await client.HttpClient.GetStreamAsync(client.Guilds.GetLogoUrl(guildId));
             var guildLogoImage = Image.Load<Rgba32>(guildLogoStream);
+
             guildLogoImage.Mutate(a => a.Resize(80, 80));
             return guildLogoImage;
         }
@@ -329,9 +322,11 @@ file record struct CardResources(Image<Rgba32> Avatar, Image<Rgba32> GuildLogo, 
         {
             var guildLogoImage = new Image<Rgba32>(80, 80);
             var font = fonts.CreateFont(48, FontStyle.Bold);
+
             guildLogoImage.Mutate(ctx => ctx
                 .Fill(Color.FromRgb(50, 50, 50))
                 .DrawText("?", font, Color.White, new PointF(25, 10)));
+
             return guildLogoImage;
         }
     }

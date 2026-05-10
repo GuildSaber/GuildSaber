@@ -76,6 +76,18 @@ public static class FunctionalExtensions
         return temp;
     }
 
+    public static Result<IEnumerable<T>> Reduce<T>(this IEnumerable<Result<T>> results)
+    {
+        var temp = new List<T>();
+        foreach (var y in results)
+        {
+            if (y.IsFailure) return Failure<IEnumerable<T>>(y.Error);
+            temp.Add(y.Value);
+        }
+
+        return temp;
+    }
+
     /// <summary>
     /// Asynchronously maps and reduces an array of Result items into a Result of items.
     /// </summary>

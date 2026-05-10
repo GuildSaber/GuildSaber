@@ -66,6 +66,8 @@ public class RankedMapEndpoints : IEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesValidationProblem()
             .RequireGuildPermission(EPermission.RankingTeam);
+
+        //TODO: Make an optimized version to search by SongHash.
     }
 
     /// <remarks>
@@ -237,23 +239,24 @@ public static class RankedMapExtensions
             if (string.IsNullOrWhiteSpace(search))
                 return query;
 
-            if (search.Length is >= BeatSaverKey.BsrPrefixLength and
-                                 <= BeatSaverKey.BsrPrefixLength + BeatSaverKey.MaxLength
-                && search.StartsWith("!bsr "))
+            switch (search.Length)
             {
-                search = search[5..];
-                return query.Where(x => x.MapVersions.Any(version => version.Song.BeatSaverKey == search));
+                case SongHash.ExactLength:
+                    search = search.ToLowerInvariant();
+                    return query.Where(x => x.MapVersions.Any(version => version.Song.Hash == search));
+                case >= BeatSaverKey.BsrPrefixLength and <= BeatSaverKey.BsrPrefixLength + BeatSaverKey.MaxLength
+                    when search.StartsWith("!bsr "):
+                    search = search[5..];
+                    return query.Where(x => x.MapVersions.Any(version => version.Song.BeatSaverKey == search));
+                default:
+                    return query.Where(x => x.MapVersions.Any(version =>
+                        EF.Functions.ILike(version.Song.Info.SongName, $"%{search}%") ||
+                        EF.Functions.ILike(version.Song.Info.SongAuthorName, $"%{search}%") ||
+                        EF.Functions.ILike(version.Song.Info.MapperName, $"%{search}%") ||
+                        search.Length <= BeatSaverKey.MaxLength
+                        && version.Song.BeatSaverKey != null
+                        && EF.Functions.ILike(version.Song.BeatSaverKey, $"%{search}%")));
             }
-
-            return query.Where(x => x.MapVersions.Any(version =>
-                EF.Functions.ILike(version.Song.Info.SongName, $"%{search}%") ||
-                EF.Functions.ILike(version.Song.Info.SongAuthorName, $"%{search}%") ||
-                EF.Functions.ILike(version.Song.Info.MapperName, $"%{search}%") ||
-                search.Length <= BeatSaverKey.MaxLength && version.Song.BeatSaverKey != null
-                                                        && EF.Functions.ILike(version.Song.BeatSaverKey,
-                                                            $"%{search}%") ||
-                search.Length == SongHash.ExactLength &&
-                EF.Functions.ILike(version.Song.Hash, $"%{search}%")));
         }
 
         public IQueryable<ServerRankedMap> ApplySortOrder(ERankedMapSorter sortBy, EOrder order, PlayerId? playerId)

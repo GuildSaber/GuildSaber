@@ -1,28 +1,25 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- This file contains project properties used by the build. -->
 <Project>
 
-    <!-- Plugin Metadata -->
+    <!-- Plugin metadata -->
     <PropertyGroup>
         <PluginId>GuildSaber</PluginId>
         <PluginName>GuildSaber</PluginName>
         <PluginHint>GuildSaber.Mod.Plugin</PluginHint>
         <Authors>SheepVand,Kuurama</Authors>
-        <Version>0.5.0</Version>
-        <GameVersion>1.40.0</GameVersion>
+        <Version>0.6.0</Version>
+        <GameVersion>&gt;=1.39.1&lt;1.43.0</GameVersion>
         <Description>The official GuildSaber mod for Beat Saber</Description>
         <ProjectHome>https://github.com/GuildSaber/GuildSaber</ProjectHome>
-        <!--<PluginIcon></PluginIcon>-->
-        <!--<ProjectSource></ProjectSource>-->
-        <!--<DonateUrl></DonateUrl>-->
+        <RepositoryUrl>https://github.com/GuildSaber/GuildSaber</RepositoryUrl>
     </PropertyGroup>
 
-    <!-- Plugin Dependencies -->
     <ItemGroup>
-        <DependsOn Include="BSIPA" Version="^4.2.0" />
+        <DependsOn Include="BSIPA" Version="^4.3.6" />
         <DependsOn Include="BS Utils" Version="^1.14.2" />
-        <DependsOs Include="BeatLeader" Version="^0.9.33" />
-        <DependsOn Include="ChatPlexSDK_BS" Version="^6.0.0" />
+        <DependsOn Include="BeatLeader" Version=">=0.9.33" />
+        <DependsOn Include="ChatPlexSDK_BS" Version=">=6.4.0" />
+        <DependsOn Include="SongCore" Version=">=3.14.15" />
     </ItemGroup>
 
     <PropertyGroup>
@@ -35,9 +32,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <OutputCopy Include="$(OutputPath)\*.dll" Exclude="$(OutputPath)\$(TargetFileName)" OutputPath="Libs\%(Filename)%(Extension)" />
         <OutputCopy Include="$(OutputPath)\$(TargetFileName)" OutputPath="Plugins\$(TargetFileName)" />
-        <OutputCopy Include="$(OutputPath)\$(TargetName).pdb" OutputPath="Plugins\$(TargetName).pdb" />
     </ItemGroup>
 
 </Project>

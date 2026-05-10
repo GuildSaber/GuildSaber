@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
+using GuildSaber.Api.Features.Guilds.Levels;
+using GuildSaber.Common.Result;
 using static GuildSaber.Api.Features.Guilds.Levels.Playlists.PlaylistRequests;
 using static GuildSaber.Api.Features.Guilds.Levels.Playlists.PlaylistResponses;
 
@@ -14,6 +16,10 @@ public sealed class PlaylistClient(
     HttpClient httpClient,
     JsonSerializerOptions jsonOptions)
 {
+    public JsonSerializerOptions JsonOptions => jsonOptions;
+
+    public readonly record struct LevelWithPlaylist(LevelResponses.Level Level, Playlist? Playlist);
+
     /// <summary>
     /// Gets the playlist for a ranked map list level by its ID.
     /// </summary>
@@ -38,4 +44,13 @@ public sealed class PlaylistClient(
                         .ReadFromJsonAsync<Playlist?>(jsonOptions, cancellationToken: cancellationToken))
                     .ConfigureAwait(false)
             };
+
+    public async Task<Result<IEnumerable<LevelWithPlaylist>>> GetAsync(
+        LevelResponses.Level[] levels, PlaylistFilter filter, PlayerId? playerId,
+        CancellationToken cancellationToken = default)
+        => (await Task.WhenAll(levels.Select(async level =>
+                    await GetByLevelIdAsync(level.Id, filter, playerId, cancellationToken)
+                        .Map(static (playlist, level) => new LevelWithPlaylist(level, playlist), level)))
+                .ConfigureAwait(false))
+            .Reduce();
 }

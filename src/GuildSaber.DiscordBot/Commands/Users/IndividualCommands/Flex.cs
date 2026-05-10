@@ -32,25 +32,16 @@ public partial class UserModuleSlash
     public async Task Flex([Autocomplete<ContextAutocompleteHandler>] ContextId contextId)
     {
         await DeferAsync();
-
-        var (playerTask, guildIdTask) = (GetPlayerAtMeAsync().AsTask(), GetGuildIdAsync().AsTask());
-        await Task.WhenAll(playerTask, guildIdTask);
-
-        var (player, guildId) = (playerTask.Result, guildIdTask.Result);
         var client = Client.Value;
 
-        var (levelStatsTask, categoriesTask, contextStatsTask) = (
-            client.LevelStats.GetByPlayerIdAsync(player.Id, contextId),
-            client.Categories.GetAllByGuildIdAsync(guildId),
-            client.ContextStats.GetByPlayerIdAsync(player.Id, contextId));
-        await Task.WhenAll(levelStatsTask, categoriesTask, contextStatsTask);
+        var (player, guildId) = await (GetPlayerAsync().AsTask(), GetGuildIdAsync().AsTask())
+            .WhenAll();
 
-        var (levelStats, categories, contextStats) = (
-            levelStatsTask.Result.Unwrap(),
-            categoriesTask.Result.Unwrap(),
-            contextStatsTask.Result.Unwrap() ??
-            throw new InteractionHandler.CurrentPlayerDidNotJoinGuildContextException()
-        );
+        var (levelStats, categories, contextStats) = await (
+                client.LevelStats.GetByPlayerIdAsync(player.Id, contextId).Unwrap(),
+                client.Categories.GetAllByGuildIdAsync(guildId).Unwrap(),
+                client.ContextStats.GetByPlayerIdAsync(player.Id, contextId).Unwrap())
+            .WhenAll();
 
         var previousFlexHistory = await DbContext.FlexHistories
             .Include(x => x.PointStats)
@@ -60,7 +51,11 @@ public partial class UserModuleSlash
             .FirstOrDefaultAsync();
 
         var flexHistory = FlexCommand.MakeNewFlexHistory(
-            player.Id, guildId, contextId, DateTimeOffset.UtcNow, levelStats, contextStats);
+            player.Id, guildId, contextId,
+            DateTimeOffset.UtcNow,
+            levelStats,
+            contextStats ?? throw new InteractionHandler.CurrentPlayerDidNotJoinGuildContextException()
+        );
 
         DbContext.FlexHistories.Add(flexHistory);
         await DbContext.SaveChangesAsync();
@@ -96,7 +91,7 @@ public partial class UserModuleSlash
             rankedMapsWithScores,
             levelStats.Select(x => x.Level).ToDictionary(x => x.Id),
             categories,
-            contextStats.SimplePointsWithRank
+            contextStats.Value.SimplePointsWithRank
                 .Where(x => x.CategoryId == null)
                 .ToDictionary(x => x.PointId, x => x.Name), EmojiSettings.Value,
             levelId => Client.Value.Levels.GetCoverUrl(levelId)
