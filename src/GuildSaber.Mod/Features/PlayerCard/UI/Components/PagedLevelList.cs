@@ -86,14 +86,13 @@ public class PagedLevelList : XUIVLayout
         HideAllLevels();
 
         var page = _page;
-
         LevelStatResponses.MemberLevelStat[] allLevels = [];
-        var allCategories = _guildSaberCache.GuildsExtended[_config.GuildId].Categories;
 
-        foreach (var category in allCategories)
+        var categories = _guildSaberCache.GuildsExtended[_config.GuildId].Categories;
+        foreach (var category in categories)
         {
             var levelArray = _guildSaberCache.MemberLevelStats[_config.ContextId]
-                .Where(x => x.Level.CategoryId == category.Id && x.Level.CategoryId != null && x.IsCompleted)
+                .Where(x => x.Level.CategoryId == category.Id && !x.IsLocked)
                 .ToArray();
 
             LevelStatResponses.MemberLevelStat? toAppend = null;
@@ -111,7 +110,7 @@ public class PagedLevelList : XUIVLayout
             if (toAppend != null)
                 allLevels = allLevels.Append(toAppend).ToArray();
             else
-                allCategories = allCategories.Where(x => x.Id != category.Id).ToArray();
+                categories = categories.Where(x => x.Id != category.Id).ToArray();
         }
 
         _totalLevelCount = allLevels.Length;
@@ -123,7 +122,7 @@ public class PagedLevelList : XUIVLayout
             if (i >= LevelsCountByPage * page && i < LevelsCountByPage * (page + 1))
             {
                 displayedLevels.Add(allLevels[i]);
-                displayedCategories.Add(allCategories[i]);
+                displayedCategories.Add(categories[i]);
             }
 
         for (var i = 0; i < displayedLevels.Count; i++)
