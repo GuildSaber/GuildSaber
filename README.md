@@ -3,7 +3,7 @@
 A multi tenant ranking system for Beat Saber, designed to manage and provide player rankings across multiple guilds.
 This project is built using .NET 10 and uses .NET Aspire for its orchestration.
 
-## 📝 License Information
+## License Information
 
 This project is primarily licensed under GNU AGPL-3.0.
 
@@ -18,17 +18,17 @@ By contributing to this project, you agree to assign copyright to Kuurama to mai
 allows for consistent decision-making while ensuring your work remains accessible through open source licensing. All
 contributions are valued and recognized. See [LICENSE-NOTICE.md](LICENSE-NOTICE.md) for details.
 
-## 🌐 Public Access
+## Public Access
 
-- API (Dev): None
+- API (Dev): https://api-dev.guildsaber.com
+- Website (Dev): https://dev.guildsaber.com
 - API Documentation: OpenAPI/Scalar documentation available at the API URL
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [JetBrain Mono Font](https://www.jetbrains.com/lp/mono/)
 - [Docker](https://www.docker.com/products/docker-desktop)
 - [JetBrains Rider](https://www.jetbrains.com/rider/) (recommended) or Visual Studio 2026+
 
@@ -95,23 +95,23 @@ This will start the following services:
 
 The Aspire dashboard will open automatically, showing the status of all services.
 
-## 🧩 Project Structure
+## Project Structure
 
 - `src/GuildSaber.Api` - Main API service
 - `src/GuildSaber.Database` - Database models and contexts
 - `src/GuildSaber.DiscordBot` - Discord bot integration
+- `src/GuildSaber.Mod` - Beat Saber mod integration
 - `src/GuildSaber.Common` - Shared utilities and services
 - `aspire/` - .NET Aspire project orchestration
 - `tools/GuildSaber.Migrator` - Database migration tool
 
-## 🗄️ Database Migrations (EFCore)
+## Database Migrations (EFCore)
 
 GuildSaber uses Entity Framework Core (EFCore) for database schema management. Migrations are organized in the
 `Migrations` folder inside each context directory under `src/GuildSaber.Database/Contexts`.
 
 ### Prerequisites
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [EFCore CLI tools](https://learn.microsoft.com/en-us/ef/core/cli/dotnet) (install with
   `dotnet tool install --global dotnet-ef` if not already installed)
 
@@ -154,7 +154,7 @@ GuildSaber uses Entity Framework Core (EFCore) for database schema management. M
 - Do **NOT** push migrations to the repositories unless they reflect changes in the production database schema. Until
   then, no migrations should be pushed to the repository.
 
-## 🤝 Contributing
+## Contributing
 
 Before contributing, please ensure you understand the license implications. All contributions will be subject to the
 project's licensing terms.
@@ -173,9 +173,3 @@ When committing, sign your commits to acknowledge the contribution terms:
 ```bash
 git commit -s -m "Your commit message"
 ```
-
-## 📚 Documentation
-
-API documentation is available at the root URL of the API when running locally or at the hosted API URL.
-
-For detailed implementation documentation, refer to the code comments and unit tests.
