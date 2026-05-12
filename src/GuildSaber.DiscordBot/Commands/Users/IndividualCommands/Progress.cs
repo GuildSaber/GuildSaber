@@ -19,8 +19,8 @@ public partial class UserModuleSlash
 {
     [SlashCommand("progress", "Shows a specific player's progress, or depending on a specific category")]
     public async Task Progress(
-        [Summary("Context")] [Autocomplete(typeof(ContextAutocompleteHandler))] int contextId,
-        [Summary("Category")] [Autocomplete(typeof(CategoryAutocompleteHandler))] int? categoryId = null,
+        [Summary("Context")] [Autocomplete(typeof(ContextAutocompleteHandler))] ContextId contextId,
+        [Summary("Category")] [Autocomplete(typeof(CategoryAutocompleteHandler))] CategoryId? categoryId = null,
         [Summary("User", "The user to show progress for (you if empty)")] IUser? user = null,
         [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Visible)
     {
@@ -50,7 +50,7 @@ public partial class UserModuleSlash
             Player: player,
             Stats: stats,
             CategoryId: categoryId,
-            CategoryName: category?.Info.Name ?? "map",
+            PoolName: category?.Info.Name ?? "map",
             EmojiSettings.Value.Trophies
         );
 
@@ -65,7 +65,7 @@ file static class ProgressCommand
         Player Player,
         MemberLevelStat[] Stats,
         int? CategoryId,
-        string CategoryName,
+        string PoolName,
         TrophyEmojis TrophyEmojis
     );
 
@@ -83,7 +83,7 @@ file static class ProgressCommand
 
         var (userName, categoryName, color, avatarUrl) = (
             data.Player.PlayerInfo.Username,
-            data.CategoryName,
+            data.PoolName,
             Color.FromArgb(data.Guild.Info.Color),
             data.Player.PlayerInfo.AvatarUrl);
 
@@ -94,7 +94,11 @@ file static class ProgressCommand
                                  $"Here is the current progress through the ***{categoryName}*** pools:")
                 .WithAccessory(new ThumbnailBuilder()
                     .WithMedia(avatarUrl)))
-            .WithTextDisplay(progressLines.ToString()));
+            .WithTextDisplay(progressLines.ToString()switch
+            {
+                "" => ":x: There are currently no levels in this category.",
+                var s => s
+            }));
 
         return builder.Build();
     }

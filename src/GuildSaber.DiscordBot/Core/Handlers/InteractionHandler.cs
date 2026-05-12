@@ -43,9 +43,11 @@ public class InteractionHandler(
     {
         commands.AddTypeConverter<GuildId>(new GuildIdTypeConverter());
         commands.AddTypeConverter<ContextId>(new ContextIdTypeConverter());
+        commands.AddTypeConverter<CategoryId>(new CategoryIdTypeConverter());
         commands.AddTypeConverter<RankedScoreResponses.EState>(new EStateTypeConverter());
         commands.AddTypeReader<PlayerId>(new PlayerIdTypeReader());
         commands.AddTypeReader<ContextId>(new ContextIdTypeReader());
+        commands.AddTypeReader<CategoryId>(new CategoryIdTypeReader());
         await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
 
         client.InteractionCreated += HandleInteraction;

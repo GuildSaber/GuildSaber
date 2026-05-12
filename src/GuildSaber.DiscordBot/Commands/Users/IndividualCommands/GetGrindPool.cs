@@ -48,7 +48,7 @@ public partial class UserModuleSlash
 
     [ComponentInteraction("ggp_*_*_*_*_*_*_*_*_*_*")]
     public async Task Ggp(
-        ContextId contextId, PlayerId playerId, int categoryId, int level, int page,
+        ContextId contextId, PlayerId playerId, CategoryId categoryId, int level, int page,
         EState anyRankedScoreStates,
         EState allRankedScoreStates,
         EState excludeRankedScoreStates,
@@ -61,7 +61,7 @@ public partial class UserModuleSlash
                 AnyRankedScoreStates: anyRankedScoreStates,
                 AllRankedScoreStates: allRankedScoreStates,
                 ExcludeRankedScoreStates: excludeRankedScoreStates,
-                CategoryIds: categoryId is 0 ? null : [categoryId],
+                CategoryIds: categoryId is { Value: 0 } ? null : [categoryId],
                 NeedConfirmation: needConfirmation switch
                 {
                     0 => false,
@@ -75,7 +75,7 @@ public partial class UserModuleSlash
 
     [ComponentInteraction("ggp_*_*_*_*_*_*_*_*_*_")]
     public async Task Ggp(
-        ContextId contextId, PlayerId playerId, int categoryId, int level, int page,
+        ContextId contextId, PlayerId playerId, CategoryId categoryId, int level, int page,
         EState anyRankedScoreStates,
         EState allRankedScoreStates,
         EState excludeRankedScoreStates,
@@ -87,7 +87,7 @@ public partial class UserModuleSlash
                 AnyRankedScoreStates: anyRankedScoreStates,
                 AllRankedScoreStates: allRankedScoreStates,
                 ExcludeRankedScoreStates: excludeRankedScoreStates,
-                CategoryIds: categoryId is 0 ? null : [categoryId],
+                CategoryIds: categoryId is { Value: 0 } ? null : [categoryId],
                 MatchAnyCategory: true,
                 NeedConfirmation: needConfirmation switch
                 {

@@ -45,7 +45,7 @@ public sealed class CategoryClient(
     /// <param name="categoryId">The ID of the category to retrieve.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing the category if found, or null if not found.</returns>
-    public async Task<Result<Category?>> GetByIdAsync(int categoryId, CancellationToken token = default)
+    public async Task<Result<Category?>> GetByIdAsync(CategoryId categoryId, CancellationToken token = default)
         => await httpClient.GetAsync($"categories/{categoryId}", token).ConfigureAwait(false) switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<Category?>(null),
@@ -103,7 +103,8 @@ public sealed class CategoryClient(
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing the updated category.</returns>
     public async Task<Result<Category>> UpdateAsync(
-        GuildId guildId, int categoryId, CategoryRequests.UpdateCategory request, CancellationToken token = default)
+        GuildId guildId, CategoryId categoryId, CategoryRequests.UpdateCategory request,
+        CancellationToken token = default)
         => await httpClient.SendAsync(
                 new HttpRequestMessage(HttpMethod.Put, $"guilds/{guildId}/categories/{categoryId}")
                 {
@@ -125,7 +126,8 @@ public sealed class CategoryClient(
     /// <param name="categoryId">The ID of the category to delete.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result indicating success (true) or not found (false).</returns>
-    public async Task<Result<bool>> DeleteAsync(GuildId guildId, int categoryId, CancellationToken token = default)
+    public async Task<Result<bool>> DeleteAsync(
+        GuildId guildId, CategoryId categoryId, CancellationToken token = default)
         => await httpClient.SendAsync(
                 new HttpRequestMessage(HttpMethod.Delete, $"guilds/{guildId}/categories/{categoryId}")
                 {

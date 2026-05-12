@@ -52,7 +52,7 @@ public static class HybridCacheExtensions
                     Expiration = TimeSpan.FromHours(5)
                 });
 
-        public ValueTask<CategoryResponses.Category?> GetCategoryByIdAsync(int id, GuildSaberClient client)
+        public ValueTask<CategoryResponses.Category?> GetCategoryByIdAsync(CategoryId id, GuildSaberClient client)
             => self.GetOrCreateAsync($"CategoryById_{id}", (id, client),
                 async static (state, token) => await state.client.Categories
                     .GetByIdAsync(state.id, token)

@@ -3,7 +3,7 @@ namespace GuildSaber.Api.Features.Guilds.Categories;
 public static class CategoryResponses
 {
     public readonly record struct Category(
-        int Id,
+        CategoryId Id,
         GuildId GuildId,
         CategoryInfo Info
     );

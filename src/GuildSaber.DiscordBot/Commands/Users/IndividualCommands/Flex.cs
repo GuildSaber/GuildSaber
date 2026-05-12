@@ -12,7 +12,6 @@ using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Result;
 using GuildSaber.Database.Models.DiscordBot.FlexHistories;
-using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.StrongTypes;
@@ -453,7 +452,7 @@ file static class FlexCommand
             .GroupBy(x => x.Level.CategoryId!.Value)
             .Select(x => new FlexHistoryLevelStat
             {
-                CategoryId = new Category.CategoryId(x.Key),
+                CategoryId = new CategoryId(x.Key),
                 LevelId = x.LastOrDefault(level => level.IsCompleted)?.Level.Id is { } levelId
                     ? new Level.LevelId(levelId)
                     : null

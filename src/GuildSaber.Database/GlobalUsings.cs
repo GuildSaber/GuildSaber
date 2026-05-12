@@ -3,3 +3,4 @@ global using static CSharpFunctionalExtensions.Result;
 global using GuildId = GuildSaber.Common.StrongTypes.GuildId;
 global using ContextId = GuildSaber.Common.StrongTypes.ContextId;
 global using PlayerId = GuildSaber.Common.StrongTypes.PlayerId;
+global using CategoryId = GuildSaber.Common.StrongTypes.CategoryId;

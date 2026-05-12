@@ -10,7 +10,6 @@ using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
-using CategoryId = GuildSaber.Database.Models.Server.Guilds.Categories.Category.CategoryId;
 using ServerCategory = GuildSaber.Database.Models.Server.Guilds.Categories.Category;
 using ServerCategoryInfo = GuildSaber.Database.Models.Server.Guilds.Categories.CategoryInfo;
 using static GuildSaber.Api.Features.Guilds.Categories.CategoryResponses;

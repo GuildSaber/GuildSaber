@@ -38,11 +38,11 @@ public partial class UserModuleSlash
         .Build());
 
     [ComponentInteraction("search_*_*_*_*_*")]
-    public async Task Search(ContextId contextId, int categoryId, int page, int needConfirmation, string search)
+    public async Task Search(ContextId contextId, CategoryId categoryId, int page, int needConfirmation, string search)
     {
         var component = (await SearchCommand.GetRankedMapsComponentAsync
             (await GetGuildIdAsync(), contextId, new RankedMapRequests.Filters(Search: search,
-                    CategoryIds: categoryId is 0 ? null : [categoryId],
+                    CategoryIds: categoryId is { Value: 0 } ? null : [categoryId],
                     MatchAnyCategory: true,
                     NeedConfirmation: needConfirmation switch
                     {

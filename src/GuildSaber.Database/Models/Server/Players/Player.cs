@@ -22,8 +22,10 @@ public class PlayerConfiguration : IEntityTypeConfiguration<Player>
     public void Configure(EntityTypeBuilder<Player> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Id).HasConversion(from => from.Value, to => new PlayerId(to))
+        builder.Property(x => x.Id)
+            .HasConversion(from => from.Value, to => new PlayerId(to))
             .ValueGeneratedOnAdd();
+
         builder.ComplexProperty(x => x.Info);
         builder.ComplexProperty(x => x.HardwareInfo);
         builder.ComplexProperty(x => x.LinkedAccounts).Configure(new PlayerLinkedAccountsConfiguration());

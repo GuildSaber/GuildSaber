@@ -79,7 +79,7 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<
         GuildId guildId,
         ContextId contextId,
         PlayerId playerId,
-        Category.CategoryId? categoryId,
+        CategoryId? categoryId,
         Point point)
     {
         var memberStat = await dbContext.MemberPointStats
@@ -134,7 +134,7 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<
         ContextId contextId,
         PlayerId playerId,
         Point point,
-        Category.CategoryId? categoryId)
+        CategoryId? categoryId)
         => dbContext.Database.SqlQuery<float>(categoryId switch
         {
             null => FormattableStringFactory.Create(

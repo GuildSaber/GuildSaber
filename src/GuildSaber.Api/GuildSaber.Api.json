@@ -313,7 +313,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -626,7 +626,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -1028,7 +1028,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -1505,7 +1505,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -1676,7 +1676,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -1720,7 +1720,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -1813,7 +1813,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -2338,7 +2338,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -2455,7 +2455,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       },
@@ -2500,7 +2500,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -2821,7 +2821,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -2982,7 +2982,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3065,7 +3065,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3176,7 +3176,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3202,12 +3202,7 @@
             "name": "categoryId",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           },
           {
@@ -3550,7 +3545,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3605,7 +3600,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       },
@@ -3658,7 +3653,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3713,7 +3708,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3752,7 +3747,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3801,7 +3796,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3820,7 +3815,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3839,7 +3834,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3858,7 +3853,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3887,7 +3882,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3916,7 +3911,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3945,7 +3940,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3964,7 +3959,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3992,7 +3987,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4011,7 +4006,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4040,7 +4035,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4069,7 +4064,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4685,7 +4680,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4721,7 +4716,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4750,7 +4745,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4779,7 +4774,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4818,7 +4813,7 @@
           }
         }
       },
-      "BeatLeaderScoreId": { },
+      "BeatLeaderScoreId": {},
       "BeatSaverKey": {
         "type": "string",
         "example": "a3c3"
@@ -4831,12 +4826,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
+            "$ref": "#/components/schemas/CategoryId"
           },
           "guildId": {
             "$ref": "#/components/schemas/GuildId"
@@ -4845,6 +4835,10 @@
             "$ref": "#/components/schemas/CategoryInfo"
           }
         }
+      },
+      "CategoryId": {
+        "type": "integer",
+        "format": "int32"
       },
       "CategoryInfo": {
         "type": "object",
@@ -5438,7 +5432,7 @@
                 "path": {
                   "type": "string"
                 },
-                "value": { }
+                "value": {}
               },
               "additionalProperties": false
             },
@@ -5564,13 +5558,14 @@
             "$ref": "#/components/schemas/ContextId"
           },
           "categoryId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CategoryId"
+              }
+            ]
           },
           "info": {
             "$ref": "#/components/schemas/LevelInfo"
@@ -5642,13 +5637,14 @@
             "$ref": "#/components/schemas/ContextId"
           },
           "categoryId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CategoryId"
+              }
+            ]
           },
           "info": {
             "$ref": "#/components/schemas/LevelInfo"
@@ -5758,13 +5754,14 @@
             "$ref": "#/components/schemas/ContextId"
           },
           "categoryId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CategoryId"
+              }
+            ]
           },
           "info": {
             "$ref": "#/components/schemas/LevelInfo"
@@ -5890,8 +5887,11 @@
               "$ref": "#/components/schemas/SimplePointWithRank"
             }
           },
-          "passCountWithRank": {
-            "$ref": "#/components/schemas/PassCountWithRank"
+          "passCountsWithRank": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PassCountWithRank"
+            }
           }
         }
       },
@@ -6441,6 +6441,16 @@
       "PassCountWithRank": {
         "type": "object",
         "properties": {
+          "categoryId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CategoryId"
+              }
+            ]
+          },
           "passCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
@@ -7133,7 +7143,7 @@
           }
         }
       },
-      "ScoreSaberScoreId": { },
+      "ScoreSaberScoreId": {},
       "ScoreScoreSaberScore": {
         "required": [
           "scoreSaberScoreId",
@@ -7255,13 +7265,14 @@
             "format": "int32"
           },
           "categoryId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CategoryId"
+              }
+            ]
           },
           "points": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",

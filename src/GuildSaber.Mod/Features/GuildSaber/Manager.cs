@@ -147,7 +147,6 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
         }
 
         if (contextStats == null) return;
-
         cache.MemberContextStats[contextId] = contextStats.Value;
 
         Initialized = true;

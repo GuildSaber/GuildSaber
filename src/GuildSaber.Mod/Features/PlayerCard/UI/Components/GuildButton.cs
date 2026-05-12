@@ -53,7 +53,7 @@ public class GuildButton : GSSecondaryButton
         GuildSaberCache guildSaberData, UIFactory factory, Texture2D guildSaberWhiteLogo, TMP_FontAsset font,
         GuildSaberClient client) => new(guildSaberData, factory, guildSaberWhiteLogo, font, client);
 
-    public override Color GetColor() => Color.black.ColorWithAlpha(0.7f);
+    public override Color GetColor() => Color.black.WithAlpha(0.7f);
 
     ///////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
@@ -79,4 +79,6 @@ public class GuildButton : GSSecondaryButton
     }
 
     private void OnGuildSelected() => OnClicked.Invoke(_currentGuild);
+
+    public GuildButton Bind(ref GuildButton x) => x = this;
 }

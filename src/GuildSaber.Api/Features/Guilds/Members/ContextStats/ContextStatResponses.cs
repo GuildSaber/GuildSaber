@@ -4,17 +4,18 @@ public static class ContextStatResponses
 {
     public readonly record struct MemberContextStat(
         SimplePointWithRank[] SimplePointsWithRank,
-        PassCountWithRank PassCountWithRank
+        PassCountWithRank[] PassCountsWithRank
     );
 
     public readonly record struct PassCountWithRank(
+        CategoryId? CategoryId,
         int PassCount,
         int Rank
     );
 
     public readonly record struct SimplePointWithRank(
         int PointId,
-        int? CategoryId,
+        CategoryId? CategoryId,
         float Points,
         string Name,
         int Rank

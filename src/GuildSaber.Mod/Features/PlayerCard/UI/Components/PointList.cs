@@ -4,50 +4,47 @@ using CP_SDK.XUI;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;
 using GuildSaber.Mod.Features.GuildSaber;
-using UnityEngine;
 
 namespace GuildSaber.Mod.Features.PlayerCard.UI.Components;
 
 public class PointList : XUIVLayout
 {
-    protected readonly List<GSText> _pointTexts = new();
-    protected GuildSaberConfig _config = null!;
-    protected UIFactory _uiFactory;
-
-    protected GuildSaberCache GuildSaberCache;
+    private readonly GuildSaberConfig _config;
+    private readonly GuildSaberCache _guildSaberCache;
+    private readonly List<GSText> _pointTexts = [];
+    private readonly UIFactory _uiFactory;
 
     protected PointList(GuildSaberCache guildSaberCache, GuildSaberConfig config, UIFactory factory) : base("PointList")
     {
         _uiFactory = factory;
         _config = config;
-        GuildSaberCache = guildSaberCache;
+        _guildSaberCache = guildSaberCache;
     }
 
     public static PointList Make(GuildSaberCache guildSaberCache, GuildSaberConfig config, UIFactory factory)
         => new(guildSaberCache, config, factory);
 
-    public PointList Bind(ref PointList x)
-    {
-        x = this;
-        return this;
-    }
-
-    public void Refresh(GuildSaberCache guildSaberCache)
-    {
-        GuildSaberCache = guildSaberCache;
-        Refresh();
-    }
-
     public void Refresh()
     {
-        var points = GuildSaberCache.MemberContextStats[_config.ContextId].SimplePointsWithRank
-            .Where(x => x.CategoryId is null).ToArray();
+        var points = _guildSaberCache.MemberContextStats[_config.ContextId].SimplePointsWithRank
+            .Where(x => x.CategoryId is null)
+            .ToArray();
 
         foreach (var item in _pointTexts)
             item.SetActive(false);
 
+        var useCustomColors =
+            _guildSaberCache.PlayerExtended?.Player is not null
+            && _config.PlayerCard.ColorSettings.UseCustomColors
+            && PlayerCardLibrary.CanPlayerUseCustomColors(
+                _guildSaberCache.MemberLevelStats[_config.ContextId],
+                _guildSaberCache.PlayerExtended.Player);
+
         for (var i = 0; i < points.Length; i++)
         {
+            var stat = points[i];
+
+            // Ensure we have enough text elements. If not, create them.
             if (_pointTexts.Count - 1 < i)
             {
                 var pointText = _uiFactory.Text("");
@@ -55,12 +52,22 @@ public class PointList : XUIVLayout
                 _pointTexts.Add(pointText);
             }
 
-            var point = points.ElementAt(i);
-            var htmlColor = ColorUtility.ToHtmlStringRGB(_config.PlayerCard.ColorSettings.MainCardColor);
-            _pointTexts[i]
-                .SetText($"<color=#{htmlColor}>{point.Name}</color>#<color=#{htmlColor}>{point.Rank:0}</color>");
+            // Check if there is too much text elements to remove them.
+            if (_pointTexts.Count - 1 > points.Length)
+                for (var j = _pointTexts.Count - 1; j >= points.Length; j--)
+                {
+                    _pointTexts[j].SetActive(false);
+                    _pointTexts.RemoveAt(j);
+                }
 
-            _pointTexts[i].SetActive(true);
+            _pointTexts[i]
+                .SetActive(true)
+                .SetText($"{stat.Points:0.##} {stat.Name} (#{stat.Rank})");
+
+            if (useCustomColors)
+                _pointTexts[i].SetColor(_config.PlayerCard.ColorSettings.MainCardColor);
         }
     }
+
+    public PointList Bind(ref PointList x) => x = this;
 }

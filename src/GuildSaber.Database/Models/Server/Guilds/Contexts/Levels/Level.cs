@@ -12,7 +12,7 @@ public abstract class Level
     public LevelId Id { get; init; }
     public GuildId GuildId { get; init; }
     public ContextId ContextId { get; init; }
-    public Category.CategoryId? CategoryId { get; init; }
+    public CategoryId? CategoryId { get; init; }
 
     public required LevelInfo Info { get; set; }
     public required LevelDiscordInfo DiscordInfo { get; set; }

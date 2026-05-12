@@ -23,7 +23,7 @@ public class CategoryAutocompleteHandler : AutocompleteHandler
 
         var categories = await cache.GetGuildCategoriesAsync(guildId.Value, client);
         return AutocompletionResult.FromSuccess(categories
-            .Select(c => new AutocompleteResult(c.Info.Name, c.Id))
+            .Select(c => new AutocompleteResult(c.Info.Name, c.Id.Value))
             .Take(AutocompletionResult.MaxSuggestionCount)
         );
     }

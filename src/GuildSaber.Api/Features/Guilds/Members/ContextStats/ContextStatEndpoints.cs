@@ -38,19 +38,29 @@ public class ContextStatEndpoints : IEndpoints
     public static async Task<Results<Ok<ContextStatResponses.MemberContextStat>, NotFound>> GetMemberContextStatsAsync(
         ContextId contextId, PlayerId playerId, ServerDbContext dbContext)
     {
+        var referenceStat = await dbContext.MemberPointStats
+            .Where(x => x.PlayerId == playerId && x.ContextId == contextId && x.CategoryId == null)
+            .OrderBy(x => x.PointId)
+            .FirstOrDefaultAsync();
+
+        if (referenceStat == null)
+            return TypedResults.NotFound();
+
         var contextStat = new ContextStatResponses.MemberContextStat
         {
-            PassCountWithRank = await dbContext.MemberPointStats
-                .Where(x => x.PlayerId == playerId && x.ContextId == contextId && x.CategoryId == null)
-                .OrderBy(x => x.PassCount)
+            PassCountsWithRank = await dbContext.MemberPointStats
+                .Where(x => x.PlayerId == playerId && x.ContextId == contextId)
+                .GroupBy(x => x.CategoryId)
                 .Select(x => new ContextStatResponses.PassCountWithRank
                 {
-                    PassCount = x.PassCount,
-                    Rank = dbContext.MemberPointStats
-                        .Count(y => y.ContextId == contextId
-                                    && y.CategoryId == null && y.PointId == x.PointId
-                                    && y.PassCount > x.PassCount) + 1
-                }).FirstOrDefaultAsync(),
+                    CategoryId = x.Key,
+                    PassCount = x.Select(y => y.PassCount).First(),
+                    Rank = dbContext.MemberPointStats.Count(others =>
+                        others.ContextId == contextId
+                        && others.CategoryId == x.Key
+                        && others.PointId == referenceStat.PointId
+                        && others.PassCount > referenceStat.PassCount) + 1
+                }).ToArrayAsync(),
             SimplePointsWithRank = await dbContext.MemberPointStats
                 .Where(x => x.PlayerId == playerId && x.ContextId == contextId)
                 .Select(x => new ContextStatResponses.SimplePointWithRank
@@ -60,15 +70,14 @@ public class ContextStatEndpoints : IEndpoints
                     Points = x.Points,
                     Name = x.Point.Info.Name,
                     Rank = dbContext.MemberPointStats
-                        .Count(y => y.ContextId == contextId
-                                    && y.CategoryId == x.CategoryId
-                                    && y.PointId == x.PointId
-                                    && y.Points > x.Points) + 1
+                        .Count(y =>
+                            y.ContextId == contextId
+                            && y.CategoryId == x.CategoryId
+                            && y.PointId == x.PointId
+                            && y.Points > x.Points) + 1
                 }).ToArrayAsync()
         };
 
-        return contextStat.PassCountWithRank == default
-            ? TypedResults.NotFound()
-            : TypedResults.Ok(contextStat);
+        return TypedResults.Ok(contextStat);
     }
 }
