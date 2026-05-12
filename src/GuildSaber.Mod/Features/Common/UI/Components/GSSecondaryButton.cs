@@ -38,8 +38,7 @@ public class GSSecondaryButton(string label, TMP_FontAsset font, Action? onClick
         button.gameObject.GetComponentInChildren<TextMeshProUGUI>().font = font;
     }
 
-    public virtual Color GetColor() => Color.black.ColorWithAlpha(0.7f);
-
+    public virtual Color GetColor() => Color.black.WithAlpha(0.7f);
 
     public static async Task<Sprite> GetBackground(int width, int height)
     {
@@ -60,7 +59,6 @@ public class GSSecondaryButton(string label, TMP_FontAsset font, Action? onClick
             meshType: SpriteMeshType.FullRect
         );
     }
-
-
+    
     public GSSecondaryButton Bind(ref GSSecondaryButton x) => x = this;
 }

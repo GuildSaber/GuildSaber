@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using CP_SDK.XUI;
-using GuildSaber.Api.Features.Guilds.Categories;
-using GuildSaber.Api.Features.Guilds.Members.LevelStats;
+using GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;
 using GuildSaber.Mod.Features.GuildSaber;
+using GuildSaber.Mod.Helpers;
 using UnityEngine;
 
 namespace GuildSaber.Mod.Features.PlayerCard.UI.Components;
@@ -16,149 +16,132 @@ public class PagedLevelList : XUIVLayout
 
     private readonly GuildSaberConfig _config;
     private readonly GuildSaberCache _guildSaberCache;
-    private readonly List<GSText> _levels = [];
+    private readonly List<GSText> _levelTextInCurrentPage = [];
 
-    private readonly UIFactory _uiFactory;
-
-    private int _maxPage;
-    private int _page;
+    private int _currentPage;
+    private Logger _logger;
 
     private GSSecondaryButton _pageLeftButton = null!;
     private GSSecondaryButton _pageRightButton = null!;
     private XUIGLayout _playerLevelsContainer = null!;
-    private int _totalLevelCount;
 
-    public PagedLevelList(UIFactory factory, GuildSaberCache guildSaberCache, GuildSaberConfig config) : base(
-        "PagedLevelList")
+    public PagedLevelList(UIFactory factory, GuildSaberCache guildSaberCache, GuildSaberConfig config, Logger logger)
+        : base("PagedLevelList")
     {
-        _uiFactory = factory;
+        var uiFactory = factory;
         _guildSaberCache = guildSaberCache;
         _config = config;
+        _logger = logger;
 
         OnReady(x =>
         {
-            XUIGLayout.Make().Bind(ref _playerLevelsContainer).SetSpacing(new Vector2(0, -1)).SetMinWidth(30)
-                .SetCellSize(new Vector2(18, 12f)).SetConstraintCount(2).BuildUI(x.transform);
+            XUIGLayout.Make()
+                .Bind(ref _playerLevelsContainer)
+                .SetSpacing(new Vector2(0, -1))
+                .SetMinWidth(30)
+                .SetCellSize(new Vector2(18, 12f))
+                .SetConstraintCount(2)
+                .BuildUI(x.transform);
+
+            // Since the max number of levels is knows ahead, allocate them all and reuse them in pagination.
+            for (var i = 0; i < LevelsCountByPage; i++)
+            {
+                var level = uiFactory.Text("");
+                level.BuildUI(_playerLevelsContainer.Element.transform);
+                _levelTextInCurrentPage.Add(level);
+            }
 
             XUIHLayout.Make(
                     factory.SecondaryButton("<", PageLeft)
                         .Bind(ref _pageLeftButton)
                         .SetWidth(5)
-                        .SetHeight(5),
+                        .SetHeight(5)
+                        .SetColor(Color.white),
                     factory.SecondaryButton(">", PageRight)
                         .Bind(ref _pageRightButton)
                         .SetWidth(5)
                         .SetHeight(5)
+                        .SetColor(Color.white)
                 ).SetSpacing(10)
                 .SetPadding(new RectOffset(-5, 2, 2, 2))
                 .BuildUI(x.transform);
         });
     }
 
-    public static PagedLevelList Make(UIFactory factory, GuildSaberCache guildSaberCache, GuildSaberConfig config)
-        => new(factory, guildSaberCache, config);
+    public readonly record struct CategoryLevelData(string CategoryName, string LevelName, Color Color);
 
-    public PagedLevelList Bind(ref PagedLevelList target)
+    public static PagedLevelList Make(
+        UIFactory factory, GuildSaberCache guildSaberCache, GuildSaberConfig config, Logger logger)
+        => new(factory, guildSaberCache, config, logger);
+
+    public void CleanRefresh()
     {
-        target = this;
-        return this;
+        _currentPage = 0;
+        RefreshUI();
     }
 
-    public void Refresh(GuildSaberCache targetData)
+    private void RefreshUI()
     {
-        _page = 0;
-        Refresh();
-    }
-
-    public void Refresh()
-    {
+        EmptyCurrentLevelTexts();
         if (_guildSaberCache.MemberLevelStats.Count == 0)
             return;
 
-        if (_levels.Count == 0)
-            for (var i = 0; i < LevelsCountByPage; i++)
-            {
-                var level = _uiFactory.Text("");
-                level.BuildUI(_playerLevelsContainer.Element.transform);
-                _levels.Add(level);
-            }
-
-        HideAllLevels();
-
-        var page = _page;
-        LevelStatResponses.MemberLevelStat[] allLevels = [];
-
         var categories = _guildSaberCache.GuildsExtended[_config.GuildId].Categories;
-        foreach (var category in categories)
+        var levelStats = _guildSaberCache.MemberLevelStats[_config.ContextId];
+
+        var categoryLevels = categories
+            .Select(category => (category, level: levelStats.GetCategoryLevel(category.Id)))
+            .Select(tuple => new CategoryLevelData(
+                tuple.category.Info.Name,
+                tuple.level?.Info.Name ?? "None",
+                Color.FromArgb(tuple.level?.Info.Color ?? 0xFFFFFF)))
+            .ToArray();
+
+        var maxPage = (categoryLevels.Length - 1) / LevelsCountByPage;
+        if (_currentPage < 0 || _currentPage > maxPage)
+            _currentPage = 0;
+
+        var displayedCategoryLevel = categoryLevels
+            .Skip(_currentPage * LevelsCountByPage)
+            .Take(LevelsCountByPage)
+            .ToArray();
+
+        for (var i = 0; i < displayedCategoryLevel.Length; i++)
         {
-            var levelArray = _guildSaberCache.MemberLevelStats[_config.ContextId]
-                .Where(x => x.Level.CategoryId == category.Id && !x.IsLocked)
-                .ToArray();
-
-            LevelStatResponses.MemberLevelStat? toAppend = null;
-
-            if (levelArray.Length > 0)
-            {
-                toAppend = levelArray.Last();
-            }
-            else
-            {
-                levelArray = allLevels.Where(x => x.Level.CategoryId == category.Id).ToArray();
-                if (levelArray.Length > 0) toAppend = levelArray.First();
-            }
-
-            if (toAppend != null)
-                allLevels = allLevels.Append(toAppend).ToArray();
-            else
-                categories = categories.Where(x => x.Id != category.Id).ToArray();
+            var categoryLevel = displayedCategoryLevel[i];
+            _levelTextInCurrentPage[i].SetText($"{categoryLevel.CategoryName}\n{categoryLevel.LevelName}");
         }
 
-        _totalLevelCount = allLevels.Length;
-        _maxPage = _totalLevelCount / LevelsCountByPage;
+        var (leftPageAvailable, rightPageAvailable) = (
+            categoryLevels.Length > LevelsCountByPage && _currentPage != 0,
+            categoryLevels.Length > LevelsCountByPage * (_currentPage + 1)
+        );
 
-        var displayedLevels = new List<LevelStatResponses.MemberLevelStat>();
-        var displayedCategories = new List<CategoryResponses.Category>();
-        for (var i = 0; i < allLevels.Length; i++)
-            if (i >= LevelsCountByPage * page && i < LevelsCountByPage * (page + 1))
-            {
-                displayedLevels.Add(allLevels[i]);
-                displayedCategories.Add(categories[i]);
-            }
+        _pageRightButton
+            .SetInteractable(rightPageAvailable)
+            .SetColor(rightPageAvailable ? Color.white : Color.white.WithAlpha(0.3f));
 
-        for (var i = 0; i < displayedLevels.Count; i++)
-        {
-            var category = displayedLevels[i];
-            if (category == null)
-            {
-                _levels[i].SetActive(false);
-                continue;
-            }
-
-            _levels[i].SetText($"{displayedCategories[i].Info.Name}\n{displayedLevels[i].Level.Order}");
-        }
-
-        _pageLeftButton.SetActive(_totalLevelCount > LevelsCountByPage && _page != 0);
-        _pageRightButton.SetActive(_totalLevelCount > LevelsCountByPage * (_page + 1));
+        _pageLeftButton
+            .SetInteractable(leftPageAvailable)
+            .SetColor(leftPageAvailable ? Color.white : Color.white.WithAlpha(0.3f));
     }
 
     public void PageLeft()
     {
-        if (_page > 0)
-            _page--;
-
-        Refresh();
+        _currentPage--;
+        RefreshUI();
     }
 
     public void PageRight()
     {
-        if (_page < _maxPage)
-            _page++;
-
-        Refresh();
+        _currentPage++;
+        RefreshUI();
     }
 
-    public void HideAllLevels()
+    public void EmptyCurrentLevelTexts()
     {
-        foreach (var x in _levels) x.SetText(string.Empty);
+        foreach (var x in _levelTextInCurrentPage) x.SetText(string.Empty);
     }
+
+    public PagedLevelList Bind(ref PagedLevelList x) => x = this;
 }

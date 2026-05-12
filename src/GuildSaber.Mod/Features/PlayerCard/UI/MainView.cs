@@ -182,17 +182,19 @@ public class PlayerCardView : ViewController<PlayerCardView>
                     )
                     .SetPadding(2, 2, 2, 7)
                     .Bind(ref PlayerImageContainer),
-                PagedLevelList.Make(_uiFactory, _guildSaberCache, _config)
+                PagedLevelList.Make(_uiFactory, _guildSaberCache, _config, _logger)
                     .Bind(ref MainPlayerLevelsContainer)
                     .SetPadding(2, 2, 2, 12)
                     .SetSpacing(-0.5f)
                     .SetActive(false)
             )
-            .OnReady(x => x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleCenter)
-            .OnReady(x => x.CSizeFitter.horizontalFit =
-                x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained)
+            .OnReady(x =>
+            {
+                x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
+                x.CSizeFitter.horizontalFit = x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+            })
             .SetBackground(true)
-            .SetBackgroundColor(Color.black.ColorWithAlpha(1))
+            .SetBackgroundColor(Color.black.WithAlpha(1))
             .Bind(ref MainLayout)
             .BuildUI(transform);
 
@@ -201,7 +203,6 @@ public class PlayerCardView : ViewController<PlayerCardView>
             .SetBackground(true)
             .OnReady(x =>
             {
-                //var l_Data = _resources.BorderMaterial;
                 var sprite = _resources.BorderSprite;
                 var material = _resources.BorderMaterial;
                 var image = x.gameObject.GetComponent<ImageView>();
@@ -209,8 +210,8 @@ public class PlayerCardView : ViewController<PlayerCardView>
                 image.sprite = sprite;
                 _borderImage = image;
             })
-            .OnReady(x => x.CSizeFitter.verticalFit =
-                x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained)
+            .OnReady(x =>
+                x.CSizeFitter.verticalFit = x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained)
             .BuildUI(transform);
 
 
@@ -447,7 +448,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
         }
     }
 
-    public void RefreshLevelsDetails() => MainPlayerLevelsContainer.Refresh(_guildSaberCache);
+    public void RefreshLevelsDetails() => MainPlayerLevelsContainer.CleanRefresh();
 
     public FloatingScreen GetCardFloatingScreen() => _cardFloatingScreen;
 
@@ -465,21 +466,19 @@ public class PlayerCardView : ViewController<PlayerCardView>
     {
         if (_guildSaberCache.PlayerExtended == null) return;
 
+        PointsContainer.Refresh();
+
         var memberLevelStats = _guildSaberCache.MemberLevelStats[_config.ContextId];
         var level = memberLevelStats.GetGlobalLevel();
 
         PlayerNameText.SetText(_guildSaberCache.PlayerExtended.Player.PlayerInfo.Username);
         PlayerLevelText.SetText($"{level?.Info.Name ?? "Level none"}");
 
-        var passCount = _guildSaberCache.MemberContextStats[_config.ContextId]
+        var globalPassStat = _guildSaberCache.MemberContextStats[_config.ContextId]
             .PassCountsWithRank
-            .First(x => x.CategoryId is null)
-            .PassCount;
+            .FirstOrDefault(x => x.CategoryId is null);
 
-        PlayerPassesText.SetText($"Pass count: {passCount}");
-
-
-        PointsContainer.Refresh(_guildSaberCache);
+        PlayerPassesText.SetText($"Pass count: {globalPassStat.PassCount} (#{globalPassStat.Rank})");
     }
 
     public void LoadConfig()
@@ -514,6 +513,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
                 _borderImage.color1 = _config.PlayerCard.ColorSettings.MainCardColor;
             }
 
+            PointsContainer.Refresh();
             return;
         }
 
@@ -531,5 +531,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
         _borderImage.color = color;
         _borderImage.color1 = color;
         _borderImage.color0 = color;
+
+        PointsContainer.Refresh();
     }
 }
