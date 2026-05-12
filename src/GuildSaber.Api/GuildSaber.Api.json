@@ -5558,13 +5558,14 @@
             "$ref": "#/components/schemas/ContextId"
           },
           "categoryId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CategoryId"
+              }
+            ]
           },
           "info": {
             "$ref": "#/components/schemas/LevelInfo"
@@ -5636,13 +5637,14 @@
             "$ref": "#/components/schemas/ContextId"
           },
           "categoryId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CategoryId"
+              }
+            ]
           },
           "info": {
             "$ref": "#/components/schemas/LevelInfo"
@@ -5752,13 +5754,14 @@
             "$ref": "#/components/schemas/ContextId"
           },
           "categoryId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CategoryId"
+              }
+            ]
           },
           "info": {
             "$ref": "#/components/schemas/LevelInfo"
@@ -5884,8 +5887,11 @@
               "$ref": "#/components/schemas/SimplePointWithRank"
             }
           },
-          "passCountWithRank": {
-            "$ref": "#/components/schemas/PassCountWithRank"
+          "passCountsWithRank": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PassCountWithRank"
+            }
           }
         }
       },
@@ -6435,6 +6441,16 @@
       "PassCountWithRank": {
         "type": "object",
         "properties": {
+          "categoryId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CategoryId"
+              }
+            ]
+          },
           "passCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
@@ -7249,13 +7265,14 @@
             "format": "int32"
           },
           "categoryId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CategoryId"
+              }
+            ]
           },
           "points": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
