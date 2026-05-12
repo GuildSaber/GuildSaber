@@ -27,13 +27,13 @@ public class LevelEndpoints : IEndpoints
     public static async Task<Ok<Level[]>> GetLevelsAsync(
         ContextId contextId,
         ServerDbContext dbContext,
-        int? categoryId = null,
+        CategoryId? categoryId = null,
         bool hasCategory = true)
     {
         var query = dbContext.Levels.Where(x => x.ContextId == contextId);
 
         if (categoryId.HasValue)
-            query = query.Where(x => x.CategoryId == categoryId.Value);
+            query = query.Where(x => x.CategoryId == categoryId);
         else if (!hasCategory)
             query = query.Where(x => x.CategoryId == null);
 

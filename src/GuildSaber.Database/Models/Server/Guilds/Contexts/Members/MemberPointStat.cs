@@ -13,7 +13,7 @@ public class MemberPointStat
     public ContextId ContextId { get; init; }
     public PlayerId PlayerId { get; init; }
     public Point.PointId PointId { get; init; }
-    public Category.CategoryId? CategoryId { get; init; }
+    public CategoryId? CategoryId { get; init; }
 
     public float Points { get; set; }
     public float Xp { get; set; }

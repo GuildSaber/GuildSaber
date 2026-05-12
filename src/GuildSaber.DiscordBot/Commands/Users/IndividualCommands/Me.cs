@@ -1,15 +1,14 @@
-﻿using System.Diagnostics;
-using Discord;
+﻿using Discord;
 using Discord.Interactions;
 using GuildSaber.Api.Features.Guilds.Categories;
-using GuildSaber.Api.Features.Guilds.Levels;
 using GuildSaber.Api.Features.Guilds.Members.ContextStats;
 using GuildSaber.Api.Features.Guilds.Members.LevelStats;
 using GuildSaber.Api.Features.Players;
+using GuildSaber.Common.Extra;
 using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Result;
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
+using GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
 using GuildSaber.DiscordBot.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Extensions;
 using GuildSaber.DiscordBot.Core.Handlers;
@@ -332,33 +331,6 @@ file record struct CardResources(Image<Rgba32> Avatar, Image<Rgba32> GuildLogo, 
     }
 }
 
-file record struct TrophiesData(int Plastic, int Silver, int Gold, int Diamond, int Ruby)
-{
-    public static TrophiesData Calculate(LevelStatResponses.MemberLevelStat[] levelStats)
-    {
-        Span<int> counts = stackalloc int[5];
-        foreach (var stat in levelStats.Where(s => s.IsCompleted))
-        {
-            var completionPercent = stat.Level switch
-            {
-                LevelResponses.Level.RankedMapListLevel { TotalCount: > 0 } listLevel => stat.PassCount.HasValue
-                    ? stat.PassCount.Value / (float)listLevel.TotalCount
-                    : 0f,
-                _ => 0f
-            };
-
-            Trace.Assert((int)Trophy.Ruby == 4, "Trophy enum values code assumption changed.");
-            var trophy = Trophy.GetFromPercentage(completionPercent);
-            if (trophy is null) continue;
-
-            // Use the int value of the trophy enum to index into the counts array
-            counts[(int)trophy]++;
-        }
-
-        return new TrophiesData(counts[0], counts[1], counts[2], counts[3], counts[4]);
-    }
-}
-
 file record struct CardData(
     PlayerResponses.Player Player,
     Color PrimaryColor,
@@ -377,13 +349,11 @@ file record struct CardData(
         LevelStatResponses.MemberLevelStat[] levelStats,
         ContextStatResponses.MemberContextStat contextStats)
     {
-        var currentLevel = levelStats
-            .Where(x => x.Level.CategoryId is null && !x.IsLocked)
-            .LastOrDefault(x => x.IsCompleted);
+        var currentLevel = levelStats.GetGlobalLevel();
 
         var primaryColor = Color.FromRgb(26, 28, 30);
         var secondaryColor = currentLevel is not null
-            ? Color.FromArgb(currentLevel.Level.Info.Color)
+            ? Color.FromArgb(currentLevel.Info.Color)
             : Color.Black;
 
         var pointStats = contextStats.SimplePointsWithRank
@@ -391,16 +361,14 @@ file record struct CardData(
             .Select(p => new PointStatData(p.Points, p.Name, p.Rank))
             .ToArray();
 
-        var trophies = TrophiesData.Calculate(levelStats);
+        var trophies = levelStats.CalculateTrophiesData();
         var categoryLevels = new List<CategoryLevelData>();
         var categoryLevelOrders = new List<int>();
 
         foreach (var category in categories)
         {
-            var categoryLevelStat = levelStats
-                .Where(x => x.Level.CategoryId == category.Id && !x.IsLocked)
-                .LastOrDefault(x => x.IsCompleted);
-            if (categoryLevelStat is null)
+            var categoryLevel = levelStats.GetCategoryLevel(category.Id);
+            if (categoryLevel is null)
             {
                 categoryLevelOrders.Add(0);
                 continue;
@@ -408,10 +376,10 @@ file record struct CardData(
 
             categoryLevels.Add(new CategoryLevelData(
                 category.Info.Name,
-                categoryLevelStat.Level.Info.Name,
-                Color.FromArgb(categoryLevelStat.Level.Info.Color)
+                categoryLevel.Info.Name,
+                Color.FromArgb(categoryLevel.Info.Color)
             ));
-            categoryLevelOrders.Add((int)categoryLevelStat.Level.Order);
+            categoryLevelOrders.Add((int)categoryLevel.Order);
         }
 
         var equilibriumPercentage = categoryLevelOrders.Count > 1
@@ -427,7 +395,7 @@ file record struct CardData(
             pointStats,
             contextStats.PassCountWithRank.PassCount,
             contextStats.PassCountWithRank.Rank,
-            currentLevel?.Level.Info.Name ?? "",
+            currentLevel?.Info.Name ?? "",
             trophies,
             [.. categoryLevels],
             (float)equilibriumPercentage

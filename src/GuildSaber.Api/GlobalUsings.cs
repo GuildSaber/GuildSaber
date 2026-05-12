@@ -13,6 +13,7 @@ global using EPermission = GuildSaber.Database.Models.Server.Guilds.Members.Memb
 global using GuildId = GuildSaber.Common.StrongTypes.GuildId;
 global using ContextId = GuildSaber.Common.StrongTypes.ContextId;
 global using PlayerId = GuildSaber.Common.StrongTypes.PlayerId;
+global using CategoryId = GuildSaber.Common.StrongTypes.CategoryId;
 global using DiscordId = GuildSaber.Common.StrongTypes.DiscordId;
 global using BeatLeaderId = GuildSaber.Common.Services.BeatLeader.Models.StrongTypes.BeatLeaderId;
 global using ScoreSaberId = GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes.ScoreSaberId;

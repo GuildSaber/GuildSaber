@@ -319,6 +319,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 OpenApiTypeTransformer.MapType<GuildId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
 OpenApiTypeTransformer.MapType<ContextId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
 OpenApiTypeTransformer.MapType<PlayerId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
+OpenApiTypeTransformer.MapType<CategoryId>(new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
 OpenApiTypeTransformer.MapType<DiscordId>(new OpenApiSchema
     { Type = JsonSchemaType.String, Example = "123456789012345678", Format = "int64" });
 OpenApiTypeTransformer.MapType<BeatLeaderId>(new OpenApiSchema

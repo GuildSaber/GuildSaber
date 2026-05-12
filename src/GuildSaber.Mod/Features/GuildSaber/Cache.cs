@@ -54,7 +54,7 @@ public static class GuildSaberCacheExtensions
             return texture;
         }
 
-        public async Task<Texture2D?> FetchCategoryIconTexture(int categoryId, GuildSaberClient client)
+        public async Task<Texture2D?> FetchCategoryIconTexture(CategoryId categoryId, GuildSaberClient client)
         {
             if (self.CategoryIcons.TryGetValue(categoryId, out var cachedIcon) && cachedIcon != null)
                 return cachedIcon;

@@ -19,8 +19,8 @@ public partial class UserModuleSlash
 {
     [SlashCommand("progress", "Shows a specific player's progress, or depending on a specific category")]
     public async Task Progress(
-        [Summary("Context")] [Autocomplete(typeof(ContextAutocompleteHandler))] int contextId,
-        [Summary("Category")] [Autocomplete(typeof(CategoryAutocompleteHandler))] int? categoryId = null,
+        [Summary("Context")] [Autocomplete(typeof(ContextAutocompleteHandler))] ContextId contextId,
+        [Summary("Category")] [Autocomplete(typeof(CategoryAutocompleteHandler))] CategoryId? categoryId = null,
         [Summary("User", "The user to show progress for (you if empty)")] IUser? user = null,
         [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Visible)
     {

@@ -9,27 +9,6 @@ public class Category
     public CategoryId Id { get; init; }
     public GuildId GuildId { get; init; }
     public CategoryInfo Info { get; set; }
-
-    public readonly record struct CategoryId(int Value) : IEFStrongTypedId<CategoryId, int>
-    {
-        public static bool TryParse(string from, out CategoryId value)
-        {
-            if (int.TryParse(from, out var id))
-            {
-                value = new CategoryId(id);
-                return true;
-            }
-
-            value = default;
-            return false;
-        }
-
-        public static implicit operator int(CategoryId id)
-            => id.Value;
-
-        public override string ToString()
-            => Value.ToString();
-    }
 }
 
 public class CategoryConfiguration : IEntityTypeConfiguration<Category>
@@ -38,8 +17,9 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id)
-            .HasGenericConversion<Category.CategoryId, int>()
+            .HasConversion(from => from.Value, to => new CategoryId(to))
             .ValueGeneratedOnAdd();
+
         builder.ComplexProperty(x => x.Info).Configure(new CategoryInfoConfiguration());
 
         builder.HasOne<Guild>()

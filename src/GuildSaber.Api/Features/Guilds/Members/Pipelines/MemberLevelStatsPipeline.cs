@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using GuildSaber.Api.Features.RankedScores;
 using GuildSaber.Database.Contexts.Server;
-using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
@@ -126,7 +125,7 @@ public sealed class MemberLevelStatsPipeline(ServerDbContext dbContext, ILogger<
             dbContext.MemberLevelStats.Add(dictionaryValue);
         }
 
-        var isLocked = new Dictionary<Category.CategoryId, bool>();
+        var isLocked = new Dictionary<CategoryId, bool>();
         foreach (var level in levels
                      .GroupBy(x => x.CategoryId)
                      .SelectMany(x => x.OrderBy(y => y.Order)))

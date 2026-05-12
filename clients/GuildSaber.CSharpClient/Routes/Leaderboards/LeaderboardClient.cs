@@ -39,9 +39,9 @@ public sealed class LeaderboardClient(
         );
 
     private Uri GetMemberCategoryPointStatLeaderboardUrl(
-        int contextId,
+        ContextId contextId,
         int pointId,
-        int categoryId,
+        CategoryId categoryId,
         PaginatedRequestOptions<LeaderboardRequests.EMemberStatLeaderboardSorter> requestOptions)
         => new(
             $"contexts/{contextId}/points/{pointId}/categories/{categoryId}/leaderboard?" +
@@ -112,9 +112,9 @@ public sealed class LeaderboardClient(
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing a paginated list of member point stats for the specified category.</returns>
     public async Task<Result<PagedList<MemberPointStat>>> GetMemberCategoryPointStatLeaderboardAsync(
-        int contextId,
+        ContextId contextId,
         int pointId,
-        int categoryId,
+        CategoryId categoryId,
         PaginatedRequestOptions<LeaderboardRequests.EMemberStatLeaderboardSorter> requestOptions,
         CancellationToken token = default)
         => await httpClient.GetAsync(
@@ -237,9 +237,9 @@ public sealed class LeaderboardClient(
     /// Enumeration stops automatically after receiving null, an empty array, or an error.
     /// </remarks>
     public async IAsyncEnumerable<Result<MemberPointStat[]>> GetMemberCategoryPointStatLeaderboardAsyncEnumerable(
-        int contextId,
+        ContextId contextId,
         int pointId,
-        int categoryId,
+        CategoryId categoryId,
         PaginatedRequestOptions<LeaderboardRequests.EMemberStatLeaderboardSorter> requestOptions)
     {
         while (requestOptions.Page <= requestOptions.MaxPage)

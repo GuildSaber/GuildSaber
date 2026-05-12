@@ -6,3 +6,4 @@ global using ContextId = GuildSaber.Common.StrongTypes.ContextId;
 global using DiscordGuildId = GuildSaber.Common.StrongTypes.DiscordGuildId;
 global using DiscordRoleId = GuildSaber.Common.StrongTypes.DiscordRoleId;
 global using PlayerId = GuildSaber.Common.StrongTypes.PlayerId;
+global using CategoryId = GuildSaber.Common.StrongTypes.CategoryId;

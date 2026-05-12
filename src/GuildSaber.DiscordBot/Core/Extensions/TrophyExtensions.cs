@@ -1,23 +1,10 @@
-using GuildSaber.Common.StrongTypes;
+using GuildSaber.Common.Extra;
 using GuildSaber.DiscordBot.Settings;
 
 namespace GuildSaber.DiscordBot.Core.Extensions;
 
 public static class TrophyExtensions
 {
-    extension(Trophy)
-    {
-        public static Trophy? GetFromPercentage(double percentage) => percentage switch
-        {
-            0 => null,
-            <= 0.25f => Trophy.Plastic,
-            <= 0.50f => Trophy.Silver,
-            <= 0.75 => Trophy.Gold,
-            < 1 => Trophy.Diamond,
-            _ => Trophy.Ruby
-        };
-    }
-
     public static (Trophy trophy, string emoji)? GetFromPercentage(this TrophyEmojis trophyEmojis, double percentage)
         => Trophy.GetFromPercentage(percentage) switch
         {
