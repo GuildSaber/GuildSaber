@@ -8,6 +8,7 @@ using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
+using GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
 using GuildSaber.Mod.Features.Common.Timer;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;
@@ -465,16 +466,15 @@ public class PlayerCardView : ViewController<PlayerCardView>
         if (_guildSaberCache.PlayerExtended == null) return;
 
         var memberLevelStats = _guildSaberCache.MemberLevelStats[_config.ContextId];
-        var level = memberLevelStats
-            .Where(x => x.Level.CategoryId is null && !x.IsLocked)
-            .LastOrDefault(x => x.IsCompleted);
+        var level = memberLevelStats.GetGlobalLevel();
 
         PlayerNameText.SetText(_guildSaberCache.PlayerExtended.Player.PlayerInfo.Username);
-        PlayerLevelText.SetText($"{level?.Level.Info.Name ?? "Level none"}");
+        PlayerLevelText.SetText($"{level?.Info.Name ?? "Level none"}");
 
-        var passCount = 0;
-        foreach (var memberLevelStat in memberLevelStats.Where(x => x.Level.CategoryId == null))
-            passCount += memberLevelStat?.PassCount ?? 0;
+        var passCount = _guildSaberCache.MemberContextStats[_config.ContextId]
+            .PassCountsWithRank
+            .First(x => x.CategoryId is null)
+            .PassCount;
 
         PlayerPassesText.SetText($"Pass count: {passCount}");
 
@@ -517,10 +517,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
             return;
         }
 
-        var level = _guildSaberCache.MemberLevelStats[_config.ContextId]
-            .Where(x => x.Level.CategoryId == null && !x.IsLocked)
-            .LastOrDefault(x => x.IsCompleted);
-
+        var level = _guildSaberCache.MemberLevelStats[_config.ContextId].GetGlobalLevel();
         if (level == null)
         {
             _borderImage.color = Color.white;
@@ -529,7 +526,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
             return;
         }
 
-        var color = PlayerCardLibrary.FromArgb(level.Level.Info.Color);
+        var color = PlayerCardLibrary.FromArgb(level.Info.Color);
         PlayerNameText.SetColor(color);
         _borderImage.color = color;
         _borderImage.color1 = color;

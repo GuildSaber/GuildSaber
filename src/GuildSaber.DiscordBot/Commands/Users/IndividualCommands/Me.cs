@@ -87,17 +87,6 @@ file static class MeCommand
         await image.SaveAsPngAsync(stream);
         stream.Position = 0;
     }
-
-    internal static double StandardDeviation(IReadOnlyCollection<int> sequence)
-    {
-        if (sequence.Count == 0)
-            return 0;
-
-        var average = sequence.Average();
-        var sum = sequence.Sum(x => Math.Pow(x - average, 2));
-
-        return Math.Sqrt(sum / (sequence.Count - 1));
-    }
 }
 
 file static class CardRenderingExtensions
@@ -362,39 +351,27 @@ file record struct CardData(
             .ToArray();
 
         var trophies = levelStats.CalculateTrophiesData();
-        var categoryLevels = new List<CategoryLevelData>();
-        var categoryLevelOrders = new List<int>();
+        var equilibriumPercentage = levelStats.CalculateSkillEquilibrium(categories.Select(x => x.Id)) ?? 0f;
 
-        foreach (var category in categories)
-        {
-            var categoryLevel = levelStats.GetCategoryLevel(category.Id);
-            if (categoryLevel is null)
-            {
-                categoryLevelOrders.Add(0);
-                continue;
-            }
+        var categoryLevels = categories
+            .Select(category => (category, level: levelStats.GetCategoryLevel(category.Id)))
+            .Select(tuple => new CategoryLevelData(
+                tuple.category.Info.Name,
+                tuple.level?.Info.Name ?? "None",
+                Color.FromArgb(tuple.level?.Info.Color ?? 0xFFFFFF)))
+            .ToArray();
 
-            categoryLevels.Add(new CategoryLevelData(
-                category.Info.Name,
-                categoryLevel.Info.Name,
-                Color.FromArgb(categoryLevel.Info.Color)
-            ));
-            categoryLevelOrders.Add((int)categoryLevel.Order);
-        }
-
-        var equilibriumPercentage = categoryLevelOrders.Count > 1
-            ? Math.Max(
-                0f,
-                100f - MeCommand.StandardDeviation(categoryLevelOrders) * 100f / categoryLevelOrders.Average())
-            : 100f;
+        var globalPassCountWithRank = contextStats
+            .PassCountsWithRank
+            .FirstOrDefault(x => x.CategoryId == null);
 
         return new CardData(
             player,
             primaryColor,
             secondaryColor,
             pointStats,
-            contextStats.PassCountWithRank.PassCount,
-            contextStats.PassCountWithRank.Rank,
+            globalPassCountWithRank.PassCount,
+            globalPassCountWithRank.Rank,
             currentLevel?.Info.Name ?? "",
             trophies,
             [.. categoryLevels],

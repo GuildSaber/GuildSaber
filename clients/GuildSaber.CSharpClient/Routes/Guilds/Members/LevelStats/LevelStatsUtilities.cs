@@ -10,12 +10,12 @@ public static class LevelStatsUtilities
     extension(IEnumerable<MemberLevelStat> self)
     {
         public Level? GetGlobalLevel() => self
-            .Where(x => x.Level.CategoryId is null && !x.IsLocked)
+            .Where(x => x.Level.CategoryId is null && x is { IsLocked: false, Level: Level.RankedMapListLevel })
             .LastOrDefault(x => x.IsCompleted)
             ?.Level;
 
         public Level? GetCategoryLevel(CategoryId categoryId) => self
-            .Where(x => x.Level.CategoryId == categoryId && !x.IsLocked)
+            .Where(x => x.Level.CategoryId == categoryId && x is { IsLocked: false, Level: Level.RankedMapListLevel })
             .LastOrDefault(x => x.IsCompleted)
             ?.Level;
 
@@ -42,5 +42,33 @@ public static class LevelStatsUtilities
 
             return new TrophiesData(counts[0], counts[1], counts[2], counts[3], counts[4]);
         }
+
+        /// <summary>
+        /// Calculates a skill equilibrium score based on the standard deviation of category levels.
+        /// </summary>
+        /// <param name="categoryIds">The category IDs to consider for the calculation.</param>
+        /// <remarks>This function will use 0 in the calculus for each missing categories.</remarks>
+        /// <returns>The skill equilibrium percentage between 0 and 100f</returns>
+        public double? CalculateSkillEquilibrium(IEnumerable<CategoryId> categoryIds)
+        {
+            var categoryLevelOrders = categoryIds
+                .Select(categoryId => (int)(self.GetCategoryLevel(categoryId)?.Order ?? 0))
+                .ToList();
+
+            return categoryLevelOrders.Count > 1
+                ? Math.Max(0f, 100f - StandardDeviation(categoryLevelOrders) * 100f / categoryLevelOrders.Average())
+                : 100f;
+        }
+    }
+
+    private static double StandardDeviation(IReadOnlyCollection<int> sequence)
+    {
+        if (sequence.Count == 0)
+            return 0;
+
+        var average = sequence.Average();
+        var sum = sequence.Sum(x => Math.Pow(x - average, 2));
+
+        return Math.Sqrt(sum / (sequence.Count - 1));
     }
 }
