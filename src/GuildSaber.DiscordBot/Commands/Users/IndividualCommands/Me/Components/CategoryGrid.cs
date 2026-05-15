@@ -26,7 +26,7 @@ public sealed class CategoryGrid(
         {
             foreach (var pair in categoryLevels.Chunk(2))
                 categoriesCol.Item()
-                    .PaddingHorizontal(25)
+                    .PaddingHorizontal(15)
                     .PaddingVertical(3)
                     .Row(pairRow =>
                     {
