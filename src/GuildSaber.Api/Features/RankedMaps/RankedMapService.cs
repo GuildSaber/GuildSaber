@@ -319,8 +319,8 @@ public class RankedMapService(
             )
         };
         song.SongDifficulties.Add(songDifficulty);
-        await dbContext.SaveChangesAsync();
 
+        await dbContext.SaveChangesAsync();
         return Success((song, songDifficulty));
     }
 

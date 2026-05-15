@@ -1,3 +1,7 @@
+using System.Text.Json.Serialization;
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
+using GuildSaber.Common.StrongTypes;
+
 namespace GuildSaber.Common.Services.BeatLeader.Models.Responses;
 
 public class PlayerScoreStats
@@ -96,9 +100,14 @@ public class Ban
 
 public class LinkResponse
 {
-    public required int? QuestId { get; init; }
-    public required string? SteamId { get; init; }
-    public required string? OculusPCId { get; init; }
+    [JsonConverter(typeof(NullableBLNativeIdJsonConverter))]
+    public required BLNativeId? QuestId { get; init; }
+
+    [JsonConverter(typeof(NullableSteamIdJsonConverter))]
+    public required SteamId? SteamId { get; init; }
+
+    [JsonConverter(typeof(NullableMetaPCIdJsonConverter))]
+    public required MetaPCId? OculusPCId { get; init; }
 }
 
 public class PlayerWithBanHistory

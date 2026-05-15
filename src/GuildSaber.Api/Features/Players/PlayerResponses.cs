@@ -1,4 +1,6 @@
 using GuildSaber.Api.Features.Guilds.Members;
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
+using GuildSaber.Common.StrongTypes;
 
 namespace GuildSaber.Api.Features.Players;
 
@@ -26,10 +28,15 @@ public static class PlayerResponses
     );
 
     public readonly record struct PlayerLinkedAccounts(
-        string BeatLeaderId,
+        SteamId? SteamId,
+        MetaPCId? MetaPCId,
+        BLNativeId? BLNativeId,
         string? ScoreSaberId,
         string? DiscordId
-    );
+    )
+    {
+        public BeatLeaderId BeatLeaderId => ((BeatLeaderId?)SteamId ?? (BeatLeaderId?)MetaPCId ?? BLNativeId)!.Value;
+    }
 
     public readonly record struct PlayerSubscriptionInfo(
         ESubscriptionTier Tier

@@ -198,8 +198,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
             .Bind(ref MainLayout)
             .BuildUI(transform);
 
-        XUIVLayout.Make(
-            )
+        XUIVLayout.Make()
             .SetBackground(true)
             .OnReady(x =>
             {

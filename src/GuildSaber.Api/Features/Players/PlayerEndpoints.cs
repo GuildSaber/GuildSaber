@@ -137,7 +137,7 @@ public class PlayerEndpoints : IEndpoints
     private static async Task<Results<Ok<PlayerId>, NotFound>> LookupPlayerIdByBeatLeaderIdAsync(
         BeatLeaderId beatleaderId, ServerDbContext dbContext)
         => await dbContext.Players
-                .Where(x => x.LinkedAccounts.BeatLeaderId == beatleaderId)
+                .Where(ServerPlayer.BeatLeaderIdEquals(beatleaderId))
                 .Select(x => (PlayerId?)x.Id)
                 .FirstOrDefaultAsync() switch
             {

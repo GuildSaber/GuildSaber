@@ -313,7 +313,7 @@ public class AuthEndpoints : IEndpoints
                 .GetPlayerIdAsync(discordId)
                 .ToResult(() => "Treating as result")
                 .Compensate(_ => BeatLeaderId
-                    .TryParseUnsafe(blClaims?.FindFirstValue(ClaimTypes.NameIdentifier))
+                    .TryParse(blClaims?.FindFirstValue(ClaimTypes.NameIdentifier))
                     .MapError(_ => TypedResults.Problem(
                         "Discord account is not linked to any player, please create/login in an account using BeatLeader first.",
                         statusCode: StatusCodes.Status422UnprocessableEntity))
@@ -338,7 +338,7 @@ public class AuthEndpoints : IEndpoints
             .MapError(_ => TypedResults.Problem("Failed to parse Discord ID from authentication claims.",
                 statusCode: StatusCodes.Status400BadRequest))
             .Bind(discordId => BeatLeaderId
-                .TryParseUnsafe(blClaims.FindFirstValue(ClaimTypes.NameIdentifier))
+                .TryParse(blClaims.FindFirstValue(ClaimTypes.NameIdentifier))
                 .MapError(_ => TypedResults.Problem(
                     "You must be logged in with BeatLeader to link your Discord account.",
                     statusCode: StatusCodes.Status401Unauthorized))
@@ -356,7 +356,7 @@ public class AuthEndpoints : IEndpoints
     private static async Task<Result<Ok<TokenResponse>, ProblemHttpResult>> BeatLeaderCallBackPipeline(
         HttpContext httpContext, AuthService authService, ClaimsPrincipal claimsPrincipal,
         IBackgroundTaskQueue taskQueue, IServiceScopeFactory scopeFactory)
-        => await BeatLeaderId.TryParseUnsafe(claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier))
+        => await BeatLeaderId.TryParse(claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier))
             .MapError(_ => TypedResults.Problem("Failed to parse BeatLeaderId from authentication claims.",
                 statusCode: StatusCodes.Status400BadRequest))
             .Bind(beatleaderId => authService
@@ -372,7 +372,7 @@ public class AuthEndpoints : IEndpoints
                             var pipeline = scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>();
 
                             await pipeline.ImportBeatLeaderScoresAsync(
-                                player.Id, player.LinkedAccounts.BeatLeaderId, token
+                                player.Id, player.LinkedAccounts.BeatLeaderId(), token
                             );
 
                             if (player.LinkedAccounts.ScoreSaberId is { } scoreSaberId)
