@@ -1,6 +1,7 @@
 using CSharpFunctionalExtensions;
 using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Services.LegacyGuildSaber;
+using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.RankedScores;

@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using GuildSaber.Api.Features.Guilds.Members;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
+using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
 
 namespace GuildSaber.Api.Features.Players;

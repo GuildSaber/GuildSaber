@@ -5,6 +5,7 @@ using GuildSaber.Api.Features.Players;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models;
+using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
