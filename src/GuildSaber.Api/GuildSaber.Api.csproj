@@ -18,6 +18,16 @@
         <OpenApiDocumentsDirectory>.</OpenApiDocumentsDirectory>
     </PropertyGroup>
 
+    <Target Name="CopyOpenApiToWebsite" AfterTargets="GenerateOpenApiDocuments">
+        <PropertyGroup>
+            <_WebsiteOpenApiDir>..\GuildSaber.Website\openapi</_WebsiteOpenApiDir>
+        </PropertyGroup>
+        <MakeDir Directories="$(_WebsiteOpenApiDir)" />
+        <Copy SourceFiles="$(MSBuildProjectDirectory)\GuildSaber.Api.json"
+              DestinationFiles="$(_WebsiteOpenApiDir)\GuildSaber.Api.json"
+              SkipUnchangedFiles="true" />
+    </Target>
+
     <ItemGroup>
         <PackageReference Include="AspNet.Security.OAuth.Discord" />
         <PackageReference Include="CSharpFunctionalExtensions.HttpResults" />

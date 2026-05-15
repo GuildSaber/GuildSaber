@@ -3,7 +3,7 @@ import "dotenv/config"
 import path from "node:path"
 
 export default defineConfig({
-  input: path.resolve(__dirname, "../GuildSaber.Api/GuildSaber.Api.json"),
+  input: path.resolve(__dirname, "openapi/GuildSaber.Api.json"),
   output: {
     path: "src/client",
     format: "prettier",
