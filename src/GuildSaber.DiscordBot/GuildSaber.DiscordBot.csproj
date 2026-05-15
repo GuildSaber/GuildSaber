@@ -17,8 +17,7 @@
         </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
         <PackageReference Include="Microsoft.Extensions.Hosting" />
-        <PackageReference Include="SixLabors.ImageSharp" />
-        <PackageReference Include="SixLabors.ImageSharp.Drawing" />
+        <PackageReference Include="QuestPDF" />
     </ItemGroup>
 
     <ItemGroup>

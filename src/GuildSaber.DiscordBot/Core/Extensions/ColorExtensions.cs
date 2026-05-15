@@ -1,6 +1,4 @@
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing;
 using Color = Discord.Color;
 
 namespace GuildSaber.DiscordBot.Core.Extensions;
@@ -29,6 +27,21 @@ public static class DiscordColorExtensions
     }
 }
 
+public static class QuestPdfColorExtensions
+{
+    extension(QuestPDF.Infrastructure.Color)
+    {
+        public static QuestPDF.Infrastructure.Color FromArgb(int argb)
+        {
+            var r = (byte)(argb >> 16 & 0xFF);
+            var g = (byte)(argb >> 8 & 0xFF);
+            var b = (byte)(argb & 0xFF);
+            return QuestPDF.Infrastructure.Color.FromRGB(r, g, b);
+        }
+    }
+}
+
+/*
 public static class ImageSharpColorExtensions
 {
     extension(SixLabors.ImageSharp.Color)
@@ -53,4 +66,4 @@ public static class ImageSharpColorExtensions
             0, 90, 90)
         .CloseFigure()
         .Build();
-}
+}*/
