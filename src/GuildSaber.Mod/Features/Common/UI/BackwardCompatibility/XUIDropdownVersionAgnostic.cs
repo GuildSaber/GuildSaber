@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -22,6 +23,17 @@ public class XUIDropdownVersionAgnostic : CP_SDK.XUI.XUIDropdown
         (XUIDropdown)_setOptionsVersionAgnostic.Invoke(this, HasTwoParameterSetOptions == true
             ? [options, notifyOnValueChanged]
             : [options]);
+
+    public new XUIDropdown OnValueChanged(Action<int, string> functor, bool add = true)
+        => (XUIDropdown)OnReady(x => x.OnValueChanged(functor, add));
+
+    public new XUIDropdown SetActive(bool active) => (XUIDropdown)OnReady(x => x.gameObject.SetActive(active));
+
+    public new XUIDropdown SetInteractable(bool interactable)
+        => (XUIDropdown)OnReady(x => x.SetInteractable(interactable));
+
+    public new XUIDropdown SetValue(string value, bool notify = true)
+        => (XUIDropdown)OnReady(x => x.SetValue(value, notify));
 
     public XUIDropdown Bind(ref XUIDropdown target) => target = this;
 }

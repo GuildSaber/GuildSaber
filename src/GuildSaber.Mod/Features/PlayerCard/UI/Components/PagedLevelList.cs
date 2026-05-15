@@ -54,14 +54,14 @@ public class PagedLevelList : XUIVLayout
             XUIHLayout.Make(
                     factory.SecondaryButton("<", PageLeft)
                         .Bind(ref _pageLeftButton)
+                        .SetColor(Color.white)
                         .SetWidth(5)
-                        .SetHeight(5)
-                        .SetColor(Color.white),
+                        .SetHeight(5),
                     factory.SecondaryButton(">", PageRight)
                         .Bind(ref _pageRightButton)
+                        .SetColor(Color.white)
                         .SetWidth(5)
                         .SetHeight(5)
-                        .SetColor(Color.white)
                 ).SetSpacing(10)
                 .SetPadding(new RectOffset(-5, 2, 2, 2))
                 .BuildUI(x.transform);
@@ -118,12 +118,12 @@ public class PagedLevelList : XUIVLayout
         );
 
         _pageRightButton
-            .SetInteractable(rightPageAvailable)
-            .SetColor(rightPageAvailable ? Color.white : Color.white.WithAlpha(0.3f));
+            .SetColor(rightPageAvailable ? Color.white : Color.white.WithAlpha(0.3f))
+            .SetInteractable(rightPageAvailable);
 
         _pageLeftButton
-            .SetInteractable(leftPageAvailable)
-            .SetColor(leftPageAvailable ? Color.white : Color.white.WithAlpha(0.3f));
+            .SetColor(leftPageAvailable ? Color.white : Color.white.WithAlpha(0.3f))
+            .SetInteractable(leftPageAvailable);
     }
 
     public void PageLeft()

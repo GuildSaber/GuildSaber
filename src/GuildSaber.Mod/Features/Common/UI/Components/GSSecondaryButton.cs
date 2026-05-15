@@ -2,7 +2,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using CP_SDK.UI.Components;
-using CP_SDK.XUI;
 using GuildSaber.Mod.Helpers;
 using TMPro;
 using UnityEngine;
@@ -59,6 +58,6 @@ public class GSSecondaryButton(string label, TMP_FontAsset font, Action? onClick
             meshType: SpriteMeshType.FullRect
         );
     }
-    
+
     public GSSecondaryButton Bind(ref GSSecondaryButton x) => x = this;
 }

@@ -16,9 +16,9 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
     [Inject] private readonly GuildSaberConfig _config = null!;
     [Inject] private readonly PlaylistDownloader _playlistDownloader = null!;
     [Inject] private readonly UIFactory _uiFactory = null!;
+    private GSSecondaryButton _downloadButton = null!;
 
     private GSText _uniquePlaylistDownloadedText = null!;
-    private GSSecondaryButton _downloadButton = null!;
 
     public event Action OnResultsModalClosed = null!;
 
