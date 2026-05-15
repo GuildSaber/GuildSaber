@@ -59,7 +59,7 @@ public class SteamIdJsonConverter : JsonConverter<SteamId>
         };
 
     public override void Write(Utf8JsonWriter writer, SteamId value, JsonSerializerOptions options)
-        => writer.WriteNumberValue(value);
+        => writer.WriteStringValue(value.ToString());
 }
 
 public class NullableSteamIdJsonConverter : JsonConverter<SteamId?>
@@ -89,6 +89,6 @@ public class NullableSteamIdJsonConverter : JsonConverter<SteamId?>
             return;
         }
 
-        writer.WriteNumberValue(value.Value);
+        writer.WriteStringValue(value.ToString());
     }
 }

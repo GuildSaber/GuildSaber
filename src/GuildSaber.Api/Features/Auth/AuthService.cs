@@ -4,6 +4,8 @@ using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Players;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.ScoreSaber;
+using GuildSaber.Common.Services.ScoreSaber.Models;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Mappers.BeatLeader;
@@ -146,15 +148,83 @@ public class AuthService(
                         blPlayer.LinkedIds?.SteamId,
                         blPlayer.LinkedIds?.OculusPCId,
                         blPlayer.LinkedIds?.QuestId,
-                        await scoreSaberApi.PlayerExistsAsync(beatleaderId).Unwrap()
-                            ? ScoreSaberId.CreateUnsafe(beatleaderId).Value
-                            : null,
+                        await GetUsedScoreSaberIdAsync(
+                            blPlayer.LinkedIds?.SteamId,
+                            blPlayer.LinkedIds?.OculusPCId),
                         DiscordId: null),
                     SubscriptionInfo = new PlayerSubscriptionInfo(PlayerSubscriptionInfo.ESubscriptionTier.None),
                     IsManager = managerSettings.Value.SteamIds.Contains(blPlayer.Id)
                 }))
             .Map(static (player, dbContext) => dbContext
                 .AddAndSaveAsync(player), dbContext);
+
+    public async Task<ScoreSaberId?> GetUsedScoreSaberIdAsync(SteamId? steamId, MetaPCId? metaPCId)
+    {
+        var ssIds = new[] { ScoreSaberId.CreateUnsafe(steamId), ScoreSaberId.CreateUnsafe(metaPCId) }
+            .OfType<ScoreSaberId>()
+            .ToArray();
+
+        if (ssIds.Length == 0)
+            return null;
+
+        var latestScoreRequest = new ScoreSaberApi.PaginatedRequestOptions<PlayerScoresSortBy>
+        {
+            Page = 1,
+            PageSize = 1,
+            MaxPage = 1,
+            SortBy = PlayerScoresSortBy.Recent
+        };
+
+        var latestScores = ssIds.Select(async scoreSaberId => (scoreSaberId, latestScore: await scoreSaberApi
+                .GetPlayerScores(scoreSaberId, latestScoreRequest)
+                .SelectMany(result => result.Unwrap() ?? [])
+                .FirstOrDefaultAsync()))
+            .ToList();
+
+        return (from tuple in await Task.WhenAll(latestScores)
+                where tuple.latestScore is not null
+                orderby tuple.latestScore.Score.TimeSet descending
+                select tuple.scoreSaberId)
+            .FirstOrDefault();
+    }
+
+    public Task UpdatePlayerInfoAsync(PlayerId playerId, BeatLeaderId beatleaderId)
+        => beatLeaderApi.GetPlayerProfileWithStatsAsync(beatleaderId)
+            .Bind(async blPlayer =>
+            {
+                if (blPlayer is null)
+                    return Failure("Player not found on BeatLeader.");
+
+                var player = await dbContext.Players.FindAsync(playerId);
+                if (player is null) return Failure("Player deleted while updating.");
+
+                player.Info = new PlayerInfo
+                {
+                    Username = blPlayer.Name,
+                    AvatarUrl = blPlayer.Avatar,
+                    Country = blPlayer.Country,
+                    CreatedAt = player.Info.CreatedAt
+                };
+
+                player.HardwareInfo = new PlayerHardwareInfo
+                {
+                    HMD = blPlayer.ScoreStats.TopHMD.Map(),
+                    Platform = PlatformMappers.Map(blPlayer.Platform)
+                };
+
+                // Using the with syntax ensure we just mutate what we need to (without touching DiscordId for example).
+                player.LinkedAccounts = player.LinkedAccounts with
+                {
+                    SteamId = blPlayer.LinkedIds?.SteamId,
+                    MetaPCId = blPlayer.LinkedIds?.OculusPCId,
+                    BLNativeId = blPlayer.LinkedIds?.QuestId,
+                    ScoreSaberId = await GetUsedScoreSaberIdAsync(
+                        blPlayer.LinkedIds?.SteamId,
+                        blPlayer.LinkedIds?.OculusPCId)
+                };
+
+                return Success();
+            }).Map(static dbContext => dbContext.SaveChangesAsync(), dbContext);
 }
 
 public abstract record SessionCreationError;

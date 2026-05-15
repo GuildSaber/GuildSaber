@@ -18,7 +18,7 @@ public record PlayerScore
 public class Score
 {
     public required ScoreSaberScoreId Id { get; init; }
-    public required LeaderboardPlayerInfo LeaderboardPlayerInfo { get; init; }
+    public required LeaderboardPlayerInfo? LeaderboardPlayerInfo { get; init; }
     public required int Rank { get; init; }
     public required int BaseScore { get; init; }
     public required int ModifiedScore { get; init; }

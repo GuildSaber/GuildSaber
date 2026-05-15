@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using GuildSaber.Api.Features.Guilds.Members;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
@@ -31,10 +32,11 @@ public static class PlayerResponses
         SteamId? SteamId,
         MetaPCId? MetaPCId,
         BLNativeId? BLNativeId,
-        string? ScoreSaberId,
-        string? DiscordId
+        ScoreSaberId? ScoreSaberId,
+        DiscordId? DiscordId
     )
     {
+        [JsonIgnore]
         public BeatLeaderId BeatLeaderId => ((BeatLeaderId?)SteamId ?? (BeatLeaderId?)MetaPCId ?? BLNativeId)!.Value;
     }
 

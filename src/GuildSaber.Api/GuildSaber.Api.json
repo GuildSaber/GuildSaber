@@ -4813,11 +4813,6 @@
           }
         }
       },
-      "BeatLeaderId": {
-        "type": "string",
-        "format": "int64",
-        "example": "123456789012345678"
-      },
       "BeatLeaderScoreId": {},
       "BeatSaverKey": {
         "type": "string",
@@ -4827,7 +4822,11 @@
         "type": "string",
         "example": "a3c391"
       },
-      "BLNativeId": {},
+      "BLNativeId": {
+        "type": "string",
+        "format": "int64",
+        "example": "123456789"
+      },
       "Category": {
         "type": "object",
         "properties": {
@@ -4937,6 +4936,11 @@
       "DiscordGuildId": {
         "type": "string",
         "example": "987654321098765432"
+      },
+      "DiscordId": {
+        "type": "string",
+        "format": "int64",
+        "example": "123456789012345678"
       },
       "DiscordRoleId": {
         "type": "string",
@@ -5954,7 +5958,11 @@
           }
         }
       },
-      "MetaPCId": {},
+      "MetaPCId": {
+        "type": "string",
+        "format": "int64",
+        "example": "1234567890123456"
+      },
       "PagedListOfCategory": {
         "type": "object",
         "properties": {
@@ -6592,19 +6600,24 @@
             ]
           },
           "scoreSaberId": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ScoreSaberId"
+              }
             ]
           },
           "discordId": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DiscordId"
+              }
             ]
-          },
-          "beatLeaderId": {
-            "$ref": "#/components/schemas/BeatLeaderId"
           }
         }
       },
@@ -7180,6 +7193,11 @@
           }
         }
       },
+      "ScoreSaberId": {
+        "type": "string",
+        "format": "int64",
+        "example": "12345678901234567"
+      },
       "ScoreSaberScoreId": {},
       "ScoreScoreSaberScore": {
         "required": [
@@ -7560,7 +7578,11 @@
         "type": "integer",
         "format": "int32"
       },
-      "SteamId": {},
+      "SteamId": {
+        "type": "string",
+        "format": "int64",
+        "example": "12345678901234567"
+      },
       "TokenResponse": {
         "type": "object",
         "properties": {

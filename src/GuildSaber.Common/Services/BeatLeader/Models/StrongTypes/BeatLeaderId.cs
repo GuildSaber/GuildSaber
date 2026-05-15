@@ -106,5 +106,5 @@ public class BeatLeaderIdJsonConverter : JsonConverter<BeatLeaderId>
         };
 
     public override void Write(Utf8JsonWriter writer, BeatLeaderId value, JsonSerializerOptions options)
-        => writer.WriteNumberValue(value);
+        => writer.WriteStringValue(value.ToString());
 }

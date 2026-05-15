@@ -54,7 +54,7 @@ public class BLNativeIdJsonConverter : JsonConverter<BLNativeId>
         };
 
     public override void Write(Utf8JsonWriter writer, BLNativeId value, JsonSerializerOptions options)
-        => writer.WriteNumberValue(value);
+        => writer.WriteStringValue(value.ToString());
 }
 
 public class NullableBLNativeIdJsonConverter : JsonConverter<BLNativeId?>
@@ -84,6 +84,6 @@ public class NullableBLNativeIdJsonConverter : JsonConverter<BLNativeId?>
             return;
         }
 
-        writer.WriteNumberValue(value.Value);
+        writer.WriteStringValue(value.ToString());
     }
 }

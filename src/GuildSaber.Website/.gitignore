@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Generated client output
+src/client/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

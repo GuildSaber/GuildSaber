@@ -319,6 +319,7 @@ public class AuthEndpoints : IEndpoints
                         statusCode: StatusCodes.Status422UnprocessableEntity))
                     .Bind(beatleaderId => authService
                         .GetPlayerIdAsync(beatleaderId)
+                        .Tap(playerId => authService.UpdatePlayerInfoAsync(playerId, beatleaderId))
                         .ToResult(() => TypedResults.Problem(
                             "Can't find the player linked to the provided BeatLeader account.",
                             statusCode: StatusCodes.Status500InternalServerError)))
@@ -361,6 +362,7 @@ public class AuthEndpoints : IEndpoints
                 statusCode: StatusCodes.Status400BadRequest))
             .Bind(beatleaderId => authService
                 .GetPlayerIdAsync(beatleaderId)
+                .Tap(playerId => authService.UpdatePlayerInfoAsync(playerId, beatleaderId))
                 .ToResult(() => "Treating as result")
                 .Compensate(_ => authService
                     .CreatePlayerAsync(beatleaderId)

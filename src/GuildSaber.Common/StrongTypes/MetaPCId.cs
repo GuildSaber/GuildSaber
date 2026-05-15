@@ -59,7 +59,7 @@ public class MetaPCIdJsonConverter : JsonConverter<MetaPCId>
         };
 
     public override void Write(Utf8JsonWriter writer, MetaPCId value, JsonSerializerOptions options)
-        => writer.WriteNumberValue(value);
+        => writer.WriteStringValue(value.ToString());
 }
 
 public class NullableMetaPCIdJsonConverter : JsonConverter<MetaPCId?>
@@ -89,6 +89,6 @@ public class NullableMetaPCIdJsonConverter : JsonConverter<MetaPCId?>
             return;
         }
 
-        writer.WriteNumberValue(value.Value);
+        writer.WriteStringValue(value.ToString());
     }
 }

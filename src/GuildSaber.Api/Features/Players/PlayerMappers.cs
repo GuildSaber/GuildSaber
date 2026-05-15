@@ -27,8 +27,8 @@ public static class PlayerMappers
                 self.LinkedAccounts.SteamId,
                 self.LinkedAccounts.MetaPCId,
                 self.LinkedAccounts.BLNativeId,
-                self.LinkedAccounts.ScoreSaberId.ToString(),
-                self.LinkedAccounts.DiscordId.ToString()
+                self.LinkedAccounts.ScoreSaberId,
+                self.LinkedAccounts.DiscordId
             ),
             new PlayerResponses.PlayerSubscriptionInfo(
                 self.SubscriptionInfo.Tier.Map()
@@ -53,8 +53,8 @@ public static class PlayerMappers
                     self.LinkedAccounts.SteamId,
                     self.LinkedAccounts.MetaPCId,
                     self.LinkedAccounts.BLNativeId,
-                    self.LinkedAccounts.ScoreSaberId.ToString(),
-                    self.LinkedAccounts.DiscordId.ToString()
+                    self.LinkedAccounts.ScoreSaberId,
+                    self.LinkedAccounts.DiscordId
                 ),
                 new PlayerResponses.PlayerSubscriptionInfo(
                     self.SubscriptionInfo.Tier.Map()

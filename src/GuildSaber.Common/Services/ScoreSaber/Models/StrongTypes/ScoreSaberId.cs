@@ -48,5 +48,5 @@ public class ScoreSaberIdJsonConverter : JsonConverter<ScoreSaberId>
     }
 
     public override void Write(Utf8JsonWriter writer, ScoreSaberId value, JsonSerializerOptions options)
-        => writer.WriteNumberValue(value);
+        => writer.WriteStringValue(value.ToString());
 }
