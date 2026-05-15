@@ -24,7 +24,9 @@ public static class PlayerMappers
                 self.HardwareInfo.Platform.ToString()
             ),
             new PlayerResponses.PlayerLinkedAccounts(
-                self.LinkedAccounts.BeatLeaderId.ToString(),
+                self.LinkedAccounts.SteamId,
+                self.LinkedAccounts.MetaPCId,
+                self.LinkedAccounts.BLNativeId,
                 self.LinkedAccounts.ScoreSaberId.ToString(),
                 self.LinkedAccounts.DiscordId.ToString()
             ),
@@ -48,7 +50,9 @@ public static class PlayerMappers
                     self.HardwareInfo.Platform.ToString()
                 ),
                 new PlayerResponses.PlayerLinkedAccounts(
-                    self.LinkedAccounts.BeatLeaderId.ToString(),
+                    self.LinkedAccounts.SteamId,
+                    self.LinkedAccounts.MetaPCId,
+                    self.LinkedAccounts.BLNativeId,
                     self.LinkedAccounts.ScoreSaberId.ToString(),
                     self.LinkedAccounts.DiscordId.ToString()
                 ),
@@ -66,11 +70,15 @@ public static class PlayerMappers
                 x.Priority
             )).ToArray());
 
-    public static PlayerResponses.Player Map(this Player self)
+    extension(Player)
     {
-        _mapPlayerImpl ??= MapPlayerExpression.Compile();
-        return _mapPlayerImpl(self);
+        public static Expression<Func<Player, bool>> BeatLeaderIdEquals(BeatLeaderId id) => self =>
+            self.LinkedAccounts.SteamId == id || self.LinkedAccounts.MetaPCId == id ||
+            self.LinkedAccounts.BLNativeId == id;
     }
+
+    public static PlayerResponses.Player Map(this Player self)
+        => (_mapPlayerImpl ??= MapPlayerExpression.Compile())(self);
 
     public static PlayerResponses.ESubscriptionTier Map(this PlayerSubscriptionInfo.ESubscriptionTier self) =>
         self switch

@@ -30,25 +30,24 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
             return;
         }
 
-        if (userInfo.platform != UserInfo.Platform.Steam)
+        if (!BeatLeaderId.TryParse(userInfo.platformUserId).TryGetValue(out var beatLeaderId, out var error))
         {
-            logger.Warn($"User platform is {userInfo.platform}, only Steam is supported. " +
+            logger.Warn($"Failed to parse BeatLeaderId: {error}. " +
                         "Invoking OnPlayerIdFetched with null and terminating Initialize.");
-            OnInitializationError("Only Steam platform is supported.");
+            OnInitializationError("Failed to parse BeatLeaderId from user information.");
             return;
         }
 
-        BeatLeaderId.TryParse(userInfo.platformUserId, out var playerBeatLeaderId);
+        logger.Info($"Fetched BeatLeaderId: {beatLeaderId} of kind {beatLeaderId.Kind}.");
 
-        var playerIdResult = await client.Players.LookupPlayerIdByBeatLeaderIdAsync(playerBeatLeaderId);
-        if (!playerIdResult.TryGetValue(out var playerId, out var error))
+        if (!(await client.Players.LookupPlayerIdByBeatLeaderIdAsync(beatLeaderId))
+            .TryGetValue(out var playerId, out error))
         {
             logger.Error($"Failed to fetch PlayerId: {error}. " +
                          "Invoking OnPlayerIdFetched with null and terminating Initialize.");
             OnInitializationError("Failed to fetch PlayerId from GuildSaber.");
             return;
         }
-
 
         if (playerId == null)
         {

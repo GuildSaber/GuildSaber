@@ -4813,6 +4813,11 @@
           }
         }
       },
+      "BeatLeaderId": {
+        "type": "string",
+        "format": "int64",
+        "example": "123456789012345678"
+      },
       "BeatLeaderScoreId": {},
       "BeatSaverKey": {
         "type": "string",
@@ -4822,6 +4827,7 @@
         "type": "string",
         "example": "a3c391"
       },
+      "BLNativeId": {},
       "Category": {
         "type": "object",
         "properties": {
@@ -5948,6 +5954,7 @@
           }
         }
       },
+      "MetaPCId": {},
       "PagedListOfCategory": {
         "type": "object",
         "properties": {
@@ -6554,8 +6561,35 @@
       "PlayerLinkedAccounts": {
         "type": "object",
         "properties": {
-          "beatLeaderId": {
-            "type": "string"
+          "steamId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SteamId"
+              }
+            ]
+          },
+          "metaPCId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MetaPCId"
+              }
+            ]
+          },
+          "blNativeId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BLNativeId"
+              }
+            ]
           },
           "scoreSaberId": {
             "type": [
@@ -6568,6 +6602,9 @@
               "null",
               "string"
             ]
+          },
+          "beatLeaderId": {
+            "$ref": "#/components/schemas/BeatLeaderId"
           }
         }
       },
@@ -7523,6 +7560,7 @@
         "type": "integer",
         "format": "int32"
       },
+      "SteamId": {},
       "TokenResponse": {
         "type": "object",
         "properties": {

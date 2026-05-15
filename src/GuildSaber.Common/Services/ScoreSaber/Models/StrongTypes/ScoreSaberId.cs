@@ -9,9 +9,7 @@ namespace GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 public readonly record struct ScoreSaberId
 {
     private readonly ulong _value;
-
-    private ScoreSaberId(ulong value)
-        => _value = value;
+    private ScoreSaberId(ulong value) => _value = value;
 
     public static Result<ScoreSaberId> TryCreate(ulong? value) => value switch
     {

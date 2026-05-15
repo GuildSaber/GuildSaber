@@ -1,11 +1,13 @@
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Guilds.Members.Pipelines;
+using GuildSaber.Api.Features.Players;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Mappers.BeatLeader;
+using GuildSaber.Database.Models.Server.Players;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
 
@@ -106,7 +108,7 @@ public class BLScoreSyncWorker(
     public static async Task<Maybe<PlayerId>> GetPlayerIdAsync(
         BeatLeaderId beatleaderId, ServerDbContext dbContext, CancellationToken token)
         => await dbContext.Players
-                .Where(x => x.LinkedAccounts.BeatLeaderId == beatleaderId)
+                .Where(Player.BeatLeaderIdEquals(beatleaderId))
                 .Select(x => x.Id)
                 .Cast<PlayerId?>()
                 .FirstOrDefaultAsync(token) switch

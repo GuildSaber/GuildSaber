@@ -15,7 +15,8 @@ public static class PlayerCardLibrary
         return memberLevelStats.Where(x => x.Level.CategoryId is null && !x.IsLocked)
                 .LastOrDefault(x => x.IsCompleted)?.Level.Order switch
             {
-                _ when player.PlayerLinkedAccounts.BeatLeaderId is "76561198846350061" or "76561198126131670" => true,
+                _ when (ulong)player.PlayerLinkedAccounts.BeatLeaderId is 76561198846350061 or 76561198126131670
+                    => true,
                 >= requiredLevel => true,
                 _ => false
             };

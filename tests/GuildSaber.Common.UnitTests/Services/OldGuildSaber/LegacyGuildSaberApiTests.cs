@@ -82,7 +82,7 @@ public class LegacyGuildSaberApiTests
     public async Task GetRankedScoreStateAsync_ShouldReturnAllowedState_WhenScoreIsValid()
     {
         var guildId = _validGuildId;
-        var beatLeaderId = BeatLeaderId.CreateUnsafe(76561198126131670).Value;
+        var beatLeaderId = BeatLeaderId.TryCreate(76561198126131670).Value;
         var scoreSaberId = ScoreSaberId.CreateUnsafe(76561198126131670).Value;
         var ssid = 287616;
         var blid = "d8d091";
@@ -103,7 +103,7 @@ public class LegacyGuildSaberApiTests
     public async Task GetRankedScoreStateAsync_ShouldReturnFailure_WhenScoreIsInvalid()
     {
         var guildId = _validGuildId;
-        var beatLeaderId = BeatLeaderId.CreateUnsafe(76561198126131670).Value;
+        var beatLeaderId = BeatLeaderId.TryCreate(76561198126131670).Value;
         var scoreSaberId = ScoreSaberId.CreateUnsafe(76561198126131670).Value;
         var ssid = 287616;
         var blid = "d8d091";

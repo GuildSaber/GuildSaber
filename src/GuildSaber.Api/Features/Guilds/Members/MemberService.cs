@@ -202,7 +202,7 @@ public class MemberService(
     private static async Task<Maybe<BeatLeaderId>> GetBeatLeaderId(
         ServerDbContext dbContext, PlayerId playerId)
         => await dbContext.Players.Where(x => x.Id == playerId)
-                .Select(x => x.LinkedAccounts.BeatLeaderId)
+                .Select(x => x.LinkedAccounts.BeatLeaderId())
                 .Cast<BeatLeaderId?>()
                 .FirstOrDefaultAsync() switch
             {

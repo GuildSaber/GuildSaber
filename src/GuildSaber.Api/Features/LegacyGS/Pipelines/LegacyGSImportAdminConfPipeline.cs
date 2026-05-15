@@ -23,8 +23,8 @@ public class LegacyGSImportAdminConfPipeline(
             playerId, guildId);
         var (beatleaderId, scoreSaberId) = await dbContext.Players
             .Where(x => x.Id == playerId)
-            .Select(x => new Tuple<BeatLeaderId, ScoreSaberId?>(
-                x.LinkedAccounts.BeatLeaderId,
+            .Select(x => new Tuple<BeatLeaderId?, ScoreSaberId?>(
+                x.LinkedAccounts.BeatLeaderId(),
                 x.LinkedAccounts.ScoreSaberId))
             .FirstAsync(token);
 
@@ -48,7 +48,7 @@ public class LegacyGSImportAdminConfPipeline(
             {
                 result = await legacyGuildSaberApi.GetRankedScoreStateAsync(
                     guildId,
-                    beatleaderId,
+                    beatleaderId!.Value,
                     scoreSaberId,
                     blId: data.BLLeaderboardId,
                     ssId: data.SSLeaderboardId,

@@ -1,6 +1,7 @@
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
+using GuildSaber.Api.Features.Players;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Database.Contexts.Server;
@@ -29,7 +30,7 @@ public class AuthService(
 {
     public async Task<Maybe<PlayerId>> GetPlayerIdAsync(BeatLeaderId beatLeaderId)
         => await dbContext.Players
-                .Where(p => p.LinkedAccounts.BeatLeaderId == beatLeaderId)
+                .Where(Player.BeatLeaderIdEquals(beatLeaderId))
                 .Select(p => p.Id)
                 .FirstOrDefaultAsync() switch
             {
@@ -142,7 +143,9 @@ public class AuthService(
                         Platform = PlatformMappers.Map(blPlayer.Platform)
                     },
                     LinkedAccounts = new PlayerLinkedAccounts(
-                        beatleaderId,
+                        blPlayer.LinkedIds?.SteamId,
+                        blPlayer.LinkedIds?.OculusPCId,
+                        blPlayer.LinkedIds?.QuestId,
                         await scoreSaberApi.PlayerExistsAsync(beatleaderId).Unwrap()
                             ? ScoreSaberId.CreateUnsafe(beatleaderId).Value
                             : null,

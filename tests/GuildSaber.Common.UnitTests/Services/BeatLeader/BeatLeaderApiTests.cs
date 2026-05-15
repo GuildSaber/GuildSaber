@@ -5,6 +5,7 @@ using GuildSaber.Common.Services.BeatLeader.Models;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.Common.UnitTests.Utils;
 
 namespace GuildSaber.Common.UnitTests.Services.BeatLeader;
@@ -12,7 +13,7 @@ namespace GuildSaber.Common.UnitTests.Services.BeatLeader;
 public class BeatLeaderApiTests
 {
     private readonly BeatLeaderApi _beatLeaderApi;
-    private readonly BeatLeaderId _invalidBeatLeaderId = BeatLeaderId.CreateUnsafe(99999999999).Value;
+    private readonly BeatLeaderId _invalidBeatLeaderId = SteamId.CreateUnsafe(99999999999).Value;
     private readonly BeatLeaderScoreId _invalidBeatLeaderScoreId = BeatLeaderScoreId.CreateUnsafe(999999999).Value;
     private readonly BLLeaderboardId _invalidLeaderboardId = BLLeaderboardId.CreateUnsafe("0").Value;
 
@@ -20,7 +21,7 @@ public class BeatLeaderApiTests
     private readonly EDifficulty _invalidSongDifficulty = (EDifficulty)(-1);
     private readonly SongHash _invalidSongHash = SongHash.TryCreate("abcdef1234567890abcdef1234567890abcdef12").Value;
 
-    private readonly BeatLeaderId _validBeatLeaderId = BeatLeaderId.CreateUnsafe(76561198126131670).Value;
+    private readonly BeatLeaderId _validBeatLeaderId = SteamId.CreateUnsafe(76561198126131670).Value;
     private readonly BeatLeaderScoreId _validBeatLeaderScoreId = BeatLeaderScoreId.CreateUnsafe(9655850).Value;
     private readonly BLLeaderboardId _validLeaderboardId = BLLeaderboardId.CreateUnsafe("a3c391").Value;
 

@@ -194,7 +194,10 @@ public class DebugEndpoints : IEndpoints
 
             await foreach (var player in dbContext.Players
                                .Where(x => x.Id >= (fromPlayerId ?? 0))
-                               .Select(x => new { x.Id, x.LinkedAccounts.BeatLeaderId, x.LinkedAccounts.ScoreSaberId })
+                               .Select(x => new
+                               {
+                                   x.Id, BeatLeaderId = x.LinkedAccounts.BeatLeaderId(), x.LinkedAccounts.ScoreSaberId
+                               })
                                .AsAsyncEnumerable()
                                .WithCancellation(token))
             {
@@ -286,7 +289,7 @@ public class DebugEndpoints : IEndpoints
         {
             await using var scope = serviceScopeFactory.CreateAsyncScope();
             await scope.ServiceProvider.GetRequiredService<PlayerScoresPipeline>()
-                .ImportBeatLeaderScoresAsync(playerId, player.LinkedAccounts.BeatLeaderId, token);
+                .ImportBeatLeaderScoresAsync(playerId, player.LinkedAccounts.BeatLeaderId(), token);
         });
 
         return TypedResults.Accepted((string?)null);
