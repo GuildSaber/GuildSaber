@@ -68,6 +68,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
     protected XUIHLayout MainLayout = null!;
 
     protected PagedLevelList MainPlayerLevelsContainer = null!;
+    protected TrophyList PlayerTrophyList = null!;
     protected XUIVLayout PlayerDataContainer = null!;
 
     protected XUIIconButton PlayerImage = null!;
@@ -82,7 +83,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
     protected XUIVLayout ServerUnreachableLayout = null!;
     protected GSSecondaryButton ShowSettingsButton = null!;
     protected GSText TimeText = null!;
-
+    
     protected override void OnViewCreation()
     {
         XUIVLayout.Make(
@@ -146,7 +147,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
             .BuildUI(transform);
 
         XUIVLayout.Make(
-                _uiFactory.Text("Loading... TODO: Replace this text by the loading indicator of the base game")
+                _uiFactory.LoadingIndicator()
             )
             .Bind(ref LoadingLayout)
             .BuildUI(transform);
@@ -186,7 +187,11 @@ public class PlayerCardView : ViewController<PlayerCardView>
                     .Bind(ref MainPlayerLevelsContainer)
                     .SetPadding(2, 2, 2, 12)
                     .SetSpacing(-0.5f)
-                    .SetActive(false)
+                    .SetActive(false),
+                TrophyList.Make(_resources, _uiFactory)
+                    .Bind(ref PlayerTrophyList)
+                    .SetPadding(2, 2, 2, -5)
+                
             )
             .OnReady(x =>
             {
@@ -328,7 +333,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
                 continue;
             }
 
-            float width = 55;
+            float width = 55 + 8;
             if (displayCardLevelsDetails && memberLevelStats.Length > 0)
                 width += 30;
 
@@ -414,7 +419,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
         ServerUnreachableLayout.SetActive(displayMode == EDisplayMode.Error);
         DidntJoinGuildLayout.SetActive(displayMode == EDisplayMode.DidntJoinGuild);
 
-        if (displayMode == EDisplayMode.Error) return;
+        if (displayMode is EDisplayMode.Error or EDisplayMode.Loading) return;
 
         LoadConfig();
 

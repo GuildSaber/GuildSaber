@@ -19,6 +19,30 @@ public class ResourcesInstaller(IPALogger logger) : Installer
         Container.Bind<Texture2D>().WithId(nameof(ResourceMap.GsWhiteLogo))
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.GsWhiteLogo, logger))
             .AsCached();
+        
+        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.PlasticTrophy))
+            .FromMethod(() => LoadTexture2DFromResource(ResourceMap.PlasticTrophy, logger))
+            .AsCached();
+        
+        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.SilverTrophy))
+            .FromMethod(() => LoadTexture2DFromResource(ResourceMap.SilverTrophy, logger))
+            .AsCached();
+        
+        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.GoldTrophy))
+            .FromMethod(() => LoadTexture2DFromResource(ResourceMap.GoldTrophy, logger))
+            .AsCached();
+        
+        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.DiamondTrophy))
+            .FromMethod(() => LoadTexture2DFromResource(ResourceMap.DiamondTrophy, logger))
+            .AsCached();
+        
+        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.RubyTrophy))
+            .FromMethod(() => LoadTexture2DFromResource(ResourceMap.RubyTrophy, logger))
+            .AsCached();
+        
+        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.WhiteCheckMark))
+            .FromMethod(() => LoadTexture2DFromResource(ResourceMap.WhiteCheckMark, logger))
+            .AsCached();
 
         Container.Bind<TMP_FontAsset>().WithId(nameof(ResourceMap.TekoMedium))
             .FromMethod(() =>

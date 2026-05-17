@@ -22,7 +22,7 @@ public class GuildSaberCache
     public Dictionary<ContextId, MemberContextStat> MemberContextStats { get; init; } = [];
     public Dictionary<GuildId, Texture2D> GuildIcons { get; init; } = [];
     public Dictionary<int, Texture2D> CategoryIcons { get; init; } = [];
-    public Dictionary<(SongHash, ContextId), RankedMap[]> RankedMaps { get; init; } = [];
+    public Dictionary<(SongHash, ContextId), RankedMapWithScores[]> RankedMaps { get; init; } = [];
 }
 
 public static class GuildSaberCacheExtensions
@@ -79,12 +79,13 @@ public static class GuildSaberCacheExtensions
             return texture;
         }
 
-        public async Task<RankedMap[]> FetchRankedMaps(ContextId contextId, SongHash hash, GuildSaberClient client)
+        public async Task<RankedMapWithScores[]> FetchRankedMaps(ContextId contextId, PlayerId playerId, SongHash hash, GuildSaberClient client)
         {
             if (self.RankedMaps.TryGetValue((hash, contextId), out var rankedMap)) return rankedMap;
 
-            var searchResult = await client.RankedMaps.GetAsync(
+            var searchResult = await client.RankedMaps.GetWithScoreAsync(
                 contextId,
+                playerId,
                 new RankedMapRequests.Filters(Search: hash),
                 new PaginatedRequestOptions<RankedMapRequests.ERankedMapSorter>(Page: 1, PageSize: 8)
             );

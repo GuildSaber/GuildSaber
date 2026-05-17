@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using GuildSaber.Api.Features.Guilds.Levels.Playlists;
+using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using GuildSaber.CSharpClient.Routes.Guilds.Levels.Playlists;
 using GuildSaber.Mod.Features.GuildSaber;
@@ -29,7 +30,10 @@ public class PlaylistDownloader(
     /// </summary>
     public event Action<string, string, bool> EventUniquePlaylistDownloadCompleted = null!;
 
-    public async void DownloadPlaylists()
+    public void DownloadPlaylists() => DownloadPlaylists(rangeMin: -1, rangeMax: int.MaxValue, categoryId: null);
+    public void DownloadPlaylists(CategoryId categoryId) => DownloadPlaylists(-1, int.MaxValue, categoryId);
+
+    public async void DownloadPlaylists(int rangeMin, int rangeMax, CategoryId? categoryId)
     {
         if (IsDownloading) throw new InvalidOperationException("Already downloading playlists");
 
@@ -48,6 +52,12 @@ public class PlaylistDownloader(
 
             foreach (var level in levels.Where(x => x.Level.CategoryId == category.Id))
             {
+                if ((level.Level.Order < rangeMin || level.Level.Order > rangeMax)) continue;
+                if (categoryId.HasValue)
+                {
+                    if (level.Level.CategoryId != categoryId) continue;
+                }
+
                 var response = await client.Playlists
                     .GetByLevelIdAsync(level.Level.Id, PlaylistRequests.PlaylistFilter.None, null);
 

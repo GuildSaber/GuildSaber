@@ -30,6 +30,7 @@ public class RankedMapStats : XUIVLayout, IDisposable
     private XUIImage _categoryIcon = null!;
 
     private XUIImage _guildIcon = null!;
+    private XUIImage _whiteCheckMarkImage = null!;
     private GSText _mapCategories = null!;
     private GSText _mapLevel = null!;
 
@@ -39,6 +40,7 @@ public class RankedMapStats : XUIVLayout, IDisposable
         [Inject] GuildSaberConfig config,
         [Inject] GuildSaberClient client,
         [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D placeHolderIcon,
+        [Inject(Id = nameof(ResourceMap.WhiteCheckMark))] Texture2D whiteCheckMarkTexture,
         [Inject] StandardLevelDetailViewController levelDetailViewController,
         [Inject] Logger logger
     ) : base("MapRankedStats")
@@ -78,6 +80,12 @@ public class RankedMapStats : XUIVLayout, IDisposable
                     .SetHeight(8)
                     .SetWidth(8)
             ).BuildUI(x.transform);
+
+            XUIImage.Make(
+                    Sprite.Create(whiteCheckMarkTexture,
+                        new Rect(0, 0, whiteCheckMarkTexture.width, whiteCheckMarkTexture.height), Vector2.zero)
+                ).Bind(ref _whiteCheckMarkImage)
+                .OnReady(i => i.LElement.ignoreLayout = true);
 
             x.SetSpacing(2);
             x.VLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
@@ -130,7 +138,7 @@ public class RankedMapStats : XUIVLayout, IDisposable
 
     protected async Task UpdateUI(BeatmapKey beatmapKey, BeatmapLevel? beatmap)
     {
-        if (!_config.RankedMapStats.Enabled || beatmap == null || !SongHash
+        if (!_config.RankedMapStats.Enabled || _cache.PlayerExtended == null || beatmap == null || !SongHash
                 .TryCreate(GetCustomHashMethodVersionAgnostic.Invoke(beatmap))
                 .TryGetValue(out var songHash))
         {
@@ -140,6 +148,7 @@ public class RankedMapStats : XUIVLayout, IDisposable
 
         var rankedMap = await FetchRankedMap(
             _config.ContextId,
+            _cache.PlayerExtended!.Player!.Id,
             songHash,
             beatmapKey.beatmapCharacteristic.serializedName,
             beatmapKey.difficulty.ToEDifficulty(),
@@ -152,10 +161,13 @@ public class RankedMapStats : XUIVLayout, IDisposable
             return;
         }
 
+        _whiteCheckMarkImage.SetActive(rankedMap.RankedScores.Any(x
+            => x.Id == (long)_cache.PlayerExtended.Player.Id.Value));
+
         var guildIconTexture = await _cache.FetchGuildIconTexture(_config.GuildId, _client) ?? _placeHolderIcon;
         var roundedIcon = await TextureUtils.CreateRoundedTextureAsync(guildIconTexture, guildIconTexture.width * 0.2f);
 
-        if (rankedMap.CategoryIds.Length == 0)
+        if (rankedMap.RankedMap.CategoryIds.Length == 0)
         {
             _categoryIcon.SetActive(false);
             _mapCategories.SetActive(false);
@@ -163,7 +175,7 @@ public class RankedMapStats : XUIVLayout, IDisposable
         else
         {
             var categories = _cache.GuildsExtended[_config.GuildId].Categories
-                .Where(x => rankedMap.CategoryIds.Contains(x.Id)).ToArray();
+                .Where(x => rankedMap.RankedMap.CategoryIds.Contains(x.Id)).ToArray();
 
             var hasCategoryIcon = false;
             if (categories.Length == 1)
@@ -197,7 +209,7 @@ public class RankedMapStats : XUIVLayout, IDisposable
             }
         }
 
-        _mapLevel.SetText($"{(int)rankedMap.Rating.DiffStar}");
+        _mapLevel.SetText($"{(int)rankedMap.RankedMap.Rating.DiffStar}");
         _guildIcon.SetSprite(Sprite.Create(roundedIcon, new Rect(0, 0, roundedIcon.width, roundedIcon.height),
             Vector2.zero));
         _guildIcon.SetActive(true);
@@ -205,10 +217,11 @@ public class RankedMapStats : XUIVLayout, IDisposable
         SetActive(true);
     }
 
-    public async Task<RankedMapResponses.RankedMap?> FetchRankedMap(
-        ContextId contextId, SongHash hash, string mode, EDifficulty difficulty, GuildSaberClient client)
-        => (await _cache.FetchRankedMaps(contextId, hash, client))
-            .FirstOrDefault(x => x.Versions
+    public async Task<RankedMapResponses.RankedMapWithScores?> FetchRankedMap(
+        ContextId contextId, PlayerId playerId, SongHash hash, string mode, EDifficulty difficulty,
+        GuildSaberClient client)
+        => (await _cache.FetchRankedMaps(contextId, playerId, hash, client))
+            .FirstOrDefault(x => x.RankedMap.Versions
                 .Any(v => v.Difficulty.GameMode == mode && v.Difficulty.Difficulty == difficulty));
 
     public sealed override void BuildUI(Transform parent) => base.BuildUI(parent);

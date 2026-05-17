@@ -8,5 +8,10 @@ public record PlayerCardResources(
     Sprite BorderSprite,
     Material BorderMaterial,
     Texture2D DownArrowTexture,
-    Texture2D GsWhiteLogoTexture
+    Texture2D GsWhiteLogoTexture,
+    Texture2D PlasticTrophyTexture,
+    Texture2D SilverTrophyTexture,
+    Texture2D GoldTrophyTexture,
+    Texture2D DiamondTrophyTexture,
+    Texture2D RubyTrophyTexture
 );

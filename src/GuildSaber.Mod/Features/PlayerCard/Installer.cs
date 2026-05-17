@@ -16,6 +16,11 @@ public class PlayerCardInstaller(GuildSaberClient client, Logger logger) : Insta
     internal class PlayerCardResourcesFactory(
         [Inject(Id = nameof(ResourceMap.DownArrow))] Texture2D downArrowTexture,
         [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture,
+        [Inject(Id = nameof(ResourceMap.PlasticTrophy))] Texture2D plasticTrophy,
+        [Inject(Id = nameof(ResourceMap.SilverTrophy))] Texture2D silverTrophy,
+        [Inject(Id = nameof(ResourceMap.GoldTrophy))] Texture2D goldTrophy,
+        [Inject(Id = nameof(ResourceMap.DiamondTrophy))] Texture2D diamondTrophy,
+        [Inject(Id = nameof(ResourceMap.RubyTrophy))] Texture2D rubyTrophy,
         [Inject(Id = nameof(ResourceMap.TekoMedium))] TMP_FontAsset font,
         [Inject] StandardLevelDetailView standardLevelDetailView) : IFactory<PlayerCardResources>
     {
@@ -26,7 +31,12 @@ public class PlayerCardInstaller(GuildSaberClient client, Logger logger) : Insta
                 .Find("BG").GetComponent<ImageView>().material,
             DownArrowTexture: downArrowTexture,
             GsWhiteLogoTexture: gsWhiteLogoTexture,
-            Font: font
+            Font: font,
+            PlasticTrophyTexture: plasticTrophy,
+            SilverTrophyTexture: silverTrophy,
+            GoldTrophyTexture: goldTrophy,
+            DiamondTrophyTexture: diamondTrophy,
+            RubyTrophyTexture: rubyTrophy
         );
     }
 

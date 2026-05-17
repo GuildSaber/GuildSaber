@@ -112,6 +112,7 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
     public event Action<string> OnInitializationError = _ => { };
     public event Action OnNoGuildError = () => { };
     public event Action OnInitializationFinished = () => { };
+    public event Action OnInitializationStarted = () => { };
 
     public void SetGuild(GuildResponses.GuildExtended guild)
     {
@@ -123,6 +124,8 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
 
     public async void SelectGuild(GuildId guildId, ContextId contextId)
     {
+        OnInitializationStarted.Invoke();
+        
         if (cache.PlayerExtended == null) return;
 
         var levelsResponse = await client.LevelStats.GetByPlayerIdAsync(cache.PlayerExtended.Player.Id, contextId);
