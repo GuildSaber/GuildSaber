@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.RankedMaps;
+using GuildSaber.Api.Features.RankedScores;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
@@ -30,9 +31,9 @@ public class RankedMapStats : XUIVLayout, IDisposable
     private XUIImage _categoryIcon = null!;
 
     private XUIImage _guildIcon = null!;
-    private XUIImage _whiteCheckMarkImage = null!;
     private GSText _mapCategories = null!;
     private GSText _mapLevel = null!;
+    private XUIImage _whiteCheckMarkImage = null!;
 
     public RankedMapStats(
         [Inject] GuildSaberCache cache,
@@ -81,11 +82,14 @@ public class RankedMapStats : XUIVLayout, IDisposable
                     .SetWidth(8)
             ).BuildUI(x.transform);
 
-            XUIImage.Make(
-                    Sprite.Create(whiteCheckMarkTexture,
-                        new Rect(0, 0, whiteCheckMarkTexture.width, whiteCheckMarkTexture.height), Vector2.zero)
+            XUIImage.Make(Sprite.Create(whiteCheckMarkTexture,
+                    new Rect(0, 0, whiteCheckMarkTexture.width, whiteCheckMarkTexture.height), Vector2.zero)
                 ).Bind(ref _whiteCheckMarkImage)
-                .OnReady(i => i.LElement.ignoreLayout = true);
+                .SetWidth(3)
+                .SetHeight(3)
+                .SetActive(false)
+                .OnReady(i => i.LElement.ignoreLayout = true)
+                .BuildUI(x.transform);
 
             x.SetSpacing(2);
             x.VLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
@@ -146,28 +150,25 @@ public class RankedMapStats : XUIVLayout, IDisposable
             return;
         }
 
-        var rankedMap = await FetchRankedMap(
+        var rankedMapWithScoresOfPlayer = await FetchRankedMapWithScoresOfPlayer(
             _config.ContextId,
-            _cache.PlayerExtended!.Player!.Id,
+            _cache.PlayerExtended!.Player.Id,
             songHash,
             beatmapKey.beatmapCharacteristic.serializedName,
             beatmapKey.difficulty.ToEDifficulty(),
             _client
         );
 
-        if (rankedMap is null)
+        if (rankedMapWithScoresOfPlayer is null)
         {
             SetActive(false);
             return;
         }
 
-        _whiteCheckMarkImage.SetActive(rankedMap.RankedScores.Any(x
-            => x.Id == (long)_cache.PlayerExtended.Player.Id.Value));
-
         var guildIconTexture = await _cache.FetchGuildIconTexture(_config.GuildId, _client) ?? _placeHolderIcon;
         var roundedIcon = await TextureUtils.CreateRoundedTextureAsync(guildIconTexture, guildIconTexture.width * 0.2f);
 
-        if (rankedMap.RankedMap.CategoryIds.Length == 0)
+        if (rankedMapWithScoresOfPlayer.RankedMap.CategoryIds.Length == 0)
         {
             _categoryIcon.SetActive(false);
             _mapCategories.SetActive(false);
@@ -175,7 +176,7 @@ public class RankedMapStats : XUIVLayout, IDisposable
         else
         {
             var categories = _cache.GuildsExtended[_config.GuildId].Categories
-                .Where(x => rankedMap.RankedMap.CategoryIds.Contains(x.Id)).ToArray();
+                .Where(x => rankedMapWithScoresOfPlayer.RankedMap.CategoryIds.Contains(x.Id)).ToArray();
 
             var hasCategoryIcon = false;
             if (categories.Length == 1)
@@ -209,15 +210,22 @@ public class RankedMapStats : XUIVLayout, IDisposable
             }
         }
 
-        _mapLevel.SetText($"{(int)rankedMap.RankedMap.Rating.DiffStar}");
+        _mapLevel.SetText($"{(int)rankedMapWithScoresOfPlayer.RankedMap.Rating.DiffStar}");
         _guildIcon.SetSprite(Sprite.Create(roundedIcon, new Rect(0, 0, roundedIcon.width, roundedIcon.height),
             Vector2.zero));
         _guildIcon.SetActive(true);
 
+        var playerPassedTheMap = rankedMapWithScoresOfPlayer
+            .RankedScores
+            .Any(x => x.State.HasFlag(RankedScoreResponses.EState.Selected)
+                      && (x.State & RankedScoreResponses.EState.NonPointGiving) == 0);
+
+        _whiteCheckMarkImage.SetActive(playerPassedTheMap);
+
         SetActive(true);
     }
 
-    public async Task<RankedMapResponses.RankedMapWithScores?> FetchRankedMap(
+    public async Task<RankedMapResponses.RankedMapWithScores?> FetchRankedMapWithScoresOfPlayer(
         ContextId contextId, PlayerId playerId, SongHash hash, string mode, EDifficulty difficulty,
         GuildSaberClient client)
         => (await _cache.FetchRankedMaps(contextId, playerId, hash, client))

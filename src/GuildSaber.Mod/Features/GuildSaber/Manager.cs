@@ -125,7 +125,7 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
     public async void SelectGuild(GuildId guildId, ContextId contextId)
     {
         OnInitializationStarted.Invoke();
-        
+
         if (cache.PlayerExtended == null) return;
 
         var levelsResponse = await client.LevelStats.GetByPlayerIdAsync(cache.PlayerExtended.Player.Id, contextId);

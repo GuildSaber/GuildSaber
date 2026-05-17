@@ -52,11 +52,10 @@ public class PlaylistDownloader(
 
             foreach (var level in levels.Where(x => x.Level.CategoryId == category.Id))
             {
-                if ((level.Level.Order < rangeMin || level.Level.Order > rangeMax)) continue;
+                if (level.Level.Order < rangeMin || level.Level.Order > rangeMax) continue;
                 if (categoryId.HasValue)
-                {
-                    if (level.Level.CategoryId != categoryId) continue;
-                }
+                    if (level.Level.CategoryId != categoryId)
+                        continue;
 
                 var response = await client.Playlists
                     .GetByLevelIdAsync(level.Level.Id, PlaylistRequests.PlaylistFilter.None, null);

@@ -68,7 +68,6 @@ public class PlayerCardView : ViewController<PlayerCardView>
     protected XUIHLayout MainLayout = null!;
 
     protected PagedLevelList MainPlayerLevelsContainer = null!;
-    protected TrophyList PlayerTrophyList = null!;
     protected XUIVLayout PlayerDataContainer = null!;
 
     protected XUIIconButton PlayerImage = null!;
@@ -78,12 +77,13 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
     protected GSText PlayerNameText = null!;
     protected GSText PlayerPassesText = null!;
+    protected TrophyList PlayerTrophyList = null!;
 
     protected PointList PointsContainer = null!;
     protected XUIVLayout ServerUnreachableLayout = null!;
     protected GSSecondaryButton ShowSettingsButton = null!;
     protected GSText TimeText = null!;
-    
+
     protected override void OnViewCreation()
     {
         XUIVLayout.Make(
@@ -191,7 +191,6 @@ public class PlayerCardView : ViewController<PlayerCardView>
                 TrophyList.Make(_resources, _uiFactory)
                     .Bind(ref PlayerTrophyList)
                     .SetPadding(2, 2, 2, -5)
-                
             )
             .OnReady(x =>
             {
@@ -477,6 +476,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
         PlayerNameText.SetText(_guildSaberCache.PlayerExtended.Player.PlayerInfo.Username);
         PlayerLevelText.SetText($"{level?.Info.Name ?? "Level none"}");
+        PlayerTrophyList.Refresh(memberLevelStats.CalculateTrophiesData());
 
         var globalPassStat = _guildSaberCache.MemberContextStats[_config.ContextId]
             .PassCountsWithRank

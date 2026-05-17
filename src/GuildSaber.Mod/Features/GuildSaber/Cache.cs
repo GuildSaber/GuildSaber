@@ -79,7 +79,8 @@ public static class GuildSaberCacheExtensions
             return texture;
         }
 
-        public async Task<RankedMapWithScores[]> FetchRankedMaps(ContextId contextId, PlayerId playerId, SongHash hash, GuildSaberClient client)
+        public async Task<RankedMapWithScores[]> FetchRankedMaps(
+            ContextId contextId, PlayerId playerId, SongHash hash, GuildSaberClient client)
         {
             if (self.RankedMaps.TryGetValue((hash, contextId), out var rankedMap)) return rankedMap;
 

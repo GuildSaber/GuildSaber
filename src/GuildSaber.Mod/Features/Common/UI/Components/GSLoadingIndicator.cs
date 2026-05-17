@@ -1,40 +1,31 @@
 ﻿using System;
-using System.Linq;
-using CP_SDK.UI.DefaultFactories;
+using System.Diagnostics.CodeAnalysis;
 using CP_SDK.XUI;
 using UnityEngine;
 
 namespace GuildSaber.Mod.Features.Common.UI.Components;
 
-public class GSLoadingIndicator : IXUIElement
+public class GSLoadingIndicator(LoadingControl loadingControlTemplate, Logger logger)
+    : IXUIElement("GuildSaberLoadingIndicator")
 {
-    protected LoadingControl? Element = null;
+    protected LoadingControl? LoadingControl;
 
-    private readonly Logger _logger = null!;
-    private readonly LoadingControl _template = null!;
-    
-    public GSLoadingIndicator(LoadingControl loadingControlTemplate, Logger logger) : base("GuildSaberLoadingIndicator")
-    {
-        _template = loadingControlTemplate;
-        _logger = logger;
-    }
+    public override RectTransform? RTransform => LoadingControl?._refreshContainer.GetComponent<RectTransform>();
 
-    public override void BuildUI(Transform p_Parent)
+    [SuppressMessage("ReSharper", "AccessToStaticMemberViaDerivedType")]
+    public override void BuildUI(Transform parent)
     {
         try
         {
-            var loadingControl = _template;
-            var instantiated = GameObject.Instantiate(loadingControl.gameObject, p_Parent);
+            var instantiated = GameObject.Instantiate(loadingControlTemplate.gameObject, parent);
             instantiated.name = m_InitialName;
-            Element = instantiated.GetComponent<LoadingControl>();
-            Element.ShowLoading();
+            LoadingControl = instantiated.GetComponent<LoadingControl>();
+            LoadingControl.ShowLoading();
         }
         catch (Exception ex)
         {
-            _logger.Error("[GuildSaber][GSLoadingIndicator/BuildUI] Error while building GSLoadingIndicator");
-            _logger.Error(ex);
+            logger.Error("Error while building GSLoadingIndicator");
+            logger.Error(ex);
         }
     }
-
-    public override RectTransform? RTransform => Element?._refreshContainer.GetComponent<RectTransform>();
 }
