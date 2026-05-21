@@ -4,6 +4,7 @@ using CP_SDK.XUI;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;
+using UnityEngine;
 
 namespace GuildSaber.Mod.Features.PlaylistDownloader.UI.Components;
 
@@ -20,7 +21,7 @@ public class CategoryView : XUIHLayout
     {
         _uiFactory = uiFactory;
         _callback = callback;
-
+        
         OnReady(EventReady);
     }
 
@@ -28,6 +29,8 @@ public class CategoryView : XUIHLayout
 
     private void EventReady(CHOrVLayout x)
     {
+        x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleLeft;
+        
         _categoryNameText = _uiFactory.Text(string.Empty);
         _downloadButton = _uiFactory.SecondaryButton("Download");
         _downloadButton
@@ -35,8 +38,8 @@ public class CategoryView : XUIHLayout
             .SetWidth(15)
             .SetHeight(4);
 
-        _categoryNameText.BuildUI(x.transform);
         _downloadButton.BuildUI(x.transform);
+        _categoryNameText.BuildUI(x.transform);
     }
 
     public void SetData(string categoryName, CategoryId categoryId)

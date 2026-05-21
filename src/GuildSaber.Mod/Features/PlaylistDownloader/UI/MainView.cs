@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using CP_SDK_BS.UI;
 using CP_SDK.XUI;
 using GuildSaber.Common.StrongTypes;
@@ -41,6 +43,12 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
         Templates.FullRectLayoutMainView(
                 XUIHLayout.Make(
                     XUIVLayout.Make(
+                        _uiFactory.SecondaryButton("Delete all")
+                            .SetWidth(20)
+                            .SetHeight(6)
+                            .OnClick(DeleteGuildsPlaylists)
+                        ).SetBackground(true, new Color(0, 0, 0, 0.80f)),
+                    XUIVLayout.Make(
                         _uiFactory.Text("Download or update [Insert guild name] playlists:")
                             .Bind(ref _guildNameText),
                         XUIHLayout.Make(
@@ -74,9 +82,12 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
                             .OnClick(DownloadClicked),
                         _uiFactory.Text(string.Empty)
                             .Bind(ref _uniquePlaylistDownloadedText)
-                    ),
+                    )
+                    .SetBackground(true, new Color(0, 0, 0, 0.8f)),
                     XUIVLayout.Make(
-                    ).Bind(ref _categoriesListLayout)
+                    )
+                    .SetBackground(true, new Color(0, 0, 0, 0.8f))
+                    .Bind(ref _categoriesListLayout)
                 )
             )
             .SetSpacing(2)
@@ -120,9 +131,45 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
 
             var category = categories[x];
             _categoryViews[x].SetData(category.Info.Name, category.Id);
+            _categoryViews[x].SetActive(true);
         }
     }
 
+    private void DeleteGuildsPlaylists()
+    {
+        var guildName = _cache.GuildsExtended[_config.GuildId].Guild.Info.Name;
+        var dirName = $"./Playlists/GuildSaber/{guildName}";
+            
+        if (!Directory.Exists(dirName))
+        {
+            ShowMessageModal("Nothing to delete");
+        }
+
+        try
+        {
+            var dirs = Directory.EnumerateDirectories(dirName);
+
+            foreach (var dir in dirs)
+            {
+                if (!Directory.Exists(dir)) continue;
+                
+                var files = Directory.EnumerateFiles($"{dirName}/{dir}");
+                
+                foreach (var file in files)
+                {
+                    File.Delete(file);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowMessageModal($"Failed playlists deletion:\n{ex.Message}");
+            return;
+        }
+        
+        ShowMessageModal("Successfully deleted playlists", TaskFinished);
+    }
+    
     private void CategoryDownloadPressed(CategoryId categoryId)
     {
         if (_rangeDownloadToggle.Element.GetValue())
@@ -172,7 +219,7 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
         foreach (var categoryView in _categoryViews)
             categoryView.OnFinished();
 
-        ShowMessageModal(message, DownloadFinished);
+        ShowMessageModal(message, TaskFinished);
     }
 
     private void DownloadClicked()
@@ -188,7 +235,7 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
             _playlistDownloader.DownloadPlaylists();
     }
 
-    private void DownloadFinished()
+    private void TaskFinished()
     {
         Loader.Instance.RefreshSongs();
         OnResultsModalClosed.Invoke();
