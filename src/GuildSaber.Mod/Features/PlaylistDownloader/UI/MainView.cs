@@ -153,11 +153,14 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
             {
                 if (!Directory.Exists(dir)) continue;
                 
-                var files = Directory.EnumerateFiles($"{dirName}/{dir}");
+                var files = Directory.EnumerateFiles($"{dir}");
                 
                 foreach (var file in files)
                 {
-                    File.Delete(file);
+                    if (File.Exists(file))
+                    {
+                        File.Delete(file);
+                    }
                 }
             }
         }
