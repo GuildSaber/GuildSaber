@@ -21,7 +21,7 @@ public class CategoryView : XUIHLayout
     {
         _uiFactory = uiFactory;
         _callback = callback;
-        
+
         OnReady(EventReady);
     }
 
@@ -30,7 +30,7 @@ public class CategoryView : XUIHLayout
     private void EventReady(CHOrVLayout x)
     {
         x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleLeft;
-        
+
         _categoryNameText = _uiFactory.Text(string.Empty);
         _downloadButton = _uiFactory.SecondaryButton("Download");
         _downloadButton
@@ -45,11 +45,10 @@ public class CategoryView : XUIHLayout
     public void SetData(string categoryName, CategoryId categoryId)
     {
         _categoryId = categoryId;
-
         _categoryNameText.SetText(categoryName);
     }
 
-    public void OnFinished() => _downloadButton.SetInteractable(true);
+    public void SetInteractable(bool interactable) => _downloadButton.SetInteractable(interactable);
 
     private void DownloadClicked()
     {

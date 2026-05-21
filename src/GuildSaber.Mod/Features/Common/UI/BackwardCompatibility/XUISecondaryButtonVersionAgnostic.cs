@@ -35,6 +35,5 @@ public class XUISecondaryButtonVersionAgnostic : CP_SDK.XUI.XUISecondaryButton
     public new XUISecondaryButton SetBackgroundColor(Color color)
         => (XUISecondaryButton)OnReady(x => x.SetBackgroundColor(color));
 
-
     public XUISecondaryButton Bind(ref XUISecondaryButton target) => target = this;
 }
