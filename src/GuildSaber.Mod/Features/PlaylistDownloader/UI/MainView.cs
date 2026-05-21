@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using CP_SDK_BS.UI;
 using CP_SDK.XUI;
@@ -24,13 +25,11 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
     [Inject] private readonly UIFactory _uiFactory = null!;
 
     private XUIVLayout _categoriesListLayout = null!;
-
-    private GSSecondaryButton _downloadButton = null!;
-
+    private GSSecondaryButton _deleteAllButton = null!;
+    private GSSecondaryButton _downloadAllButton = null!;
     private GSText _guildNameText = null!;
     private XUISlider _rangeDownloadMaxSlider = null!;
     private XUISlider _rangeDownloadMinSlider = null!;
-
     private XUIToggle _rangeDownloadToggle = null!;
     private GSText _uniquePlaylistDownloadedText = null!;
 
@@ -40,6 +39,13 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
     {
         Templates.FullRectLayoutMainView(
                 XUIHLayout.Make(
+                    XUIVLayout.Make(
+                        _uiFactory.SecondaryButton("Delete all")
+                            .Bind(ref _deleteAllButton)
+                            .SetWidth(20)
+                            .SetHeight(6)
+                            .OnClick(DeleteGuildsPlaylists)
+                    ).SetBackground(true, new Color(0, 0, 0, 0.80f)),
                     XUIVLayout.Make(
                         _uiFactory.Text("Download or update [Insert guild name] playlists:")
                             .Bind(ref _guildNameText),
@@ -68,17 +74,17 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
                                 .Bind(ref _rangeDownloadMaxSlider)
                         ),
                         _uiFactory.SecondaryButton("Download all")
-                            .Bind(ref _downloadButton)
+                            .Bind(ref _downloadAllButton)
                             .SetWidth(30)
                             .SetHeight(5)
-                            .OnClick(DownloadClicked),
+                            .OnClick(DownloadAllClicked),
                         _uiFactory.Text(string.Empty)
                             .Bind(ref _uniquePlaylistDownloadedText)
-                    ),
-                    XUIVLayout.Make(
-                    ).Bind(ref _categoriesListLayout)
-                )
-            )
+                    ).SetBackground(true, new Color(0, 0, 0, 0.8f)),
+                    XUIVLayout.Make()
+                        .SetBackground(true, new Color(0, 0, 0, 0.8f))
+                        .Bind(ref _categoriesListLayout)
+                ))
             .SetSpacing(2)
             .OnReady(x => x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.MinSize)
             .BuildUI(transform);
@@ -95,43 +101,60 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
 
         _guildNameText.SetText($"Download or update {guildName} playlists:");
 
-
         var filteredLevels = levels.Where(x => x.Level.Order != 100)
             .ToArray();
 
         float minLevel = filteredLevels.Min(x => x.Level.Order);
         float maxLevel = filteredLevels.Max(x => x.Level.Order);
 
-        _rangeDownloadMinSlider.SetMinValue(minLevel);
-        _rangeDownloadMinSlider.SetMaxValue(maxLevel);
-        _rangeDownloadMaxSlider.SetMinValue(minLevel);
-        _rangeDownloadMaxSlider.SetMaxValue(maxLevel);
+        _rangeDownloadMinSlider
+            .SetMinValue(minLevel)
+            .SetMaxValue(maxLevel)
+            .SetValue(minLevel);
+
+        _rangeDownloadMaxSlider
+            .SetMinValue(minLevel)
+            .SetMaxValue(maxLevel)
+            .SetValue(maxLevel);
 
         _categoryViews.ForEach(x => x.SetActive(false));
 
-        for (var x = 0; x < categories.Length; x++)
+        for (var i = 0; i < categories.Length; i++)
         {
-            if (x >= _categoryViews.Count)
+            if (i >= _categoryViews.Count)
             {
-                var categoryView = CategoryView.Make(_uiFactory, CategoryDownloadPressed);
+                var categoryView = CategoryView.Make(_uiFactory, DownloadCategoryClicked);
                 categoryView.BuildUI(_categoriesListLayout.Element.transform);
                 _categoryViews.Add(categoryView);
             }
 
-            var category = categories[x];
-            _categoryViews[x].SetData(category.Info.Name, category.Id);
+            var category = categories[i];
+            _categoryViews[i].SetData(category.Info.Name, category.Id);
+            _categoryViews[i].SetActive(true);
         }
     }
 
-    private void CategoryDownloadPressed(CategoryId categoryId)
+    private void DeleteGuildsPlaylists()
     {
-        if (_rangeDownloadToggle.Element.GetValue())
-            _playlistDownloader.DownloadPlaylists(
-                (int)_rangeDownloadMinSlider.Element.GetValue(),
-                (int)_rangeDownloadMaxSlider.Element.GetValue(),
-                categoryId);
-        else
-            _playlistDownloader.DownloadPlaylists(categoryId);
+        var guildPlaylistsPath = _playlistDownloader.GetGuildPlaylistsPath();
+
+        if (!Directory.Exists(guildPlaylistsPath))
+        {
+            ShowMessageModal("Nothing to delete");
+            return;
+        }
+
+        try
+        {
+            Directory.Delete(guildPlaylistsPath, true);
+        }
+        catch (Exception ex)
+        {
+            ShowMessageModal($"Failed playlists deletion:\n{ex.Message}");
+            return;
+        }
+
+        ShowMessageModal("Successfully deleted playlists", TaskFinished);
     }
 
     private void RangeDownloadToggleChanged(bool value)
@@ -142,8 +165,13 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
 
     private void RangeDownloadValueChanged(float _)
     {
-        if (_rangeDownloadMinSlider.Element.GetValue() > _rangeDownloadMaxSlider.Element.GetValue())
-            _rangeDownloadMinSlider.SetValue(_rangeDownloadMaxSlider.Element.GetValue(), false);
+        var minValue = _rangeDownloadMinSlider.Element.GetValue();
+        var maxValue = _rangeDownloadMaxSlider.Element.GetValue();
+
+        if (minValue <= maxValue + Mathf.Epsilon) return;
+
+        _rangeDownloadMinSlider.SetValue(maxValue, false);
+        _rangeDownloadMaxSlider.SetValue(minValue, false);
     }
 
     private void UniquePlaylistsDownloadFinished(string category, string levelName, bool success)
@@ -153,31 +181,27 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
 
     private void DownloadFinished(int successCount, int failCount)
     {
-        var message = string.Empty;
-
-        if (successCount == 0 && failCount == 0)
+        var message = (successCount, failCount) switch
         {
-            message = "There was nothing to download";
-        }
-        else
-        {
-            if (successCount != 0)
-                message += $"Successfully downloaded {successCount} playlist{(successCount == 1 ? "" : "s")}\n";
+            (successCount: 0, failCount: 0) => "There was nothing to download",
+            (successCount: 0, _) => $"Failed to download {failCount} playlist{(failCount == 1 ? "" : "s")}",
+            (_, failCount: 0) => $"Successfully downloaded {successCount} playlist{(successCount == 1 ? "" : "s")}",
+            _ => $"Successfully downloaded {successCount} playlist{(successCount == 1 ? "" : "s")}\n" +
+                 $"Failed to download {failCount} playlist{(failCount == 1 ? "" : "s")}"
+        };
 
-            if (failCount != 0)
-                message += $"Failed to download {failCount} playlist{(failCount == 1 ? "" : "s")}";
-        }
+        _downloadAllButton.SetInteractable(true);
+        _categoryViews.ForEach(x => x.SetInteractable(true));
+        _deleteAllButton.SetInteractable(true);
 
-        _downloadButton.SetInteractable(true);
-        foreach (var categoryView in _categoryViews)
-            categoryView.OnFinished();
-
-        ShowMessageModal(message, DownloadFinished);
+        ShowMessageModal(message, TaskFinished);
     }
 
-    private void DownloadClicked()
+    private void DownloadAllClicked()
     {
-        _downloadButton.SetInteractable(false);
+        _downloadAllButton.SetInteractable(false);
+        _categoryViews.ForEach(x => x.SetInteractable(false));
+        _deleteAllButton.SetInteractable(false);
 
         if (_rangeDownloadToggle.Element.GetValue())
             _playlistDownloader.DownloadPlaylists(
@@ -188,9 +212,26 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
             _playlistDownloader.DownloadPlaylists();
     }
 
-    private void DownloadFinished()
+    private void DownloadCategoryClicked(CategoryId categoryId)
     {
+        _downloadAllButton.SetInteractable(false);
+        _categoryViews.ForEach(x => x.SetInteractable(false));
+        _deleteAllButton.SetInteractable(false);
+
+        if (_rangeDownloadToggle.Element.GetValue())
+            _playlistDownloader.DownloadPlaylists(
+                (int)_rangeDownloadMinSlider.Element.GetValue(),
+                (int)_rangeDownloadMaxSlider.Element.GetValue(),
+                categoryId);
+        else
+            _playlistDownloader.DownloadPlaylists(categoryId);
+    }
+
+    private void TaskFinished()
+    {
+        Loader.Instance.RefreshLevelPacks();
         Loader.Instance.RefreshSongs();
+
         OnResultsModalClosed.Invoke();
     }
 }

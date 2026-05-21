@@ -84,6 +84,6 @@ public static class PlaylistUtilities
         return $"{guildSmallName} ({contextName}){categoryPart}.zip";
     }
 
-    private static string SanitizeFileName(string name)
+    public static string SanitizeFileName(string name)
         => string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
 }
