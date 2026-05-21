@@ -240,7 +240,7 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
 
     private void TaskFinished()
     {
-        Loader.Instance.RefreshSongs();
+        Loader.Instance.RefreshLevelPacks();
         OnResultsModalClosed.Invoke();
     }
 }
