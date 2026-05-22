@@ -20,139 +20,124 @@ contributions are valued and recognized. See [LICENSE-NOTICE.md](LICENSE-NOTICE.
 
 ## Public Access
 
-- API (Dev): https://api-dev.guildsaber.com
-- Website (Dev): https://dev.guildsaber.com
-- API Documentation: OpenAPI/Scalar documentation available at the API URL
+- **Website (Dev)**: https://dev.guildsaber.com
+- **Guild View (Dev)**: https://dev.guildsaber.com/guilds/1
+- **API docs (Dev)**: https://api-dev.guildsaber.com/docs
 
-## Getting Started
+# PC Mod
 
-### Prerequisites
+The GuildSaber Mod can be found in the [Releases](https://github.com/GuildSaber/GuildSaber/releases) section.
+It currently features the following:
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Docker](https://www.docker.com/products/docker-desktop)
-- [JetBrains Rider](https://www.jetbrains.com/rider/) (recommended) or Visual Studio 2026+
+- An in-game player card that shows your levels, ranks, and have a session play time timer.
+- A way to if maps are ranked on your favorite guild, displaying it's level, categories and show if you got a pass on it
+  or not already.
+- A playlist downloader (accessible from the player card menu by clicking on your avatar), allowing you to download your
+  favorite guild playlists without having to leave the game.
 
-### Configuration
+Much more is planned, but this list is going to be updated as new features are added and released.
+Let's dive into images showcasing these features one by one ^^
 
-Before running the project, you need to configure the following settings:
+## Player Card
 
-1. **API Settings** (`src/GuildSaber.Api/appsettings.json`):
-   ```json
-   {
-     "AuthSettings": {
-       "Jwt": {
-         "Secret": "YourSecureJwtSecret"
-       },
-       "BeatLeader": {
-         "ClientId": "YourBeatLeaderClientId",
-         "ClientSecret": "YourBeatLeaderClientSecret"
-       },
-       "Discord": {
-         "ClientId": "YourDiscordClientId",
-         "ClientSecret": "YourDiscordClientSecret"
-       }
-     }
-   }
-   ```
+The player card is visible from two different places (with each having its own position preset you can change).
 
-2. **Discord Bot Settings** (`src/GuildSaber.DiscordBot/appsettings.json`):
-   ```json
-   {
-     "DiscordBotOptions": {
-       "Id": 123456789012345678,
-       "Name": "GuildSaber Bot",
-       "Status": "Managing guilds",
-       "Token": "YourDiscordBotToken",
-       "ManagerId": 123456789012345678,
-       "GuildId": 123456789012345678
-     }
-   }
-   ```
+First, the menu player card:
+![Player card](src/GuildSaber.Mod/docs/images/player-card.png)
 
-### Starting the Project with Aspire
+And second, the in-game player card:
+![In-game player card](src/GuildSaber.Mod/docs/images/player-card-in-game.png)
 
-GuildSaber uses .NET Aspire for orchestrating its microservices architecture.
+As you can see, there is a little timer at the botton left of the player card. This represents how much time you've
+spent playing during this whole day. (It does persist during restarts until the day ends, and you close the game.)
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Kuurama/GuildSaber.git
-   cd GuildSaber
-   ```
+There is a special feature you guys should be aware of. As you can see, the playercard have a nice looking gradient
+background. This background capabilities is unlocked by **reaching level 30** on Challenge Saber.
+Note that this might also be a feature available for future patreon supporters, however, I still believe players
+deserves to have those cosmetic rewards accessible through time and effort too, and not just through support money.
 
-2. **Run the Aspire application:**
-   ```bash
-   cd aspire/GuildSaber.AppHost
-   dotnet run
-   ```
+Regarding the player card settings, accessing them is pretty easy, just **click on your avatar**:
+![Player card settings](src/GuildSaber.Mod/docs/images/player-card-settings.png)
 
-This will start the following services:
+And as you can see, there is a playlist button hidding in there :eyes:
 
-- Postgre (with PgWeb)
-- Redis (with Redis Commander)
-- Database Migrator
-- API Service
-- Discord Bot
+## The Playlist Downloader
 
-The Aspire dashboard will open automatically, showing the status of all services.
+Clicking that playlist button on the player card settings brings this menu up:
+![Playlist downloader](src/GuildSaber.Mod/docs/images/playlist-downloader.png)
 
-## Project Structure
+With it, you can manage your selected guild's playlists. I will let you use it and discover it by yourself.
+However, a feature you must use is the **Folder view** of Playlist manager.
 
-- `src/GuildSaber.Api` - Main API service
-- `src/GuildSaber.Database` - Database models and contexts
-- `src/GuildSaber.DiscordBot` - Discord bot integration
-- `src/GuildSaber.Mod` - Beat Saber mod integration
-- `src/GuildSaber.Common` - Shared utilities and services
-- `aspire/` - .NET Aspire project orchestration
-- `tools/GuildSaber.Migrator` - Database migration tool
+If you look above the player-card, at your feet, there is a menu from playlist manager, clicking the last button on the
+right will open the folder view. In you head into "GuildSaber" and then the Guild of your choice, you will find all the
+downloaded categories.
 
-## Database Migrations (EFCore)
+Using it (and selecting a category there) will reduce the amount of playlists visible in your game UI, basically
+filtering them to whatever folder you selected. Which is a must, given the 180+ playlists Challenge Saber have lol.
 
-GuildSaber uses Entity Framework Core (EFCore) for database schema management. Migrations are organized in the
-`Migrations` folder inside each context directory under `src/GuildSaber.Database/Contexts`.
+## RankedMap Stats
 
-### Prerequisites
+Even dreamed of knowing if a map was ranked on your favorite guild without having to open discord or the website?
+We've got you covered.
 
-- [EFCore CLI tools](https://learn.microsoft.com/en-us/ef/core/cli/dotnet) (install with
-  `dotnet tool install --global dotnet-ef` if not already installed)
+![RankedMap Stats](src/GuildSaber.Mod/docs/images/ranked-map-stats.png)
 
-### Generating a Migration
+When you select a map, if it's ranked, you will see a little guild icon followed by the difficutly level and categoties
+it belongs to.
 
-1. **Navigate to the database project:**
-   ```bash
-   cd src/GuildSaber.Database
-   ```
+It now also shows wether you got a pass on it or not with a little green checkmark ^^
 
-2. **Add a migration for a specific context:**
+# Website
 
-   For example, to add a migration for the `ServerDbContext` (migrations will be placed in
-   `Contexts/Server/Migrations`):
+The website is currently in early stage development. (It got remade from scratch at the same time as the API)
+Currently, it offers the following features:
 
-   ```bash
-   dotnet ef migrations add <MigrationName> \
-     --context GuildSaber.Database.Contexts.Server.ServerDbContext \
-     --output-dir Contexts/Server/Migrations
-   ```
+- The ability to sign in using BeatLeader, creating a new account, which is necessary to use the mod and the bot.
+  ![Sign in page](src/GuildSaber.Website/docs/images/sign-in.png)
 
-   For the DiscordBot context (replace with the actual context class name if different):
+- A small dashboard where you can link your Discord account to use the bot, but also join the Challenge Saber guild.
+  ![Signed in page](src/GuildSaber.Website/docs/images/signed-in.png)
 
-   ```bash
-   dotnet ef migrations add <MigrationName> \
-     --context GuildSaber.Database.Contexts.DiscordBot.DiscordBotDbContext \
-     --output-dir Contexts/DiscordBot/Migrations
-   ```
+- A page to view the guilds in detail with map searching and filtering capabilities.
+  (Still a WIP, but things are getting there)
+  ![Guild view](src/GuildSaber.Website/docs/images/guild-view.png)
 
-   Replace `<MigrationName>` with a descriptive name for your migration.
+# Discord Bot
 
-3. The database migrations will be automatically applied by the `GuildSaber.Migrator` service when it starts.
+The discord bot is currently the most feature complete part of the project. It offers a wide variety of features such
+as:
 
-### Notes
+- A command to display your player card.
+  ![Me Command](src/GuildSaber.DiscordBot/docs/images/me-command.png)
 
-- Always ensure you are in the `src/GuildSaber.Database` directory when running EFCore commands.
-- Each context should have its own migrations in its respective `Migrations` folder.
-- If you add or modify models, generate a new migration as shown above.
-- They should be applied automatically when the `GuildSaber.Migrator` service starts.
-- Do **NOT** push migrations to the repositories unless they reflect changes in the production database schema. Until
-  then, no migrations should be pushed to the repository.
+- The search guilds command, allowing you to search for guilds you might have not joined yet.
+  ![Search Guilds Command](src/GuildSaber.DiscordBot/docs/images/search-guilds-command.png)
+
+- A command that shows your progress through the map pool:
+  ![Progress Command](src/GuildSaber.DiscordBot/docs/images/progress-command.png)
+
+- A command to search for maps:
+  ![Search Maps Command](src/GuildSaber.DiscordBot/docs/images/search-maps-command.png)
+
+- A command to show the grind pool including your passes and fails:
+  ![GGP Command](src/GuildSaber.DiscordBot/docs/images/ggp-command.png)
+
+- A command to get the playlists (parametrized):
+  ![Playlists Command](src/GuildSaber.DiscordBot/docs/images/playlist-command.png)
+
+And finally, a command to flex what you've done since last time you flexed (It also displays level change and attribute
+roles for them):
+![Flex Command](src/GuildSaber.DiscordBot/docs/images/flex-command.png)
+
+## Developer Docs
+
+- API: `src/GuildSaber.Api/README.md`
+- Website: `src/GuildSaber.Website/README.md`
+- Mod: `src/GuildSaber.Mod/README.md`
+- Discord Bot: `src/GuildSaber.DiscordBot/README.md`
+- Database: `src/GuildSaber.Database/README.md`
+- Common: `src/GuildSaber.Common/README.md`
 
 ## Contributing
 
