@@ -85,7 +85,7 @@ We've got you covered.
 
 ![RankedMap Stats](src/GuildSaber.Mod/docs/images/ranked-map-stats.png)
 
-When you select a map, if it's ranked, you will see a little guild icon followed by the difficutly level and categoties
+When you select a map, if it's ranked, you will see a little guild icon followed by the difficutly level and categories
 it belongs to.
 
 It now also shows wether you got a pass on it or not with a little green checkmark ^^
