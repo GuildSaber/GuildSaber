@@ -134,12 +134,12 @@ roles for them):
 
 ## Developer Docs
 
-- API: `src/GuildSaber.Api/README.md`
-- Website: `src/GuildSaber.Website/README.md`
-- Mod: `src/GuildSaber.Mod/README.md`
-- Discord Bot: `src/GuildSaber.DiscordBot/README.md`
-- Database: `src/GuildSaber.Database/README.md`
-- Common: `src/GuildSaber.Common/README.md`
+- [API](src/GuildSaber.Api/README.md)
+- [Website](src/GuildSaber.Website/README.md)
+- [Mod](src/GuildSaber.Mod/README.md)
+- [Discord Bot](src/GuildSaber.DiscordBot/README.md)
+- [Database](src/GuildSaber.Database/README.md)
+- [Common](src/GuildSaber.Common/README.md)
 
 ## Contributing
 
