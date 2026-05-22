@@ -73,6 +73,8 @@ If you look above the player-card, at your feet, there is a menu from playlist m
 right will open the folder view. In you head into "GuildSaber" and then the Guild of your choice, you will find all the
 downloaded categories.
 
+![Playlist manager folder view](src/GuildSaber.Mod/docs/images/playlist-manager-folder-view.png)
+
 Using it (and selecting a category there) will reduce the amount of playlists visible in your game UI, basically
 filtering them to whatever folder you selected. Which is a must, given the 180+ playlists Challenge Saber have lol.
 
