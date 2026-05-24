@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ using GuildSaber.Mod.Features.Common.UI.Components;
 using GuildSaber.Mod.Features.GuildSaber;
 using GuildSaber.Mod.Helpers;
 using GuildSaber.Mod.Resources;
+using HMUI;
 using SongCore.Utilities;
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,15 +28,20 @@ public class RankedMapStats : XUIVLayout, IDisposable
     private readonly GuildSaberClient _client;
     private readonly GuildSaberConfig _config;
     private readonly StandardLevelDetailViewController _levelDetailViewController;
+    private readonly GameplayModifiersPanelController _gameplayModifiersPanelController;
     private readonly Logger _logger;
     private readonly Texture2D _placeHolderIcon;
     private XUIImage _categoryIcon = null!;
-
+    
     private XUIImage _guildIcon = null!;
     private GSText _mapCategories = null!;
     private GSText _mapLevel = null!;
     private XUIImage _whiteCheckMarkImage = null!;
 
+    private RankedMapResponses.RankedMap? _rankedMap;
+    private ImageView[] _actionButtonBaseImageViews;
+    private ImageView[] _actionButtonRedImageViews;
+    
     public RankedMapStats(
         [Inject] GuildSaberCache cache,
         [Inject] UIFactory factory,
@@ -43,6 +50,7 @@ public class RankedMapStats : XUIVLayout, IDisposable
         [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D placeHolderIcon,
         [Inject(Id = nameof(ResourceMap.WhiteCheckMark))] Texture2D whiteCheckMarkTexture,
         [Inject] StandardLevelDetailViewController levelDetailViewController,
+        [Inject] GameplayModifiersPanelController gameplayModifiersPanelController,
         [Inject] Logger logger
     ) : base("MapRankedStats")
     {
@@ -51,8 +59,30 @@ public class RankedMapStats : XUIVLayout, IDisposable
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _placeHolderIcon = placeHolderIcon;
         _levelDetailViewController = levelDetailViewController;
+        _gameplayModifiersPanelController = gameplayModifiersPanelController;
         _logger = logger;
+        
+        var componentsInActionButton = _levelDetailViewController._standardLevelDetailView.actionButton.GetComponentsInChildren<ImageView>();
 
+        _actionButtonBaseImageViews = componentsInActionButton;
+
+        List<ImageView> redImageViews = new List<ImageView>();
+        foreach (var imageView in componentsInActionButton)
+        {
+            var newImageViewGo = GameObject.Instantiate(imageView.gameObject, imageView.transform.parent, false);
+            newImageViewGo.name = imageView.gameObject.name + "_red";
+            var newImageView = newImageViewGo.GetComponent<ImageView>();
+
+            newImageView.color = Color.white;
+            newImageView.color0 = Color.red;
+            newImageView.color1 = new Color(1.0f, 0.3f, 0.0f);
+            newImageView.gameObject.SetActive(false);
+            newImageView.gameObject.transform.SetSiblingIndex(imageView.gameObject.transform.GetSiblingIndex() + 1);
+            redImageViews.Add(newImageView);
+        }
+
+        _actionButtonRedImageViews = redImageViews.ToArray();
+    
         _logger.Info("Preparing UI");
         OnReady(x =>
         {
@@ -103,12 +133,41 @@ public class RankedMapStats : XUIVLayout, IDisposable
 
             // Move the ranked stats UI to the right of the levelParamsPanel.
             RTransform.offsetMin = new Vector2(80, -5);
+
         });
 
+        _gameplayModifiersPanelController.didChangeGameplayModifiersEvent += OnModifiersChanged;
         BuildUI(_levelDetailViewController._standardLevelDetailView._levelParamsPanel.transform);
         _logger.Info("UI created and attached to levelParamsPanel");
     }
 
+    private void OnModifiersChanged()
+    {
+        UpdateLevelIsEligibleForValidation(_rankedMap);
+    }
+
+    public void UpdateLevelIsEligibleForValidation(RankedMapResponses.RankedMap? rankedMap)
+    {
+        GameplayModifiers gameplayModifiers = _gameplayModifiersPanelController.gameplayModifiers;
+         
+        RankedMapRequests.EModifiers modifiers = gameplayModifiers == null ? RankedMapRequests.EModifiers.None : GameplayModifiersToEnum(gameplayModifiers);
+
+        bool isEligible = rankedMap != null 
+                          && (((modifiers & rankedMap.Requirements.ProhibitedModifiers) == RankedMapRequests.EModifiers.None) 
+                              && (modifiers & RankedMapRequests.EModifiers.Unk) == RankedMapRequests.EModifiers.None
+                          && (modifiers & rankedMap.Requirements.MandatoryModifiers) == rankedMap.Requirements.MandatoryModifiers);
+        
+        foreach (var imageView in _actionButtonBaseImageViews)
+        {
+            imageView.gameObject.SetActive(isEligible);
+        }
+        
+        foreach (var imageView in _actionButtonRedImageViews)
+        {
+            imageView.gameObject.SetActive(!isEligible);
+        }
+    }
+    
     /// <remarks>
     /// As of SongCore v15.0.0, the `Hashing.GetCustomLevelHash` method got obsolete in favor of the new
     /// `Hashing.ComputeCustomLevelHash`.
@@ -159,11 +218,23 @@ public class RankedMapStats : XUIVLayout, IDisposable
             _client
         );
 
+        try
+        {
+            UpdateLevelIsEligibleForValidation(rankedMapWithScoresOfPlayer?.RankedMap);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex);
+        }
+
         if (rankedMapWithScoresOfPlayer is null)
         {
             SetActive(false);
+            _rankedMap = null;
             return;
         }
+        
+        _rankedMap = rankedMapWithScoresOfPlayer.RankedMap;
 
         var guildIconTexture = await _cache.FetchGuildIconTexture(_config.GuildId, _client) ?? _placeHolderIcon;
         var roundedIcon = await TextureUtils.CreateRoundedTextureAsync(guildIconTexture, guildIconTexture.width * 0.2f);
@@ -225,6 +296,27 @@ public class RankedMapStats : XUIVLayout, IDisposable
         SetActive(true);
     }
 
+    public RankedMapRequests.EModifiers GameplayModifiersToEnum(GameplayModifiers gameplayModifiers)
+    {
+        var modifiers = RankedMapRequests.EModifiers.None;
+
+        if (gameplayModifiers.disappearingArrows) modifiers |= RankedMapRequests.EModifiers.DisappearingArrows;
+        if (gameplayModifiers.ghostNotes) modifiers |= RankedMapRequests.EModifiers.GhostNotes;
+        if (gameplayModifiers.noArrows) modifiers |= RankedMapRequests.EModifiers.NoArrows;
+        if (gameplayModifiers.enabledObstacleType != GameplayModifiers.EnabledObstacleType.All)
+            modifiers |= RankedMapRequests.EModifiers.NoObstacles; 
+        if (gameplayModifiers.noBombs) modifiers |= RankedMapRequests.EModifiers.NoBombs;
+        if (gameplayModifiers.zenMode) modifiers |= RankedMapRequests.EModifiers.Unk;
+        if (gameplayModifiers.proMode) modifiers |= RankedMapRequests.EModifiers.ProMode;
+        if (gameplayModifiers.strictAngles) modifiers |= RankedMapRequests.EModifiers.StrictAngles;
+        if (gameplayModifiers.smallCubes) modifiers |= RankedMapRequests.EModifiers.SmallNotes;
+        if (gameplayModifiers.songSpeedMul < 1.0f) modifiers |= RankedMapRequests.EModifiers.SlowerSong;
+        if (gameplayModifiers.instaFail) modifiers |= RankedMapRequests.EModifiers.InstaFail;
+        if (gameplayModifiers.failOnSaberClash) modifiers |= RankedMapRequests.EModifiers.BatteryEnergy;
+        
+        return modifiers;
+    }
+    
     public async Task<RankedMapResponses.RankedMapWithScores?> FetchRankedMapWithScoresOfPlayer(
         ContextId contextId, PlayerId playerId, SongHash hash, string mode, EDifficulty difficulty,
         GuildSaberClient client)
