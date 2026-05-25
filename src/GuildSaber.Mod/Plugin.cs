@@ -2,9 +2,11 @@
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.GuildSaber;
 using GuildSaber.Mod.Features.GuildSaber.Settings;
+using GuildSaber.Mod.Features.MenuTweaks.PlayButtonRequirements;
+using GuildSaber.Mod.Features.MenuTweaks.RankedMapStats;
 using GuildSaber.Mod.Features.PlayerCard;
 using GuildSaber.Mod.Features.PlaylistDownloader;
-using GuildSaber.Mod.Features.RankedMapStats;
+using GuildSaber.Mod.Features.RankedMap;
 using GuildSaber.Mod.Resources;
 using HarmonyLib;
 using IPA;
@@ -27,21 +29,22 @@ public class Plugin
         var config = ipaConfig.Generated<GuildSaberConfig>();
 
         zenjector.Install<GuildSaberInstaller>(Location.App, config);
-        zenjector.Install<ResourcesInstaller>(Location.App, logger);
+        zenjector.Install<GuildSaberSettingsInstaller>(Location.Menu);
 
+        zenjector.Install<ResourcesInstaller>(Location.App, logger);
         zenjector.Install<UIInstaller>(Location.App);
+
+        zenjector.Install<PlayerCardInstaller>(Location.Menu);
+        zenjector.Install<PlaylistDownloaderInstaller>(Location.Menu);
         zenjector.Install<TimerInstaller>(Location.Menu);
 
-        zenjector.Install<PlaylistDownloaderInstaller>(Location.Menu);
-        zenjector.Install<PlayerCardInstaller>(Location.Menu);
+        zenjector.Install<RankedMapInstaller>(Location.Menu);
         zenjector.Install<MapRankedStatsInstaller>(Location.Menu);
-
-        zenjector.Install<GuildSaberSettingsInstaller>(Location.Menu);
+        zenjector.Install<PlayButtonRequirementsInstaller>(Location.Menu);
     }
 
     [OnEnable]
     public void OnEnable() => _guildSaberHarmony.PatchAll();
-
 
     [OnDisable]
     public void OnDisable() => _guildSaberHarmony.UnpatchSelf();
