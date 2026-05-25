@@ -7,16 +7,15 @@ using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using GuildSaber.CSharpClient.Routes.Guilds.Levels.Playlists;
 using GuildSaber.Mod.Features.GuildSaber;
-using Zenject;
 
 namespace GuildSaber.Mod.Features.PlaylistDownloader;
 
 [SuppressMessage("ReSharper", "AsyncVoidMethod")]
 public class PlaylistDownloader(
-    [Inject] Logger logger,
-    [Inject] GuildSaberClient client,
-    [Inject] GuildSaberConfig config,
-    [Inject] GuildSaberCache cache)
+    GuildSaberClient client,
+    GuildSaberConfig config,
+    GuildSaberCache cache,
+    Logger logger)
 {
     public bool IsDownloading { get; private set; }
 

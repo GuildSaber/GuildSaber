@@ -1,4 +1,4 @@
-namespace GuildSaber.Mod.Features.RankedMapStats;
+namespace GuildSaber.Mod.Features.MenuTweaks.RankedMapStats;
 
 public class RankedMapStatsConfig
 {

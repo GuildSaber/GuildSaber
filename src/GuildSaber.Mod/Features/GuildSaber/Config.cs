@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using GuildSaber.Common.StrongTypes;
+using GuildSaber.Mod.Features.MenuTweaks.RankedMapStats;
 using GuildSaber.Mod.Features.PlayerCard;
-using GuildSaber.Mod.Features.RankedMapStats;
 using IPA.Config.Stores;
 
 [assembly: InternalsVisibleTo(GeneratedStore.AssemblyVisibilityTarget)]
