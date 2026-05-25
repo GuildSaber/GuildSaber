@@ -152,10 +152,9 @@ public class RankedMapStats : XUIVLayout, IDisposable
          
         RankedMapRequests.EModifiers modifiers = gameplayModifiers == null ? RankedMapRequests.EModifiers.None : GameplayModifiersToEnum(gameplayModifiers);
 
-        bool isEligible = rankedMap != null 
-                          && (((modifiers & rankedMap.Requirements.ProhibitedModifiers) == RankedMapRequests.EModifiers.None) 
-                              && (modifiers & RankedMapRequests.EModifiers.Unk) == RankedMapRequests.EModifiers.None
-                          && (modifiers & rankedMap.Requirements.MandatoryModifiers) == rankedMap.Requirements.MandatoryModifiers);
+        bool isEligible = rankedMap == null || (((modifiers & rankedMap.Requirements.ProhibitedModifiers) == RankedMapRequests.EModifiers.None) 
+                                                && (modifiers & RankedMapRequests.EModifiers.Unk) == RankedMapRequests.EModifiers.None
+                                                && (modifiers & rankedMap.Requirements.MandatoryModifiers) == rankedMap.Requirements.MandatoryModifiers);
         
         foreach (var imageView in _actionButtonBaseImageViews)
         {
