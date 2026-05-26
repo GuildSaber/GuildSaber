@@ -90,6 +90,22 @@ it belongs to.
 
 It now also shows wether you got a pass on it or not with a little green checkmark ^^
 
+## Play Button Requirements
+
+In case the map you are about to play is ranked, the play button will change color based on the modifier requirements of
+the ranked map. (It doesn't prevent you from playing the map, and only act as a visual indicator)
+
+Put more simply, if a pass can't be considered valid when you play the map on slower song or with no obstacles,
+and one of those is selected, the play button will turn red.
+
+Similarly, if you are required to play the map with one or more specific modifiers, and they aren't all selected,
+the play button will also turn red. (Even though this feature isn't used on Challenge Saber,
+it exists and can be used by other guilds)
+
+![Play button requirements](src/GuildSaber.Mod/docs/images/play-button-requirements.png)
+
+Reciprocally, if the requirements are met, the play button will be of its normal blue color.
+
 # Website
 
 The website is currently in early stage development. (It got remade from scratch at the same time as the API)
