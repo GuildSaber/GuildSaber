@@ -63,14 +63,7 @@ public class RankedMapService(
         public sealed record NotOnBeatSaver(BeatSaverKey BeatSaverKey) : CreateResponse;
         public sealed record BeatSaverError(string Message) : CreateResponse;
         public sealed record RateLimited(TimeSpan RetryAfter) : CreateResponse;
-
-        public sealed record Success(
-            RankedMap RankedMap,
-            Song Song,
-            SongDifficulty SongDifficulty,
-            GameMode GameMode
-        ) : CreateResponse;
-
+        public sealed record Success(RankedMap RankedMap) : CreateResponse;
         public sealed record UnexpectedFailure(string Message) : CreateResponse;
     }
 
@@ -88,10 +81,7 @@ public class RankedMapService(
                 => string.Join("; ", Errors.SelectMany(x => x.Value.Select(err => $"{x.Key}: {err}")));
         }
 
-        public sealed record Success(
-            RankedMap RankedMap
-        ) : UpdateResponse;
-
+        public sealed record Success(RankedMap RankedMap) : UpdateResponse;
         public sealed record UnexpectedFailure(string Message) : UpdateResponse;
     }
 
@@ -163,17 +153,28 @@ public class RankedMapService(
                     guildId, contextId, tuple.beatMap, tuple.song.Id, tuple.difficulty.Id, tuple.playMode.Id, request)
                 .MapError(CreateResponse (errors) => new ValidationFailure(errors))
                 .Map(static (rankedMap, dbContext) => dbContext.AddAndSaveAsync(rankedMap), dbContext)
-                .Map(static (rankedMap, tuple) => (rankedMap, tuple.song, tuple.difficulty, tuple.gameMode), tuple))
-            .Match(async tuple =>
+                .Map(static (rankedMap, tuple) =>
+                {
+                    foreach (var mapVersion in rankedMap.MapVersions)
+                    {
+                        mapVersion.Song = tuple.song;
+                        mapVersion.SongDifficulty = tuple.difficulty;
+                        mapVersion.SongDifficulty.GameMode = tuple.gameMode;
+                    }
+
+                    return rankedMap;
+                }, tuple))
+            .Match(async rankedMap =>
             {
                 await taskQueue.QueueBackgroundWorkItemAsync(async token =>
                 {
                     using var scope = serviceScopeFactory.CreateScope();
-                    await scope.ServiceProvider.GetRequiredService<AddRankedMapPipeline>()
-                        .ExecuteAsync(tuple.difficulty, token);
+                    foreach (var mapVersion in rankedMap.MapVersions)
+                        await scope.ServiceProvider.GetRequiredService<AddRankedMapPipeline>()
+                            .ExecuteAsync(mapVersion.SongDifficulty, token);
                 });
 
-                return new Success(tuple.rankedMap, tuple.song, tuple.difficulty, tuple.gameMode) as CreateResponse;
+                return new Success(rankedMap) as CreateResponse;
             }, Task.FromResult);
 
     private async Task<UpdateResponse> UpdateRankedMapAsync(
@@ -184,6 +185,8 @@ public class RankedMapService(
             .AsTracking()
             .Include(x => x.Categories)
             .Include(x => x.Levels)
+            .Include(x => x.MapVersions).ThenInclude(x => x.SongDifficulty).ThenInclude(x => x.GameMode)
+            .Include(x => x.MapVersions).ThenInclude(x => x.Song)
             .FirstOrDefaultAsync(x => x.Id == rankedMapId && x.GuildId == guildId && x.ContextId == contextId);
 
         if (rankedMap is null)

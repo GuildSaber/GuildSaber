@@ -74,10 +74,18 @@ public record LeaderboardInfo
 
 public record DifficultyResponse
 {
-    public required int LeaderboardId { get; init; }
-    public required EDifficulty Difficulty { get; init; }
     public required string GameMode { get; init; }
     public required string DifficultyRaw { get; init; }
+
+    public EDifficulty Difficulty => DifficultyRaw switch
+    {
+        [_, 'E', 'a', 's', 'y', ..] => EDifficulty.Easy,
+        [_, 'N', 'o', 'r', 'm', 'a', 'l', ..] => EDifficulty.Normal,
+        [_, 'H', 'a', 'r', 'd', ..] => EDifficulty.Hard,
+        [_, 'E', 'x', 'p', 'e', 'r', 't', 'P', 'l', 'u', 's', ..] => EDifficulty.ExpertPlus,
+        [_, 'E', 'x', 'p', 'e', 'r', 't', ..] => EDifficulty.Expert,
+        _ => throw new InvalidOperationException($"Unknown difficulty: {DifficultyRaw}")
+    };
 }
 
 public class LeaderboardPlayerInfo

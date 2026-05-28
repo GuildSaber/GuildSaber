@@ -13,7 +13,6 @@ public class ScoreSaberApiTests
     private readonly ScoreSaberId _invalidScoreSaberId = ScoreSaberId.CreateUnsafe(99999999999).Value;
 
     private readonly string _invalidSongCharacteristic = "InvalidMode";
-    private readonly EDifficulty _invalidSongDifficulty = (EDifficulty)(-1);
     private readonly SongHash _invalidSongHash = SongHash.TryCreate("abcdef1234567890abcdef1234567890abcdef12").Value;
     private readonly ScoreSaberApi _scoreSaberApi;
     private readonly ScoreSaberId _validScoreSaberId = ScoreSaberId.CreateUnsafe(76561198126131670).Value;
@@ -126,11 +125,11 @@ public class ScoreSaberApiTests
     {
         // Arrange
         var songHash = _invalidSongHash;
-        var difficulty = _invalidSongDifficulty;
         var characteristic = SSGameMode.TryCreate(_invalidSongCharacteristic).Value;
 
         // Act
-        var leaderboardInfo = await _scoreSaberApi.GetLeaderboardInfoAsync(songHash, difficulty, characteristic);
+        var leaderboardInfo =
+            await _scoreSaberApi.GetLeaderboardInfoAsync(songHash, EDifficulty.ExpertPlus, characteristic);
 
         // Assert
         leaderboardInfo.SuccessShould().BeNull();

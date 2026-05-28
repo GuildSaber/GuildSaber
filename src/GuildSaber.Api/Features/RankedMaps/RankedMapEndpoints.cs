@@ -67,7 +67,15 @@ public class RankedMapEndpoints : IEndpoints
             .ProducesValidationProblem()
             .RequireGuildPermission(EPermission.RankingTeam);
 
-        //TODO: Make an optimized version to search by SongHash.
+        group.MapPut("/{rankedMapId}", UpdateRankedMap)
+            .WithName("UpdateRankedMap")
+            .WithSummary("Update a ranked map.")
+            .WithDescription("Update a ranked map by its Id.")
+            .Produces<RankedMap>()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesValidationProblem()
+            .RequireGuildPermission(EPermission.RankingTeam);
     }
 
     /// <remarks>
@@ -85,8 +93,7 @@ public class RankedMapEndpoints : IEndpoints
         ContextId contextId, CreateRankedMap create, RankedMapService rankedMapService)
         => await rankedMapService.CreateRankedMapAsync(contextId, create) switch
         {
-            CreateResponse.Success(var rankedMap, var song, var songDifficulty, var gameMode) => TypedResults
-                .Ok(rankedMap.Map(song, songDifficulty, gameMode)),
+            CreateResponse.Success(var rankedMap) => TypedResults.Ok(rankedMap.Map()),
             CreateResponse.TooManyRankedMaps(var current, var max) => TypedResults.Problem(
                 $"Guild has reached its maximum number of ranked maps ({current}/{max}), consider getting more boosts.",
                 statusCode: StatusCodes.Status401Unauthorized,
@@ -105,6 +112,21 @@ public class RankedMapEndpoints : IEndpoints
                 .InternalServerError($"Unexpected error: {message}"),
             _ => throw new ArgumentOutOfRangeException(nameof(rankedMapService.CreateRankedMapAsync),
                 "Unexpected response from CreateRankedMap.")
+        };
+
+    public static async Task<IResult> UpdateRankedMap(
+        ContextId contextId, RankedMapId rankedMapId, UpdateRankedMap update, RankedMapService rankedMapService)
+        => await rankedMapService.UpdateRankedMapAsync(rankedMapId, contextId, update) switch
+        {
+            UpdateResponse.Success(var rankedMap) => TypedResults.Ok(rankedMap.Map()),
+            UpdateResponse.NotFound => TypedResults.NotFound(),
+            UpdateResponse.ValidationFailure(var errors) => TypedResults
+                .ValidationProblem(errors: errors,
+                    detail: "Failed to validate ranked map update."),
+            UpdateResponse.UnexpectedFailure(var message) => TypedResults
+                .InternalServerError($"Unexpected error: {message}"),
+            _ => throw new ArgumentOutOfRangeException(nameof(rankedMapService.UpdateRankedMapAsync),
+                "Unexpected response from UpdateRankedMap.")
         };
 
     private static async Task<Results<Ok<RankedMap>, NotFound>> GetRankedMapAsync(

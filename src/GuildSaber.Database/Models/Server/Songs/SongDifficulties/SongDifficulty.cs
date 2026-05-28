@@ -21,7 +21,7 @@ public class SongDifficulty
 
     public required SongDifficultyStats Stats { get; init; }
 
-    public GameMode GameMode { get; init; } = null!;
+    public GameMode GameMode { get; set; } = null!;
 
     public readonly record struct SongDifficultyId(long Value) : IEFStrongTypedId<SongDifficultyId, long>
     {

@@ -26,8 +26,8 @@ public class MapVersion
     public DateTimeOffset AddedAt { get; init; }
     public byte Order { get; set; }
 
-    public SongDifficulty SongDifficulty { get; init; } = null!;
-    public Song Song { get; init; } = null!;
+    public SongDifficulty SongDifficulty { get; set; } = null!;
+    public Song Song { get; set; } = null!;
 }
 
 public class MapVersionConfiguration : IEntityTypeConfiguration<MapVersion>

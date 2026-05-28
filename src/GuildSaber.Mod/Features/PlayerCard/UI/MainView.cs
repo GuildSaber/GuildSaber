@@ -217,7 +217,6 @@ public class PlayerCardView : ViewController<PlayerCardView>
                 x.CSizeFitter.verticalFit = x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained)
             .BuildUI(transform);
 
-
         // So the component persists when scene changes.
         DontDestroyOnLoad(transform.parent.gameObject);
 

@@ -40,7 +40,7 @@ public class ScoreSaberApi(HttpClient httpClient)
 
     private Uri GetPlayerScoreUrl(ScoreSaberId playerId, PaginatedRequestOptions<PlayerScoresSortBy> requestOptions)
         => new(
-            $"api/player/{playerId}/scores?page={requestOptions.Page}&limit={requestOptions.PageSize}" +
+            $"api/v1/player/{playerId}/scores?page={requestOptions.Page}&limit={requestOptions.PageSize}" +
             $"&sort={requestOptions.SortBy.ToString().ToLower()}&withMetadata=true",
             UriKind.Relative
         );
@@ -88,7 +88,7 @@ public class ScoreSaberApi(HttpClient httpClient)
 
     public async Task<Result<LeaderboardInfo?>> GetLeaderboardInfoAsync(
         SongHash hash, EDifficulty difficulty, SSGameMode gameMode) => await httpClient
-            .GetAsync($"api/leaderboard/by-hash/{hash}/info?difficulty={(int)difficulty}&gameMode={gameMode}") switch
+            .GetAsync($"api/v1/leaderboard/by-hash/{hash}/info?difficulty={(int)difficulty}&gameMode={gameMode}") switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<LeaderboardInfo?>(null),
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
@@ -101,7 +101,7 @@ public class ScoreSaberApi(HttpClient httpClient)
         };
 
     public async Task<Result<bool>> PlayerExistsAsync(ulong scoreSaberId) => await httpClient
-            .GetAsync($"api/player/{scoreSaberId}/basic") switch
+            .GetAsync($"api/v1/player/{scoreSaberId}/basic") switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success(false),
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }

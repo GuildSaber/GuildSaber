@@ -1510,6 +1510,102 @@
         ]
       }
     },
+    "/contexts/{contextId}/ranked-maps/{rankedMapId}": {
+      "put": {
+        "tags": [
+          "Context.RankedMaps"
+        ],
+        "summary": "Update a ranked map.",
+        "description": "Update a ranked map by its Id.",
+        "operationId": "UpdateRankedMap",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rankedMapId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRankedMap"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankedMap"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "PUT contexts/{contextId}/ranked-maps/{rankedMapId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "PUT contexts/{contextId}/ranked-maps/{rankedMapId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/players": {
       "get": {
         "tags": [
@@ -7599,6 +7695,45 @@
           },
           "description": {
             "type": "string"
+          }
+        }
+      },
+      "UpdateRankedMap": {
+        "required": [
+          "requirements",
+          "manualRating",
+          "categoryIds",
+          "levelIds"
+        ],
+        "type": "object",
+        "properties": {
+          "requirements": {
+            "$ref": "#/components/schemas/RankedMapRequirements"
+          },
+          "manualRating": {
+            "$ref": "#/components/schemas/ManualRating"
+          },
+          "categoryIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "levelIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
           }
         }
       }

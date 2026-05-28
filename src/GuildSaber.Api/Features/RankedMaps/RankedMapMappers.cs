@@ -75,19 +75,6 @@ public static class RankedMapMappers
             .Select(x => x.Map())
             .ToArray());
 
-    public static RankedMapResponses.RankedMap Map(
-        this RankedMap self, Song song, SongDifficulty songDifficulty, GameMode gameMode) => new(
-        Id: self.Id,
-        GuildId: self.GuildId,
-        ContextId: self.ContextId,
-        Info: self.Info.Map(),
-        Requirements: self.Requirements.Map(),
-        Rating: self.Rating.Map(),
-        Versions: self.MapVersions.Select(v => v.Map(song, songDifficulty, gameMode)).ToArray(),
-        CategoryIds: self.Categories.Select(x => (int)x.Id).ToArray(),
-        LevelIds: self.Levels.Select(x => (int)x.Id).ToArray()
-    );
-
     public static RankedMapResponses.RankedMapInfo Map(this RankedMapInfo self) => new(
         CreatedAt: self.CreatedAt,
         EditedAt: self.EditedAt
