@@ -152,7 +152,13 @@ public class RankedMapService(
             .Bind(tuple => CreateAndValidate(
                     guildId, contextId, tuple.beatMap, tuple.song.Id, tuple.difficulty.Id, tuple.playMode.Id, request)
                 .MapError(CreateResponse (errors) => new ValidationFailure(errors))
-                .Map(static (rankedMap, dbContext) => dbContext.AddAndSaveAsync(rankedMap), dbContext)
+                .Map(static async (rankedMap, dbContext) =>
+                {
+                    var result = await dbContext.AddAndSaveAsync(rankedMap);
+                    dbContext.ChangeTracker.Clear();
+
+                    return result;
+                }, dbContext)
                 .Map(static (rankedMap, tuple) =>
                 {
                     foreach (var mapVersion in rankedMap.MapVersions)
@@ -215,6 +221,8 @@ public class RankedMapService(
 
         if (await dbContext.SaveChangesAsync() <= 0)
             return new UpdateResponse.UnexpectedFailure("Failed to save changes to the database.");
+
+        dbContext.ChangeTracker.Clear();
 
         await taskQueue.QueueBackgroundWorkItemAsync(async token =>
         {
@@ -321,9 +329,10 @@ public class RankedMapService(
                 Duration: diff.Length
             )
         };
-        song.SongDifficulties.Add(songDifficulty);
 
+        song.SongDifficulties.Add(songDifficulty);
         await dbContext.SaveChangesAsync();
+
         return Success((song, songDifficulty));
     }
 

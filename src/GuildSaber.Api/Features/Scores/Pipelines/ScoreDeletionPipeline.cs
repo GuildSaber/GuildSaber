@@ -1,9 +1,9 @@
 using System.Diagnostics;
+using GuildSaber.Api.Features.RankedScores.Pipelines;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.Scores;
 using Microsoft.EntityFrameworkCore;
-using static GuildSaber.Api.Features.RankedScores.Pipelines.RankedScoreUpdateRankPipeline;
 using ScoreId = GuildSaber.Database.Models.Server.Scores.AbstractScore.ScoreId;
 
 namespace GuildSaber.Api.Features.Scores.Pipelines;
@@ -25,7 +25,7 @@ public class ScoreDeletionPipeline(ServerDbContext dbContext)
         if (guildsWithRankedMaps.RankedMapIds.Length == 0) return;
 
         //TODO: Recalculate rankedScores for each RankedMapIds because one of their scores got deleted, and there might be a score that fits a new ranked score. (UpdateOrAddAsync should just do it too, yoink the call from there)
-        await UpdateRanksForRankedMapsAsync(guildsWithRankedMaps.RankedMapIds, dbContext);
+        await RankedScoreUpdateRankPipeline.UpdateRanksForRankedMapsAsync(guildsWithRankedMaps.RankedMapIds, dbContext);
     }
 
     /// <summary>

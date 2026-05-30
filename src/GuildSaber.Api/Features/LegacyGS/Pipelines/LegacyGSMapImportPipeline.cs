@@ -187,7 +187,6 @@ public class LegacyGuildSaberMapImportPipeline(
         logger.LogInformation("Completed legacy GuildSaber map import for guild {GuildId}", guildId);
     }
 
-
     private bool MapShouldBeUpdated(
         RankedMap currentMap, RankedMapRequests.RankedMapRequirements requirements,
         RankedMapRequests.ManualRating manualRating, int[] categoryIds, int[] levelIds)
@@ -389,7 +388,7 @@ public class LegacyGuildSaberMapImportPipeline(
                             Color = Color.FromArgb(legacyLevel.Color)
                         },
                         DiscordInfo = new LevelDiscordInfo(DiscordRoleId.TryCreate(legacyLevel.DiscordRoleId)
-                            .Match(roleId => (DiscordRoleId?)roleId, _ => null)),
+                            .GetValueOrDefault()),
                         Order = (uint)Math.Round(legacyLevel.LevelNumber),
                         IsLocking = true,
                         RequiredPassCount = 1
@@ -401,7 +400,7 @@ public class LegacyGuildSaberMapImportPipeline(
                 {
                     categoryLevel.Info = categoryLevel.Info with { Color = Color.FromArgb(legacyLevel.Color) };
                     categoryLevel.DiscordInfo = new LevelDiscordInfo(DiscordRoleId.TryCreate(legacyLevel.DiscordRoleId)
-                        .Match(roleId => (DiscordRoleId?)roleId, _ => null));
+                        .GetValueOrDefault());
                 }
 
                 result[new LegacyLevelKey(legacyLevel.Id, legacyCategoryId)] = categoryLevel;

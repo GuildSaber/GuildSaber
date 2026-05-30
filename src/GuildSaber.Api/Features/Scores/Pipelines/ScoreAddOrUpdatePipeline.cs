@@ -129,7 +129,7 @@ public sealed class ScoreAddOrUpdatePipeline(
                     state.dbContext
                 );
 
-                // The same "ranked scores" might be used multiple time by the same context, we need to cleanup tracking.
+                // The same "ranked scores" might be used multiple time by the same context, we need to clean up tracking.
                 state.dbContext.ChangeTracker.Clear();
                 return new PipelineResult(tuple.rankingContext.ContextsWithPoints);
             }, (dbContext, scoreToAdd.PlayerId, token))

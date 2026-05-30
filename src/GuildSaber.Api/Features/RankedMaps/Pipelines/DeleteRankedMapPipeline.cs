@@ -5,14 +5,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GuildSaber.Api.Features.RankedMaps.Pipelines;
 
-public class EditRankedMapPipeline(
+public class DeleteRankedMapPipeline(
     ServerDbContext dbContext,
     ScoreAddOrUpdatePipeline scoreAddOrUpdatePipeline,
-    ILogger<EditRankedMapPipeline> logger)
+    ILogger<DeleteRankedMapPipeline> logger)
 {
     public async Task ExecuteAsync(RankedMap.RankedMapId rankedMapId, CancellationToken token)
     {
-        logger.LogInformation("Executing edit pipeline for ranked map with Id {RankedMapId}", rankedMapId);
+        logger.LogInformation("Executing delete pipeline for ranked map with RankedMapId {RankedMapId}", rankedMapId);
 
         var versions = await dbContext.MapVersions
             .Where(x => x.RankedMapId == rankedMapId)
@@ -26,6 +26,6 @@ public class EditRankedMapPipeline(
                            .WithCancellation(token))
             await scoreAddOrUpdatePipeline.ExecuteAsync(score, token);
 
-        logger.LogInformation("Completed editing ranked map with Id {RankedMapId}", rankedMapId);
+        logger.LogInformation("Completed delete pipeline for ranked map with RankedMapId {RankedMapId}", rankedMapId);
     }
 }

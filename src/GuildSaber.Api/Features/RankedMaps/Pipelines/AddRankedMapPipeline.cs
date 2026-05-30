@@ -17,7 +17,7 @@ public class AddRankedMapPipeline(
 {
     public async Task ExecuteAsync(SongDifficulty songDifficulty, CancellationToken token)
     {
-        logger.LogInformation("Adding ranked map with SongDifficultyId {SongDifficultyId} to the database",
+        logger.LogInformation("Executing added pipeline for ranked map with SongDifficultyId {SongDifficultyId}",
             songDifficulty.Id);
 
         await foreach (var score in dbContext.Scores
@@ -53,7 +53,7 @@ public class AddRankedMapPipeline(
             }
         }
 
-        logger.LogInformation("Completed adding ranked map with SongDifficultyId {SongDifficultyId} to the database",
+        logger.LogInformation("Completed added pipeline for ranked map with SongDifficultyId {SongDifficultyId}",
             songDifficulty.Id);
     }
 }
