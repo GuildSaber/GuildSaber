@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Players;
 using GuildSaber.Common.Services.BeatLeader;
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
@@ -129,9 +131,28 @@ public class AuthService(
 
     public Task<Result<Player>> CreatePlayerAsync(BeatLeaderId beatleaderId)
         => beatLeaderApi.GetPlayerProfileWithStatsAsync(beatleaderId)
-            .Bind(async blPlayer => blPlayer == null
-                ? Failure<Player>("Player not found on BeatLeader.")
-                : Success(new Player
+            .Bind(async blPlayer =>
+            {
+                if (blPlayer is null)
+                    return Failure<Player>("Player not found on BeatLeader.");
+
+                // BeatLeader doesn't return linked accounts if only one of them is linked.
+                var steamId = blPlayer.LinkedIds?.SteamId ?? (beatleaderId.Kind == BeatLeaderId.Platform.Steam
+                    ? SteamId.TryCreate(beatleaderId).Unwrap()
+                    : null);
+                var metaPCId = blPlayer.LinkedIds?.OculusPCId ?? (beatleaderId.Kind == BeatLeaderId.Platform.MetaPC
+                    ? MetaPCId.TryCreate(beatleaderId).Unwrap()
+                    : null);
+                var blNativeId = blPlayer.LinkedIds?.QuestId ?? (beatleaderId.Kind == BeatLeaderId.Platform.MetaNative
+                    ? BLNativeId.TryCreate(beatleaderId).Unwrap()
+                    : null);
+
+                if (steamId is null && metaPCId is null && blNativeId is null)
+                    throw new InvalidOperationException(
+                        "At least one of the linked accounts should be present, either from the BeatLeader linked account response or inferred from the BeatLeaderId."
+                    );
+
+                return Success(new Player
                 {
                     Info = new PlayerInfo
                     {
@@ -146,16 +167,15 @@ public class AuthService(
                         Platform = PlatformMappers.Map(blPlayer.Platform)
                     },
                     LinkedAccounts = new PlayerLinkedAccounts(
-                        blPlayer.LinkedIds?.SteamId,
-                        blPlayer.LinkedIds?.OculusPCId,
-                        blPlayer.LinkedIds?.QuestId,
-                        await GetUsedScoreSaberIdAsync(
-                            blPlayer.LinkedIds?.SteamId,
-                            blPlayer.LinkedIds?.OculusPCId),
+                        steamId,
+                        metaPCId,
+                        blNativeId,
+                        await GetUsedScoreSaberIdAsync(steamId, metaPCId),
                         DiscordId: null),
                     SubscriptionInfo = new PlayerSubscriptionInfo(PlayerSubscriptionInfo.ESubscriptionTier.None),
                     IsManager = managerSettings.Value.SteamIds.Contains(blPlayer.Id)
-                }))
+                });
+            })
             .Map(static (player, dbContext) => dbContext
                 .AddAndSaveAsync(player), dbContext);
 
@@ -213,15 +233,29 @@ public class AuthService(
                     Platform = PlatformMappers.Map(blPlayer.Platform)
                 };
 
+                // BeatLeader doesn't return linked accounts if only one of them is linked.
+                var steamId = blPlayer.LinkedIds?.SteamId ?? (beatleaderId.Kind == BeatLeaderId.Platform.Steam
+                    ? SteamId.TryCreate(beatleaderId).Unwrap()
+                    : null);
+                var metaPCId = blPlayer.LinkedIds?.OculusPCId ?? (beatleaderId.Kind == BeatLeaderId.Platform.MetaPC
+                    ? MetaPCId.TryCreate(beatleaderId).Unwrap()
+                    : null);
+                var blNativeId = blPlayer.LinkedIds?.QuestId ?? (beatleaderId.Kind == BeatLeaderId.Platform.MetaNative
+                    ? BLNativeId.TryCreate(beatleaderId).Unwrap()
+                    : null);
+
+                if (steamId is null && metaPCId is null && blNativeId is null)
+                    throw new InvalidOperationException(
+                        "At least one of the linked accounts should be present, either from the BeatLeader linked account response or inferred from the BeatLeaderId."
+                    );
+
                 // Using the with syntax ensure we just mutate what we need to (without touching DiscordId for example).
                 player.LinkedAccounts = player.LinkedAccounts with
                 {
-                    SteamId = blPlayer.LinkedIds?.SteamId,
-                    MetaPCId = blPlayer.LinkedIds?.OculusPCId,
-                    BLNativeId = blPlayer.LinkedIds?.QuestId,
-                    ScoreSaberId = await GetUsedScoreSaberIdAsync(
-                        blPlayer.LinkedIds?.SteamId,
-                        blPlayer.LinkedIds?.OculusPCId)
+                    SteamId = steamId,
+                    MetaPCId = metaPCId,
+                    BLNativeId = blNativeId,
+                    ScoreSaberId = await GetUsedScoreSaberIdAsync(steamId, metaPCId)
                 };
 
                 return Success();
