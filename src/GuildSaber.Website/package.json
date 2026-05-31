@@ -11,8 +11,7 @@
     "format": "prettier --check . --log-level warn",
     "format:fix": "prettier --write . --log-level warn",
     "preview": "vite preview",
-    "api": "openapi-ts",
-    "prepare": "openapi-ts"
+    "api": "openapi-ts"
   },
   "dependencies": {
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
