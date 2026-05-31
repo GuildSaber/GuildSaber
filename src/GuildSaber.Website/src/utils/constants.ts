@@ -4,9 +4,11 @@ export const ORDER_BY = {
 }
 
 export const MAX_STARS = 100
+
 export const MIN_STARS = 0
 
 export const MAX_BPM = 800
+
 export const MIN_BPM = 0
 
 export const MAP_DIFFICULTY = {

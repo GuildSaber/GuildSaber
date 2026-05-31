@@ -1,6 +1,13 @@
 import type { EOrder, ERankedMapSorter } from "@/client"
 import { MAP_SORT_BY, MAX_BPM, MAX_STARS, MIN_BPM, MIN_STARS, ORDER_BY } from "@/utils/constants"
-import { parseAsArrayOf, parseAsBoolean, parseAsInteger, parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs"
+import {
+  parseAsArrayOf,
+  parseAsBoolean,
+  parseAsInteger,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryStates,
+} from "nuqs"
 
 const orderKeys = Object.keys(ORDER_BY) as EOrder[]
 const sortKeys = Object.keys(MAP_SORT_BY) as ERankedMapSorter[]

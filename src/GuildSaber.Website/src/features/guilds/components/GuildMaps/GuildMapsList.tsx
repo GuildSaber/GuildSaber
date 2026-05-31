@@ -24,7 +24,7 @@ const GuildMapsList = () => {
   } = useQuery({
     ...getRankedMapsOptions({
       path: {
-        contextId: guild?.contexts[0].id as number,
+        contextId: guild?.contexts[0].id ?? 0,
       },
       query: {
         search: filters.search,

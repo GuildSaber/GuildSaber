@@ -1,14 +1,15 @@
 import type { GetRankedMapResponse } from "@/client"
 import BeatSaver from "@/components/icons/BeatSaver"
+import Twitch from "@/components/icons/Twitch"
 import Image from "@/components/Image"
 import { Button } from "@/components/ui/button"
 import { useArcViewerStore } from "@/features/maps/stores/arcViewerStore"
 import { getMapCover } from "@/utils/beatsaver"
 import { MAP_DIFFICULTY } from "@/utils/constants"
-import { DownloadCloud, Play, Sparkles, Star, Twitch } from "lucide-react"
+import { DownloadCloud, Play, Sparkles, Star } from "lucide-react"
 import { useCopyToClipboard } from "usehooks-ts"
 
-type Props = {
+interface Props {
   map: GetRankedMapResponse
 }
 

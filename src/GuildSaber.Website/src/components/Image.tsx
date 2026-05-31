@@ -13,7 +13,7 @@ const Image = ({ src, banner, ...props }: Props) => {
     return "/images/fallback.svg"
   }, [banner])
 
-  const [imgSrc, setImgSrc] = useState(src || fallback())
+  const [imgSrc, setImgSrc] = useState(src ?? fallback())
 
   const handleError = () => {
     setImgSrc(fallback())

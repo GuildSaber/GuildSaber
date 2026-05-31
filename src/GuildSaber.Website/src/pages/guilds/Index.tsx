@@ -10,7 +10,8 @@ import { useParams } from "react-router"
 const HomeGuild = () => {
   const { guildId } = useParams()
   const { data: guild, isLoading } = useQuery({
-    ...getGuildExtendedOptions({ path: { guildId: guildId as string } }),
+    ...getGuildExtendedOptions({ path: { guildId: guildId ?? "" } }),
+    enabled: Boolean(guildId),
   })
 
   if (!guild && !isLoading) {

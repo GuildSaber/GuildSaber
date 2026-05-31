@@ -10,14 +10,14 @@ const variants = {
   muted: { container: "bg-muted", icon: "text-muted-foreground" },
 } as const
 
-type Action = {
+interface Action {
   label: string
   icon?: LucideIcon
   onClick: () => void
   variant?: "default" | "outline" | "destructive" | "secondary" | "ghost" | "link"
 }
 
-type Props = {
+interface Props {
   icon?: LucideIcon
   variant?: keyof typeof variants
   title?: string
@@ -49,7 +49,7 @@ const ErrorState = ({
     {
       label: "Go home",
       icon: Home,
-      onClick: () => navigate("/"),
+      onClick: () => void navigate("/"),
       variant: "default",
     },
   ]
