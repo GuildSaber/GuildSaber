@@ -1,12 +1,12 @@
 import { AlertDialog, AlertDialogContent } from "@/components/ui/alert-dialog"
 import { useArcViewerStore } from "@/features/maps/stores/arcViewerStore"
-import { useRef } from "react"
+import { useRef, type RefObject } from "react"
 import { useOnClickOutside } from "usehooks-ts"
 
 const DialogArcViewer = () => {
   const { open, key, difficulty, gamemode, closeArcViewer } = useArcViewerStore()
-  const ref = useRef<HTMLDivElement>(null!)
-  useOnClickOutside(ref, closeArcViewer)
+  const ref = useRef<HTMLDivElement>(null)
+  useOnClickOutside(ref as RefObject<HTMLDivElement>, closeArcViewer)
 
   const generateArcViewerUrl = () =>
     `https://allpoland.github.io/ArcViewer/?id=${key}&mode=${gamemode}&difficulty=${difficulty}`

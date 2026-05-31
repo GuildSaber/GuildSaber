@@ -28,7 +28,7 @@ const JoinCSGuild = () => {
   }
 
   const { members } = session
-  const isMember = members?.find((m) => m.guildId === 1)
+  const isMember = members.find((m) => m.guildId === 1)
 
   return (
     <div className="flex items-center gap-3">

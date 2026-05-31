@@ -25,7 +25,7 @@ const GuildsSelector = () => {
   return (
     <div className="bg-background dark:bg-input/30 flex h-9 items-center rounded-lg border shadow-xs">
       <div className="flex h-full items-center gap-2 px-1 py-1">
-        {session?.members.length > 2 && selectedGuild && (
+        {session.members.length > 2 && selectedGuild && (
           <>
             <img className="size-7 rounded-lg" src={getCdnUrl(`guilds/${selectedGuild}/logo.jpg`)} />
             <Separator orientation="vertical" className="bg-input" />

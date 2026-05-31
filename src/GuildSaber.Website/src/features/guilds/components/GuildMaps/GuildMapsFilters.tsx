@@ -13,7 +13,7 @@ import { MAP_SORT_BY, MAX_BPM, MAX_STARS, MIN_BPM, MIN_STARS, ORDER_BY } from "@
 import { type ChangeEvent } from "react"
 import { useDebounceCallback } from "usehooks-ts"
 
-type Props = {
+interface Props {
   categories?: Category[]
 }
 
@@ -47,16 +47,20 @@ const GuildMapsFilters = ({ categories }: Props) => {
     updateFilters({ sort: v })
   }
 
-  const handleCategoriesSelect = (categoryId: number) => () => {
-    const { categories } = filters
+  const handleCategoriesSelect = (categoryId: number | undefined) => () => {
+    if (!categoryId) {
+      return
+    }
 
-    if (categories.includes(categoryId)) {
-      updateFilters({ categories: categories.filter((id) => id !== categoryId) })
+    const { categories: selectedCategories } = filters
+
+    if (selectedCategories.includes(categoryId)) {
+      updateFilters({ categories: selectedCategories.filter((id) => id !== categoryId) })
 
       return
     }
 
-    updateFilters({ categories: [...categories, categoryId] })
+    updateFilters({ categories: [...selectedCategories, categoryId] })
   }
 
   const handleMatchAnyCategoryChange = (v: boolean) => {
@@ -109,8 +113,8 @@ const GuildMapsFilters = ({ categories }: Props) => {
       <Field>
         <FieldLabel>Stars</FieldLabel>
         <FieldDescription>
-          Only show maps with Stars between <span className="font-semibold text-amber-400">{stars.localValue[0]}</span> and{" "}
-          <span className="font-semibold text-amber-400">{stars.localValue[1]}</span>
+          Only show maps with Stars between <span className="font-semibold text-amber-400">{stars.localValue[0]}</span>{" "}
+          and <span className="font-semibold text-amber-400">{stars.localValue[1]}</span>
         </FieldDescription>
         <Slider
           className="**:data-[slot=slider-range]:bg-amber-400 **:data-[slot=slider-thumb]:border-amber-400 **:data-[slot=slider-thumb]:ring-amber-400/50"
@@ -159,11 +163,17 @@ const GuildMapsFilters = ({ categories }: Props) => {
 
         <div className="flex flex-wrap gap-2">
           {categories?.map((category) => {
-            const isSelected = filters.categories.includes(category.id as number)
+            const categoryId = category.id
+
+            if (!categoryId) {
+              return null
+            }
+
+            const isSelected = filters.categories.includes(categoryId)
 
             return (
               <Button
-                onClick={handleCategoriesSelect(category.id as number)}
+                onClick={handleCategoriesSelect(category.id)}
                 key={category.id}
                 variant={isSelected ? "default" : "outline"}
                 size="sm"

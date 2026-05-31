@@ -4,18 +4,18 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "@/features/auth/hooks/useSession"
+import { useGuildContext } from "@/features/guilds/contexts/guildContext"
 import { decimalToHex, getTextColor } from "@/utils/color"
 import { getCdnUrl } from "@/utils/url"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { useGuildContext } from "../contexts/guildContext"
 
 const GuildHeader = () => {
   const queryClient = useQueryClient()
   const { data: session } = useSession()
   const guild = useGuildContext()
 
-  const isMember = session?.members?.find((m) => m.guildId === guild?.guild.id) !== undefined
+  const isMember = session?.members.find((m) => m.guildId === guild?.guild.id) !== undefined
 
   const { mutate } = useMutation({
     ...joinGuildAtMeMutation(),
@@ -43,39 +43,34 @@ const GuildHeader = () => {
     return <LoadingSkeleton />
   }
 
-  const guildColor = decimalToHex(guild?.guild.info.color)
+  const guildColor = decimalToHex(guild.guild.info.color)
   const colors = {
     text: getTextColor(guildColor),
     bg: guildColor,
   }
+  const guildBanner = getCdnUrl(`guilds/${guild.guild.id}/banner.jpg`)
 
   return (
     <Card className="overflow-hidden p-0">
-      {guild?.guild && (
-        <Image
-          className="z-0 h-20 w-full object-cover md:h-40"
-          src={getCdnUrl(`guilds/${guild?.guild.id}/banner.jpg`)}
-          banner={true}
-        />
-      )}
+      {guildBanner && <Image className="z-0 h-20 w-full object-cover md:h-40" src={guildBanner} banner={true} />}
       <CardContent className="grid gap-6 md:grid-cols-[2fr_1fr]">
         <div>
           <div className="mb-2 flex flex-col items-center gap-4 md:flex-row md:items-start">
             <Image
-              src={getCdnUrl(`guilds/${guild?.guild.id}/logo.jpg`)}
-              alt={guild?.guild.info.name}
+              src={getCdnUrl(`guilds/${guild.guild.id}/logo.jpg`)}
+              alt={guild.guild.info.name}
               className="border-card bg-card z-10 -mt-14 size-20 rounded-lg border-6 md:-mt-22 md:size-34"
             />
 
-            <h1 className="line-clamp-2 text-xl font-bold md:text-3xl">{guild?.guild.info.name}</h1>
+            <h1 className="line-clamp-2 text-xl font-bold md:text-3xl">{guild.guild.info.name}</h1>
           </div>
-          <p className="text-muted-foreground line-clamp-3 text-center md:text-left">{guild?.guild.info.description}</p>
+          <p className="text-muted-foreground line-clamp-3 text-center md:text-left">{guild.guild.info.description}</p>
         </div>
 
         <div className="flex items-end justify-between text-right md:flex-col md:justify-start">
           <div className="rounded p-0.5 px-1" style={{ backgroundColor: colors.bg }}>
             <p className="text-muted-foreground text-lg font-extrabold" style={{ color: colors.text }}>
-              {guild?.guild.info.smallName}
+              {guild.guild.info.smallName}
             </p>
           </div>
           <Button onClick={handleJoin} disabled={isMember} className="md:mt-auto">

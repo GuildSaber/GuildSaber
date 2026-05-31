@@ -1,6 +1,6 @@
 import { create } from "zustand"
 
-type ArcViewerStore = {
+interface ArcViewerStore {
   open: boolean
   key: string | null
   difficulty: string | null

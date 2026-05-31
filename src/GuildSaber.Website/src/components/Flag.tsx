@@ -6,7 +6,7 @@ const getSvgFlag = (countryCode: string | undefined) => {
   return `https://cdn.jsdelivr.net/gh/lipis/flag-icons/flags/4x3/${countryCode.toLowerCase()}.svg`
 }
 
-type Props = {
+interface Props {
   code?: string
   className?: string
 }

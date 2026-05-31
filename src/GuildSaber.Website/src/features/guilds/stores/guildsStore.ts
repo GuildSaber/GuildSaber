@@ -1,7 +1,7 @@
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
 
-type GuildsStore = {
+interface GuildsStore {
   selectedGuild: number | null
   setSelectedGuild: (_guildId: number | null) => void
 }

@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
 import { parseAsInteger, useQueryState } from "nuqs"
 
-type Props = {
+interface Props {
   totalPages: number
   pageSize?: number
   showEllipsis?: boolean
@@ -63,7 +63,7 @@ const Pagination = ({ totalPages, showEllipsis = true, maxVisiblePages = 5, isLo
 
   return (
     <PaginationComponent className="sticky bottom-6 md:bottom-3">
-      <PaginationContent className="bg-background select-none rounded-lg border p-[0.2rem]">
+      <PaginationContent className="bg-background rounded-lg border p-[0.2rem] select-none">
         <PaginationItem>
           <PaginationPrevious
             onClick={() => {

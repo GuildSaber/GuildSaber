@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 
 type Theme = "dark" | "light" | "system"
 
-type ThemeContextType = {
+interface ThemeContextType {
   theme: Theme
   resolvedTheme: "dark" | "light"
   setTheme: (_theme: Theme) => void
@@ -10,7 +10,7 @@ type ThemeContextType = {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
-type ThemeProviderProps = {
+interface ThemeProviderProps {
   children: ReactNode
   defaultTheme?: Theme
   storageKey?: string
@@ -20,6 +20,7 @@ export function ThemeProvider({ children, defaultTheme = "system", storageKey = 
   const [theme, setThemeState] = useState<Theme>(() => {
     const stored = localStorage.getItem(storageKey)
 
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     return (stored as Theme) || defaultTheme
   })
 
