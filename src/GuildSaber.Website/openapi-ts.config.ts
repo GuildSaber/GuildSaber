@@ -3,11 +3,10 @@ import "dotenv/config"
 import path from "node:path"
 
 export default defineConfig({
-  input: path.resolve(__dirname, "openapi/GuildSaber.Api.json"),
+  input: path.join(import.meta.dirname, "openapi/GuildSaber.Api.json"),
   output: {
     path: "src/client",
-    format: "prettier",
-    lint: "eslint",
+    postProcess: ["prettier"],
   },
   plugins: [
     "@hey-api/client-ky",

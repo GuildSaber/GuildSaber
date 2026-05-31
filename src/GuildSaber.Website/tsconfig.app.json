@@ -8,7 +8,7 @@
     "skipLibCheck": true,
 
     /* Bundler mode */
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "verbatimModuleSyntax": false,
     "moduleDetection": "force",
     "noEmit": true,
@@ -22,7 +22,6 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Aliasing */
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
