@@ -1,6 +1,0 @@
-allowBuilds:
-  esbuild: true
-  oxlint: true
-  oxlint-tsgolint: true
-
-minimumReleaseAge: 10080
