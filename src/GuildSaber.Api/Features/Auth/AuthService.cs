@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
@@ -214,10 +213,10 @@ public class AuthService(
             .Bind(async blPlayer =>
             {
                 if (blPlayer is null)
-                    return Failure("Player not found on BeatLeader.");
+                    return Failure<Player>("Player not found on BeatLeader.");
 
-                var player = await dbContext.Players.FindAsync(playerId);
-                if (player is null) return Failure("Player deleted while updating.");
+                var player = await dbContext.Players.Where(x => x.Id == playerId).FirstOrDefaultAsync();
+                if (player is null) return Failure<Player>("Player deleted while updating.");
 
                 player.Info = new PlayerInfo
                 {
@@ -258,8 +257,10 @@ public class AuthService(
                     ScoreSaberId = await GetUsedScoreSaberIdAsync(steamId, metaPCId)
                 };
 
-                return Success();
-            }).Map(static dbContext => dbContext.SaveChangesAsync(), dbContext);
+                return Success(player);
+            }).Map(static (player, dbContext) => dbContext
+                // Explicitly passing it because it doesn't work well with readonly record struct even with tracking enabled. 
+                .UpdateAndSaveAsync(player), dbContext);
 }
 
 public abstract record SessionCreationError;
