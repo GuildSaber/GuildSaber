@@ -54,6 +54,7 @@ public class CategoryEndpoints : IEndpoints
             .WithName("UpdateCategory")
             .WithSummary("Update a category of a guild.")
             .WithDescription("Update a category of a guild by its Id.")
+            .ProducesProblem(statusCode: StatusCodes.Status400BadRequest)
             .RequireGuildPermission(EPermission.RankingTeam);
 
         guildsGroup.MapDelete("/{categoryId}", DeleteCategoryAsync)
@@ -100,16 +101,27 @@ public class CategoryEndpoints : IEndpoints
                 .AddAndSaveAsync(category, x => x.Map()), dbContext)
             .ToCreatedAtRouteHttpResult(GetCategoryName, res => new { guildId, categoryId = res.Id });
 
-    private static async Task<Results<Ok<Category>, ProblemHttpResult>> UpdateCategoryAsync(
+    private static async Task<Results<Ok<Category>, NotFound, ProblemHttpResult>> UpdateCategoryAsync(
         GuildId guildId, CategoryId categoryId, CategoryRequests.UpdateCategory request,
         ServerDbContext dbContext)
-        => await (from name in Name_2_50.TryCreate(request.Name)
-                  from description in Description.TryCreate(request.Description)
-                  select new ServerCategory
-                      { Id = categoryId, GuildId = guildId, Info = new ServerCategoryInfo(name, description) })
-            .Map(static (category, dbContext) => dbContext
-                .UpdateAndSaveAsync(category, x => x.Map()), dbContext)
-            .ToOkHttpResult();
+    {
+        if (!ServerCategoryInfo.TryCreate(request.Name, request.Description)
+                .TryGetValue(out var info, out var error))
+            return TypedResults.Problem(error, statusCode: StatusCodes.Status400BadRequest);
+
+        var category = await dbContext.Categories
+            .AsTracking()
+            .Where(x => x.GuildId == guildId && x.Id == categoryId)
+            .FirstOrDefaultAsync();
+
+        if (category is null)
+            return TypedResults.NotFound();
+
+        category.Info = info;
+        await dbContext.SaveChangesAsync();
+
+        return TypedResults.Ok(category.Map());
+    }
 
     private static async Task<Results<NoContent, NotFound>> DeleteCategoryAsync(
         GuildId guildId, CategoryId categoryId, ServerDbContext dbContext)
