@@ -27,6 +27,10 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.Build.Tasks.Core">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -44,6 +48,9 @@
             <GeneratePathProperty>true</GeneratePathProperty>
         </PackageReference>
         <PackageReference Include="System.ValueTuple" />
+        <PackageReference Include="System.Collections.Immutable" />
+        <PackageReference Include="System.Reflection.Metadata" />
+        <PackageReference Include="System.Threading.Tasks.Dataflow" />
         <PackageReference Include="System.Buffers">
             <GeneratePathProperty>true</GeneratePathProperty>
         </PackageReference>
