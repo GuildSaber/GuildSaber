@@ -88,6 +88,7 @@ services:
       AuthSettings:Discord:ClientSecret: "${AUTHSETTINGS_DISCORD_CLIENTSECRET}"
       AuthSettings:Redirect:AllowedOriginUrls:0: "${AUTHSETTINGS_REDIRECT_ALLOWEDORIGINURLS_0}"
       AuthSettings:Redirect:AllowedOriginUrls:1: "${AUTHSETTINGS_REDIRECT_ALLOWEDORIGINURLS_1}"
+      AuthSettings:TickerQ:ApiKey: "${AUTHSETTINGS_TICKERQ_APIKEY}"
       GuildSettings:Creation:RequiredSubscriptionTier: "${GUILDSETTINGS_CREATION_REQUIREDSUBSCRIPTIONTIER}"
       GuildSettings:Creation:MaxGuildCountPerUser: "${GUILDSETTINGS_CREATION_MAXGUILDCOUNTPERUSER}"
       RankedMapSettings:DefaultSettings:MaxRankedMapCount: "${RANKEDMAPSETTINGS_DEFAULTSETTINGS_MAXRANKEDMAPCOUNT}"

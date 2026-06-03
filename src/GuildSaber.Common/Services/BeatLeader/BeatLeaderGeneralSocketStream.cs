@@ -135,11 +135,8 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
 
                 // Message should already be in UTF-8 format in this case, no need for encoding conversion
                 var mem = _receiveBuffer.AsMemory(0, _receiveBufferWPos);
-
                 yield return TryDeserializeMessage<GeneralSocketMessage>(mem.Span, _jsonOptions)
-                    .TryGetValue(out var test, out var error)
-                    ? Success<GeneralSocketMessage, Error>(test!)
-                    : Failure<GeneralSocketMessage, Error>(error);
+                    .MapError(Error (error) => error);
 
                 _receiveBufferWPos = 0;
             }
@@ -175,7 +172,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
     /// A result containing either the <see cref="WebSocketReceiveResult" /> on success,
     /// or the <see cref="Exception" /> that occurred during the receive operation.
     /// </returns>
-    private async ValueTask<Result<WebSocketReceiveResult, Exception>> TryReceiveAsync(
+    private static async ValueTask<Result<WebSocketReceiveResult, Exception>> TryReceiveAsync(
         ClientWebSocket webSocket, ArraySegment<byte> buffer, CancellationToken cancellationToken)
     {
         try
@@ -189,7 +186,7 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
         }
     }
 
-    private bool TryIncrementByChecked(ref int value, int increment)
+    private static bool TryIncrementByChecked(ref int value, int increment)
     {
         try
         {
@@ -206,21 +203,26 @@ public sealed class BeatLeaderGeneralSocketStream(Uri baseUri) : IAsyncEnumerabl
         }
     }
 
-    private static Result<T?, DeserializationError> TryDeserializeMessage<T>(
+    private static Result<T, DeserializationError> TryDeserializeMessage<T>(
         ReadOnlySpan<byte> utf8Json,
         JsonSerializerOptions? options = null)
     {
         try
         {
-            return JsonSerializer.Deserialize<T>(utf8Json, options);
+            var message = JsonSerializer.Deserialize<T>(utf8Json, options);
+            if (message is null)
+                return Failure<T, DeserializationError>(new DeserializationError(
+                    new JsonException("Deserialized message is null"), Encoding.UTF8.GetString(utf8Json)));
+
+            return message;
         }
         catch (JsonException ex)
         {
 #if NETSTANDARD2_0
-            return Failure<T?, DeserializationError>(
+            return Failure<T, DeserializationError>(
                 new DeserializationError(ex, Encoding.UTF8.GetString(utf8Json.ToArray())));
 #else
-            return Failure<T?, DeserializationError>(
+            return Failure<T, DeserializationError>(
                 new DeserializationError(ex, Encoding.UTF8.GetString(utf8Json)));
 #endif
         }
