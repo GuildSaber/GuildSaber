@@ -1,5 +1,5 @@
-using GuildSaber.Api.Features.Scores;
 using GuildSaber.Api.Features.Scores.Pipelines;
+using GuildSaber.Api.Features.Scores.Workers;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models;
 using GuildSaber.Database.Contexts.Server;
@@ -41,7 +41,7 @@ public class AddRankedMapPipeline(
                                .SelectMany(x => x.Unwrap()?.Scores ?? [])
                                .WithCancellation(token))
             {
-                if (!(await BLScoreSyncWorker.GetPlayerIdAsync(score.PlayerId, dbContext, token))
+                if (!(await BeatLeaderScoreSyncWorker.GetPlayerIdAsync(score.PlayerId, dbContext, token))
                     .TryGetValue(out var playerId)) continue;
 
                 var scoreStats = (await beatLeaderApi.GetScoreStatisticsAsync(score.Id))

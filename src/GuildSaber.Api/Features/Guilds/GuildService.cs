@@ -1,5 +1,6 @@
 using System.Drawing;
 using CSharpFunctionalExtensions;
+using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Api.Features.Guilds.Members;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;

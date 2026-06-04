@@ -1,4 +1,4 @@
-using GuildSaber.Api.Features.RankedMaps;
+using GuildSaber.Api.Features.RankedMaps.Http;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 
 namespace GuildSaber.Mod.Features.RankedMap;

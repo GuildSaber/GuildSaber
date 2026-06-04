@@ -2,7 +2,7 @@
 using System.Linq;
 using CP_SDK_BS.UI;
 using CP_SDK.XUI;
-using GuildSaber.Api.Features.Guilds;
+using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.GuildSaber;

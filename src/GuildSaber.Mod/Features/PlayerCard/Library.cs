@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using GuildSaber.Api.Features.Guilds.Members.LevelStats;
-using GuildSaber.Api.Features.Players;
+using GuildSaber.Api.Features.Guilds.Members.LevelStats.Http;
+using GuildSaber.Api.Features.Players.Http;
 using UnityEngine;
 
 namespace GuildSaber.Mod.Features.PlayerCard;

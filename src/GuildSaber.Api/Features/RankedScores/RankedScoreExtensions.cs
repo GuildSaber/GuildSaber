@@ -1,8 +1,8 @@
 using System.Linq.Expressions;
 using GuildSaber.Api.Extensions;
-using GuildSaber.Api.Features.Internal;
+using GuildSaber.Api.Shared;
 using GuildSaber.Database.Models.Server.RankedScores;
-using static GuildSaber.Api.Features.RankedScores.RankedScoreRequests;
+using static GuildSaber.Api.Features.RankedScores.Http.RankedScoreRequests;
 
 namespace GuildSaber.Api.Features.RankedScores;
 

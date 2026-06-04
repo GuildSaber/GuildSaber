@@ -57,10 +57,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Features\Players\Scores\" />
-    </ItemGroup>
-
-    <ItemGroup>
         <ProjectReference Include="..\..\aspire\GuildSaber.ServiceDefaults\GuildSaber.ServiceDefaults.csproj" />
         <ProjectReference Include="..\GuildSaber.Database\GuildSaber.Database.csproj" />
     </ItemGroup>

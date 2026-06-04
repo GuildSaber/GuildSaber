@@ -1,5 +1,5 @@
 ﻿using System;
-using GuildSaber.Api.Features.Guilds;
+using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.GuildSaber;
 using HMUI;

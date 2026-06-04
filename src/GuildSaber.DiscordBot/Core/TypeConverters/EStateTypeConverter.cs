@@ -1,6 +1,6 @@
 using Discord;
 using Discord.Interactions;
-using GuildSaber.Api.Features.RankedScores;
+using GuildSaber.Api.Features.RankedScores.Http;
 
 namespace GuildSaber.DiscordBot.Core.TypeConverters;
 

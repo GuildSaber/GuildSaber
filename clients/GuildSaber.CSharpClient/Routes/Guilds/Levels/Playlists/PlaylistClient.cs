@@ -2,10 +2,10 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
-using GuildSaber.Api.Features.Guilds.Levels;
+using GuildSaber.Api.Features.Guilds.Levels.Http;
 using GuildSaber.Common.Result;
-using static GuildSaber.Api.Features.Guilds.Levels.Playlists.PlaylistRequests;
-using static GuildSaber.Api.Features.Guilds.Levels.Playlists.PlaylistResponses;
+using static GuildSaber.Api.Features.Guilds.Levels.Playlists.Http.PlaylistRequests;
+using static GuildSaber.Api.Features.Guilds.Levels.Playlists.Http.PlaylistResponses;
 
 namespace GuildSaber.CSharpClient.Routes.Guilds.Levels.Playlists;
 

@@ -1,0 +1,34 @@
+namespace GuildSaber.Api.Features.Guilds.Members.Http;
+
+public static class MemberResponses
+{
+    public record Member(
+        PlayerId PlayerId,
+        GuildId GuildId,
+        DateTimeOffset InitializedAt,
+        DateTimeOffset EditedAt,
+        EPermission Permissions,
+        EJoinState JoinState,
+        int Priority
+    );
+
+    public enum EJoinState
+    {
+        None = 0,
+        Joined = 1 << 0,
+        Requested = 1 << 1,
+        Invited = 1 << 2,
+        Refused = 1 << 3,
+        Banned = 1 << 4
+    }
+
+    [Flags]
+    public enum EPermission
+    {
+        None = 0,
+        GuildLeader = 1 << 0,
+        RankingTeam = 1 << 1,
+        ScoringTeam = 1 << 2,
+        MemberTeam = 1 << 3
+    }
+}

@@ -2286,6 +2286,654 @@
         }
       }
     },
+    "/contexts/{contextId}/members/{playerId}/level-stats": {
+      "get": {
+        "tags": [
+          "Context.Members.LevelStats"
+        ],
+        "summary": "Get level stats for a guild member.",
+        "description": "Get level statistics for a specific player within a context.",
+        "operationId": "GetMemberLevelStats",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemberLevelStat"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contexts/{contextId}/members/@me/level-stats": {
+      "get": {
+        "tags": [
+          "Context.Members.LevelStats"
+        ],
+        "summary": "Get level stats for the current authenticated member.",
+        "description": "Get level statistics for the current authenticated player within a context.",
+        "operationId": "GetCurrentMemberLevelStats",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemberLevelStat"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/guilds/{guildId}/members": {
+      "get": {
+        "tags": [
+          "Guilds.Members"
+        ],
+        "summary": "Get all members of a guild.",
+        "description": "Get all members of a guild by guild id.",
+        "operationId": "GetMembers",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 0,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "default": "CreatedAt",
+              "$ref": "#/components/schemas/EMemberSorters"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "default": "Desc",
+              "$ref": "#/components/schemas/EOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfMember"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Guilds.Members"
+        ],
+        "summary": "Join a guild as the current player.",
+        "description": "Join a guild as the current player using their player id from claims.",
+        "operationId": "JoinGuildAtMe",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST guilds/{guildId}/members/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST guilds/{guildId}/members/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/guilds/{guildId}/members/{playerId}": {
+      "get": {
+        "tags": [
+          "Guilds.Members"
+        ],
+        "summary": "Get a member of a guild",
+        "description": "Get a member of a guild by player id.",
+        "operationId": "GetMember",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET guilds/{guildId}/members/{playerId}/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Guilds.Members"
+        ],
+        "summary": "Join a guild",
+        "description": "Join a guild by player id.",
+        "operationId": "JoinGuild",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST guilds/{guildId}/members/{playerId}/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST guilds/{guildId}/members/{playerId}/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/members/{playerId}/context-stats": {
+      "get": {
+        "tags": [
+          "Context.Members.ContextStats"
+        ],
+        "summary": "Get context stats for a guild member.",
+        "description": "Get context statistics for a specific player within a context.",
+        "operationId": "GetMemberContextStats",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberContextStat"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET contexts/{contextId}/members/{playerId}/context-stats",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contexts/{contextId}/members/@me/context-stats": {
+      "get": {
+        "tags": [
+          "Context.Members.ContextStats"
+        ],
+        "summary": "Get context stats for the current authenticated member.",
+        "description": "Get context statistics for the current authenticated player within a context.",
+        "operationId": "GetCurrentMemberContextStats",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberContextStat"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET contexts/{contextId}/members/@me/context-stats",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/levels/{levelId}/playlist": {
+      "get": {
+        "tags": [
+          "Levels.Playlists"
+        ],
+        "summary": "Get the playlist for a ranked map list level.",
+        "description": "Get the playlist associated with a ranked map list level by its Id.",
+        "operationId": "GetLevelPlaylist",
+        "parameters": [
+          {
+            "name": "levelId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PlaylistFilter"
+            }
+          },
+          {
+            "name": "playerId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Playlist"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET levels/{levelId}/playlist/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/context/{contextId}/levels": {
+      "get": {
+        "tags": [
+          "Context.Levels"
+        ],
+        "summary": "Get all levels in a context, optionally filtered by category.",
+        "description": "- No parameters: Returns all levels.\r\n- hasCategory=false: Only return levels with no category.\r\n- category=5: Returns levels with category 5.",
+        "operationId": "GetLevels",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasCategory",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Level"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/guilds": {
       "get": {
         "tags": [
@@ -2748,654 +3396,6 @@
         }
       }
     },
-    "/guilds/{guildId}/members": {
-      "get": {
-        "tags": [
-          "Guilds.Members"
-        ],
-        "summary": "Get all members of a guild.",
-        "description": "Get all members of a guild by guild id.",
-        "operationId": "GetMembers",
-        "parameters": [
-          {
-            "name": "guildId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "maximum": 2147483647,
-              "minimum": 0,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32",
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "maximum": 100,
-              "minimum": 0,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32",
-              "default": 10
-            }
-          },
-          {
-            "name": "sortBy",
-            "in": "query",
-            "schema": {
-              "default": "CreatedAt",
-              "$ref": "#/components/schemas/EMemberSorters"
-            }
-          },
-          {
-            "name": "order",
-            "in": "query",
-            "schema": {
-              "default": "Desc",
-              "$ref": "#/components/schemas/EOrder"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PagedListOfMember"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Guilds.Members"
-        ],
-        "summary": "Join a guild as the current player.",
-        "description": "Join a guild as the current player using their player id from claims.",
-        "operationId": "JoinGuildAtMe",
-        "parameters": [
-          {
-            "name": "guildId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Member"
-                }
-              }
-            }
-          },
-          "202": {
-            "description": "Accepted",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Member"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Member"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-                  "title": "Not Found",
-                  "status": 404,
-                  "detail": null,
-                  "instance": "POST guilds/{guildId}/members/",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-                  "title": "One or more validation errors occurred.",
-                  "status": 400,
-                  "detail": null,
-                  "instance": "POST guilds/{guildId}/members/",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
-                  "errors": {
-                    "propertyName": [
-                      "Error message"
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      }
-    },
-    "/guilds/{guildId}/members/{playerId}": {
-      "get": {
-        "tags": [
-          "Guilds.Members"
-        ],
-        "summary": "Get a member of a guild",
-        "description": "Get a member of a guild by player id.",
-        "operationId": "GetMember",
-        "parameters": [
-          {
-            "name": "guildId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "playerId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Member"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-                  "title": "Not Found",
-                  "status": 404,
-                  "instance": "GET guilds/{guildId}/members/{playerId}/",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Guilds.Members"
-        ],
-        "summary": "Join a guild",
-        "description": "Join a guild by player id.",
-        "operationId": "JoinGuild",
-        "parameters": [
-          {
-            "name": "guildId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "playerId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Member"
-                }
-              }
-            }
-          },
-          "202": {
-            "description": "Accepted",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Member"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Member"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-                  "title": "Not Found",
-                  "status": 404,
-                  "detail": null,
-                  "instance": "POST guilds/{guildId}/members/{playerId}/",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-                  "title": "One or more validation errors occurred.",
-                  "status": 400,
-                  "detail": null,
-                  "instance": "POST guilds/{guildId}/members/{playerId}/",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
-                  "errors": {
-                    "propertyName": [
-                      "Error message"
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      }
-    },
-    "/contexts/{contextId}/members/{playerId}/level-stats": {
-      "get": {
-        "tags": [
-          "Context.Members.LevelStats"
-        ],
-        "summary": "Get level stats for a guild member.",
-        "description": "Get level statistics for a specific player within a context.",
-        "operationId": "GetMemberLevelStats",
-        "parameters": [
-          {
-            "name": "contextId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "playerId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MemberLevelStat"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/contexts/{contextId}/members/@me/level-stats": {
-      "get": {
-        "tags": [
-          "Context.Members.LevelStats"
-        ],
-        "summary": "Get level stats for the current authenticated member.",
-        "description": "Get level statistics for the current authenticated player within a context.",
-        "operationId": "GetCurrentMemberLevelStats",
-        "parameters": [
-          {
-            "name": "contextId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MemberLevelStat"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      }
-    },
-    "/contexts/{contextId}/members/{playerId}/context-stats": {
-      "get": {
-        "tags": [
-          "Context.Members.ContextStats"
-        ],
-        "summary": "Get context stats for a guild member.",
-        "description": "Get context statistics for a specific player within a context.",
-        "operationId": "GetMemberContextStats",
-        "parameters": [
-          {
-            "name": "contextId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "playerId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MemberContextStat"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-                  "title": "Not Found",
-                  "status": 404,
-                  "instance": "GET contexts/{contextId}/members/{playerId}/context-stats",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/contexts/{contextId}/members/@me/context-stats": {
-      "get": {
-        "tags": [
-          "Context.Members.ContextStats"
-        ],
-        "summary": "Get context stats for the current authenticated member.",
-        "description": "Get context statistics for the current authenticated player within a context.",
-        "operationId": "GetCurrentMemberContextStats",
-        "parameters": [
-          {
-            "name": "contextId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MemberContextStat"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-                  "title": "Not Found",
-                  "status": 404,
-                  "instance": "GET contexts/{contextId}/members/@me/context-stats",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      }
-    },
-    "/context/{contextId}/levels": {
-      "get": {
-        "tags": [
-          "Context.Levels"
-        ],
-        "summary": "Get all levels in a context, optionally filtered by category.",
-        "description": "- No parameters: Returns all levels.\n- hasCategory=false: Only return levels with no category.\n- category=5: Returns levels with category 5.",
-        "operationId": "GetLevels",
-        "parameters": [
-          {
-            "name": "contextId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "categoryId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "hasCategory",
-            "in": "query",
-            "schema": {
-              "type": "boolean",
-              "default": true
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Level"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/levels/{levelId}/playlist": {
-      "get": {
-        "tags": [
-          "Levels.Playlists"
-        ],
-        "summary": "Get the playlist for a ranked map list level.",
-        "description": "Get the playlist associated with a ranked map list level by its Id.",
-        "operationId": "GetLevelPlaylist",
-        "parameters": [
-          {
-            "name": "levelId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
-            }
-          },
-          {
-            "name": "filter",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/PlaylistFilter"
-            }
-          },
-          {
-            "name": "playerId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Playlist"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-                  "title": "Not Found",
-                  "status": 404,
-                  "instance": "GET levels/{levelId}/playlist/",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/guilds/{guildId}/stats": {
       "get": {
         "tags": [
@@ -3689,6 +3689,41 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "PUT guilds/{guildId}/categories/{categoryId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "PUT guilds/{guildId}/categories/{categoryId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
                 }
               }
             }
@@ -7769,28 +7804,28 @@
       "description": "Endpoints for accessing leaderboards in the server."
     },
     {
-      "name": "Guilds",
-      "description": "Endpoints for managing guilds in the server."
+      "name": "Context.Members.LevelStats",
+      "description": "Endpoints for accessing context member level statistics"
     },
     {
       "name": "Guilds.Members",
       "description": "Endpoints for managing guild members by guild id."
     },
     {
-      "name": "Context.Members.LevelStats",
-      "description": "Endpoints for accessing context member level statistics"
-    },
-    {
       "name": "Context.Members.ContextStats",
       "description": "Endpoints for accessing context member statistics"
+    },
+    {
+      "name": "Levels.Playlists",
+      "description": "Endpoints for accessing playlists associated with RankingLevelList levels."
     },
     {
       "name": "Context.Levels",
       "description": "Endpoints for managing levels within a context."
     },
     {
-      "name": "Levels.Playlists",
-      "description": "Endpoints for accessing playlists associated with RankingLevelList levels."
+      "name": "Guilds",
+      "description": "Endpoints for managing guilds in the server."
     },
     {
       "name": "Guilds.Stats",

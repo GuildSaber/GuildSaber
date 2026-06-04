@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using CP_SDK.XUI;
-using GuildSaber.Api.Features.RankedMaps;
-using GuildSaber.Api.Features.RankedScores;
+using GuildSaber.Api.Features.RankedMaps.Http;
+using GuildSaber.Api.Features.RankedScores.Http;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;

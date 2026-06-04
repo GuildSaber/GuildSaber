@@ -1,16 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using GuildSaber.Api.Features.Internal;
-using GuildSaber.Api.Features.RankedMaps;
+using GuildSaber.Api.Features.RankedMaps.Http;
+using GuildSaber.Api.Shared;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using UnityEngine;
-using static GuildSaber.Api.Features.Guilds.GuildResponses;
-using static GuildSaber.Api.Features.Players.PlayerResponses;
-using static GuildSaber.Api.Features.Guilds.Members.LevelStats.LevelStatResponses;
-using static GuildSaber.Api.Features.Guilds.Members.ContextStats.ContextStatResponses;
-using static GuildSaber.Api.Features.RankedMaps.RankedMapResponses;
+using static GuildSaber.Api.Features.Guilds.Http.GuildResponses;
+using static GuildSaber.Api.Features.Players.Http.PlayerResponses;
+using static GuildSaber.Api.Features.Guilds.Members.LevelStats.Http.LevelStatResponses;
+using static GuildSaber.Api.Features.Guilds.Members.ContextStats.Http.ContextStatResponses;
+using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapResponses;
 
 namespace GuildSaber.Mod.Features.GuildSaber;
 

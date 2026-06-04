@@ -1,5 +1,5 @@
 using System;
-using static GuildSaber.Api.Features.RankedMaps.RankedMapRequests;
+using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapRequests;
 using static GameplayModifiers;
 
 namespace GuildSaber.Mod.Helpers;

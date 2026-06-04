@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using GuildSaber.Api.Features.RankedMaps;
+using GuildSaber.Api.Features.RankedMaps.Http;
 using GuildSaber.Common.Helpers;
 using GuildSaber.Mod.Features.RankedMap;
 using GuildSaber.Mod.Helpers;

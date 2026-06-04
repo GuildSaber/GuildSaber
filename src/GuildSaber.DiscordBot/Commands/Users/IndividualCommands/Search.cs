@@ -3,8 +3,8 @@ using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using GuildSaber.Api.Features.Internal;
-using GuildSaber.Api.Features.RankedMaps;
+using GuildSaber.Api.Features.RankedMaps.Http;
+using GuildSaber.Api.Shared;
 using GuildSaber.Common.Helpers;
 using GuildSaber.CSharpClient;
 using GuildSaber.DiscordBot.AutocompleteHandlers;
@@ -12,7 +12,7 @@ using GuildSaber.DiscordBot.Core.Extensions;
 using GuildSaber.DiscordBot.Settings;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Options;
-using static GuildSaber.Api.Features.Guilds.Categories.CategoryResponses;
+using static GuildSaber.Api.Features.Guilds.Categories.Http.CategoryResponses;
 
 namespace GuildSaber.DiscordBot.Commands.Users;
 

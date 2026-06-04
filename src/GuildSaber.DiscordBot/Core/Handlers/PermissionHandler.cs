@@ -1,7 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using GuildSaber.Api.Features.Guilds.Members;
+using GuildSaber.Api.Features.Guilds.Members.Http;
 using GuildSaber.DiscordBot.Core.Extensions;
 using Microsoft.Extensions.Caching.Hybrid;
 

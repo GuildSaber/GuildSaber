@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
-using static GuildSaber.Api.Features.Guilds.Members.ContextStats.ContextStatResponses;
+using static GuildSaber.Api.Features.Guilds.Members.ContextStats.Http.ContextStatResponses;
 
 namespace GuildSaber.CSharpClient.Routes.Guilds.Members.ContextStats;
 

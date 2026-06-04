@@ -3,9 +3,10 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
-using GuildSaber.Api.Features.Internal;
-using static GuildSaber.Api.Features.RankedMaps.RankedMapRequests;
-using static GuildSaber.Api.Features.RankedMaps.RankedMapResponses;
+using GuildSaber.Api.Features.RankedMaps.Http;
+using GuildSaber.Api.Shared;
+using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapRequests;
+using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapResponses;
 
 namespace GuildSaber.CSharpClient.Routes.RankedMaps;
 
@@ -212,7 +213,8 @@ public class RankedMapClient(
     /// <param name="requestFilters">Filters to apply to the ranked map request.</param>
     /// <param name="pageOptions">Pagination, sorting, and ordering settings for the request.</param>
     /// <returns>
-    /// An async enumerable sequence of <see cref="Result{T}" /> containing arrays of <see cref="RankedMapWithScores" />.
+    /// An async enumerable sequence of <see cref="Result{T}" /> containing arrays of
+    /// <see cref="RankedMapResponses.RankedMapWithScores" />.
     /// </returns>
     public async IAsyncEnumerable<Result<RankedMapWithScores[]>> GetAsyncWithScoreEnumerable(
         ContextId contextId,
@@ -250,7 +252,8 @@ public class RankedMapClient(
     /// <param name="requestFilters">Filters to apply to the ranked map request.</param>
     /// <param name="pageOptions">Pagination, sorting, and ordering settings for the request.</param>
     /// <returns>
-    /// An async enumerable sequence of <see cref="Result{T}" /> containing arrays of <see cref="RankedMapWithScores" />.
+    /// An async enumerable sequence of <see cref="Result{T}" /> containing arrays of
+    /// <see cref="RankedMapResponses.RankedMapWithScores" />.
     /// </returns>
     public async IAsyncEnumerable<Result<RankedMapWithScores[]>> GetAsyncWithScoreAtMeEnumerable(
         ContextId contextId,

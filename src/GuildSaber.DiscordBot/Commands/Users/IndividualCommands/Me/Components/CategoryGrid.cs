@@ -1,5 +1,5 @@
-using GuildSaber.Api.Features.Guilds.Categories;
-using GuildSaber.Api.Features.Guilds.Members.LevelStats;
+using GuildSaber.Api.Features.Guilds.Categories.Http;
+using GuildSaber.Api.Features.Guilds.Members.LevelStats.Http;
 using GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
 using GuildSaber.DiscordBot.Core.Extensions;
 using QuestPDF.Fluent;
