@@ -17,8 +17,8 @@
     <ItemGroup>
         <Compile Include="..\..\src\GuildSaber.Api\Features\**\*Responses.cs" Link="Routes\%(RecursiveDir)%(Filename)%(Extension)" />
         <Compile Include="..\..\src\GuildSaber.Api\Features\**\*Requests.cs" Link="Routes\%(RecursiveDir)%(Filename)%(Extension)" />
-        <Compile Include="..\..\src\GuildSaber.Api\Features\Internal\*.cs" Link="Routes\Internal\%(Filename)%(Extension)" />
-        <Compile Remove="..\..\src\GuildSaber.Api\Features\Internal\*Extensions.cs" Link="Routes\Internal\%(Filename)%(Extension)" />
+        <Compile Include="..\..\src\GuildSaber.Api\Shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+        <Compile Remove="..\..\src\GuildSaber.Api\Shared\*Extensions.cs" Link="Shared\%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>

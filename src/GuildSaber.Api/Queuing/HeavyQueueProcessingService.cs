@@ -1,11 +1,12 @@
 namespace GuildSaber.Api.Queuing;
 
-public class QueueProcessingService(IBackgroundTaskQueue taskQueue, ILogger<QueueProcessingService> logger)
-    : BackgroundService
+public class HeavyQueueProcessingService(
+    IHeavyBackgroundTaskQueue taskQueue,
+    ILogger<HeavyQueueProcessingService> logger) : BackgroundService
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("{QueueProcessingService} is running.\n\n", nameof(QueueProcessingService));
+        logger.LogInformation("{HeavyQueueProcessingService} is running.\n\n", nameof(HeavyQueueProcessingService));
         return ProcessTaskQueueAsync(stoppingToken);
     }
 
@@ -31,7 +32,7 @@ public class QueueProcessingService(IBackgroundTaskQueue taskQueue, ILogger<Queu
 
     public override async Task StopAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("{QueueProcessingService} is stopping.", nameof(QueueProcessingService));
+        logger.LogInformation("{HeavyQueueProcessingService} is stopping.", nameof(HeavyQueueProcessingService));
         await base.StopAsync(stoppingToken);
     }
 }

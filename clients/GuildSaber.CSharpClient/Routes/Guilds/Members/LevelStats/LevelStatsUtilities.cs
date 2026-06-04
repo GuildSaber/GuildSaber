@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using GuildSaber.Common.Extra;
-using static GuildSaber.Api.Features.Guilds.Members.LevelStats.LevelStatResponses;
-using static GuildSaber.Api.Features.Guilds.Levels.LevelResponses;
+using static GuildSaber.Api.Features.Guilds.Members.LevelStats.Http.LevelStatResponses;
+using static GuildSaber.Api.Features.Guilds.Levels.Http.LevelResponses;
 
 namespace GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
 

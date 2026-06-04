@@ -1,11 +1,11 @@
 using System.Linq.Expressions;
 using AwesomeAssertions;
-using GuildSaber.Api.Features.Guilds;
-using GuildSaber.Api.Features.Internal;
+using GuildSaber.Api.Features.Guilds.Http;
+using GuildSaber.Api.Shared;
 using GuildSaber.AspireTests.DataClasses;
 using GuildSaber.AspireTests.Utils;
 using GuildSaber.Common.StrongTypes;
-using static GuildSaber.Api.Features.Guilds.GuildResponses;
+using static GuildSaber.Api.Features.Guilds.Http.GuildResponses;
 
 namespace GuildSaber.AspireTests.Route.Guilds;
 

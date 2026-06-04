@@ -2,7 +2,7 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using GuildSaber.Api.Features.RankedScores;
+using GuildSaber.Api.Features.RankedScores.Http;
 using GuildSaber.Common.Settings;
 using GuildSaber.DiscordBot.Core.TypeConverters;
 using Microsoft.Extensions.Options;

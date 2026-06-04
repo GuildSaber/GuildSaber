@@ -3,10 +3,10 @@ using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using GuildSaber.Api.Features.Internal;
-using GuildSaber.Api.Features.Players;
-using GuildSaber.Api.Features.RankedMaps;
-using GuildSaber.Api.Features.RankedScores;
+using GuildSaber.Api.Features.Players.Http;
+using GuildSaber.Api.Features.RankedMaps.Http;
+using GuildSaber.Api.Features.RankedScores.Http;
+using GuildSaber.Api.Shared;
 using GuildSaber.Common.Helpers;
 using GuildSaber.CSharpClient;
 using GuildSaber.Database.Models.StrongTypes;
@@ -15,9 +15,9 @@ using GuildSaber.DiscordBot.Core.Extensions;
 using GuildSaber.DiscordBot.Settings;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Options;
-using Filters = GuildSaber.Api.Features.RankedMaps.RankedMapRequests.Filters;
-using EState = GuildSaber.Api.Features.RankedScores.RankedScoreResponses.EState;
-using static GuildSaber.Api.Features.Guilds.Categories.CategoryResponses;
+using Filters = GuildSaber.Api.Features.RankedMaps.Http.RankedMapRequests.Filters;
+using EState = GuildSaber.Api.Features.RankedScores.Http.RankedScoreResponses.EState;
+using static GuildSaber.Api.Features.Guilds.Categories.Http.CategoryResponses;
 
 namespace GuildSaber.DiscordBot.Commands.Users;
 

@@ -1,4 +1,5 @@
 using CSharpFunctionalExtensions;
+using GuildSaber.Api.Features.RankedMaps.Http;
 using GuildSaber.Api.Features.RankedMaps.Pipelines;
 using GuildSaber.Api.Features.Scores;
 using GuildSaber.Api.Queuing;

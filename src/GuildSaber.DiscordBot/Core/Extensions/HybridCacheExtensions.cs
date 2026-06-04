@@ -1,6 +1,6 @@
-using GuildSaber.Api.Features.Guilds;
-using GuildSaber.Api.Features.Guilds.Categories;
-using GuildSaber.Api.Features.Guilds.Members;
+using GuildSaber.Api.Features.Guilds.Categories.Http;
+using GuildSaber.Api.Features.Guilds.Http;
+using GuildSaber.Api.Features.Guilds.Members.Http;
 using GuildSaber.Common.Result;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;

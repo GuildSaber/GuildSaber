@@ -1,10 +1,10 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
-using GuildSaber.Api.Features.Internal;
-using GuildSaber.Api.Features.Leaderboards;
-using static GuildSaber.Api.Features.Leaderboards.LeaderboardResponses;
-using static GuildSaber.Api.Features.RankedScores.RankedScoreResponses;
+using GuildSaber.Api.Features.Leaderboards.Http;
+using GuildSaber.Api.Shared;
+using static GuildSaber.Api.Features.Leaderboards.Http.LeaderboardResponses;
+using static GuildSaber.Api.Features.RankedScores.Http.RankedScoreResponses;
 
 namespace GuildSaber.CSharpClient.Routes.Leaderboards;
 

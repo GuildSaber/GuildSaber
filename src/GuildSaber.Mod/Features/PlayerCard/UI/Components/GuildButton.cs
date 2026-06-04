@@ -1,6 +1,6 @@
 ﻿using System;
 using CP_SDK.XUI;
-using GuildSaber.Api.Features.Guilds;
+using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;

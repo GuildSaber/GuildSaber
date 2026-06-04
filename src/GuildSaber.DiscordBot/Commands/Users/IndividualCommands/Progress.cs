@@ -1,17 +1,17 @@
 using System.Text;
 using Discord;
 using Discord.Interactions;
-using GuildSaber.Api.Features.Guilds;
+using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Result;
 using GuildSaber.DiscordBot.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Extensions;
 using GuildSaber.DiscordBot.Core.Handlers;
 using GuildSaber.DiscordBot.Settings;
-using static GuildSaber.Api.Features.Guilds.Levels.LevelResponses;
-using static GuildSaber.Api.Features.Guilds.Members.LevelStats.LevelStatResponses;
-using static GuildSaber.Api.Features.Guilds.Categories.CategoryResponses;
-using static GuildSaber.Api.Features.Players.PlayerResponses;
+using static GuildSaber.Api.Features.Guilds.Levels.Http.LevelResponses;
+using static GuildSaber.Api.Features.Guilds.Members.LevelStats.Http.LevelStatResponses;
+using static GuildSaber.Api.Features.Guilds.Categories.Http.CategoryResponses;
+using static GuildSaber.Api.Features.Players.Http.PlayerResponses;
 
 namespace GuildSaber.DiscordBot.Commands.Users;
 

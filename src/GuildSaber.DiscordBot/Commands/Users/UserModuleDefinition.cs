@@ -1,8 +1,8 @@
 ﻿using Discord;
 using Discord.Interactions;
-using GuildSaber.Api.Features.Guilds;
-using GuildSaber.Api.Features.Guilds.Members;
-using GuildSaber.Api.Features.Players;
+using GuildSaber.Api.Features.Guilds.Http;
+using GuildSaber.Api.Features.Guilds.Members.Http;
+using GuildSaber.Api.Features.Players.Http;
 using GuildSaber.Common.Result;
 using GuildSaber.Common.Settings;
 using GuildSaber.Common.StrongTypes;

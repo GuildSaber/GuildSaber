@@ -9,7 +9,7 @@ using GuildSaber.Mod.Features.GuildSaber;
 using GuildSaber.Mod.Helpers;
 using SongCore.Utilities;
 using Zenject;
-using static GuildSaber.Api.Features.RankedMaps.RankedMapResponses;
+using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapResponses;
 
 namespace GuildSaber.Mod.Features.RankedMap;
 

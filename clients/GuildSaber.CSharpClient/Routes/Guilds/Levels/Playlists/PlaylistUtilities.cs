@@ -1,8 +1,8 @@
 using System.IO.Compression;
 using System.Text.Json;
-using GuildSaber.Api.Features.Guilds;
-using static GuildSaber.Api.Features.Guilds.Levels.Playlists.PlaylistResponses;
-using static GuildSaber.Api.Features.Guilds.Levels.LevelResponses;
+using GuildSaber.Api.Features.Guilds.Http;
+using static GuildSaber.Api.Features.Guilds.Levels.Playlists.Http.PlaylistResponses;
+using static GuildSaber.Api.Features.Guilds.Levels.Http.LevelResponses;
 
 namespace GuildSaber.CSharpClient.Routes.Guilds.Levels.Playlists;
 

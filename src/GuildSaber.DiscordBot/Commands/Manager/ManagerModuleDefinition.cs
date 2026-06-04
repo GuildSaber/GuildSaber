@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
-using GuildSaber.Api.Features.Guilds.Members;
+using GuildSaber.Api.Features.Guilds.Members.Http;
 using GuildSaber.CSharpClient;
 using GuildSaber.Database.Contexts.DiscordBot;
 using GuildSaber.DiscordBot.Core.Extensions;

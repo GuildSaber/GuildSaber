@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using GuildSaber.Api.Features.Guilds.Levels.Playlists;
+using GuildSaber.Api.Features.Guilds.Levels.Playlists.Http;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using GuildSaber.CSharpClient.Routes.Guilds.Levels.Playlists;

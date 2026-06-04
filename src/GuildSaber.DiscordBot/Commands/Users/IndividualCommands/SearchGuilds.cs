@@ -2,8 +2,8 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using GuildSaber.Api.Features.Guilds;
-using GuildSaber.Api.Features.Internal;
+using GuildSaber.Api.Features.Guilds.Http;
+using GuildSaber.Api.Shared;
 using GuildSaber.Common.Settings;
 using GuildSaber.CSharpClient;
 using GuildSaber.DiscordBot.Core.Extensions;

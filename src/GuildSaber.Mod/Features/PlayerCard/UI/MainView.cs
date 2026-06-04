@@ -5,7 +5,7 @@ using BeatSaberMarkupLanguage.FloatingScreen;
 using CP_SDK_BS.Game;
 using CP_SDK_BS.UI;
 using CP_SDK.XUI;
-using GuildSaber.Api.Features.Guilds;
+using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;

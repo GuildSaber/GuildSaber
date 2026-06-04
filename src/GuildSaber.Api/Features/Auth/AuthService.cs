@@ -1,7 +1,7 @@
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Auth.Settings;
-using GuildSaber.Api.Features.Players;
+using GuildSaber.Api.Features.Players.Http;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.ScoreSaber;

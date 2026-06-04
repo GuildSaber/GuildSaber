@@ -1,7 +1,7 @@
-using GuildSaber.Api.Features.Guilds;
-using GuildSaber.Api.Features.Guilds.Members.ContextStats;
-using GuildSaber.Api.Features.Guilds.Members.LevelStats;
-using GuildSaber.Api.Features.Players;
+using GuildSaber.Api.Features.Guilds.Http;
+using GuildSaber.Api.Features.Guilds.Members.ContextStats.Http;
+using GuildSaber.Api.Features.Guilds.Members.LevelStats.Http;
+using GuildSaber.Api.Features.Players.Http;
 using GuildSaber.Common.Helpers;
 using GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
 using GuildSaber.DiscordBot.Commands.Users.Me.Components;

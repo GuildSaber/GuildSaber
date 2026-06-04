@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using AwesomeAssertions;
 using AwesomeAssertions.Collections;
-using GuildSaber.Api.Features.Internal;
+using GuildSaber.Api.Shared;
 
 namespace GuildSaber.AspireTests.Utils;
 

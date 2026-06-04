@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using GuildSaber.Api.Features.Internal;
+using GuildSaber.Api.Shared;
 using Microsoft.EntityFrameworkCore.Query;
 
 namespace GuildSaber.Api.Extensions;

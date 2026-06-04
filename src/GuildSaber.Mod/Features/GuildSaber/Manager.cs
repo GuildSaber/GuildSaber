@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using BS_Utils.Gameplay;
-using GuildSaber.Api.Features.Guilds;
+using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;

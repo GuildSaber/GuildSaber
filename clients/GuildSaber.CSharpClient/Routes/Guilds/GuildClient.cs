@@ -4,9 +4,9 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
-using GuildSaber.Api.Features.Guilds;
-using GuildSaber.Api.Features.Internal;
-using static GuildSaber.Api.Features.Guilds.GuildResponses;
+using GuildSaber.Api.Features.Guilds.Http;
+using GuildSaber.Api.Shared;
+using static GuildSaber.Api.Features.Guilds.Http.GuildResponses;
 
 namespace GuildSaber.CSharpClient.Routes.Guilds;
 
