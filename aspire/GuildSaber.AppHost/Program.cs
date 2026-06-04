@@ -10,6 +10,8 @@ builder.AddDockerComposeEnvironment("guildsaber-env")
     .WithDashboard(enabled: false);
 
 var postgres = builder.AddPostgres("postgres", port: 5432)
+    //TODO: Update to 18.x when migration is figured out.
+    .WithImageTag("17.6")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume(isReadOnly: false)
     .PublishAsDockerComposeService((_, service) => service.Restart = "unless-stopped");
