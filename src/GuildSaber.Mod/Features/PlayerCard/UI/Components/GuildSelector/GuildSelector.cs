@@ -70,6 +70,7 @@ public class GuildSelector : XUIHLayout
             catch
             {
                 // ignored
+                
             }
         });
     }
@@ -101,7 +102,7 @@ public class GuildSelector : XUIHLayout
         var guild = _guildSaberData.GuildsExtended[guildId];
         if (guild == null) return;
 
-        _guildSaberManager.SelectGuild(guildId, guild.Contexts[0].Id);
+        _guildSaberManager.SetGuild(guild);
     }
 
     private void OnArrowButtonClicked() => _guildSelectorFlowCoordinator.Show(OnGuildSelected);
