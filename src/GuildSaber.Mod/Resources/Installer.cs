@@ -40,8 +40,24 @@ public class ResourcesInstaller(IPALogger logger) : Installer
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.RubyTrophy, logger))
             .AsCached();
 
-        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.WhiteCheckMark))
-            .FromMethod(() => LoadTexture2DFromResource(ResourceMap.WhiteCheckMark, logger))
+        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.CheckMark))
+            .FromMethod(() => LoadTexture2DFromResource(ResourceMap.CheckMark, logger))
+            .AsCached();
+
+        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.DenyMark))
+            .FromMethod(() => LoadTexture2DFromResource(ResourceMap.DenyMark, logger))
+            .AsCached();
+
+        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.QuestionMark))
+            .FromMethod(() => LoadTexture2DFromResource(ResourceMap.QuestionMark, logger))
+            .AsCached();
+
+        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.CheckShield))
+            .FromMethod(() => LoadTexture2DFromResource(ResourceMap.CheckShield, logger))
+            .AsCached();
+
+        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.DenyShield))
+            .FromMethod(() => LoadTexture2DFromResource(ResourceMap.DenyShield, logger))
             .AsCached();
 
         Container.Bind<TMP_FontAsset>().WithId(nameof(ResourceMap.TekoMedium))

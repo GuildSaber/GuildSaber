@@ -1,8 +1,8 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using BS_Utils.Gameplay;
 using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
@@ -12,8 +12,13 @@ using Zenject;
 namespace GuildSaber.Mod.Features.GuildSaber;
 
 [SuppressMessage("ReSharper", "AsyncVoidMethod")]
-public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSaberCache cache, GuildSaberConfig config)
-    : IInitializable
+public class GuildSaberManager(
+    GuildSaberClient client,
+    GuildSaberCache cache,
+    GuildSaberConfig config,
+    IPlatformUserModel platformLeaderboardsModel,
+    Logger logger
+) : IInitializable
 {
     public bool Initialized;
 
@@ -21,15 +26,7 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
     {
         logger.Info("Initializing GuildSaberManager...");
 
-        var userInfo = await GetUserInfo.GetUserAsync();
-        if (userInfo == null)
-        {
-            logger.Warn("UserInfo is null, cannot fetch PlayerId. " +
-                        "Invoking OnPlayerIdFetched with null and terminating Initialize.");
-            OnInitializationError("Failed to retrieve user information.");
-            return;
-        }
-
+        var userInfo = await platformLeaderboardsModel.GetUserInfo(CancellationToken.None);
         if (!BeatLeaderId.TryParse(userInfo.platformUserId).TryGetValue(out var beatLeaderId, out var error))
         {
             logger.Warn($"Failed to parse BeatLeaderId: {error}. " +
@@ -51,8 +48,8 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
 
         if (playerId == null)
         {
-            logger.Warn("PlayerId is null, user does not have an account on GuildSaber. " +
-                        "Invoking OnPlayerIdFetched with null and terminating Initialize.");
+            logger.Error("PlayerId is null, user does not have an account on GuildSaber. " +
+                         "Invoking OnPlayerIdFetched with null and terminating Initialize.");
             OnInitializationError("User does not have an account on GuildSaber.");
             return;
         }
@@ -126,7 +123,11 @@ public class GuildSaberManager(GuildSaberClient client, Logger logger, GuildSabe
     {
         OnInitializationStarted.Invoke();
 
-        if (cache.PlayerExtended == null) return;
+        if (cache.PlayerExtended == null)
+        {
+            logger.Info("PLAYER EXTENDED IS NULL WHY");
+            return;
+        }
 
         var levelsResponse = await client.LevelStats.GetByPlayerIdAsync(cache.PlayerExtended.Player.Id, contextId);
         if (!levelsResponse.TryGetValue(out var levels, out var error))
