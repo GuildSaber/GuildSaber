@@ -350,7 +350,10 @@ public class PlayerCardView : ViewController<PlayerCardView>
         try
         {
             if (_guildSaberCache.PlayerExtended == null)
+            {
+                _logger.Error("[PlayerCard/RefreshCard]: Guild Saber cache player is null");
                 return;
+            }
 
             var texture = new Texture2D(100, 100);
 

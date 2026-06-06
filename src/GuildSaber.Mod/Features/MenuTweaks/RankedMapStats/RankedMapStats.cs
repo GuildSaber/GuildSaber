@@ -22,7 +22,11 @@ namespace GuildSaber.Mod.Features.MenuTweaks.RankedMapStats;
 /// </summary>
 public class RankedMapStats(
     [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D placeHolderIcon,
-    [Inject(Id = nameof(ResourceMap.WhiteCheckMark))] Texture2D whiteCheckMarkTexture,
+    [Inject(Id = nameof(ResourceMap.CheckMark))] Texture2D checkMarkTexture,
+    [Inject(Id = nameof(ResourceMap.DenyMark))] Texture2D denyMarkTexture,
+    [Inject(Id = nameof(ResourceMap.QuestionMark))] Texture2D questionMarkTexture,
+    [Inject(Id = nameof(ResourceMap.CheckShield))] Texture2D checkShieldTexture,
+    [Inject(Id = nameof(ResourceMap.DenyShield))] Texture2D denyShieldTexture,
     GuildSaberClient client,
     GuildSaberConfig config,
     GuildSaberCache cache,
@@ -36,7 +40,7 @@ public class RankedMapStats(
     private XUIImage _guildIcon = null!;
     private GSText _mapCategories = null!;
     private GSText _mapLevel = null!;
-    private XUIImage _whiteCheckMarkImage = null!;
+    private XUIImage _whiteMarkImage = null!;
 
     public void Dispose()
     {
@@ -77,9 +81,9 @@ public class RankedMapStats(
                     .SetWidth(8)
             ).BuildUI(element.transform);
 
-            XUIImage.Make(Sprite.Create(whiteCheckMarkTexture,
-                    new Rect(0, 0, whiteCheckMarkTexture.width, whiteCheckMarkTexture.height), Vector2.zero)
-                ).Bind(ref _whiteCheckMarkImage)
+            XUIImage.Make(Sprite.Create(checkMarkTexture,
+                    new Rect(0, 0, checkMarkTexture.width, checkMarkTexture.height), Vector2.zero)
+                ).Bind(ref _whiteMarkImage)
                 .SetWidth(3)
                 .SetHeight(3)
                 .SetActive(false)
@@ -167,7 +171,27 @@ public class RankedMapStats(
             .Any(x => x.State.HasFlag(RankedScoreResponses.EState.Selected)
                       && (x.State & RankedScoreResponses.EState.NonPointGiving) == 0);
 
-        _whiteCheckMarkImage.SetActive(playerPassedTheMap);
+        var isRefused = rankedScores.Any(x => x.State.HasFlag(RankedScoreResponses.EState.Refused));
+        var isPending = rankedScores.Any(x => x.State.HasFlag(RankedScoreResponses.EState.Pending));
+        var isConfirmed = rankedScores.Any(x => x.State.HasFlag(RankedScoreResponses.EState.Confirmed));
+        var isDenied = rankedScores.Any(x => x.State.HasFlag(RankedScoreResponses.EState.Denied));
+
+        _whiteMarkImage.SetActive(playerPassedTheMap || isRefused || isPending || isDenied);
+
+        var usedTexture = (playerPassedTheMap, isRefused, isDenied, isPending, isConfirmed) switch
+        {
+            (playerPassedTheMap: true, false, false, false, false) => checkMarkTexture,
+            (false, false, isDenied: true, false, false) => denyMarkTexture,
+            (false, false, false, isPending: true, false) => questionMarkTexture,
+            (playerPassedTheMap: true, false, false, false, isConfirmed: true) => checkShieldTexture,
+            (false, isRefused: true, false, false, false) => denyShieldTexture,
+            _ => throw new InvalidOperationException("Incompatible states")
+        };
+
+        var resultSprite =
+            Sprite.Create(usedTexture, new Rect(0, 0, usedTexture.width, usedTexture.height), Vector2.zero);
+        _whiteMarkImage.SetSprite(resultSprite);
+
         SetActive(true);
     }
 

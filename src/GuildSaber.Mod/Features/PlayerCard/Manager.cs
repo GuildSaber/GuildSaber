@@ -15,6 +15,9 @@ internal class PlayerCardManager(
 {
     public void Initialize()
     {
+        if (manager.Initialized)
+            playerCardView.RefreshCard();
+
         manager.OnInitializationStarted += () => { playerCardView.DisplayCard(PlayerCardView.EDisplayMode.Loading); };
         manager.OnInitializationFinished += playerCardView.RefreshCard;
         manager.OnInitializationError += error =>
