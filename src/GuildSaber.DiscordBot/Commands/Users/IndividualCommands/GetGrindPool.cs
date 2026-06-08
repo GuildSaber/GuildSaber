@@ -16,7 +16,7 @@ using GuildSaber.DiscordBot.Settings;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Options;
 using Filters = GuildSaber.Api.Features.RankedMaps.Http.RankedMapRequests.Filters;
-using EState = GuildSaber.Api.Features.RankedScores.Http.RankedScoreResponses.EState;
+using ERankedScoreType = GuildSaber.Api.Features.RankedScores.Http.RankedScoreRequests.ERankedScoreType;
 using static GuildSaber.Api.Features.Guilds.Categories.Http.CategoryResponses;
 
 namespace GuildSaber.DiscordBot.Commands.Users;
@@ -40,27 +40,24 @@ public partial class UserModuleSlash
             await GetPlayerId(user?.DiscordId ?? Context.User.DiscordId),
             page: 1, level, Client.Value, Cache, EmojiSettings,
             new Filters(Search: search?.Trim(), DifficultyStarFrom: level, DifficultyStarTo: level,
-                AnyRankedScoreStates: EState.Selected,
-                ExcludeRankedScoreStates: EState.NonPointGiving,
+                RankedScoreTypes: ERankedScoreType.PointGiving,
                 CategoryIds: categoryId is null ? null : [categoryId.Value],
                 NeedConfirmation: needConfirmation,
                 MatchAnyCategory: true)));
 
-    [ComponentInteraction("ggp_*_*_*_*_*_*_*_*_*_*")]
+    [ComponentInteraction("ggp_*_*_*_*_*_*_*_*_*")]
     public async Task Ggp(
         ContextId contextId, PlayerId playerId, CategoryId categoryId, int level, int page,
-        EState anyRankedScoreStates,
-        EState allRankedScoreStates,
-        EState excludeRankedScoreStates,
+        ERankedScoreType rankedScoreTypes,
+        int includeMapsWithoutScore,
         int needConfirmation,
         string search)
     {
         var component = await SearchCommand.GetGgpComponentAsync
         (await GetGuildIdAsync(), contextId, playerId, page: page, level, Client.Value, Cache, EmojiSettings,
             new Filters(Search: search.Trim(), DifficultyStarFrom: level, DifficultyStarTo: level,
-                AnyRankedScoreStates: anyRankedScoreStates,
-                AllRankedScoreStates: allRankedScoreStates,
-                ExcludeRankedScoreStates: excludeRankedScoreStates,
+                RankedScoreTypes: rankedScoreTypes,
+                IncludeMapsWithoutScore: includeMapsWithoutScore == 1,
                 CategoryIds: categoryId is { Value: 0 } ? null : [categoryId],
                 NeedConfirmation: needConfirmation switch
                 {
@@ -73,20 +70,18 @@ public partial class UserModuleSlash
         await ((SocketMessageComponent)Context.Interaction).UpdateAsync(msg => msg.Components = component);
     }
 
-    [ComponentInteraction("ggp_*_*_*_*_*_*_*_*_*_")]
+    [ComponentInteraction("ggp_*_*_*_*_*_*_*_*_")]
     public async Task Ggp(
         ContextId contextId, PlayerId playerId, CategoryId categoryId, int level, int page,
-        EState anyRankedScoreStates,
-        EState allRankedScoreStates,
-        EState excludeRankedScoreStates,
+        ERankedScoreType rankedScoreTypes,
+        int includeMapsWithoutScore,
         int needConfirmation)
     {
         var component = await SearchCommand.GetGgpComponentAsync
         (await GetGuildIdAsync(), contextId, playerId, page: page, level, Client.Value, Cache, EmojiSettings,
             new Filters(Search: null, DifficultyStarFrom: level, DifficultyStarTo: level,
-                AnyRankedScoreStates: anyRankedScoreStates,
-                AllRankedScoreStates: allRankedScoreStates,
-                ExcludeRankedScoreStates: excludeRankedScoreStates,
+                RankedScoreTypes: rankedScoreTypes,
+                IncludeMapsWithoutScore: includeMapsWithoutScore == 1,
                 CategoryIds: categoryId is { Value: 0 } ? null : [categoryId],
                 MatchAnyCategory: true,
                 NeedConfirmation: needConfirmation switch
@@ -108,15 +103,6 @@ file static class SearchCommand
         HybridCache cache,
         IOptions<EmojiSettings> emojiSettings, Filters requestFilters)
     {
-        if (requestFilters.AnyRankedScoreStates == EState.None)
-            requestFilters.AnyRankedScoreStates = null;
-
-        if (requestFilters.AllRankedScoreStates == EState.None)
-            requestFilters.AllRankedScoreStates = null;
-
-        if (requestFilters.ExcludeRankedScoreStates == EState.None)
-            requestFilters.ExcludeRankedScoreStates = null;
-
         var pageOption = new PaginatedRequestOptions<RankedMapRequests.ERankedMapSorter>
         {
             Page = Math.Max(page, 1),
@@ -180,17 +166,13 @@ file static class SearchCommand
         };
 
         var (page, totalPages, playerId) = (pagedRankedMaps.Page, pagedRankedMaps.TotalPages, player.Id);
+        var includeMapsWithoutScoreValue = requestFilters.IncludeMapsWithoutScore ? 1 : 0;
         var (prevCustomId, nextCustomId, unpassedCustomId, passedCustomId, pendingCustomId) = (
-            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_{page - 1}_{(int)(requestFilters.AnyRankedScoreStates ?? EState.None)}_{(int)EState.None}_" +
-            $"{(int)(requestFilters.ExcludeRankedScoreStates ?? EState.None)}_{needConfirmationValue}_{requestFilters.Search}",
-            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_{page + 1}_{(int)(requestFilters.AnyRankedScoreStates ?? EState.None)}_{(int)EState.None}_" +
-            $"{(int)(requestFilters.ExcludeRankedScoreStates ?? EState.None)}_{needConfirmationValue}_{requestFilters.Search}",
-            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-2_{(int)EState.NonPointGivingNoPending}_{(int)EState.None}_" +
-            $"{(int)EState.Pending}_{needConfirmationValue}_{requestFilters.Search}",
-            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-3_{(int)EState.Selected}_{(int)EState.None}_" +
-            $"{(int)EState.NonPointGiving}_{needConfirmationValue}_{requestFilters.Search}",
-            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-4_{(int)EState.None}_{(int)(EState.Selected | EState.Pending)}_" +
-            $"{(int)EState.NonPointGivingNoPending}_{needConfirmationValue}_{requestFilters.Search}"
+            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_{page - 1}_{(int)requestFilters.RankedScoreTypes}_{includeMapsWithoutScoreValue}_{needConfirmationValue}_{requestFilters.Search}",
+            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_{page + 1}_{(int)requestFilters.RankedScoreTypes}_{includeMapsWithoutScoreValue}_{needConfirmationValue}_{requestFilters.Search}",
+            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-2_{(int)ERankedScoreType.NonPointGivingNoPending}_1_{needConfirmationValue}_{requestFilters.Search}",
+            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-3_{(int)ERankedScoreType.PointGiving}_0_{needConfirmationValue}_{requestFilters.Search}",
+            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-4_{(int)ERankedScoreType.Pending}_0_{needConfirmationValue}_{requestFilters.Search}"
         );
         var searchTermTooLong = prevCustomId.Length > 100 || nextCustomId.Length > 100 ||
                                 unpassedCustomId.Length > 100
@@ -229,13 +211,14 @@ file static class SearchCommand
             .Build();
     }
 
-    private static bool IsPassed(Filters filters) => filters.AnyRankedScoreStates == EState.Selected;
+    private static bool IsPassed(Filters filters)
+        => filters.RankedScoreTypes == ERankedScoreType.PointGiving && !filters.IncludeMapsWithoutScore;
 
     private static bool IsUnpassed(Filters filters)
-        => filters.AnyRankedScoreStates == EState.NonPointGivingNoPending;
+        => filters.RankedScoreTypes == ERankedScoreType.NonPointGivingNoPending && filters.IncludeMapsWithoutScore;
 
     private static bool IsPending(Filters filters)
-        => filters.AllRankedScoreStates == (EState.Selected | EState.Pending);
+        => filters.RankedScoreTypes == ERankedScoreType.Pending && !filters.IncludeMapsWithoutScore;
 
     private static ContainerBuilder BuildRankedMapWithScoresDisplayContainer(
         RankedMapResponses.RankedMapWithScores data,
@@ -337,11 +320,13 @@ file static class SearchCommand
                 var score = rankedScore.Score;
 
                 sb.Clear()
-                    .Append(rankedScore.State switch
+                    .Append(rankedScore switch
                     {
-                        _ when rankedScore.State.HasAnyFlag(EState.NonPointGivingNoPending) => ":x: ",
-                        _ when rankedScore.State.HasAnyFlag(EState.Pending) => ":hourglass: ",
-                        _ when rankedScore.State.HasAnyFlag(EState.Selected) => ":white_check_mark: ",
+                        RankedScoreResponses.RankedScore.InvalidRankedScore => ":x: ",
+                        RankedScoreResponses.RankedScore.PendingRankedScore => ":hourglass: ",
+                        RankedScoreResponses.RankedScore.AcceptedRankedScore => emojiSettings.Value.Confirmed,
+                        RankedScoreResponses.RankedScore.RefusedRankedScore => emojiSettings.Value.Refused,
+                        RankedScoreResponses.RankedScore.ValidRankedScore => ":white_check_mark: ",
                         _ => string.Empty
                     }).Append(((float)Accuracy.From(
                             BaseScore.CreateUnsafe(score.BaseScore).Value,

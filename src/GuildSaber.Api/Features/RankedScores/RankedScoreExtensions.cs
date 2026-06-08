@@ -14,6 +14,26 @@ public static class RankedScoreExtensions
     public static Expression<Func<RankedScore, bool>> IsValidOrPendingExpression =>
         x => x.IsSelected && (x is PointGivingRankedScore || x is PendingRankedScore);
 
+    public static IQueryable<RankedScore> ApplyTypeFilter(
+        this IQueryable<RankedScore> query, ERankedScoreType rankedScoreTypes)
+    {
+        if (rankedScoreTypes is ERankedScoreType.None)
+            return query;
+
+        var includeValid = rankedScoreTypes.HasFlag(ERankedScoreType.Valid);
+        var includeInvalid = rankedScoreTypes.HasFlag(ERankedScoreType.Invalid);
+        var includePending = rankedScoreTypes.HasFlag(ERankedScoreType.Pending);
+        var includeAccepted = rankedScoreTypes.HasFlag(ERankedScoreType.Accepted);
+        var includeRefused = rankedScoreTypes.HasFlag(ERankedScoreType.Refused);
+
+        return query.Where(x =>
+            includeValid && x is ValidRankedScore
+            || includeInvalid && x is InvalidRankedScore
+            || includePending && x is PendingRankedScore
+            || includeAccepted && x is AcceptedRankedScore
+            || includeRefused && x is RefusedRankedScore);
+    }
+
     public static IQueryable<RankedScore> ApplySortOrder(
         this IQueryable<RankedScore> query, ERankedScoreSorter sortBy, EOrder order) => sortBy switch
     {
