@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using GuildSaber.Common.StrongTypes;
 
 namespace GuildSaber.Api.Features.Guilds.Levels.Http;
 

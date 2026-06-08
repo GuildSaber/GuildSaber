@@ -1,4 +1,3 @@
-using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Database.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

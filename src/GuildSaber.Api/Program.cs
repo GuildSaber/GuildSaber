@@ -1,4 +1,3 @@
-using System.Reflection;
 using GuildSaber.Api;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth;
@@ -13,7 +12,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using MyCSharp.HttpUserAgentParser.AspNetCore.DependencyInjection;
 using MyCSharp.HttpUserAgentParser.DependencyInjection;
 using Scalar.AspNetCore;
-using TickerQ.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -60,8 +58,8 @@ app.UseCors()
     .UseOutputCache();
 
 // https://github.com/Arcenox-co/TickerQ/issues/788
-if (Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider")
-    app.UseTickerQ();
+/*if (Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider")
+    app.UseTickerQ();*/
 
 app.UseFileServer("/website");
 

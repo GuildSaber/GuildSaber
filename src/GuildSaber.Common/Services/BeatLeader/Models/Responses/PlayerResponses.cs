@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
-using GuildSaber.Common.StrongTypes;
 
 namespace GuildSaber.Common.Services.BeatLeader.Models.Responses;
 

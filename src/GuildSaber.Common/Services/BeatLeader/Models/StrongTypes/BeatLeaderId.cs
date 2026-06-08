@@ -2,7 +2,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using CSharpFunctionalExtensions;
-using GuildSaber.Common.StrongTypes;
 
 namespace GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 

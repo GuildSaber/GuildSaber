@@ -101,20 +101,21 @@ public class PlayerCardView(
                                     .Row(statRow =>
                                     {
                                         var gold = Color.FromARGB(255, 255, 215, 0);
-                                        if (contextStat.SimplePointsWithRank.Length > 0)
-                                        {
-                                            var pointStat = contextStat.SimplePointsWithRank[0];
+                                        var globalPointsWithRank = contextStat.SimplePointsWithRank
+                                            .Where(x => x.CategoryId == null)
+                                            .ToArray();
+
+                                        foreach (var pointStat in globalPointsWithRank)
                                             statRow.AutoItem()
                                                 .Text($" {pointStat.Points:0.##} {pointStat.Name} (#{pointStat.Rank})")
                                                 .FontColor(gold)
                                                 .FontSize(24);
-                                        }
-
-                                        if (contextStat.PassCountsWithRank.Length <= 0)
-                                            return;
 
                                         var passStat = contextStat.PassCountsWithRank
                                             .FirstOrDefault(x => x.CategoryId == null);
+
+                                        if (passStat.CategoryId != null)
+                                            return;
 
                                         // Pass count wrapping to relative if it overlaps, else auto
                                         statRow.RelativeItem()

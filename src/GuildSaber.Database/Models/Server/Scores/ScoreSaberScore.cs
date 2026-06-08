@@ -1,4 +1,3 @@
-using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

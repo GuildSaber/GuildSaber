@@ -3,7 +3,6 @@ using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.RankedScores.Http;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
-using GuildSaber.Database.Models.Server.RankedScores;
 using GuildSaber.Database.Models.Server.Scores;
 using GuildSaber.Database.Models.Server.Songs;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
@@ -71,7 +70,7 @@ public static class RankedMapMappers
         PlayerId playerId) => self => new RankedMapResponses.RankedMapWithScores(
         self.Map(),
         self.RankedScores.AsQueryable()
-            .Where(x => x.PlayerId == playerId && x.State.HasFlag(RankedScore.EState.Selected))
+            .Where(x => x.PlayerId == playerId && x.IsSelected)
             .Select(x => x.Map())
             .ToArray());
 

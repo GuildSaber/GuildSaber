@@ -1,7 +1,4 @@
 ﻿using System.Diagnostics;
-using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
-using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Extensions;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

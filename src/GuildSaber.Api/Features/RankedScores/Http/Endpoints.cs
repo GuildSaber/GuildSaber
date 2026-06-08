@@ -8,7 +8,6 @@ using GuildSaber.Database.Contexts.Server;
 using Microsoft.AspNetCore.Http.HttpResults;
 using static GuildSaber.Api.Features.RankedScores.Http.RankedScoreResponses;
 using ERankedScoreSorter = GuildSaber.Api.Features.RankedScores.Http.RankedScoreRequests.ERankedScoreSorter;
-using ServerRankedScore = GuildSaber.Database.Models.Server.RankedScores.RankedScore;
 
 namespace GuildSaber.Api.Features.RankedScores.Http;
 
@@ -80,9 +79,7 @@ public class RankedScoreEndpoints : IEndpoints
         float? bpmTo = null)
     {
         var query = dbContext.RankedScores
-            .Where(x => x.PlayerId == playerId
-                        && x.ContextId == contextId
-                        && x.State.HasFlag(ServerRankedScore.EState.Selected));
+            .Where(x => x.PlayerId == playerId && x.ContextId == contextId && x.IsSelected);
 
         if (difficultyStarFrom.HasValue)
             query = query.Where(x => x.RankedMap.Rating.DiffStar >= difficultyStarFrom.Value);
@@ -137,9 +134,7 @@ public class RankedScoreEndpoints : IEndpoints
         float? bpmTo = null)
     {
         var query = dbContext.RankedScores
-            .Where(x => x.PlayerId == playerId
-                        && x.ContextId == contextId
-                        && x.State.HasFlag(ServerRankedScore.EState.Selected));
+            .Where(x => x.PlayerId == playerId && x.ContextId == contextId && x.IsSelected);
 
         if (difficultyStarFrom.HasValue)
             query = query.Where(x => x.RankedMap.Rating.DiffStar >= difficultyStarFrom.Value);

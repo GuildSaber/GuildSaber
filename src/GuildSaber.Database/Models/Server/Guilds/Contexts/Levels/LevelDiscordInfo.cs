@@ -1,4 +1,3 @@
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

@@ -26,8 +26,8 @@ public sealed class CategoryGrid(
         {
             foreach (var pair in categoryLevels.Chunk(2))
                 categoriesCol.Item()
-                    .PaddingHorizontal(15)
                     .PaddingVertical(3)
+                    .ScaleToFit()
                     .Row(pairRow =>
                     {
                         pairRow.RelativeItem().Element(c => CategoryCell(c, pair[0]));
@@ -46,7 +46,7 @@ public sealed class CategoryGrid(
         {
             catRow.RelativeItem()
                 .AlignRight()
-                .Text($"{category.CategoryName}: ")
+                .Text($"{category.CategoryName}:")
                 .FontColor(Colors.White)
                 .FontSize(26)
                 .Bold();

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.RankedScores.Pipelines;
 using GuildSaber.Database.Contexts.Server;
@@ -11,8 +12,7 @@ using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
-using EState = GuildSaber.Database.Models.Server.RankedScores.RankedScore.EState;
-using EDenyReason = GuildSaber.Database.Models.Server.RankedScores.RankedScore.EDenyReason;
+using EInvalidReason = GuildSaber.Database.Models.Server.RankedScores.InvalidRankedScore.EInvalidReason;
 
 namespace GuildSaber.Api.Features.Scores.Pipelines;
 
@@ -124,6 +124,7 @@ public sealed class ScoreAddOrUpdatePipeline(
                 var changedRankedMapIds = enumerated
                     .Select(x => x.RankedMapId)
                     .Distinct().ToArray();
+
                 await RankedScoreUpdateRankPipeline.UpdateRanksForRankedMapsAsync(
                     changedRankedMapIds,
                     state.dbContext
@@ -238,6 +239,7 @@ public sealed class ScoreAddOrUpdatePipeline(
             .Select(x => x.Id)
             .ToArray() as IEnumerable<RankedMap.RankedMapId>;
         var rankedScores = await dbContext.RankedScores
+            .AsNoTracking()
             .Where(x => x.PlayerId == playerId && rankedMapsIds.Contains(x.RankedMapId))
             .ToArrayAsync();
 
@@ -256,7 +258,7 @@ public sealed class ScoreAddOrUpdatePipeline(
 
     private static IEnumerable<RankedScore> IterateRankedScoresWithTransform(
         ScoreRankingContext rankingContext,
-        Func<RankedScoreTransformContext, RankedScore, RankedScore> transform)
+        Func<RankedScoreTransformContext, RankedScore?, RankedScore> transform)
     {
         foreach (var rankedMap in rankingContext.RankedMapsWithVersionsWithSongDifficulty)
         foreach (var mapVersion in rankedMap.MapVersions)
@@ -286,54 +288,151 @@ public sealed class ScoreAddOrUpdatePipeline(
             }
 
             if (!anyRankedScores)
-                yield return transform(transformContext, new RankedScore
-                {
-                    GuildId = rankedMap.GuildId,
-                    ContextId = rankedMap.ContextId,
-                    RankedMapId = mapVersion.RankedMapId,
-                    SongDifficultyId = mapVersion.SongDifficultyId,
-                    PointId = point.Id,
-                    PlayerId = score.PlayerId,
-                    ScoreId = score.Id,
-                    PrevScoreId = null,
-                    State = EState.None,
-                    DenyReason = EDenyReason.Unspecified,
-                    EffectiveScore = default,
-                    RawPoints = default,
-                    Rank = 0,
-                    EditedAt = score.SetAt
-                });
+                yield return transform(transformContext, null);
         }
     }
 
-    private static RankedScore RecalculateRankedScore(RankedScoreTransformContext context, RankedScore rankedScore)
+    private static RankedScore RecalculateRankedScore(RankedScoreTransformContext context, RankedScore? rankedScore)
     {
-        rankedScore.EffectiveScore = ScoringUtils.CalculateScoreFromModifiers(
+        var effectiveScore = ScoringUtils.CalculateScoreFromModifiers(
             context.Score.BaseScore,
             context.Score.Modifiers,
             context.Point.ModifierValues
         );
 
-        (rankedScore.State, rankedScore.DenyReason) = ScoringUtils.RecalculateStateAndReason(
-            rankedScore.State,
+        var type = ScoringUtils.RecalculateRankedScoreType(
+            rankedScore,
             context.Score,
             context.Map.Requirements,
-            context.SongDifficulty.Stats
+            context.SongDifficulty.Stats,
+            out var invalidReason
         );
 
-        rankedScore.RawPoints = ScoringUtils.CalculateRawPoints(
+        var rawPoints = ScoringUtils.CalculateRawPoints(
             context.Score.BaseScore,
-            rankedScore.EffectiveScore,
+            effectiveScore,
             context.SongDifficulty.Stats.MaxScore,
             context.Point,
             context.Map.Rating
         );
 
-        // RankedScore comparison relies on the Score property (BeatLeader scores are preferred).
-        rankedScore.Score = context.Score;
-
-        return rankedScore;
+        return type switch
+        {
+            RankedScore.ERankedScoreType.Valid => CreateValidRankedScore(context, rankedScore, effectiveScore,
+                rawPoints),
+            RankedScore.ERankedScoreType.Accepted => CreateAcceptedRankedScore(context, rankedScore, effectiveScore,
+                rawPoints),
+            RankedScore.ERankedScoreType.Pending => CreatePendingRankedScore(context, rankedScore, effectiveScore,
+                rawPoints),
+            RankedScore.ERankedScoreType.Refused => CreateRefusedRankedScore(context, rankedScore, effectiveScore,
+                rawPoints),
+            RankedScore.ERankedScoreType.Invalid => CreateInvalidRankedScore(context, rankedScore, effectiveScore,
+                invalidReason),
+            _ => throw new UnreachableException()
+        };
     }
+
+    private static ValidRankedScore CreateValidRankedScore(
+        RankedScoreTransformContext context, RankedScore? rankedScore, EffectiveScore effectiveScore,
+        RawPoints rawPoints) => new()
+    {
+        Id = rankedScore?.Id ?? default,
+        GuildId = context.Map.GuildId,
+        ContextId = context.Map.ContextId,
+        RankedMapId = context.Map.Id,
+        SongDifficultyId = context.SongDifficulty.Id,
+        PointId = context.Point.Id,
+        PlayerId = context.Score.PlayerId,
+        ScoreId = context.Score.Id,
+        PrevScoreId = rankedScore?.PrevScoreId,
+        IsSelected = rankedScore?.IsSelected ?? false,
+        EffectiveScore = effectiveScore,
+        RawPoints = rawPoints,
+        Rank = rankedScore is PointGivingRankedScore pointGivingRankedScore ? pointGivingRankedScore.Rank : 0,
+        EditedAt = rankedScore?.EditedAt ?? context.Score.SetAt,
+        Score = context.Score
+    };
+
+    private static AcceptedRankedScore CreateAcceptedRankedScore(
+        RankedScoreTransformContext context, RankedScore? rankedScore, EffectiveScore effectiveScore,
+        RawPoints rawPoints) => new()
+    {
+        Id = rankedScore?.Id ?? default,
+        GuildId = context.Map.GuildId,
+        ContextId = context.Map.ContextId,
+        RankedMapId = context.Map.Id,
+        SongDifficultyId = context.SongDifficulty.Id,
+        PointId = context.Point.Id,
+        PlayerId = context.Score.PlayerId,
+        ScoreId = context.Score.Id,
+        PrevScoreId = rankedScore?.PrevScoreId,
+        IsSelected = rankedScore?.IsSelected ?? false,
+        EffectiveScore = effectiveScore,
+        RawPoints = rawPoints,
+        Rank = rankedScore is PointGivingRankedScore pointGivingRankedScore ? pointGivingRankedScore.Rank : 0,
+        EditedAt = rankedScore?.EditedAt ?? context.Score.SetAt,
+        Score = context.Score
+    };
+
+    private static PendingRankedScore CreatePendingRankedScore(
+        RankedScoreTransformContext context, RankedScore? rankedScore, EffectiveScore effectiveScore,
+        RawPoints rawPoints) => new()
+    {
+        Id = rankedScore?.Id ?? default,
+        GuildId = context.Map.GuildId,
+        ContextId = context.Map.ContextId,
+        RankedMapId = context.Map.Id,
+        SongDifficultyId = context.SongDifficulty.Id,
+        PointId = context.Point.Id,
+        PlayerId = context.Score.PlayerId,
+        ScoreId = context.Score.Id,
+        PrevScoreId = rankedScore?.PrevScoreId,
+        IsSelected = rankedScore?.IsSelected ?? false,
+        EffectiveScore = effectiveScore,
+        RawPoints = rawPoints,
+        EditedAt = rankedScore?.EditedAt ?? context.Score.SetAt,
+        Score = context.Score
+    };
+
+    private static RefusedRankedScore CreateRefusedRankedScore(
+        RankedScoreTransformContext context, RankedScore? rankedScore, EffectiveScore effectiveScore,
+        RawPoints rawPoints) => new()
+    {
+        Id = rankedScore?.Id ?? default,
+        GuildId = context.Map.GuildId,
+        ContextId = context.Map.ContextId,
+        RankedMapId = context.Map.Id,
+        SongDifficultyId = context.SongDifficulty.Id,
+        PointId = context.Point.Id,
+        PlayerId = context.Score.PlayerId,
+        ScoreId = context.Score.Id,
+        PrevScoreId = rankedScore?.PrevScoreId,
+        IsSelected = rankedScore?.IsSelected ?? false,
+        EffectiveScore = effectiveScore,
+        RawPoints = rawPoints,
+        EditedAt = rankedScore?.EditedAt ?? context.Score.SetAt,
+        Score = context.Score
+    };
+
+    private static InvalidRankedScore CreateInvalidRankedScore(
+        RankedScoreTransformContext context, RankedScore? rankedScore, EffectiveScore effectiveScore,
+        EInvalidReason invalidReason) => new()
+    {
+        Id = rankedScore?.Id ?? default,
+        GuildId = context.Map.GuildId,
+        ContextId = context.Map.ContextId,
+        RankedMapId = context.Map.Id,
+        SongDifficultyId = context.SongDifficulty.Id,
+        PointId = context.Point.Id,
+        PlayerId = context.Score.PlayerId,
+        ScoreId = context.Score.Id,
+        PrevScoreId = rankedScore?.PrevScoreId,
+        IsSelected = rankedScore?.IsSelected ?? false,
+        EffectiveScore = effectiveScore,
+        InvalidReason = invalidReason,
+        EditedAt = rankedScore?.EditedAt ?? context.Score.SetAt,
+        Score = context.Score
+    };
 
     /// <summary>
     /// Processes ranked scores by grouping them by RankedMapId and PointId.
@@ -343,34 +442,34 @@ public sealed class ScoreAddOrUpdatePipeline(
     ///         <description>Finds the highest-scoring entry (using default comparison)</description>
     ///     </item>
     ///     <item>
-    ///         <description>Removes the Selected state from all persisted scores</description>
+    ///         <description>Clears selection from all persisted scores</description>
     ///     </item>
     ///     <item>
-    ///         <description>Sets only the best score to Selected state</description>
+    ///         <description>Sets only the best score as selected</description>
     ///     </item>
     /// </list>
-    /// This ensures that for each (RankedMapId, PointId) combination, only one score is marked as Selected.
+    /// This ensures that for each (RankedMapId, PointId) combination, only one score is marked as selected.
     /// </summary>
     /// <param name="rankedScores">Collection of ranked scores to process</param>
-    /// <returns>Processed collection of ranked scores with appropriate Selected state</returns>
+    /// <returns>Processed collection of ranked scores with appropriate selection state</returns>
     internal static IEnumerable<RankedScore> SetStateForBestRankedScorePerGroup(IEnumerable<RankedScore> rankedScores)
         => rankedScores
             .GroupBy(x => (x.RankedMapId, x.PointId))
             .SelectMany(group => group.Max() switch
             {
                 null => throw new InvalidOperationException("Group should contain at least one element."),
-                var best => group.Select(x => x == best ? AddSelectedState(x) : RemoveSelectedState(x))
+                var best => group.Select(x => x == best ? SelectRankedScore(x) : DeselectRankedScore(x))
             });
 
-    private static RankedScore RemoveSelectedState(RankedScore rankedScore)
+    private static RankedScore DeselectRankedScore(RankedScore rankedScore)
     {
-        rankedScore.State &= ~EState.Selected;
+        rankedScore.IsSelected = false;
         return rankedScore;
     }
 
-    private static RankedScore AddSelectedState(RankedScore rankedScore)
+    private static RankedScore SelectRankedScore(RankedScore rankedScore)
     {
-        rankedScore.State |= EState.Selected;
+        rankedScore.IsSelected = true;
         return rankedScore;
     }
 

@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using GuildSaber.Api.Features.RankedScores;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
@@ -15,28 +14,28 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<
 {
     private static readonly string _calculatePointsFormattableString =
         $$"""
-          SELECT COALESCE(SUM("{{nameof(RankedScore.RawPoints)}}" * POWER({0}, position - 1)), 0)::float AS "Value"
+          SELECT COALESCE(SUM("{{nameof(ScoredRankedScore.RawPoints)}}" * POWER({0}, position - 1)), 0)::float AS "Value"
           FROM (
               SELECT
-                  "{{nameof(RankedScore.RawPoints)}}",
-                  ROW_NUMBER() OVER (ORDER BY "{{nameof(RankedScore.RawPoints)}}" DESC) as position
+                  "{{nameof(ScoredRankedScore.RawPoints)}}",
+                  ROW_NUMBER() OVER (ORDER BY "{{nameof(ScoredRankedScore.RawPoints)}}" DESC) as position
               FROM "{{nameof(ServerDbContext.RankedScores)}}"
               WHERE "{{nameof(RankedScore.GuildId)}}" = {1}
                   AND "{{nameof(RankedScore.ContextId)}}" = {2}
                   AND "{{nameof(RankedScore.PlayerId)}}" = {3}
                   AND "{{nameof(RankedScore.PointId)}}" = {4}
-                  AND ("{{nameof(RankedScore.State)}}" & {{(int)RankedScore.EState.Selected}}) = {{(int)RankedScore.EState.Selected}}
-                  AND ("{{nameof(RankedScore.State)}}" & {{(int)RankedScore.EState.NonPointGiving}}) = 0
+                  AND "{{nameof(RankedScore.IsSelected)}}"
+                  AND "{{nameof(RankedScore.Type)}}" IN ({{(int)RankedScore.ERankedScoreType.Valid}}, {{(int)RankedScore.ERankedScoreType.Accepted}})
           ) ranked_scores
           """;
 
     private static readonly string _calculatePointsWithCategoryFormattableString =
         $$"""
-          SELECT COALESCE(SUM("{{nameof(RankedScore.RawPoints)}}" * POWER({0}, position - 1)), 0)::float AS "Value"
+          SELECT COALESCE(SUM("{{nameof(ScoredRankedScore.RawPoints)}}" * POWER({0}, position - 1)), 0)::float AS "Value"
           FROM (
               SELECT
-                  rs."{{nameof(RankedScore.RawPoints)}}",
-                  ROW_NUMBER() OVER (ORDER BY rs."{{nameof(RankedScore.RawPoints)}}" DESC) as position
+                  rs."{{nameof(ScoredRankedScore.RawPoints)}}",
+                  ROW_NUMBER() OVER (ORDER BY rs."{{nameof(ScoredRankedScore.RawPoints)}}" DESC) as position
               FROM "{{nameof(ServerDbContext.RankedScores)}}" rs
               JOIN "{{nameof(ServerDbContext.RankedMaps)}}" rm
                   ON rs."{{nameof(RankedScore.RankedMapId)}}" = rm."{{nameof(RankedMap.Id)}}"
@@ -47,8 +46,8 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<
                   AND rs."{{nameof(RankedScore.PlayerId)}}" = {3}
                   AND rs."{{nameof(RankedScore.PointId)}}" = {4}
                   AND rmc."{{nameof(Category)[..^1] + "ies" + nameof(Category.Id)}}" = {5}
-                  AND (rs."{{nameof(RankedScore.State)}}" & {{(int)RankedScore.EState.Selected}}) = {{(int)RankedScore.EState.Selected}}
-                  AND (rs."{{nameof(RankedScore.State)}}" & {{(int)RankedScore.EState.NonPointGiving}}) = 0
+                  AND rs."{{nameof(RankedScore.IsSelected)}}"
+                  AND rs."{{nameof(RankedScore.Type)}}" IN ({{(int)RankedScore.ERankedScoreType.Valid}}, {{(int)RankedScore.ERankedScoreType.Accepted}})
           ) ranked_scores
           """;
 
@@ -105,13 +104,13 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<
             dbContext.MemberPointStats.Add(memberStat);
         }
 
-        var validPassesQuery = dbContext.RankedScores
+        var validPassesQuery = dbContext.PointGivingRankedScores
             .Where(x =>
                 x.GuildId == guildId &&
                 x.ContextId == contextId &&
                 x.PlayerId == playerId &&
-                x.PointId == point.Id)
-            .Where(RankedScoreExtensions.IsValidPassesExpression);
+                x.PointId == point.Id &&
+                x.IsSelected);
 
         if (categoryId is not null)
             validPassesQuery = validPassesQuery.Where(x => x.RankedMap.Categories.Any(c => c.Id == categoryId));
