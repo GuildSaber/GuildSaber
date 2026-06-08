@@ -1,5 +1,4 @@
-﻿using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
-using GuildSaber.Database.Extensions;
+﻿using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

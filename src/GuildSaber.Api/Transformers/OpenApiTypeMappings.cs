@@ -1,8 +1,4 @@
 using GuildSaber.Api.Features.RankedMaps.Http;
-using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
-using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
-using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
-using GuildSaber.Common.StrongTypes;
 using Microsoft.OpenApi;
 
 namespace GuildSaber.Api.Transformers;
@@ -33,6 +29,9 @@ public static class OpenApiTypeMappings
             { Type = JsonSchemaType.String, Example = "987654321098765432" });
         OpenApiTypeTransformer.MapType<DiscordRoleId>(new OpenApiSchema
             { Type = JsonSchemaType.String, Example = "987654321098765432" });
+
+        OpenApiTypeTransformer.MapType<RankedScoreId>(new OpenApiSchema
+            { Type = JsonSchemaType.String, Example = "123456789" });
 
         OpenApiTypeTransformer.MapType<BeatSaverKey>(new OpenApiSchema
             { Type = JsonSchemaType.String, Example = "a3c3" });

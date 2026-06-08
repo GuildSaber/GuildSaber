@@ -15,35 +15,13 @@ public static class RankedScoreMappers
 
     public static Expression<Func<RankedScore, RankedScoreResponses.RankedScoreWithPlayer>>
         MapRankedScoreWithPlayerExpression => rankedScore => new RankedScoreResponses.RankedScoreWithPlayer(
-        new RankedScoreResponses.RankedScore(
-            rankedScore.Id,
-            rankedScore.PointId,
-            rankedScore.RankedMapId,
-            rankedScore.EditedAt,
-            rankedScore.Score.Map(),
-            rankedScore.PrevScore == null ? null : rankedScore.PrevScore.Map(),
-            rankedScore.State.Map(),
-            rankedScore.Rank,
-            rankedScore.RawPoints,
-            rankedScore.EffectiveScore
-        ),
+        rankedScore.Map(),
         rankedScore.Player.Map()
     );
 
     public static Expression<Func<RankedScore, RankedScoreResponses.RankedScoreWithRankedMap>>
         MapRankedScoreWithRankedMapExpression => rankedScore => new RankedScoreResponses.RankedScoreWithRankedMap(
-        new RankedScoreResponses.RankedScore(
-            rankedScore.Id,
-            rankedScore.PointId,
-            rankedScore.RankedMapId,
-            rankedScore.EditedAt,
-            rankedScore.Score.Map(),
-            rankedScore.PrevScore == null ? null : rankedScore.PrevScore.Map(),
-            rankedScore.State.Map(),
-            rankedScore.Rank,
-            rankedScore.RawPoints,
-            rankedScore.EffectiveScore
-        ),
+        rankedScore.Map(),
         rankedScore.RankedMap.Map()
     );
 
@@ -86,37 +64,82 @@ public static class RankedScoreMappers
         => (_mapRankedScoreImpl ??= MapRankedScoreExpression().Compile())(self);
 
     public static Expression<Func<RankedScore, RankedScoreResponses.RankedScore>> MapRankedScoreExpression()
-        => rankedScore => new RankedScoreResponses.RankedScore(
-            rankedScore.Id,
-            rankedScore.PointId,
-            rankedScore.RankedMapId,
-            rankedScore.EditedAt,
-            rankedScore.Score.Map(),
-            rankedScore.PrevScore == null ? null : rankedScore.PrevScore.Map(),
-            rankedScore.State.Map(),
-            rankedScore.Rank,
-            rankedScore.RawPoints,
-            rankedScore.EffectiveScore
-        );
+        => rankedScore => rankedScore.Type == RankedScore.ERankedScoreType.Valid
+            ? new RankedScoreResponses.RankedScore.ValidRankedScore(
+                rankedScore.Id,
+                rankedScore.PointId,
+                rankedScore.RankedMapId,
+                rankedScore.EditedAt,
+                rankedScore.Score.Map(),
+                rankedScore.PrevScore == null ? null : rankedScore.PrevScore.Map(),
+                rankedScore.IsSelected,
+                ((ValidRankedScore)rankedScore).RawPoints,
+                rankedScore.EffectiveScore,
+                ((ValidRankedScore)rankedScore).Rank)
+            : rankedScore.Type == RankedScore.ERankedScoreType.Accepted
+                ? new RankedScoreResponses.RankedScore.AcceptedRankedScore(
+                    rankedScore.Id,
+                    rankedScore.PointId,
+                    rankedScore.RankedMapId,
+                    rankedScore.EditedAt,
+                    rankedScore.Score.Map(),
+                    rankedScore.PrevScore == null ? null : rankedScore.PrevScore.Map(),
+                    rankedScore.IsSelected,
+                    ((AcceptedRankedScore)rankedScore).RawPoints,
+                    rankedScore.EffectiveScore,
+                    ((AcceptedRankedScore)rankedScore).Rank)
+                : rankedScore.Type == RankedScore.ERankedScoreType.Pending
+                    ? new RankedScoreResponses.RankedScore.PendingRankedScore(
+                        rankedScore.Id,
+                        rankedScore.PointId,
+                        rankedScore.RankedMapId,
+                        rankedScore.EditedAt,
+                        rankedScore.Score.Map(),
+                        rankedScore.PrevScore == null ? null : rankedScore.PrevScore.Map(),
+                        rankedScore.IsSelected,
+                        ((PendingRankedScore)rankedScore).RawPoints,
+                        rankedScore.EffectiveScore)
+                    : rankedScore.Type == RankedScore.ERankedScoreType.Refused
+                        ? new RankedScoreResponses.RankedScore.RefusedRankedScore(
+                            rankedScore.Id,
+                            rankedScore.PointId,
+                            rankedScore.RankedMapId,
+                            rankedScore.EditedAt,
+                            rankedScore.Score.Map(),
+                            rankedScore.PrevScore == null ? null : rankedScore.PrevScore.Map(),
+                            rankedScore.IsSelected,
+                            ((RefusedRankedScore)rankedScore).RawPoints,
+                            rankedScore.EffectiveScore)
+                        : new RankedScoreResponses.RankedScore.InvalidRankedScore(
+                            rankedScore.Id,
+                            rankedScore.PointId,
+                            rankedScore.RankedMapId,
+                            rankedScore.EditedAt,
+                            rankedScore.Score.Map(),
+                            rankedScore.PrevScore == null ? null : rankedScore.PrevScore.Map(),
+                            rankedScore.IsSelected,
+                            rankedScore.EffectiveScore,
+                            ((InvalidRankedScore)rankedScore).InvalidReason.Map());
 
-    public static RankedScoreResponses.EState Map(this RankedScore.EState self) =>
-        Enum.GetValues<RankedScore.EState>()
-            .Where(flag => flag != RankedScore.EState.None && self.HasFlag(flag))
+    public static RankedScoreResponses.EInvalidReason Map(this InvalidRankedScore.EInvalidReason self) =>
+        Enum.GetValues<InvalidRankedScore.EInvalidReason>()
+            .Where(flag => flag != InvalidRankedScore.EInvalidReason.Unspecified && self.HasFlag(flag))
             .Select(flag => flag switch
             {
-                RankedScore.EState.None => RankedScoreResponses.EState.None,
-                RankedScore.EState.Denied => RankedScoreResponses.EState.Denied,
-                RankedScore.EState.Selected => RankedScoreResponses.EState.Selected,
-                RankedScore.EState.Removed => RankedScoreResponses.EState.Removed,
-                RankedScore.EState.Pending => RankedScoreResponses.EState.Pending,
-                RankedScore.EState.Confirmed => RankedScoreResponses.EState.Confirmed,
-                RankedScore.EState.Refused => RankedScoreResponses.EState.Refused,
-                // On purpose, because it will construct with each flag separately.
-                RankedScore.EState.NonPointGiving or RankedScore.EState.NonPointGivingNoPending
-                    => RankedScoreResponses.EState.None,
+                InvalidRankedScore.EInvalidReason.Unspecified => RankedScoreResponses.EInvalidReason.Unspecified,
+                InvalidRankedScore.EInvalidReason.MinAccuracyRequirements
+                    => RankedScoreResponses.EInvalidReason.MinAccuracyRequirements,
+                InvalidRankedScore.EInvalidReason.ProhibitedModifiers
+                    => RankedScoreResponses.EInvalidReason.ProhibitedModifiers,
+                InvalidRankedScore.EInvalidReason.MissingModifiers
+                    => RankedScoreResponses.EInvalidReason.MissingModifiers,
+                InvalidRankedScore.EInvalidReason.PausedTooMuch => RankedScoreResponses.EInvalidReason.PausedTooMuch,
+                InvalidRankedScore.EInvalidReason.NoFullCombo => RankedScoreResponses.EInvalidReason.NoFullCombo,
+                InvalidRankedScore.EInvalidReason.MissingTrackers
+                    => RankedScoreResponses.EInvalidReason.MissingTrackers,
                 _ => throw new ArgumentOutOfRangeException(nameof(flag), flag, null)
             })
-            .Aggregate(RankedScoreResponses.EState.None, (acc, mapped) => acc | mapped);
+            .Aggregate(RankedScoreResponses.EInvalidReason.Unspecified, (acc, mapped) => acc | mapped);
 
     public static RankedScoreResponses.EHMD Map(this PlayerHardwareInfo.EHMD self) => self switch
     {

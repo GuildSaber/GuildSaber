@@ -147,6 +147,14 @@
               ],
               "format": "float"
             }
+          },
+          {
+            "name": "rankedScoreTypes",
+            "in": "query",
+            "schema": {
+              "default": "None",
+              "$ref": "#/components/schemas/ERankedScoreType"
+            }
           }
         ],
         "responses": {
@@ -296,6 +304,14 @@
                 "string"
               ],
               "format": "float"
+            }
+          },
+          {
+            "name": "rankedScoreTypes",
+            "in": "query",
+            "schema": {
+              "default": "None",
+              "$ref": "#/components/schemas/ERankedScoreType"
             }
           }
         ],
@@ -460,6 +476,14 @@
               ],
               "format": "float"
             }
+          },
+          {
+            "name": "rankedScoreTypes",
+            "in": "query",
+            "schema": {
+              "default": "None",
+              "$ref": "#/components/schemas/ERankedScoreType"
+            }
           }
         ],
         "responses": {
@@ -610,6 +634,14 @@
               ],
               "format": "float"
             }
+          },
+          {
+            "name": "rankedScoreTypes",
+            "in": "query",
+            "schema": {
+              "default": "None",
+              "$ref": "#/components/schemas/ERankedScoreType"
+            }
           }
         ],
         "responses": {
@@ -728,24 +760,19 @@
             }
           },
           {
-            "name": "anyRankedScoreStates",
+            "name": "rankedScoreTypes",
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/EState"
+              "default": "None",
+              "$ref": "#/components/schemas/ERankedScoreType"
             }
           },
           {
-            "name": "allRankedScoreStates",
+            "name": "includeMapsWithoutScore",
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/EState"
-            }
-          },
-          {
-            "name": "excludeRankedScoreStates",
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/EState"
+              "type": "boolean",
+              "default": false
             }
           },
           {
@@ -916,7 +943,7 @@
           "Context.RankedMaps"
         ],
         "summary": "Create a ranked map for a context.",
-        "description": "    This endpoint:\r\n    * Returns 200 OK with ranked map details when created successfully.\r\n* Returns 401 Unauthorized when the guild has reached its maximum number of ranked maps.\r\n* Returns 400 Bad Request with validation details when validation fails.\r\n* Returns 404 Not Found when the map is not found on BeatSaver.\r\n* Returns 429 Too Many Requests when rate limited by BeatSaver API.\r\n* Returns 500 Internal Server Error when BeatSaver API fails.",
+        "description": "    This endpoint:\n    * Returns 200 OK with ranked map details when created successfully.\n* Returns 401 Unauthorized when the guild has reached its maximum number of ranked maps.\n* Returns 400 Bad Request with validation details when validation fails.\n* Returns 404 Not Found when the map is not found on BeatSaver.\n* Returns 429 Too Many Requests when rate limited by BeatSaver API.\n* Returns 500 Internal Server Error when BeatSaver API fails.",
         "operationId": "CreateRankedMap",
         "parameters": [
           {
@@ -1089,24 +1116,19 @@
             }
           },
           {
-            "name": "anyRankedScoreStates",
+            "name": "rankedScoreTypes",
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/EState"
+              "default": "None",
+              "$ref": "#/components/schemas/ERankedScoreType"
             }
           },
           {
-            "name": "allRankedScoreStates",
+            "name": "includeMapsWithoutScore",
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/EState"
-            }
-          },
-          {
-            "name": "excludeRankedScoreStates",
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/EState"
+              "type": "boolean",
+              "default": false
             }
           },
           {
@@ -1321,24 +1343,19 @@
             }
           },
           {
-            "name": "anyRankedScoreStates",
+            "name": "rankedScoreTypes",
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/EState"
+              "default": "None",
+              "$ref": "#/components/schemas/ERankedScoreType"
             }
           },
           {
-            "name": "allRankedScoreStates",
+            "name": "includeMapsWithoutScore",
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/EState"
-            }
-          },
-          {
-            "name": "excludeRankedScoreStates",
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/EState"
+              "type": "boolean",
+              "default": false
             }
           },
           {
@@ -2890,7 +2907,7 @@
           "Context.Levels"
         ],
         "summary": "Get all levels in a context, optionally filtered by category.",
-        "description": "- No parameters: Returns all levels.\r\n- hasCategory=false: Only return levels with no category.\r\n- category=5: Returns levels with category 5.",
+        "description": "- No parameters: Returns all levels.\n- hasCategory=false: Only return levels with no category.\n- category=5: Returns levels with category 5.",
         "operationId": "GetLevels",
         "parameters": [
           {
@@ -5035,7 +5052,7 @@
             "$ref": "#/components/schemas/RankedMapRequirements"
           },
           "manualRating": {
-            "description": "Used to force a specific difficulty and/or accuracy star rating for the map.\r\nIf null, the star ratings will be calculated automatically by BeatLeader's ExMachina.",
+            "description": "Used to force a specific difficulty and/or accuracy star rating for the map.\nIf null, the star ratings will be calculated automatically by BeatLeader's ExMachina.",
             "$ref": "#/components/schemas/ManualRating"
           },
           "categoryIds": {
@@ -5166,6 +5183,9 @@
           "Quest3S"
         ]
       },
+      "EInvalidReason": {
+        "type": "string"
+      },
       "EJoinState": {
         "enum": [
           "None",
@@ -5238,7 +5258,7 @@
           "ScoreTime"
         ]
       },
-      "EState": {
+      "ERankedScoreType": {
         "type": "string"
       },
       "ESubscriptionTier": {
@@ -7075,26 +7095,75 @@
       },
       "RankedScore": {
         "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/RankedScoreValidRankedScore"
+          },
+          {
+            "$ref": "#/components/schemas/RankedScorePendingRankedScore"
+          },
+          {
+            "$ref": "#/components/schemas/RankedScoreAcceptedRankedScore"
+          },
+          {
+            "$ref": "#/components/schemas/RankedScoreRefusedRankedScore"
+          },
+          {
+            "$ref": "#/components/schemas/RankedScoreInvalidRankedScore"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Valid": "#/components/schemas/RankedScoreValidRankedScore",
+            "Pending": "#/components/schemas/RankedScorePendingRankedScore",
+            "Accepted": "#/components/schemas/RankedScoreAcceptedRankedScore",
+            "Refused": "#/components/schemas/RankedScoreRefusedRankedScore",
+            "Invalid": "#/components/schemas/RankedScoreInvalidRankedScore"
+          }
+        }
+      },
+      "RankedScoreAcceptedRankedScore": {
+        "required": [
+          "rawPoints",
+          "rank",
           "id",
           "pointId",
           "rankedMapId",
           "editedAt",
           "score",
           "prevScore",
-          "state",
-          "rank",
-          "rawPoints",
+          "isSelected",
           "effectiveScore"
         ],
-        "type": "object",
         "properties": {
-          "id": {
+          "type": {
+            "enum": [
+              "Accepted"
+            ],
+            "type": "string"
+          },
+          "rawPoints": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "rank": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
               "string"
             ],
-            "format": "int64"
+            "format": "int32"
+          },
+          "id": {
+            "$ref": "#/components/schemas/RankedScoreId"
           },
           "pointId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -7129,8 +7198,273 @@
               }
             ]
           },
-          "state": {
-            "$ref": "#/components/schemas/EState"
+          "isSelected": {
+            "type": "boolean"
+          },
+          "effectiveScore": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "RankedScoreId": {
+        "type": "string",
+        "example": "123456789"
+      },
+      "RankedScoreInvalidRankedScore": {
+        "required": [
+          "invalidReason",
+          "id",
+          "pointId",
+          "rankedMapId",
+          "editedAt",
+          "score",
+          "prevScore",
+          "isSelected",
+          "effectiveScore"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "Invalid"
+            ],
+            "type": "string"
+          },
+          "invalidReason": {
+            "$ref": "#/components/schemas/EInvalidReason"
+          },
+          "id": {
+            "$ref": "#/components/schemas/RankedScoreId"
+          },
+          "pointId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rankedMapId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "editedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "score": {
+            "$ref": "#/components/schemas/Score"
+          },
+          "prevScore": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Score"
+              }
+            ]
+          },
+          "isSelected": {
+            "type": "boolean"
+          },
+          "effectiveScore": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "RankedScorePendingRankedScore": {
+        "required": [
+          "rawPoints",
+          "id",
+          "pointId",
+          "rankedMapId",
+          "editedAt",
+          "score",
+          "prevScore",
+          "isSelected",
+          "effectiveScore"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "Pending"
+            ],
+            "type": "string"
+          },
+          "rawPoints": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "id": {
+            "$ref": "#/components/schemas/RankedScoreId"
+          },
+          "pointId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rankedMapId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "editedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "score": {
+            "$ref": "#/components/schemas/Score"
+          },
+          "prevScore": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Score"
+              }
+            ]
+          },
+          "isSelected": {
+            "type": "boolean"
+          },
+          "effectiveScore": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "RankedScoreRefusedRankedScore": {
+        "required": [
+          "rawPoints",
+          "id",
+          "pointId",
+          "rankedMapId",
+          "editedAt",
+          "score",
+          "prevScore",
+          "isSelected",
+          "effectiveScore"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "Refused"
+            ],
+            "type": "string"
+          },
+          "rawPoints": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "id": {
+            "$ref": "#/components/schemas/RankedScoreId"
+          },
+          "pointId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rankedMapId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "editedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "score": {
+            "$ref": "#/components/schemas/Score"
+          },
+          "prevScore": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Score"
+              }
+            ]
+          },
+          "isSelected": {
+            "type": "boolean"
+          },
+          "effectiveScore": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "RankedScoreValidRankedScore": {
+        "required": [
+          "rawPoints",
+          "rank",
+          "id",
+          "pointId",
+          "rankedMapId",
+          "editedAt",
+          "score",
+          "prevScore",
+          "isSelected",
+          "effectiveScore"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "Valid"
+            ],
+            "type": "string"
+          },
+          "rawPoints": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
           },
           "rank": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -7140,13 +7474,44 @@
             ],
             "format": "int32"
           },
-          "rawPoints": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+          "id": {
+            "$ref": "#/components/schemas/RankedScoreId"
+          },
+          "pointId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
-              "number",
+              "integer",
               "string"
             ],
-            "format": "float"
+            "format": "int32"
+          },
+          "rankedMapId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "editedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "score": {
+            "$ref": "#/components/schemas/Score"
+          },
+          "prevScore": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Score"
+              }
+            ]
+          },
+          "isSelected": {
+            "type": "boolean"
           },
           "effectiveScore": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",

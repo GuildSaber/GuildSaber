@@ -1,8 +1,7 @@
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 using GuildSaber.Api.Features.Players.Http;
 using GuildSaber.Api.Features.RankedMaps.Http;
-using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
-using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 
 namespace GuildSaber.Api.Features.RankedScores.Http;
 
@@ -56,18 +55,85 @@ public static class RankedScoreResponses
         ) : Score(Id, SongDifficultyId, BaseScore, Modifiers, SetAt, MaxCombo, IsFullCombo, MissedNotes, BadCuts, HMD);
     }
 
-    public sealed record RankedScore(
-        long Id,
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
+    [JsonDerivedType(typeof(ValidRankedScore), "Valid")]
+    [JsonDerivedType(typeof(PendingRankedScore), "Pending")]
+    [JsonDerivedType(typeof(AcceptedRankedScore), "Accepted")]
+    [JsonDerivedType(typeof(RefusedRankedScore), "Refused")]
+    [JsonDerivedType(typeof(InvalidRankedScore), "Invalid")]
+    public abstract record RankedScore(
+        RankedScoreId Id,
         int PointId,
         long RankedMapId,
         DateTimeOffset EditedAt,
         Score Score,
         Score? PrevScore,
-        EState State,
-        int Rank,
-        float RawPoints,
+        bool IsSelected,
         int EffectiveScore
-    );
+    )
+    {
+        public sealed record ValidRankedScore(
+            RankedScoreId Id,
+            int PointId,
+            long RankedMapId,
+            DateTimeOffset EditedAt,
+            Score Score,
+            Score? PrevScore,
+            bool IsSelected,
+            float RawPoints,
+            int EffectiveScore,
+            int Rank
+        ) : RankedScore(Id, PointId, RankedMapId, EditedAt, Score, PrevScore, IsSelected, EffectiveScore);
+
+        public sealed record PendingRankedScore(
+            RankedScoreId Id,
+            int PointId,
+            long RankedMapId,
+            DateTimeOffset EditedAt,
+            Score Score,
+            Score? PrevScore,
+            bool IsSelected,
+            float RawPoints,
+            int EffectiveScore
+        ) : RankedScore(Id, PointId, RankedMapId, EditedAt, Score, PrevScore, IsSelected, EffectiveScore);
+
+        public sealed record AcceptedRankedScore(
+            RankedScoreId Id,
+            int PointId,
+            long RankedMapId,
+            DateTimeOffset EditedAt,
+            Score Score,
+            Score? PrevScore,
+            bool IsSelected,
+            float RawPoints,
+            int EffectiveScore,
+            int Rank
+        ) : RankedScore(Id, PointId, RankedMapId, EditedAt, Score, PrevScore, IsSelected, EffectiveScore);
+
+        public sealed record RefusedRankedScore(
+            RankedScoreId Id,
+            int PointId,
+            long RankedMapId,
+            DateTimeOffset EditedAt,
+            Score Score,
+            Score? PrevScore,
+            bool IsSelected,
+            float RawPoints,
+            int EffectiveScore
+        ) : RankedScore(Id, PointId, RankedMapId, EditedAt, Score, PrevScore, IsSelected, EffectiveScore);
+
+        public sealed record InvalidRankedScore(
+            RankedScoreId Id,
+            int PointId,
+            long RankedMapId,
+            DateTimeOffset EditedAt,
+            Score Score,
+            Score? PrevScore,
+            bool IsSelected,
+            int EffectiveScore,
+            EInvalidReason InvalidReason
+        ) : RankedScore(Id, PointId, RankedMapId, EditedAt, Score, PrevScore, IsSelected, EffectiveScore);
+    }
 
     public record RankedScoreWithPlayer(
         RankedScore RankedScore,
@@ -130,17 +196,28 @@ public static class RankedScoreResponses
     public record ScoreGraphTracker(List<float> Graph);
 
     [Flags]
-    public enum EState
+    public enum EInvalidReason
     {
-        None = 0,
-        Selected = 1 << 0,
-        Denied = 1 << 1,
-        Removed = 1 << 2,
-        Pending = 1 << 3,
-        Confirmed = 1 << 4,
-        Refused = 1 << 5,
-        NonPointGiving = None | Denied | Removed | Pending | Refused,
-        NonPointGivingNoPending = None | Denied | Removed | Refused
+        [Description("No reason specified.")]
+        Unspecified = 0,
+
+        [Description("Score did not meet the minimum score requirement.")]
+        MinAccuracyRequirements = 1 << 0,
+
+        [Description("Score used prohibited modifiers.")]
+        ProhibitedModifiers = 1 << 1,
+
+        [Description("Score was missing required modifiers.")]
+        MissingModifiers = 1 << 2,
+
+        [Description("Score had too much pause time.")]
+        PausedTooMuch = 1 << 3,
+
+        [Description("Score was not a full combo when one was required.")]
+        NoFullCombo = 1 << 4,
+
+        [Description("Score was missing trackers.")]
+        MissingTrackers = 1 << 5
     }
 
     public enum EHMD

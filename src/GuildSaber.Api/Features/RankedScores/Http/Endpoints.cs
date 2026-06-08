@@ -8,7 +8,7 @@ using GuildSaber.Database.Contexts.Server;
 using Microsoft.AspNetCore.Http.HttpResults;
 using static GuildSaber.Api.Features.RankedScores.Http.RankedScoreResponses;
 using ERankedScoreSorter = GuildSaber.Api.Features.RankedScores.Http.RankedScoreRequests.ERankedScoreSorter;
-using ServerRankedScore = GuildSaber.Database.Models.Server.RankedScores.RankedScore;
+using ERankedScoreType = GuildSaber.Api.Features.RankedScores.Http.RankedScoreRequests.ERankedScoreType;
 
 namespace GuildSaber.Api.Features.RankedScores.Http;
 
@@ -60,9 +60,11 @@ public class RankedScoreEndpoints : IEndpoints
         float? difficultyStarTo = null,
         float? accuracyStarTo = null,
         float? bpmFrom = null,
-        float? bpmTo = null
+        float? bpmTo = null,
+        ERankedScoreType rankedScoreTypes = ERankedScoreType.None
     ) => await GetPlayerRankedScoresAsync(claimsPrincipal.GetPlayerId()!.Value, contextId, dbContext, page, pageSize,
-        sortBy, order, difficultyStarFrom, accuracyStarFrom, difficultyStarTo, accuracyStarTo, bpmFrom, bpmTo);
+        sortBy, order, difficultyStarFrom, accuracyStarFrom, difficultyStarTo, accuracyStarTo, bpmFrom, bpmTo,
+        rankedScoreTypes);
 
     public static async Task<Ok<PagedList<RankedScore>>> GetPlayerRankedScoresAsync(
         PlayerId playerId,
@@ -77,12 +79,12 @@ public class RankedScoreEndpoints : IEndpoints
         float? difficultyStarTo = null,
         float? accuracyStarTo = null,
         float? bpmFrom = null,
-        float? bpmTo = null)
+        float? bpmTo = null,
+        ERankedScoreType rankedScoreTypes = ERankedScoreType.None)
     {
         var query = dbContext.RankedScores
-            .Where(x => x.PlayerId == playerId
-                        && x.ContextId == contextId
-                        && x.State.HasFlag(ServerRankedScore.EState.Selected));
+            .Where(x => x.PlayerId == playerId && x.ContextId == contextId && x.IsSelected)
+            .ApplyTypeFilter(rankedScoreTypes);
 
         if (difficultyStarFrom.HasValue)
             query = query.Where(x => x.RankedMap.Rating.DiffStar >= difficultyStarFrom.Value);
@@ -116,10 +118,11 @@ public class RankedScoreEndpoints : IEndpoints
         float? difficultyStarTo = null,
         float? accuracyStarTo = null,
         float? bpmFrom = null,
-        float? bpmTo = null
+        float? bpmTo = null,
+        ERankedScoreType rankedScoreTypes = ERankedScoreType.None
     ) => await GetPlayerRankedScoresWithRankedMapAsync(claimsPrincipal.GetPlayerId()!.Value, contextId, dbContext, page,
-        pageSize,
-        sortBy, order, difficultyStarFrom, accuracyStarFrom, difficultyStarTo, accuracyStarTo, bpmFrom, bpmTo);
+        pageSize, sortBy, order, difficultyStarFrom, accuracyStarFrom, difficultyStarTo, accuracyStarTo, bpmFrom, bpmTo,
+        rankedScoreTypes);
 
     public static async Task<Ok<PagedList<RankedScoreWithRankedMap>>> GetPlayerRankedScoresWithRankedMapAsync(
         PlayerId playerId,
@@ -134,12 +137,12 @@ public class RankedScoreEndpoints : IEndpoints
         float? difficultyStarTo = null,
         float? accuracyStarTo = null,
         float? bpmFrom = null,
-        float? bpmTo = null)
+        float? bpmTo = null,
+        ERankedScoreType rankedScoreTypes = ERankedScoreType.None)
     {
         var query = dbContext.RankedScores
-            .Where(x => x.PlayerId == playerId
-                        && x.ContextId == contextId
-                        && x.State.HasFlag(ServerRankedScore.EState.Selected));
+            .Where(x => x.PlayerId == playerId && x.ContextId == contextId && x.IsSelected)
+            .ApplyTypeFilter(rankedScoreTypes);
 
         if (difficultyStarFrom.HasValue)
             query = query.Where(x => x.RankedMap.Rating.DiffStar >= difficultyStarFrom.Value);

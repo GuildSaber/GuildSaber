@@ -1,5 +1,3 @@
-using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
-
 namespace GuildSaber.Api.Features.RankedMaps.MapVersions.Http;
 
 public class MapVersionRequests

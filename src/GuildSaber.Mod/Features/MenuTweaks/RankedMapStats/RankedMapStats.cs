@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.RankedMaps.Http;
-using GuildSaber.Api.Features.RankedScores.Http;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;
@@ -14,6 +13,7 @@ using GuildSaber.Mod.Resources;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
+using static GuildSaber.Api.Features.RankedScores.Http.RankedScoreResponses.RankedScore;
 
 namespace GuildSaber.Mod.Features.MenuTweaks.RankedMapStats;
 
@@ -118,7 +118,7 @@ public class RankedMapStats(
     {
         var (rankedMap, rankedScores) = rankedMapWithScoresOfPlayer;
         var guildIconTexture = await cache.FetchGuildIconTexture(config.GuildId, client) ?? placeHolderIcon;
-        var roundedIcon = await TextureUtils.CreateRoundedTextureAsync(guildIconTexture, guildIconTexture.width * 0.2f);
+        var guildIcon = await TextureUtils.CreateRoundedTextureAsync(guildIconTexture, guildIconTexture.width * 0.2f);
 
         if (rankedMap.CategoryIds.Length == 0)
         {
@@ -136,12 +136,13 @@ public class RankedMapStats(
                 var categoryIconTexture = await cache.FetchCategoryIconTexture(categories[0].Id, client);
                 if (categoryIconTexture != null)
                 {
-                    var roundedCategoryIcon = await TextureUtils.CreateRoundedTextureAsync(
+                    var categoryIcon = await TextureUtils.CreateRoundedTextureAsync(
                         categoryIconTexture, categoryIconTexture.width * 0.2f);
                     _categoryIcon.SetSprite(Sprite.Create(
-                        roundedCategoryIcon,
-                        new Rect(0, 0, roundedCategoryIcon.width, roundedCategoryIcon.height),
-                        Vector2.zero));
+                        categoryIcon,
+                        new Rect(0, 0, categoryIcon.width, categoryIcon.height),
+                        Vector2.zero)
+                    );
 
                     hasCategoryIcon = true;
                 }
@@ -163,33 +164,28 @@ public class RankedMapStats(
         }
 
         _mapLevel.SetText($"{(int)rankedMap.Rating.DiffStar}");
-        _guildIcon.SetSprite(Sprite.Create(roundedIcon, new Rect(0, 0, roundedIcon.width, roundedIcon.height),
-            Vector2.zero));
+        _guildIcon.SetSprite(Sprite.Create(guildIcon, new Rect(0, 0, guildIcon.width, guildIcon.height), Vector2.zero));
         _guildIcon.SetActive(true);
 
-        var playerPassedTheMap = rankedScores
-            .Any(x => x.State.HasFlag(RankedScoreResponses.EState.Selected)
-                      && (x.State & RankedScoreResponses.EState.NonPointGiving) == 0);
+        var isGivingPoint = rankedScores.Any(x => x is ValidRankedScore or AcceptedRankedScore);
+        var isRefused = rankedScores.Any(x => x is RefusedRankedScore);
+        var isPending = rankedScores.Any(x => x is PendingRankedScore);
+        var isConfirmed = rankedScores.Any(x => x is AcceptedRankedScore);
+        var isDenied = rankedScores.Any(x => x is InvalidRankedScore);
 
-        var isRefused = rankedScores.Any(x => x.State.HasFlag(RankedScoreResponses.EState.Refused));
-        var isPending = rankedScores.Any(x => x.State.HasFlag(RankedScoreResponses.EState.Pending));
-        var isConfirmed = rankedScores.Any(x => x.State.HasFlag(RankedScoreResponses.EState.Confirmed));
-        var isDenied = rankedScores.Any(x => x.State.HasFlag(RankedScoreResponses.EState.Denied));
+        _whiteMarkImage.SetActive(isGivingPoint || isRefused || isPending || isDenied);
 
-        _whiteMarkImage.SetActive(playerPassedTheMap || isRefused || isPending || isDenied);
-
-        var usedTexture = (playerPassedTheMap, isRefused, isDenied, isPending, isConfirmed) switch
+        var texture = (isGivingPoint, isRefused, isDenied, isPending, isConfirmed) switch
         {
-            (playerPassedTheMap: true, false, false, false, false) => checkMarkTexture,
+            (isGivingPoint: true, false, false, false, false) => checkMarkTexture,
             (false, false, isDenied: true, false, false) => denyMarkTexture,
             (false, false, false, isPending: true, false) => questionMarkTexture,
-            (playerPassedTheMap: true, false, false, false, isConfirmed: true) => checkShieldTexture,
+            (isGivingPoint: true, false, false, false, isConfirmed: true) => checkShieldTexture,
             (false, isRefused: true, false, false, false) => denyShieldTexture,
             _ => throw new InvalidOperationException("Incompatible states")
         };
 
-        var resultSprite =
-            Sprite.Create(usedTexture, new Rect(0, 0, usedTexture.width, usedTexture.height), Vector2.zero);
+        var resultSprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.zero);
         _whiteMarkImage.SetSprite(resultSprite);
 
         SetActive(true);

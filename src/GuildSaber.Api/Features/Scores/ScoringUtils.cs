@@ -2,12 +2,12 @@ using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.RankedMaps;
+using GuildSaber.Database.Models.Server.RankedScores;
 using GuildSaber.Database.Models.Server.Scores;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using GuildSaber.Database.Models.StrongTypes;
 using EModifiers = GuildSaber.Database.Models.Server.Scores.AbstractScore.EModifiers;
-using EState = GuildSaber.Database.Models.Server.RankedScores.RankedScore.EState;
-using EDenyReason = GuildSaber.Database.Models.Server.RankedScores.RankedScore.EDenyReason;
+using EInvalidReason = GuildSaber.Database.Models.Server.RankedScores.InvalidRankedScore.EInvalidReason;
 
 namespace GuildSaber.Api.Features.Scores;
 
@@ -47,47 +47,55 @@ public static class ScoringUtils
                 var adder => EffectiveScore.CreateUnsafe((int)(baseScore * adder)).Value
             };
 
-    public static (EState, EDenyReason) RecalculateStateAndReason(
-        EState state, AbstractScore score, RankedMapRequirements requirements, SongDifficultyStats songDifficultyStats)
+    public static RankedScore.ERankedScoreType RecalculateRankedScoreType(
+        RankedScore? rankedScore,
+        AbstractScore score,
+        RankedMapRequirements requirements,
+        SongDifficultyStats songDifficultyStats,
+        out EInvalidReason invalidReason)
     {
-        var denyReason = EDenyReason.Unspecified;
+        invalidReason = CalculateInvalidReason(score, requirements, songDifficultyStats);
+
+        if (invalidReason != EInvalidReason.Unspecified)
+            return RankedScore.ERankedScoreType.Invalid;
+
+        return rankedScore switch
+        {
+            AcceptedRankedScore => RankedScore.ERankedScoreType.Accepted,
+            RefusedRankedScore => RankedScore.ERankedScoreType.Refused,
+            _ when requirements.NeedConfirmation => RankedScore.ERankedScoreType.Pending,
+            _ => RankedScore.ERankedScoreType.Valid
+        };
+    }
+
+    private static EInvalidReason CalculateInvalidReason(
+        AbstractScore score, RankedMapRequirements requirements, SongDifficultyStats songDifficultyStats)
+    {
+        var invalidReason = EInvalidReason.Unspecified;
 
         if (requirements.NeedFullCombo && !score.IsFullCombo)
-            denyReason |= EDenyReason.NoFullCombo;
+            invalidReason |= EInvalidReason.NoFullCombo;
 
         if (requirements.MaxPauseDurationSec is not null)
         {
             if (score is not BeatLeaderScore blScore)
-                denyReason |= EDenyReason.MissingTrackers;
+                invalidReason |= EInvalidReason.MissingTrackers;
             else if (blScore.Statistics?.WinTracker.TotalPauseDuration > requirements.MaxPauseDurationSec)
-                denyReason |= EDenyReason.TooMuchPaused;
+                invalidReason |= EInvalidReason.PausedTooMuch;
         }
 
         if (requirements.MinAccuracy is not null
             && Accuracy.From(score.BaseScore, songDifficultyStats.MaxScore) < requirements.MinAccuracy)
-            denyReason |= EDenyReason.MinAccuracyRequirements;
+            invalidReason |= EInvalidReason.MinAccuracyRequirements;
 
         if (requirements.MandatoryModifiers != EModifiers.None
             && !score.Modifiers.HasFlag(requirements.MandatoryModifiers))
-            denyReason |= EDenyReason.MissingModifiers;
+            invalidReason |= EInvalidReason.MissingModifiers;
 
         if (score.Modifiers.HasAnyFlag(requirements.ProhibitedModifiers))
-            denyReason |= EDenyReason.ProhibitedModifiers;
+            invalidReason |= EInvalidReason.ProhibitedModifiers;
 
-        /* Set the state to Denied if we did find a reason to deny previously.
-         * This even overrides Confirmed/Refused to allow a score to get the chance to get through verification again
-         * if requirements changes. */
-        if (denyReason != EDenyReason.Unspecified)
-            state = EState.Denied;
-
-        /* Keep NeedConfirmation last so it doesn't override other states.
-         * The Need confirmation / Pending state will only be set if the score is not already in a final state.
-         * (e.g. Denied, Refused, Confirmed) (Btw: Setting Pending to an already Pending score doesn't matter here.) */
-        if (requirements.NeedConfirmation &&
-            (state == EState.None || !state.HasAnyFlag(EState.Denied | EState.Refused | EState.Confirmed)))
-            state |= EState.Pending;
-
-        return (state, denyReason);
+        return invalidReason;
     }
 
     public static RawPoints CalculateRawPoints(

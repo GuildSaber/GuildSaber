@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using Discord;
 using Discord.Interactions;
@@ -22,6 +23,7 @@ using GuildSaber.DiscordBot.Settings;
 using Microsoft.EntityFrameworkCore;
 using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapResponses;
 using static GuildSaber.Api.Features.RankedScores.Http.RankedScoreResponses;
+using static GuildSaber.Api.Features.RankedScores.Http.RankedScoreResponses.RankedScore;
 
 namespace GuildSaber.DiscordBot.Commands.Users;
 
@@ -273,23 +275,19 @@ file static class FlexCommand
         var (passedMaps, prohibitedMaps, pendingMaps, adminConfirmedMaps, adminRefusedMaps) =
         (
             rankedMapWithScores
-                .Where(x => x.RankedScores.Any(y =>
-                    !y.State.HasAnyFlag(EState.NonPointGiving)
-                    && !y.State.HasFlag(EState.Confirmed)))
+                .Where(x => x.RankedScores.Any(y => y is ValidRankedScore))
                 .ToArray(),
             rankedMapWithScores
-                .Where(x => x.RankedScores.Any(y =>
-                    y.State.HasAnyFlag(EState.NonPointGivingNoPending)
-                    && !y.State.HasFlag(EState.Refused)))
+                .Where(x => x.RankedScores.Any(y => y is InvalidRankedScore))
                 .ToArray(),
             rankedMapWithScores
-                .Where(x => x.RankedScores.Any(y => y.State.HasAnyFlag(EState.Pending)))
+                .Where(x => x.RankedScores.Any(y => y is PendingRankedScore))
                 .ToArray(),
             rankedMapWithScores
-                .Where(x => x.RankedScores.Any(y => y.State.HasAnyFlag(EState.Confirmed)))
+                .Where(x => x.RankedScores.Any(y => y is AcceptedRankedScore))
                 .ToArray(),
             rankedMapWithScores
-                .Where(x => x.RankedScores.Any(y => y.State.HasAnyFlag(EState.Refused)))
+                .Where(x => x.RankedScores.Any(y => y is RefusedRankedScore))
                 .ToArray()
         );
 
@@ -364,15 +362,16 @@ file static class FlexCommand
         var score = rankedScore.Score;
         var version = rankedMap.Versions.First(x => x.Difficulty.Id == score.SongDifficultyId);
 
-        stringBuilder.Append(rankedScore.State switch
+        stringBuilder.Append(rankedScore switch
         {
-            _ when rankedScore.State.HasAnyFlag(EState.NonPointGivingNoPending) => ":x: ",
-            _ when rankedScore.State.HasAnyFlag(EState.Pending) => ":hourglass: ",
-            _ when rankedScore.State.HasAnyFlag(EState.Confirmed) => emojiSettings.Confirmed,
-            _ when rankedScore.State.HasAnyFlag(EState.Refused) => emojiSettings.Refused,
-            _ when rankedScore.State.HasAnyFlag(EState.Selected) => ":white_check_mark: ",
-            _ => string.Empty
+            InvalidRankedScore => ":x: ",
+            PendingRankedScore => ":hourglass: ",
+            AcceptedRankedScore => emojiSettings.Confirmed,
+            RefusedRankedScore => emojiSettings.Refused,
+            ValidRankedScore => ":white_check_mark: ",
+            _ => throw new UnreachableException()
         });
+
         stringBuilder.Append(((float)Accuracy.From(
                 BaseScore.CreateUnsafe(score.BaseScore).Value,
                 MaxScore.CreateUnsafe(version.Difficulty.Stats.MaxScore).Value))
@@ -423,9 +422,16 @@ file static class FlexCommand
             stringBuilder.Remove(stringBuilder.Length - 2, 2).Append(")** ");
         }
 
-        if (!rankedScore.State.HasAnyFlag(EState.NonPointGiving))
+        var pointGivingRawPoints = rankedScore switch
+        {
+            ValidRankedScore validRankedScore => validRankedScore.RawPoints,
+            AcceptedRankedScore acceptedRankedScore => acceptedRankedScore.RawPoints,
+            _ => null as float?
+        };
+
+        if (pointGivingRawPoints is { } rawPoints)
             stringBuilder.Append('(')
-                .Append(rankedScore.RawPoints.ToString("0.##")).Append(' ').Append(pointNamesById[rankedScore.PointId])
+                .Append(rawPoints.ToString("0.##")).Append(' ').Append(pointNamesById[rankedScore.PointId])
                 .Append(") ");
 
         stringBuilder.AppendLine(score is Score.BeatLeaderScore { BeatLeaderScoreId: { } blScoreId }

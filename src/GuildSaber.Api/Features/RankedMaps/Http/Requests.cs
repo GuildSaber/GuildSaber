@@ -1,5 +1,5 @@
 using GuildSaber.Api.Features.RankedMaps.MapVersions.Http;
-using GuildSaber.Api.Features.RankedScores.Http;
+using ERankedScoreType = GuildSaber.Api.Features.RankedScores.Http.RankedScoreRequests.ERankedScoreType;
 
 namespace GuildSaber.Api.Features.RankedMaps.Http;
 
@@ -20,14 +20,12 @@ public class RankedMapRequests
     /// If true, returns maps matching any of the provided categories. If false, returns only maps matching all provided
     /// categories.
     /// </param>
-    /// <param name="AnyRankedScoreStates">
-    /// If specified, only returns maps where the player has at least one ranked score with the specified state.
+    /// <param name="RankedScoreTypes">
+    /// If not None, only returns maps where the player has at least one selected ranked score with any of the specified
+    /// ranked score types.
     /// </param>
-    /// <param name="AllRankedScoreStates">
-    /// If specified, only returns maps where the player has ranked scores with the specified state for all map versions.
-    /// </param>
-    /// <param name="ExcludeRankedScoreStates">
-    /// If specified, excludes maps where the player has any ranked scores with the specified state.
+    /// <param name="IncludeMapsWithoutScore">
+    /// If true, also returns maps where the player has no selected ranked score.
     /// </param>
     /// <param name="DifficultyStarFrom">The minimum difficulty star rating to filter maps.</param>
     /// <param name="DifficultyStarTo">The maximum difficulty star rating to filter maps.</param>
@@ -42,9 +40,8 @@ public class RankedMapRequests
         [FromQuery(Name = "search")] string? Search = null,
         [FromQuery(Name = "categoryIds")] int[]? CategoryIds = null,
         [FromQuery(Name = "matchAnyCategory")] bool MatchAnyCategory = true,
-        [FromQuery(Name = "anyRankedScoreStates")] RankedScoreResponses.EState? AnyRankedScoreStates = null,
-        [FromQuery(Name = "allRankedScoreStates")] RankedScoreResponses.EState? AllRankedScoreStates = null,
-        [FromQuery(Name = "excludeRankedScoreStates")] RankedScoreResponses.EState? ExcludeRankedScoreStates = null,
+        [FromQuery(Name = "rankedScoreTypes")] ERankedScoreType RankedScoreTypes = ERankedScoreType.None,
+        [FromQuery(Name = "includeMapsWithoutScore")] bool IncludeMapsWithoutScore = false,
         [FromQuery(Name = "difficultyStarFrom")] float? DifficultyStarFrom = null,
         [FromQuery(Name = "difficultyStarTo")] float? DifficultyStarTo = null,
         [FromQuery(Name = "accuracyStarFrom")] float? AccuracyStarFrom = null,

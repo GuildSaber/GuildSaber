@@ -3,12 +3,13 @@ using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.RankedScores.Http;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
-using GuildSaber.Database.Models.Server.RankedScores;
 using GuildSaber.Database.Models.Server.Scores;
 using GuildSaber.Database.Models.Server.Songs;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties.GameModes;
 using GuildSaber.Database.Models.StrongTypes;
+using ERankedScoreType = GuildSaber.Api.Features.RankedScores.Http.RankedScoreRequests.ERankedScoreType;
+using RankedScoreType = GuildSaber.Database.Models.Server.RankedScores.RankedScore.ERankedScoreType;
 
 namespace GuildSaber.Api.Features.RankedMaps.Http;
 
@@ -68,12 +69,29 @@ public static class RankedMapMappers
 
     /// <warning>.AsExpandable() must be called with this expression</warning>
     public static Expression<Func<RankedMap, RankedMapResponses.RankedMapWithScores>> MapRankedMapWithScoresExpression(
-        PlayerId playerId) => self => new RankedMapResponses.RankedMapWithScores(
-        self.Map(),
-        self.RankedScores.AsQueryable()
-            .Where(x => x.PlayerId == playerId && x.State.HasFlag(RankedScore.EState.Selected))
-            .Select(x => x.Map())
-            .ToArray());
+        PlayerId playerId,
+        ERankedScoreType rankedScoreTypes = ERankedScoreType.None)
+    {
+        var filterByRankedScoreType = rankedScoreTypes is not ERankedScoreType.None;
+        var includeValid = rankedScoreTypes.HasFlag(ERankedScoreType.Valid);
+        var includeInvalid = rankedScoreTypes.HasFlag(ERankedScoreType.Invalid);
+        var includePending = rankedScoreTypes.HasFlag(ERankedScoreType.Pending);
+        var includeAccepted = rankedScoreTypes.HasFlag(ERankedScoreType.Accepted);
+        var includeRefused = rankedScoreTypes.HasFlag(ERankedScoreType.Refused);
+
+        return self => new RankedMapResponses.RankedMapWithScores(
+            self.Map(),
+            self.RankedScores.AsQueryable()
+                .Where(x => x.PlayerId == playerId && x.IsSelected)
+                .Where(x => !filterByRankedScoreType
+                            || includeValid && x.Type == RankedScoreType.Valid
+                            || includeInvalid && x.Type == RankedScoreType.Invalid
+                            || includePending && x.Type == RankedScoreType.Pending
+                            || includeAccepted && x.Type == RankedScoreType.Accepted
+                            || includeRefused && x.Type == RankedScoreType.Refused)
+                .Select(x => x.Map())
+                .ToArray());
+    }
 
     public static RankedMapResponses.RankedMapInfo Map(this RankedMapInfo self) => new(
         CreatedAt: self.CreatedAt,

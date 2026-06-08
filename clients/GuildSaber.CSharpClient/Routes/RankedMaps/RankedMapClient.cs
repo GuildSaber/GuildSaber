@@ -5,6 +5,7 @@ using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.RankedMaps.Http;
 using GuildSaber.Api.Shared;
+using ERankedScoreType = GuildSaber.Api.Features.RankedScores.Http.RankedScoreRequests.ERankedScoreType;
 using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapRequests;
 using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapResponses;
 
@@ -24,9 +25,8 @@ public class RankedMapClient(
         => new(
             $"contexts/{contextId}/ranked-maps?{(requestFilters.Search is null ? "" : $"search={requestFilters.Search}&")}page={requestOptions.Page}" +
             $"&pageSize={requestOptions.PageSize}&order={requestOptions.Order}&sortBy={requestOptions.SortBy}" +
-            $"{(requestFilters.AnyRankedScoreStates is null ? "" : $"&anyRankedScoreStates={requestFilters.AnyRankedScoreStates}")}" +
-            $"{(requestFilters.AllRankedScoreStates is null ? "" : $"&allRankedScoreStates={requestFilters.AllRankedScoreStates}")}" +
-            $"{(requestFilters.ExcludeRankedScoreStates is null ? "" : $"&excludeRankedScoreStates={requestFilters.ExcludeRankedScoreStates}")}" +
+            $"{(requestFilters.RankedScoreTypes is ERankedScoreType.None ? "" : $"&rankedScoreTypes={(int)requestFilters.RankedScoreTypes}")}" +
+            $"{(!requestFilters.IncludeMapsWithoutScore ? "" : $"&includeMapsWithoutScore={requestFilters.IncludeMapsWithoutScore}")}" +
             $"{(requestFilters.DifficultyStarFrom is null ? "" : $"&difficultyStarFrom={requestFilters.DifficultyStarFrom}")}" +
             $"{(requestFilters.AccuracyStarFrom is null ? "" : $"&accuracyStarFrom={requestFilters.AccuracyStarFrom}")}" +
             $"{(requestFilters.DifficultyStarTo is null ? "" : $"&difficultyStarTo={requestFilters.DifficultyStarTo}")}" +
@@ -47,9 +47,8 @@ public class RankedMapClient(
         => new(
             $"contexts/{contextId}/ranked-maps/with-scores/{(playerId is null ? "@me" : playerId)}?{(requestFilters.Search is null ? "" : $"search={requestFilters.Search}&")}page={requestOptions.Page}" +
             $"&pageSize={requestOptions.PageSize}&order={requestOptions.Order}&sortBy={requestOptions.SortBy}" +
-            $"{(requestFilters.AnyRankedScoreStates is null ? "" : $"&anyRankedScoreStates={requestFilters.AnyRankedScoreStates}")}" +
-            $"{(requestFilters.AllRankedScoreStates is null ? "" : $"&allRankedScoreStates={requestFilters.AllRankedScoreStates}")}" +
-            $"{(requestFilters.ExcludeRankedScoreStates is null ? "" : $"&excludeRankedScoreStates={requestFilters.ExcludeRankedScoreStates}")}" +
+            $"{(requestFilters.RankedScoreTypes is ERankedScoreType.None ? "" : $"&rankedScoreTypes={(int)requestFilters.RankedScoreTypes}")}" +
+            $"{(!requestFilters.IncludeMapsWithoutScore ? "" : $"&includeMapsWithoutScore={requestFilters.IncludeMapsWithoutScore}")}" +
             $"{(requestFilters.DifficultyStarFrom is null ? "" : $"&difficultyStarFrom={requestFilters.DifficultyStarFrom}")}" +
             $"{(requestFilters.AccuracyStarFrom is null ? "" : $"&accuracyStarFrom={requestFilters.AccuracyStarFrom}")}" +
             $"{(requestFilters.DifficultyStarTo is null ? "" : $"&difficultyStarTo={requestFilters.DifficultyStarTo}")}" +

@@ -11,17 +11,18 @@ public static class RankedScoreUpdateRankPipeline
     private static readonly string _updateAllowedRankedScoresRankFormattableString =
         $$"""
           UPDATE "{{nameof(ServerDbContext.RankedScores)}}" rs
-          SET "{{nameof(RankedScore.Rank)}}" = subquery."NewRank"
+          SET "{{nameof(PointGivingRankedScore.Rank)}}" = subquery."NewRank"
           FROM (
               SELECT 
                   "{{nameof(RankedScore.Id)}}", 
                   DENSE_RANK() OVER (
                       PARTITION BY "{{nameof(RankedScore.RankedMapId)}}", "{{nameof(RankedScore.PointId)}}"
-                      ORDER BY "{{nameof(RankedScore.RawPoints)}}" DESC, "{{nameof(RankedScore.EffectiveScore)}}" DESC
+                      ORDER BY "{{nameof(ScoredRankedScore.RawPoints)}}" DESC, "{{nameof(RankedScore.EffectiveScore)}}" DESC
                   ) AS "NewRank"
               FROM "{{nameof(ServerDbContext.RankedScores)}}"
               WHERE "{{nameof(RankedScore.RankedMapId)}}" = {0}
-                  AND ("{{nameof(RankedScore.State)}}" & {{(int)(RankedScore.EState.Selected | RankedScore.EState.NonPointGiving)}}) = {{(int)RankedScore.EState.Selected}}
+                  AND "{{nameof(RankedScore.IsSelected)}}"
+                  AND "{{nameof(RankedScore.Type)}}" IN ({{(int)RankedScore.ERankedScoreType.Valid}}, {{(int)RankedScore.ERankedScoreType.Accepted}})
           ) subquery
           WHERE rs."{{nameof(RankedScore.Id)}}" = subquery."{{nameof(RankedScore.Id)}}"
           """;

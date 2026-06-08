@@ -1,5 +1,3 @@
-using System.ComponentModel;
-using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.Players;
@@ -15,9 +13,7 @@ using PointId = GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId;
 
 namespace GuildSaber.Database.Models.Server.RankedScores;
 
-/*TODO: Turn RankedScore into a DU to enforce different states having different properties.
- * E.g. Denied scores will have a DenyReason and no RawPoints, Approved scores won't and will have RawPoints.*/
-public class RankedScore : IComparable<RankedScore>
+public abstract class RankedScore : IComparable<RankedScore>
 {
     public RankedScoreId Id { get; init; }
 
@@ -31,12 +27,8 @@ public class RankedScore : IComparable<RankedScore>
     public required ScoreId ScoreId { get; set; }
     public required ScoreId? PrevScoreId { get; set; }
 
-    public required EState State { get; set; }
-    public required EDenyReason DenyReason { get; set; }
+    public required bool IsSelected { get; set; }
     public required EffectiveScore EffectiveScore { get; set; }
-    public required RawPoints RawPoints { get; set; }
-
-    public required int Rank { get; set; }
     public required DateTimeOffset EditedAt { get; set; }
 
     public AbstractScore Score { get; set; } = null!;
@@ -45,34 +37,42 @@ public class RankedScore : IComparable<RankedScore>
     public RankedMap RankedMap { get; init; } = null!;
     public SongDifficulty SongDifficulty { get; init; } = null!;
 
-    /// <remarks>
-    /// Old piece of code non-tested and used for the sake of getting things to work.
-    /// </remarks>
+    public ERankedScoreType Type { get; private init; }
+
     public int CompareTo(RankedScore? other) => other switch
     {
         // Surely this score is better than a non-existing one.
         null => 1,
-        { State: var otherState } => ((State & EState.NonPointGivingNoPending) == 0) switch
+        // The other score is scored so we can compare it's state and points.
+        ScoredRankedScore otherRankedScore => this switch
         {
-            // State & otherState don't have any non-allowed flags.
-            true when (otherState & EState.NonPointGivingNoPending) == 0 =>
-                RawPoints.CompareTo(other.RawPoints) switch
-                {
-                    0 => EffectiveScore.CompareTo(other.EffectiveScore) switch
-                    {
-                        0 => PreferBlScore(other),
-                        var x => x
-                    },
-                    var x => x
-                },
-            // Other state has non-allowed flag(s) when State doesn't.
-            true => 1,
-            // Other state doesn't have non-allowed flag(s) while State has.
-            false when (otherState & EState.NonPointGivingNoPending) == 0 => -1,
-            // State and Other state have non-allowed flag(s).
-            false => RawPoints.CompareTo(other.RawPoints) switch
+            // We make sure to prioritize scores that are inclined to giving points.
+            ScoredRankedScore self => IsGivingPointOrPending().CompareTo(other.IsGivingPointOrPending()) switch
             {
-                0 => EffectiveScore.CompareTo(other.EffectiveScore) switch
+                0 => self.RawPoints.CompareTo(otherRankedScore.RawPoints) switch
+                {
+                    0 => EffectiveScore.CompareTo(otherRankedScore.EffectiveScore) switch
+                    {
+                        0 => PreferBlScore(otherRankedScore),
+                        var effectiveScoreComparison => effectiveScoreComparison
+                    },
+                    var rawPointsComparison => rawPointsComparison
+                },
+                var selectedComparison => selectedComparison
+            },
+            // Our score isn't scored, therefore it's worse than any scored.
+            _ => -1
+        },
+        // The other score isn't scored.
+        _ => this switch
+        {
+            // Our score is scored, therefore it's better than a non-scored one.
+            ScoredRankedScore => 1,
+            // Both scores aren't scored, we can simply compare their effective score.
+            _ => EffectiveScore.CompareTo(other.EffectiveScore) switch
+            {
+                // We make sure to prioritize scores that are inclined to giving points.
+                0 => IsGivingPointOrPending().CompareTo(other.IsGivingPointOrPending()) switch
                 {
                     0 => PreferBlScore(other),
                     var x => x
@@ -82,91 +82,18 @@ public class RankedScore : IComparable<RankedScore>
         }
     };
 
-    public readonly record struct RankedScoreId(long Value) : IEFStrongTypedId<RankedScoreId, long>
-    {
-        public static bool TryParse(string from, out RankedScoreId value)
-        {
-            if (long.TryParse(from, out var id))
-            {
-                value = new RankedScoreId(id);
-                return true;
-            }
-
-            value = default;
-            return false;
-        }
-
-        public static implicit operator long(RankedScoreId id)
-            => id.Value;
-
-        public override string ToString()
-            => Value.ToString();
-    }
+    public enum ERankedScoreType : byte { Valid = 0, Invalid = 1, Pending = 2, Accepted = 3, Refused = 4 }
 
     /// <summary>
-    /// The state of the ranked score in the ranking process.
+    /// Compares this score with another score by preferring BeatLeader as an underlying score preference.
+    /// If both scores are BeatLeader scores, it compares their BeatLeaderScoreId, if they exist, otherwise it falls back to
+    /// comparing their ScoreId.
     /// </summary>
-    /// <remarks>
-    /// All states but Approved are non-point-giving states.
-    /// </remarks>
-    [Flags]
-    public enum EState
-    {
-        [Description("Score is in no particular state. It might be unprocessed, it won't give points.")]
-        None = 0,
-
-        [Description("Score has been selected to giving points.")]
-        Selected = 1 << 0,
-
-        [Description("Score has been denied from giving points. Check DenyReason for clues.")]
-        Denied = 1 << 1,
-
-        [Description("Score has been removed from ranking. (Player removed from guild, or score was invalidated)")]
-        Removed = 1 << 2,
-
-        [Description("Score is awaiting review by a scoring team member.")]
-        Pending = 1 << 3,
-
-        [Description("Score has been confirmed by scoring team member.")]
-        Confirmed = 1 << 4,
-
-        [Description("Score has been refused by a scoring team member.")]
-        Refused = 1 << 5,
-
-        //Note for future me: Should auto-confirmed be its own state? Or just Confirmed.
-        NonPointGiving = None | Denied | Removed | Pending | Refused,
-        NonPointGivingNoPending = None | Denied | Removed | Refused
-    }
-
-    /// <summary>
-    /// The reason(s) a score was denied.
-    /// </summary>
-    [Flags]
-    public enum EDenyReason
-    {
-        [Description("No reason specified.")]
-        Unspecified = 0,
-
-        [Description("Score did not meet the minimum score requirement.")]
-        MinAccuracyRequirements = 1 << 0,
-
-        [Description("Score used prohibited modifiers.")]
-        ProhibitedModifiers = 1 << 1,
-
-        [Description("Score was missing required modifiers.")]
-        MissingModifiers = 1 << 2,
-
-        [Description("Score had too much pause time.")]
-        TooMuchPaused = 1 << 3,
-
-        [Description("Score was not a full combo when one was required.")]
-        NoFullCombo = 1 << 4,
-
-        [Description("Score was missing trackers.")]
-        MissingTrackers = 1 << 5
-    }
-
-    public int PreferBlScore(RankedScore other) => Score switch
+    /// <returns>
+    /// 1 if this score should be preferred over the other, -1 if the other should be preferred, 0 if they are equal in terms
+    /// of preference.
+    /// </returns>
+    private int PreferBlScore(RankedScore other) => Score switch
     {
         { Type: AbstractScore.EScoreType.BeatLeader } => other.Score switch
         {
@@ -186,6 +113,8 @@ public class RankedScore : IComparable<RankedScore>
             _ => ScoreId.Value.CompareTo(other.ScoreId.Value)
         }
     };
+
+    private bool IsGivingPointOrPending() => this is PointGivingRankedScore or PendingRankedScore;
 }
 
 public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
@@ -194,21 +123,25 @@ public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id)
-            .HasGenericConversion<RankedScore.RankedScoreId, long>()
+            .HasConversion(from => from.Value, to => new RankedScoreId(to))
             .ValueGeneratedOnAdd();
 
         builder.HasIndex(x => new { x.ContextId, x.PointId, x.RankedMapId });
-        builder.HasIndex(x => new { x.ContextId, x.PlayerId, x.RawPoints, x.Id })
-            .IsDescending(false, false, true, false);
-        builder.HasIndex(x => new { x.RankedMapId, x.PlayerId, x.State });
-        builder.HasIndex(x => new { x.PlayerId, x.State });
-        builder.HasIndex(x => x.State);
+        builder.HasIndex(x => new { x.RankedMapId, x.PlayerId, x.IsSelected });
+        builder.HasIndex(x => new { x.PlayerId, x.IsSelected });
+        builder.HasIndex(x => x.IsSelected);
         builder.HasIndex(x => x.EditedAt);
+
+        builder.HasDiscriminator(x => x.Type)
+            .HasValue<ValidRankedScore>(RankedScore.ERankedScoreType.Valid)
+            .HasValue<InvalidRankedScore>(RankedScore.ERankedScoreType.Invalid)
+            .HasValue<PendingRankedScore>(RankedScore.ERankedScoreType.Pending)
+            .HasValue<AcceptedRankedScore>(RankedScore.ERankedScoreType.Accepted)
+            .HasValue<RefusedRankedScore>(RankedScore.ERankedScoreType.Refused)
+            .IsComplete();
 
         builder.Property(x => x.EffectiveScore)
             .HasConversion<int>(from => from, to => EffectiveScore.CreateUnsafe(to).Value);
-        builder.Property(x => x.RawPoints)
-            .HasConversion<float>(from => from, to => RawPoints.CreateUnsafe(to).Value);
 
         builder.HasOne<Guild>()
             .WithMany(x => x.RankedScores).HasForeignKey(x => x.GuildId)

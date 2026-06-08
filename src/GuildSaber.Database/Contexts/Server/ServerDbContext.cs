@@ -54,6 +54,13 @@ public class ServerDbContext : DbContext
     public DbSet<BeatLeaderScore> BeatLeaderScores { get; set; }
 
     public DbSet<RankedScore> RankedScores { get; set; }
+    public DbSet<ScoredRankedScore> ScoredRankedScores { get; set; }
+    public DbSet<PointGivingRankedScore> PointGivingRankedScores { get; set; }
+    public DbSet<ValidRankedScore> ValidRankedScores { get; set; }
+    public DbSet<InvalidRankedScore> InvalidRankedScores { get; set; }
+    public DbSet<PendingRankedScore> PendingRankedScores { get; set; }
+    public DbSet<AcceptedRankedScore> AcceptedRankedScores { get; set; }
+    public DbSet<RefusedRankedScore> RefusedRankedScores { get; set; }
 
     public DbSet<Song> Songs { get; set; }
     public DbSet<SongDifficulty> SongDifficulties { get; set; }
@@ -95,6 +102,13 @@ public class ServerDbContext : DbContext
         builder.ApplyConfiguration(new RankedMapConfiguration());
         builder.ApplyConfiguration(new MapVersionConfiguration());
         builder.ApplyConfiguration(new RankedScoreConfiguration());
+        builder.ApplyConfiguration(new ScoredRankedScoreConfiguration());
+        builder.ApplyConfiguration(new PointGivingRankedScoreConfiguration());
+        builder.ApplyConfiguration(new ValidRankedScoreConfiguration());
+        builder.ApplyConfiguration(new InvalidRankedScoreConfiguration());
+        builder.ApplyConfiguration(new PendingRankedScoreConfiguration());
+        builder.ApplyConfiguration(new AcceptedRankedScoreConfiguration());
+        builder.ApplyConfiguration(new RefusedRankedScoreConfiguration());
         builder.ApplyConfiguration(new SongConfiguration());
         builder.ApplyConfiguration(new SongDifficultyConfiguration());
         builder.ApplyConfiguration(new PlayModeConfiguration());

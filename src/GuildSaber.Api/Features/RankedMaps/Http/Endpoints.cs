@@ -6,12 +6,11 @@ using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.RankedScores.Http;
 using GuildSaber.Api.Shared;
 using GuildSaber.Api.Transformers;
-using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
+using GuildSaber.Database.Models.Server.RankedScores;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using ServerRankedMap = GuildSaber.Database.Models.Server.RankedMaps.RankedMap;
-using ServerRankedScore = GuildSaber.Database.Models.Server.RankedScores.RankedScore;
 using RankedMapId = GuildSaber.Database.Models.Server.RankedMaps.RankedMap.RankedMapId;
 using static GuildSaber.Api.Features.RankedMaps.RankedMapService;
 using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapRequests;
@@ -175,7 +174,7 @@ public class RankedMapEndpoints : IEndpoints
             .Where(x => x.ContextId == contextId)
             .ApplyFilters(filters, playerId)
             .ApplySortOrder(sortBy, order, playerId)
-            .Select(RankedMapMappers.MapRankedMapWithScoresExpression(playerId))
+            .Select(RankedMapMappers.MapRankedMapWithScoresExpression(playerId, filters.RankedScoreTypes))
             .ToPagedListAsync(page, pageSize));
 }
 
@@ -192,33 +191,32 @@ public static class RankedMapExtensions
 
             if (playerId is not null)
             {
-                if (filters.AnyRankedScoreStates is { } anyRankedScoreStates)
-                {
-                    if (anyRankedScoreStates.HasFlag(RankedScoreResponses.EState.Selected))
-                        query = query.Where(x => x.RankedScores
-                            .Any(rs => rs.PlayerId == playerId && rs.State.HasFlag(ServerRankedScore.EState.Selected)));
+                var filterByRankedScoreTypes =
+                    filters.RankedScoreTypes is not RankedScoreRequests.ERankedScoreType.None;
 
-                    var stateValue = (ServerRankedScore.EState)anyRankedScoreStates;
-                    query = query.Where(x => x.RankedScores
-                        .Where(rs => rs.PlayerId == playerId && rs.State.HasFlag(ServerRankedScore.EState.Selected))
-                        .All(rs => (rs.State & stateValue) != 0));
-                }
-
-                if (filters.AllRankedScoreStates is { } allRankedScoreStates)
+                if (filterByRankedScoreTypes || filters.IncludeMapsWithoutScore)
                 {
-                    var stateValue = (ServerRankedScore.EState)allRankedScoreStates;
-                    query = query.Where(x => x.RankedScores.Any(rs =>
-                        rs.PlayerId == playerId
-                        && rs.State.HasFlag(ServerRankedScore.EState.Selected)
-                        && rs.State.HasFlag(stateValue)));
-                }
+                    var includeMapsWithoutScore = filters.IncludeMapsWithoutScore;
+                    var includeValid = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Valid);
+                    var includeInvalid = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Invalid);
+                    var includePending = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Pending);
+                    var includeAccepted = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Accepted);
+                    var includeRefused = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Refused);
 
-                if (filters.ExcludeRankedScoreStates is { } excludeRankedScoreStates)
-                {
-                    var stateValue = (ServerRankedScore.EState)excludeRankedScoreStates;
-                    query = query.Where(x => x.RankedScores
-                        .Where(rs => rs.PlayerId == playerId && rs.State.HasFlag(ServerRankedScore.EState.Selected))
-                        .All(rs => (rs.State & stateValue) == 0));
+                    query = query.Where(x =>
+                        includeMapsWithoutScore
+                        && !x.RankedScores.Any(rs => rs.PlayerId == playerId && rs.IsSelected)
+                        || filterByRankedScoreTypes
+                        && x.RankedScores.Any(rs =>
+                            rs.PlayerId == playerId
+                            && rs.IsSelected
+                            && (
+                                includeValid && rs is ValidRankedScore
+                                || includeInvalid && rs is InvalidRankedScore
+                                || includePending && rs is PendingRankedScore
+                                || includeAccepted && rs is AcceptedRankedScore
+                                || includeRefused && rs is RefusedRankedScore
+                            )));
                 }
             }
 
@@ -295,7 +293,7 @@ public static class RankedMapExtensions
                         .FirstOrDefault())
                     .ThenBy(order, x => x.Id),
                 ERankedMapSorter.RankedScoreTime => query.OrderBy(order, x => x.RankedScores
-                        .Where(rs => rs.PlayerId == playerId && rs.State.HasFlag(ServerRankedScore.EState.Selected))
+                        .Where(rs => rs.PlayerId == playerId && rs.IsSelected)
                         .Select(rs => rs.EditedAt)
                         .FirstOrDefault())
                     .ThenBy(order, x => x.Id),

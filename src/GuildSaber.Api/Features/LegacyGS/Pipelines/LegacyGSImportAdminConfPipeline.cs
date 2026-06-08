@@ -1,9 +1,10 @@
 using CSharpFunctionalExtensions;
+using GuildSaber.Api.Features.RankedScores.Pipelines;
 using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Services.LegacyGuildSaber;
-using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds.Points;
+using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.RankedScores;
 using Microsoft.EntityFrameworkCore;
 using OldGSState = GuildSaber.Common.Services.LegacyGuildSaber.Models.EState;
@@ -30,13 +31,15 @@ public class LegacyGSImportAdminConfPipeline(
             .FirstAsync(token);
 
         var impactedContextPoints = new HashSet<(ContextId, Point.PointId)>();
-        await foreach (var data in dbContext.RankedScores
-                           .Where(x => x.PlayerId == playerId && x.State.HasFlag(RankedScore.EState.Pending))
+        var impactedRankedMapIds = new HashSet<RankedMap.RankedMapId>();
+        await foreach (var data in dbContext.PendingRankedScores
+                           .Where(x => x.PlayerId == playerId)
                            .Select(x => new
                            {
                                x.Id,
                                x.ContextId,
                                x.PointId,
+                               x.RankedMapId,
                                x.Score.BaseScore,
                                x.SongDifficulty.BLLeaderboardId,
                                x.SongDifficulty.SSLeaderboardId
@@ -67,30 +70,13 @@ public class LegacyGSImportAdminConfPipeline(
                 continue;
 
             if (state.HasAnyFlag(OldGSState.ScoringTeamConfirmed | OldGSState.Allowed))
-                await dbContext.RankedScores
-                    .Where(x => x.Id == data.Id)
-                    .ExecuteUpdateAsync(x =>
-                        {
-                            x.SetProperty(y => y.State, y => y.State
-                                & ~RankedScore.EState.Pending | RankedScore.EState.Confirmed);
-                            x.SetProperty(y => y.EditedAt, y => timeProvider.GetUtcNow());
-                        },
-                        cancellationToken: token
-                    );
+                await UpdateRankedScoreTypeAsync(data.Id, RankedScore.ERankedScoreType.Accepted, token);
             else if (state.HasAnyFlag(OldGSState.ScoringTeamDenied | OldGSState.Denied))
-                await dbContext.RankedScores
-                    .Where(x => x.Id == data.Id)
-                    .ExecuteUpdateAsync(x =>
-                        {
-                            x.SetProperty(y => y.State, y => y.State
-                                & ~RankedScore.EState.Pending | RankedScore.EState.Refused);
-                            x.SetProperty(y => y.EditedAt, y => timeProvider.GetUtcNow());
-                        },
-                        cancellationToken: token
-                    );
+                await UpdateRankedScoreTypeAsync(data.Id, RankedScore.ERankedScoreType.Refused, token);
             else continue;
 
             impactedContextPoints.Add((data.ContextId, data.PointId));
+            impactedRankedMapIds.Add(data.RankedMapId);
         }
 
         if (impactedContextPoints.Count == 0)
@@ -103,7 +89,22 @@ public class LegacyGSImportAdminConfPipeline(
 
         logger.LogInformation("Completed importing {count} legacy GuildSaber admin confirmations for player {PlayerId}",
             impactedContextPoints.Count, playerId);
+        await RankedScoreUpdateRankPipeline.UpdateRanksForRankedMapsAsync(impactedRankedMapIds, dbContext);
 
         return true;
     }
+
+    private Task<int> UpdateRankedScoreTypeAsync(
+        RankedScoreId rankedScoreId,
+        RankedScore.ERankedScoreType type,
+        CancellationToken token)
+        => dbContext.Database.ExecuteSqlAsync(
+            $"""
+             UPDATE "{nameof(ServerDbContext.RankedScores)}"
+             SET "{nameof(RankedScore.Type)}" = {(int)type},
+                 "{nameof(PointGivingRankedScore.Rank)}" = CASE WHEN {(int)type} = {(int)RankedScore.ERankedScoreType.Accepted} THEN 0 ELSE NULL END,
+                 "{nameof(RankedScore.EditedAt)}" = {timeProvider.GetUtcNow()}
+             WHERE "{nameof(RankedScore.Id)}" = {rankedScoreId.Value}
+             """,
+            token);
 }
