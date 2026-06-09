@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.RankedScores.Pipelines;
 using GuildSaber.Common.Helpers;
@@ -17,6 +18,15 @@ public class LegacyGSImportAdminConfPipeline(
     TimeProvider timeProvider,
     ILogger<LegacyGSImportAdminConfPipeline> logger)
 {
+    private static readonly string _updateRankedScoreTypeFormattableString =
+        $$"""
+          UPDATE "{{nameof(ServerDbContext.RankedScores)}}"
+          SET "{{nameof(RankedScore.Type)}}" = {0},
+              "{{nameof(PointGivingRankedScore.Rank)}}" = CASE WHEN {0} = {{(int)RankedScore.ERankedScoreType.Accepted}} THEN 0 ELSE NULL END,
+              "{{nameof(RankedScore.EditedAt)}}" = {1}
+          WHERE "{{nameof(RankedScore.Id)}}" = {2}
+          """;
+
     /// <returns>True if any confirmations were imported; otherwise, false.</returns>
     public async Task<bool> ExecuteAsync(GuildId guildId, PlayerId playerId, CancellationToken token)
     {
@@ -95,16 +105,12 @@ public class LegacyGSImportAdminConfPipeline(
     }
 
     private Task<int> UpdateRankedScoreTypeAsync(
-        RankedScoreId rankedScoreId,
-        RankedScore.ERankedScoreType type,
-        CancellationToken token)
-        => dbContext.Database.ExecuteSqlAsync(
-            $"""
-             UPDATE "{nameof(ServerDbContext.RankedScores)}"
-             SET "{nameof(RankedScore.Type)}" = {(int)type},
-                 "{nameof(PointGivingRankedScore.Rank)}" = CASE WHEN {(int)type} = {(int)RankedScore.ERankedScoreType.Accepted} THEN 0 ELSE NULL END,
-                 "{nameof(RankedScore.EditedAt)}" = {timeProvider.GetUtcNow()}
-             WHERE "{nameof(RankedScore.Id)}" = {rankedScoreId.Value}
-             """,
+        RankedScoreId rankedScoreId, RankedScore.ERankedScoreType type, CancellationToken token) => dbContext.Database
+        .ExecuteSqlAsync(
+            FormattableStringFactory.Create(
+                _updateRankedScoreTypeFormattableString,
+                (int)type,
+                timeProvider.GetUtcNow(),
+                rankedScoreId.Value),
             token);
 }
