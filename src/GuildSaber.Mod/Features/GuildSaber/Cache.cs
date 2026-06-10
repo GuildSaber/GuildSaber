@@ -87,7 +87,7 @@ public static class GuildSaberCacheExtensions
             var searchResult = await client.RankedMaps.GetWithScoreAsync(
                 contextId,
                 playerId,
-                new RankedMapRequests.Filters(Search: hash),
+                new RankedMapRequests.Filters(Search: hash, IncludeMapsWithoutScore: true),
                 new PaginatedRequestOptions<RankedMapRequests.ERankedMapSorter>(Page: 1, PageSize: 8)
             );
 
