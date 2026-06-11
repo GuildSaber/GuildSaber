@@ -19,7 +19,7 @@ public class RankedMapClient(
     AuthenticationHeaderValue? authenticationHeader,
     JsonSerializerOptions jsonOptions)
 {
-    private Uri GetRankedMapUrl(
+    private static Uri GetRankedMapUrl(
         ContextId contextId, Filters requestFilters,
         PaginatedRequestOptions<ERankedMapSorter> requestOptions)
         => new(
@@ -41,7 +41,7 @@ public class RankedMapClient(
             UriKind.Relative
         );
 
-    private Uri GetRankedMapWithScoreUrl(
+    private static Uri GetRankedMapWithScoresUrl(
         ContextId contextId, PlayerId? playerId, Filters requestFilters,
         PaginatedRequestOptions<ERankedMapSorter> requestOptions)
         => new(
@@ -107,7 +107,7 @@ public class RankedMapClient(
             };
 
     /// <summary>
-    /// Gets a paginated list of ranked maps with score for a specific player.
+    /// Gets a paginated list of ranked maps with point scores for a specific player.
     /// </summary>
     /// <param name="contextId">The context identifier.</param>
     /// <param name="playerId">The player identifier.</param>
@@ -115,46 +115,46 @@ public class RankedMapClient(
     /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing a paginated list of ranked maps with score.</returns>
-    public async Task<Result<PagedList<RankedMapWithScores>>> GetWithScoreAsync(
+    public async Task<Result<PagedList<RankedMapWithScores>>> GetWithScoresAsync(
         ContextId contextId,
         PlayerId playerId,
         Filters requestFilters,
         PaginatedRequestOptions<ERankedMapSorter> requestOptions,
         CancellationToken token = default)
-        => await httpClient.GetAsync(GetRankedMapWithScoreUrl(contextId, playerId, requestFilters, requestOptions),
+        => await httpClient.GetAsync(GetRankedMapWithScoresUrl(contextId, playerId, requestFilters, requestOptions),
                     token)
                 .ConfigureAwait(false) switch
             {
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<PagedList<RankedMapWithScores>>(
-                        $"Failed to retrieve ranked maps with score for context ID {contextId} and player {playerId}, status code: {(int)statusCode} ({reasonPhrase})"),
+                        $"Failed to retrieve ranked maps with point scores for context ID {contextId} and player {playerId}, status code: {(int)statusCode} ({reasonPhrase})"),
                 var response => await Try(() => response.Content
                         .ReadFromJsonAsync<PagedList<RankedMapWithScores>>(jsonOptions, cancellationToken: token))
                     .ConfigureAwait(false)
             };
 
     /// <summary>
-    /// Gets a paginated list of ranked maps with score for the current user (@me).
+    /// Gets a paginated list of ranked maps with point scores for the current user (@me).
     /// </summary>
     /// <param name="contextId">The context identifier.</param>
     /// <param name="requestFilters">Filters to apply to the ranked map request.</param>
     /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing a paginated list of ranked maps with score for @me.</returns>
-    public async Task<Result<PagedList<RankedMapWithScores>>> GetWithScoreAtMeAsync(
+    public async Task<Result<PagedList<RankedMapWithScores>>> GetWithScoresAtMeAsync(
         ContextId contextId,
         Filters requestFilters,
         PaginatedRequestOptions<ERankedMapSorter> requestOptions,
         CancellationToken token = default)
         => await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get,
-                GetRankedMapWithScoreUrl(contextId, null, requestFilters, requestOptions))
+                GetRankedMapWithScoresUrl(contextId, null, requestFilters, requestOptions))
             {
                 Headers = { Authorization = authenticationHeader }
             }, token).ConfigureAwait(false) switch
             {
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<PagedList<RankedMapWithScores>>(
-                        $"Failed to retrieve ranked maps with score for context ID {contextId} (@me), status code: {(int)statusCode} ({reasonPhrase})"),
+                        $"Failed to retrieve ranked maps with point score for context ID {contextId} (@me), status code: {(int)statusCode} ({reasonPhrase})"),
                 var response => await Try(() => response.Content
                         .ReadFromJsonAsync<PagedList<RankedMapWithScores>>(jsonOptions, cancellationToken: token))
                     .ConfigureAwait(false)
@@ -205,7 +205,7 @@ public class RankedMapClient(
     }
 
     /// <summary>
-    /// Asynchronously retrieves ranked maps with score for a specific player, with automatic pagination.
+    /// Asynchronously retrieves ranked maps with point scores for a specific player, with automatic pagination.
     /// </summary>
     /// <param name="contextId">The context identifier.</param>
     /// <param name="playerId">The player identifier.</param>
@@ -215,7 +215,7 @@ public class RankedMapClient(
     /// An async enumerable sequence of <see cref="Result{T}" /> containing arrays of
     /// <see cref="RankedMapResponses.RankedMapWithScores" />.
     /// </returns>
-    public async IAsyncEnumerable<Result<RankedMapWithScores[]>> GetAsyncWithScoreEnumerable(
+    public async IAsyncEnumerable<Result<RankedMapWithScores[]>> GetAsyncWithScoresEnumerable(
         ContextId contextId,
         PlayerId playerId,
         Filters requestFilters,
@@ -223,7 +223,7 @@ public class RankedMapClient(
     {
         while (pageOptions.Page <= pageOptions.MaxPage)
         {
-            var url = GetRankedMapWithScoreUrl(contextId, playerId, requestFilters, pageOptions);
+            var url = GetRankedMapWithScoresUrl(contextId, playerId, requestFilters, pageOptions);
             var response = await httpClient.GetAsync(url).ConfigureAwait(false);
             pageOptions.Page++;
 
@@ -232,7 +232,7 @@ public class RankedMapClient(
             {
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<RankedMapWithScores[]>(
-                        $"Failed to retrieve ranked maps with score for context ID {contextId} and player {playerId} at page {pageOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
+                        $"Failed to retrieve ranked maps with point scores for context ID {contextId} and player {playerId} at page {pageOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
                 _ => await Try(() => response.Content
                         .ReadFromJsonAsync<PagedList<RankedMapWithScores>>(jsonOptions))
                     .Map(RankedMapWithScores[] (parsed) => parsed.Data)
@@ -245,7 +245,7 @@ public class RankedMapClient(
     }
 
     /// <summary>
-    /// Asynchronously retrieves ranked maps with score for the current user (@me), with automatic pagination.
+    /// Asynchronously retrieves ranked maps with scores for the current user (@me), with automatic pagination.
     /// </summary>
     /// <param name="contextId">The context identifier.</param>
     /// <param name="requestFilters">Filters to apply to the ranked map request.</param>
@@ -254,14 +254,14 @@ public class RankedMapClient(
     /// An async enumerable sequence of <see cref="Result{T}" /> containing arrays of
     /// <see cref="RankedMapResponses.RankedMapWithScores" />.
     /// </returns>
-    public async IAsyncEnumerable<Result<RankedMapWithScores[]>> GetAsyncWithScoreAtMeEnumerable(
+    public async IAsyncEnumerable<Result<RankedMapWithScores[]>> GetAsyncWithScoresAtMeEnumerable(
         ContextId contextId,
         Filters requestFilters,
         PaginatedRequestOptions<ERankedMapSorter> pageOptions)
     {
         while (pageOptions.Page <= pageOptions.MaxPage)
         {
-            var url = GetRankedMapWithScoreUrl(contextId, null, requestFilters, pageOptions);
+            var url = GetRankedMapWithScoresUrl(contextId, null, requestFilters, pageOptions);
             var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, url)
             {
                 Headers = { Authorization = authenticationHeader }
@@ -273,7 +273,7 @@ public class RankedMapClient(
             {
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<RankedMapWithScores[]>(
-                        $"Failed to retrieve ranked maps with score for context ID {contextId} (@me) at page {pageOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
+                        $"Failed to retrieve ranked maps with scores for context ID {contextId} (@me) at page {pageOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
                 _ => await Try(() => response.Content.ReadFromJsonAsync<PagedList<RankedMapWithScores>>(jsonOptions))
                     .Map(RankedMapWithScores[] (parsed) => parsed.Data)
                     .ConfigureAwait(false)

@@ -114,7 +114,7 @@ file static class SearchCommand
 
         var (categories, rankedMaps, playerResult) = await (
                 cache.GetGuildCategoriesAsync(guildId, client).AsTask(),
-                client.RankedMaps.GetWithScoreAsync(contextId, playerId, requestFilters, pageOption),
+                client.RankedMaps.GetWithScoresAsync(contextId, playerId, requestFilters, pageOption),
                 client.Players.GetByIdAsync(playerId))
             .WhenAll();
 
