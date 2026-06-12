@@ -182,8 +182,15 @@ public class RankedMapStats(
             (false, false, false, isPending: true, false) => questionMarkTexture,
             (isGivingPoint: true, false, false, false, isConfirmed: true) => checkShieldTexture,
             (false, isRefused: true, false, false, false) => denyShieldTexture,
-            _ => throw new InvalidOperationException("Incompatible states")
+            _ => null
         };
+
+        if (texture is null)
+        {
+            _whiteMarkImage.SetActive(false);
+            SetActive(true);
+            return;
+        }
 
         var resultSprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.zero);
         _whiteMarkImage.SetSprite(resultSprite);
