@@ -9,7 +9,6 @@ public class GuildSaberMenuButton : MenuButton
         : base("Guild Saber", null)
     {
         OnClick += guildSaberSettingsFlowCoordinator.Present;
-
         MenuButtons.Instance.RegisterButton(this);
     }
 }

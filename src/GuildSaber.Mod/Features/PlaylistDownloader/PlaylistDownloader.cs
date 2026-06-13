@@ -6,16 +6,12 @@ using GuildSaber.Api.Features.Guilds.Levels.Playlists.Http;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using GuildSaber.CSharpClient.Routes.Guilds.Levels.Playlists;
-using GuildSaber.Mod.Features.GuildSaber;
+using GuildSaber.Mod.Features.GuildSaber.Runtime;
 
 namespace GuildSaber.Mod.Features.PlaylistDownloader;
 
 [SuppressMessage("ReSharper", "AsyncVoidMethod")]
-public class PlaylistDownloader(
-    GuildSaberClient client,
-    GuildSaberConfig config,
-    GuildSaberCache cache,
-    Logger logger)
+public class PlaylistDownloader(GuildSaberClient client, GuildSaberSession session, Logger logger)
 {
     public bool IsDownloading { get; private set; }
 
@@ -34,7 +30,7 @@ public class PlaylistDownloader(
 
     public string GetGuildPlaylistsPath()
     {
-        var guildName = cache.GuildsExtended[config.GuildId].Guild.Info.Name;
+        var guildName = session.CurrentGuild.Guild.Info.Name;
         return Path.Combine(".", "Playlists", "GuildSaber", PlaylistUtilities.SanitizeFileName(guildName));
     }
 
@@ -45,8 +41,9 @@ public class PlaylistDownloader(
 
         try
         {
-            var categories = cache.GuildsExtended[config.GuildId].Categories;
-            var levels = cache.MemberLevelStats[config.ContextId];
+            var currentGuild = session.CurrentGuild;
+            var categories = currentGuild.Categories;
+            var levels = session.CurrentMemberLevelStats;
 
             var (successfulPlaylists, failedPlaylists) = (0, 0);
             foreach (var category in categories.Where(c => !categoryId.HasValue || c.Id == categoryId.Value))
@@ -78,7 +75,7 @@ public class PlaylistDownloader(
 
                     var playlistFilename = PlaylistUtilities.GetPlaylistFileName(
                         level.Level,
-                        cache.GuildsExtended[config.GuildId]
+                        currentGuild
                     );
 
                     var path = Path.Combine(playlistsPath, playlistFilename);

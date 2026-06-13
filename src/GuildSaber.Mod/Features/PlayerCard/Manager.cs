@@ -1,5 +1,6 @@
 using BeatSaberMarkupLanguage.FloatingScreen;
 using GuildSaber.Mod.Features.GuildSaber;
+using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using GuildSaber.Mod.Features.PlayerCard.UI;
 using HMUI;
 using Zenject;
@@ -8,6 +9,8 @@ namespace GuildSaber.Mod.Features.PlayerCard;
 
 internal class PlayerCardManager(
     GuildSaberManager manager,
+    GuildSaberSession session,
+    GuildSaberConfig config,
     PlayerCardView playerCardView,
     [Inject(Id = Constants.CardFloatingPanelId)] FloatingScreen cardFloatingScreen,
     Logger logger
@@ -15,11 +18,15 @@ internal class PlayerCardManager(
 {
     public void Initialize()
     {
-        if (manager.Initialized)
-            playerCardView.RefreshCard();
+        if (manager.Initialized) playerCardView.RefreshCard();
+        session.CurrentGuildContextChanged += (_, _) => playerCardView.RefreshCard();
 
-        manager.OnInitializationStarted += () => { playerCardView.DisplayCard(PlayerCardView.EDisplayMode.Loading); };
-        manager.OnInitializationFinished += playerCardView.RefreshCard;
+        manager.OnGuildSelectionStarted += () => playerCardView.DisplayCard(PlayerCardView.EDisplayMode.Loading);
+        manager.OnMemberStatsRefreshed += contextId =>
+        {
+            if (contextId == config.ContextId)
+                playerCardView.RefreshMemberStats();
+        };
         manager.OnInitializationError += error =>
         {
             logger.Warn($"GuildSaberManager initialization error: {error}");
@@ -33,8 +40,5 @@ internal class PlayerCardManager(
 
         cardFloatingScreen.name = "PlayerCardFloatingScreen";
         cardFloatingScreen.SetRootViewController(playerCardView, ViewController.AnimationType.In);
-
-        // In case GuildSaberManager is already initialized before PlayerCardManager, we directly refresh the card.
-        // playerCardView.RefreshCard();
     }
 }

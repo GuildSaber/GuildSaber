@@ -44,6 +44,24 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="System.Configuration.ConfigurationManager">
+            <GeneratePathProperty>true</GeneratePathProperty>
+        </PackageReference>
+        <PackageReference Include="System.Runtime.Caching">
+            <GeneratePathProperty>true</GeneratePathProperty>
+        </PackageReference>
+        <PackageReference Include="System.Security.AccessControl">
+            <GeneratePathProperty>true</GeneratePathProperty>
+        </PackageReference>
+        <PackageReference Include="System.Security.Cryptography.ProtectedData">
+            <GeneratePathProperty>true</GeneratePathProperty>
+        </PackageReference>
+        <PackageReference Include="System.Security.Permissions">
+            <GeneratePathProperty>true</GeneratePathProperty>
+        </PackageReference>
+        <PackageReference Include="System.Security.Principal.Windows">
+            <GeneratePathProperty>true</GeneratePathProperty>
+        </PackageReference>
         <PackageReference Include="System.Text.Json">
             <GeneratePathProperty>true</GeneratePathProperty>
         </PackageReference>
@@ -117,6 +135,11 @@
         </Reference>
         <Reference Include="BSML">
             <HintPath>$(BeatSaberDir)\Plugins\BSML.dll</HintPath>
+            <Private>False</Private>
+            <SpecificVersion>False</SpecificVersion>
+        </Reference>
+        <Reference Include="BeatLeader">
+            <HintPath>$(BeatSaberDir)\Plugins\BeatLeader.dll</HintPath>
             <Private>False</Private>
             <SpecificVersion>False</SpecificVersion>
         </Reference>

@@ -1,10 +1,9 @@
 ﻿using System;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds.Http;
-using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;
-using GuildSaber.Mod.Features.GuildSaber;
+using GuildSaber.Mod.Features.GuildSaber.Caching;
 using GuildSaber.Mod.Features.PlayerCard.UI.Components.GuildSelector;
 using GuildSaber.Mod.Helpers;
 using TMPro;
@@ -19,10 +18,10 @@ public class GuildButton : GSSecondaryButton
     private GuildResponses.GuildExtended _currentGuild = null!;
 
     public GuildButton(
-        GuildSaberCache guildSaberData, UIFactory uiFactory, Texture2D guildSaberWhiteLogo, TMP_FontAsset font,
-        GuildSaberClient client, Action? onClick = null) : base(string.Empty, font, onClick)
+        GuildAssetCache guildAssetCache, UIFactory uiFactory, Texture2D guildSaberWhiteLogo, TMP_FontAsset font,
+        Action? onClick = null) : base(string.Empty, font, onClick)
     {
-        _guildIcon = GuildIconButton.Make(guildSaberData, guildSaberWhiteLogo, client, null);
+        _guildIcon = GuildIconButton.Make(guildAssetCache, guildSaberWhiteLogo, null);
         _guildName = uiFactory.Text("");
 
         OnReady(element =>
@@ -50,8 +49,8 @@ public class GuildButton : GSSecondaryButton
     public event Action<GuildResponses.GuildExtended> OnClicked = null!;
 
     public static GuildButton Make(
-        GuildSaberCache guildSaberData, UIFactory factory, Texture2D guildSaberWhiteLogo, TMP_FontAsset font,
-        GuildSaberClient client) => new(guildSaberData, factory, guildSaberWhiteLogo, font, client);
+        GuildAssetCache guildAssetCache, UIFactory factory, Texture2D guildSaberWhiteLogo, TMP_FontAsset font)
+        => new(guildAssetCache, factory, guildSaberWhiteLogo, font);
 
     public override Color GetColor() => Color.black.WithAlpha(0.7f);
 

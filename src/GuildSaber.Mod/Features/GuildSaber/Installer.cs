@@ -1,4 +1,6 @@
 ﻿using GuildSaber.CSharpClient;
+using GuildSaber.Mod.Features.GuildSaber.Caching;
+using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using GuildSaber.Mod.Helpers;
 using Zenject;
 
@@ -21,8 +23,11 @@ public class GuildSaberInstaller(GuildSaberConfig config) : Installer
     public override void InstallBindings()
     {
         Container.Bind<GuildSaberClient>().FromFactory<GuildSaberClientFactory>().AsSingle();
-        Container.Bind<GuildSaberCache>().AsSingle();
+
+        Container.Bind<GuildSaberSession>().AsSingle();
         Container.BindInterfacesAndSelfTo<GuildSaberManager>().AsSingle();
+        Container.BindInterfacesAndSelfTo<GuildAssetCache>().AsSingle();
+        Container.BindInterfacesAndSelfTo<GuildSaberCacheStore>().AsSingle();
 
         Container.BindInstance(config);
     }

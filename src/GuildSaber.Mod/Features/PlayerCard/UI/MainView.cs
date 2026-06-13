@@ -6,13 +6,14 @@ using CP_SDK_BS.Game;
 using CP_SDK_BS.UI;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds.Http;
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
 using GuildSaber.Mod.Features.Common.Timer;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;
 using GuildSaber.Mod.Features.GuildSaber;
+using GuildSaber.Mod.Features.GuildSaber.Caching;
+using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using GuildSaber.Mod.Features.PlayerCard.UI.Components;
 using GuildSaber.Mod.Features.PlayerCard.UI.Components.GuildSelector;
 using GuildSaber.Mod.Features.PlayerCard.UI.Settings;
@@ -44,13 +45,14 @@ public class PlayerCardView : ViewController<PlayerCardView>
     [Inject] private readonly PlayerCardSettingsCoordinator _cardSettingsCoordinator = null!;
     [Inject] private readonly GuildSaberClient _client = null!;
     [Inject] private readonly GuildSaberConfig _config = null!;
-    [Inject] private readonly GuildSaberCache _guildSaberCache = null!;
+    [Inject] private readonly GuildAssetCache _guildAssetCache = null!;
 
     [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
     [Inject] private readonly GuildSelectorFlowCoordinator _guildSelectorFlowCoordinator = null!;
     [Inject] private readonly Logger _logger = null!;
     [Inject] private readonly PlaylistDownloaderCoordinator _playlistDownloaderCoordinator = null!;
     [Inject] private readonly PlayerCardResources _resources = null!;
+    [Inject] private readonly GuildSaberSession _session = null!;
     [Inject] private readonly Timer _timer = null!;
     [Inject] private readonly UIFactory _uiFactory = null!;
 
@@ -92,9 +94,8 @@ public class PlayerCardView : ViewController<PlayerCardView>
                     .SetColor(Color.yellow),
                 GuildSelector.Make(
                         guildSelectorFlowCoordinator: _guildSelectorFlowCoordinator,
-                        guildSaberCache: _guildSaberCache,
-                        guildSaberManager: _guildSaberManager,
-                        client: _client,
+                        session: _session,
+                        guildAssetCache: _guildAssetCache,
                         downArrowTexture: _resources.DownArrowTexture,
                         whiteArrowTexture: _resources.GsWhiteLogoTexture)
                     .Bind(ref GuildSelector)
@@ -164,7 +165,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
                         _uiFactory.Text(string.Empty)
                             .Bind(ref PlayerLevelText)
                             .SetFontSize(4.5f),
-                        PointList.Make(_guildSaberCache, _config, _uiFactory)
+                        PointList.Make(_session, _config, _uiFactory)
                             .Bind(ref PointsContainer)
                             .SetSpacing(0),
                         _uiFactory.Text("______")
@@ -183,7 +184,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
                     )
                     .SetPadding(2, 2, 2, 7)
                     .Bind(ref PlayerImageContainer),
-                PagedLevelList.Make(_uiFactory, _guildSaberCache, _config, _logger)
+                PagedLevelList.Make(_uiFactory, _session)
                     .Bind(ref MainPlayerLevelsContainer)
                     .SetPadding(2, 2, 2, 12)
                     .SetSpacing(-0.5f)
@@ -303,17 +304,18 @@ public class PlayerCardView : ViewController<PlayerCardView>
             return;
         }
 
-        _config.GuildId = guildExtended.Guild.Id;
         _guildSaberManager.SetGuild(guildExtended);
-
-        SetGuild(new GuildId(_config.GuildId), UpdatePlayer);
     }
 
     private void ContextSelected(int index, string _)
     {
-        var contextId = _guildSaberCache
-            .GuildsExtended[_config.GuildId]
-            .Contexts[index].Id;
+        if (!_guildSaberManager.Initialized)
+            return;
+
+        if (index < 0 || index >= _session.CurrentGuild.Contexts.Length)
+            return;
+
+        var contextId = _session.CurrentGuild.Contexts[index].Id;
 
         _guildSaberManager.SelectGuild(_config.GuildId, contextId);
     }
@@ -322,7 +324,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
     {
         while (true)
         {
-            if (!_guildSaberCache.MemberLevelStats.TryGetValue(_config.ContextId, out var memberLevelStats))
+            if (!_session.TryGetCurrentMemberLevelStats(out var memberLevelStats))
                 return;
 
             if (memberLevelStats.Length == 0 && displayCardLevelsDetails)
@@ -335,11 +337,10 @@ public class PlayerCardView : ViewController<PlayerCardView>
             if (displayCardLevelsDetails && memberLevelStats.Length > 0)
                 width += 30;
 
-            if (_guildSaberCache.PlayerExtended != null)
-                GetCardFloatingScreen().ScreenSize = new Vector2(
-                    width + _guildSaberCache.PlayerExtended.Player.PlayerInfo.Username.Length,
-                    40
-                );
+            GetCardFloatingScreen().ScreenSize = new Vector2(
+                width + _session.PlayerExtended.Player.PlayerInfo.Username.Length,
+                40
+            );
 
             break;
         }
@@ -349,9 +350,9 @@ public class PlayerCardView : ViewController<PlayerCardView>
     {
         try
         {
-            if (_guildSaberCache.PlayerExtended == null)
+            if (!_guildSaberManager.Initialized)
             {
-                _logger.Error("[PlayerCard/RefreshCard]: Guild Saber cache player is null");
+                _logger.Error("[PlayerCard/RefreshCard]: GuildSaber is not initialized.");
                 return;
             }
 
@@ -360,7 +361,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
             try
             {
                 var bytes = await _client.HttpClient.GetByteArrayAsync(
-                    _guildSaberCache.PlayerExtended.Player.PlayerInfo.AvatarUrl);
+                    _session.PlayerExtended.Player.PlayerInfo.AvatarUrl);
                 texture.LoadImage(bytes);
             }
             catch
@@ -369,13 +370,15 @@ public class PlayerCardView : ViewController<PlayerCardView>
             }
 
             PlayerImage.SetSprite(Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2()));
-            var contextNames = _guildSaberCache
-                .GuildsExtended[_config.GuildId]
-                .Contexts.Select(t => t.Info.Name)
-                .ToList();
+            var currentGuild = _session.CurrentGuild;
+            var contextNames = currentGuild.Contexts.Select(t => t.Info.Name).ToList();
+            var currentContextIndex = Array.FindIndex(currentGuild.Contexts, x => x.Id == _config.ContextId);
+            var currentContextName = currentContextIndex >= 0
+                ? contextNames[currentContextIndex]
+                : contextNames[0];
 
             ContextDropdown.SetOptions(contextNames);
-            ContextDropdown.SetValue(contextNames[0], false);
+            ContextDropdown.SetValue(currentContextName, false);
 
             LoadConfig();
             DisplayCard(EDisplayMode.Normal);
@@ -429,7 +432,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
     public void DisplayLevelsDetails(bool display)
     {
-        if (_guildSaberCache.MemberLevelStats.Count == 0 && display)
+        if (!_session.HasCurrentMemberStats && display)
         {
             DisplayLevelsDetails(false);
             return;
@@ -457,30 +460,28 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
     public FloatingScreen GetCardFloatingScreen() => _cardFloatingScreen;
 
-    public void SetGuild(GuildId guildId, Action? callback)
+    public void RefreshMemberStats()
     {
-        var guild = _guildSaberCache.GuildsExtended[guildId];
-        if (guild == null) return;
+        if (!_session.HasCurrentMemberStats) return;
 
-        RefreshCard();
-
-        if (callback != null) callback.Invoke();
+        LoadConfig();
+        UpdatePlayer();
     }
 
     public void UpdatePlayer()
     {
-        if (_guildSaberCache.PlayerExtended == null) return;
+        if (!_guildSaberManager.Initialized) return;
 
         PointsContainer.Refresh();
 
-        var memberLevelStats = _guildSaberCache.MemberLevelStats[_config.ContextId];
+        var memberLevelStats = _session.CurrentMemberLevelStats;
         var level = memberLevelStats.GetGlobalLevel();
 
-        PlayerNameText.SetText(_guildSaberCache.PlayerExtended.Player.PlayerInfo.Username);
+        PlayerNameText.SetText(_session.PlayerExtended.Player.PlayerInfo.Username);
         PlayerLevelText.SetText($"{level?.Info.Name ?? "Level none"}");
         PlayerTrophyList.Refresh(memberLevelStats.CalculateTrophiesData());
 
-        var globalPassStat = _guildSaberCache.MemberContextStats[_config.ContextId]
+        var globalPassStat = _session.CurrentMemberContextStats
             .PassCountsWithRank
             .FirstOrDefault(x => x.CategoryId is null);
 
@@ -491,16 +492,16 @@ public class PlayerCardView : ViewController<PlayerCardView>
     {
         DisplayLevelsDetails(_config.PlayerCard.CategoryLevelViewEnabled);
 
-        if (_guildSaberCache.PlayerExtended is null)
+        if (!_guildSaberManager.Initialized || !_session.HasCurrentMemberStats)
         {
-            _logger.Error("[PlayerCard] Player is null, cannot set colors");
+            _logger.Error("[PlayerCard] GuildSaber is not initialized, cannot set colors");
             return;
         }
 
         if (_config.PlayerCard.ColorSettings.UseCustomColors
             && PlayerCardLibrary.CanPlayerUseCustomColors(
-                _guildSaberCache.MemberLevelStats[_config.ContextId],
-                _guildSaberCache.PlayerExtended.Player))
+                _session.CurrentMemberLevelStats,
+                _session.PlayerExtended.Player))
         {
             _borderImage.color = _config.PlayerCard.ColorSettings.MainCardColor;
             PlayerNameText.SetColor(_config.PlayerCard.ColorSettings.MainCardColor);
@@ -523,7 +524,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
             return;
         }
 
-        var level = _guildSaberCache.MemberLevelStats[_config.ContextId].GetGlobalLevel();
+        var level = _session.CurrentMemberLevelStats.GetGlobalLevel();
         if (level == null)
         {
             _borderImage.color = Color.white;

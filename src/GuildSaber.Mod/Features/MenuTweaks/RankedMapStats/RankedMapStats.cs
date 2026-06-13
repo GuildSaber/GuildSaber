@@ -3,12 +3,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.RankedMaps.Http;
-using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;
 using GuildSaber.Mod.Features.GuildSaber;
+using GuildSaber.Mod.Features.GuildSaber.Caching;
+using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using GuildSaber.Mod.Features.RankedMap;
-using GuildSaber.Mod.Helpers;
 using GuildSaber.Mod.Resources;
 using UnityEngine;
 using UnityEngine.UI;
@@ -27,9 +27,9 @@ public class RankedMapStats(
     [Inject(Id = nameof(ResourceMap.QuestionMark))] Texture2D questionMarkTexture,
     [Inject(Id = nameof(ResourceMap.CheckShield))] Texture2D checkShieldTexture,
     [Inject(Id = nameof(ResourceMap.DenyShield))] Texture2D denyShieldTexture,
-    GuildSaberClient client,
     GuildSaberConfig config,
-    GuildSaberCache cache,
+    GuildAssetCache assetCache,
+    GuildSaberSession session,
     RankedMapManager rankedMapManager,
     StandardLevelDetailView standardLevelDetailView,
     UIFactory factory,
@@ -117,8 +117,9 @@ public class RankedMapStats(
     private async Task UpdateUI(RankedMapResponses.RankedMapWithScores rankedMapWithScoresOfPlayer)
     {
         var (rankedMap, rankedScores) = rankedMapWithScoresOfPlayer;
-        var guildIconTexture = await cache.FetchGuildIconTexture(config.GuildId, client) ?? placeHolderIcon;
-        var guildIcon = await TextureUtils.CreateRoundedTextureAsync(guildIconTexture, guildIconTexture.width * 0.2f);
+
+        var guild = session.CurrentGuild;
+        var guildIcon = await assetCache.GetOrFetchRoundedGuildIcon(guild.Guild.Id) ?? placeHolderIcon;
 
         if (rankedMap.CategoryIds.Length == 0)
         {
@@ -127,17 +128,15 @@ public class RankedMapStats(
         }
         else
         {
-            var categories = cache.GuildsExtended[config.GuildId].Categories
+            var categories = guild.Categories
                 .Where(x => rankedMap.CategoryIds.Contains(x.Id)).ToArray();
 
             var hasCategoryIcon = false;
             if (categories.Length == 1)
             {
-                var categoryIconTexture = await cache.FetchCategoryIconTexture(categories[0].Id, client);
-                if (categoryIconTexture != null)
+                var categoryIcon = await assetCache.GetOrFetchRoundedCategoryIcon(categories[0].Id);
+                if (categoryIcon != null)
                 {
-                    var categoryIcon = await TextureUtils.CreateRoundedTextureAsync(
-                        categoryIconTexture, categoryIconTexture.width * 0.2f);
                     _categoryIcon.SetSprite(Sprite.Create(
                         categoryIcon,
                         new Rect(0, 0, categoryIcon.width, categoryIcon.height),

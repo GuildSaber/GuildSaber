@@ -8,9 +8,7 @@ namespace GuildSaber.Mod.Features.PlayerCard.UI.Components;
 public class TrophyList : XUIVLayout
 {
     private readonly PlayerCardResources _playerCardResources;
-
     private readonly UIFactory _uiFactory;
-
     private Trophy _diamond = null!;
 
     //private Trophy _plastic = null!; 
@@ -57,9 +55,5 @@ public class TrophyList : XUIVLayout
         _ruby.Refresh(data.Ruby);
     }
 
-    public TrophyList Bind(ref TrophyList value)
-    {
-        value = this;
-        return this;
-    }
+    public TrophyList Bind(ref TrophyList value) => value = this;
 }
