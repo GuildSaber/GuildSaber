@@ -3,13 +3,14 @@
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     </PropertyGroup>
     <ItemGroup>
-        <PackageVersion Include="Aspire.Hosting.Docker" Version="13.4.2" />
-        <PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.4.2" />
-        <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.2" />
-        <PackageVersion Include="Aspire.Hosting.Redis" Version="13.4.2" />
-        <PackageVersion Include="Aspire.Hosting.Valkey" Version="13.4.2" />
-        <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.4.2" />
+        <PackageVersion Include="Aspire.Hosting.Docker" Version="13.4.3" />
+        <PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.4.3" />
+        <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.3" />
+        <PackageVersion Include="Aspire.Hosting.Redis" Version="13.4.3" />
+        <PackageVersion Include="Aspire.Hosting.Valkey" Version="13.4.3" />
+        <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.4.3" />
         <PackageVersion Include="ILRepack.Lib.MSBuild.Task" Version="2.0.45" />
+        <PackageVersion Include="MessagePack" Version="3.1.7" />
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
         <PackageVersion Include="AspNet.Security.OAuth.Discord" Version="10.0.0" />
         <PackageVersion Include="Bogus" Version="35.6.5" />
