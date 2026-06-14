@@ -25,7 +25,8 @@ public class RankedMapRequests
     /// ranked score types.
     /// </param>
     /// <param name="IncludeMapsWithoutScore">
-    /// If true, also returns maps where the player has no selected ranked score.
+    /// When <paramref name="RankedScoreTypes"/> is specified, if true, the maps without scores will be included, and for those with scores the <paramref name="RankedScoreTypes"/> filter will be applied.
+    /// When false, the filter only applies when <paramref name="RankedScoreTypes"/> is specified (and not None).
     /// </param>
     /// <param name="DifficultyStarFrom">The minimum difficulty star rating to filter maps.</param>
     /// <param name="DifficultyStarTo">The maximum difficulty star rating to filter maps.</param>

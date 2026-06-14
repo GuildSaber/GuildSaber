@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 using System.Security.Claims;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
@@ -174,7 +175,7 @@ public class RankedMapEndpoints : IEndpoints
             .Where(x => x.ContextId == contextId)
             .ApplyFilters(filters, playerId)
             .ApplySortOrder(sortBy, order, playerId)
-            .Select(RankedMapMappers.MapRankedMapWithScoresExpression(playerId, filters.RankedScoreTypes))
+            .Select(RankedMapMappers.MapRankedMapWithScoresExpression(playerId))
             .ToPagedListAsync(page, pageSize));
 }
 
@@ -189,35 +190,32 @@ public static class RankedMapExtensions
                     ? query.Where(x => x.Categories.Any(c => ((IEnumerable<int>)categoryIds).Contains(c.Id)))
                     : query.Where(x => categoryIds.All(id => x.Categories.Any(c => c.Id == id)));
 
-            if (playerId is not null)
+            // Filtering only applies when there is a player and a filter for their scores, otherwise the map is gonna be included.
+            if (playerId is not null && filters.RankedScoreTypes is not RankedScoreRequests.ERankedScoreType.None)
             {
-                var filterByRankedScoreTypes =
-                    filters.RankedScoreTypes is not RankedScoreRequests.ERankedScoreType.None;
+                var valid = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Valid);
+                var invalid = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Invalid);
+                var pending = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Pending);
+                var accepted = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Accepted);
+                var refused = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Refused);
 
-                if (filterByRankedScoreTypes || filters.IncludeMapsWithoutScore)
-                {
-                    var includeMapsWithoutScore = filters.IncludeMapsWithoutScore;
-                    var includeValid = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Valid);
-                    var includeInvalid = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Invalid);
-                    var includePending = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Pending);
-                    var includeAccepted = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Accepted);
-                    var includeRefused = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Refused);
+                var playerHaveNoScore = (Expression<Func<ServerRankedMap, bool>>)
+                    (map => !map.RankedScores.Any(rs => rs.PlayerId == playerId.Value && rs.IsSelected));
 
-                    query = query.Where(x =>
-                        includeMapsWithoutScore
-                        && !x.RankedScores.Any(rs => rs.PlayerId == playerId && rs.IsSelected)
-                        || filterByRankedScoreTypes
-                        && x.RankedScores.Any(rs =>
-                            rs.PlayerId == playerId
-                            && rs.IsSelected
-                            && (
-                                includeValid && rs is ValidRankedScore
-                                || includeInvalid && rs is InvalidRankedScore
-                                || includePending && rs is PendingRankedScore
-                                || includeAccepted && rs is AcceptedRankedScore
-                                || includeRefused && rs is RefusedRankedScore
-                            )));
-                }
+                var scoreTypeFilter = (Expression<Func<ServerRankedMap, bool>>)
+                    (map => map.RankedScores.Any(rs => rs.PlayerId == playerId.Value && rs.IsSelected && (
+                        valid && rs is ValidRankedScore
+                        || invalid && rs is InvalidRankedScore
+                        || pending && rs is PendingRankedScore
+                        || accepted && rs is AcceptedRankedScore
+                        || refused && rs is RefusedRankedScore
+                    )));
+
+                query = filters.IncludeMapsWithoutScore
+                    // Allow when there is no score, but apply the score type filter when the player have a score.
+                    ? query.Where(playerHaveNoScore.Or(scoreTypeFilter))
+                    // Only include maps where the player have a score of the specified types.
+                    : query.Where(scoreTypeFilter);
             }
 
             if (filters.DifficultyStarFrom is { } difficultyStarFrom)
@@ -300,4 +298,7 @@ public static class RankedMapExtensions
                 _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
             };
     }
+
+    private static Expression<Func<ServerRankedMap, bool>> MapsHaveNoPlayerScore(PlayerId playerId)
+        => map => !map.RankedScores.Any(rs => rs.PlayerId == playerId && rs.IsSelected);
 }
