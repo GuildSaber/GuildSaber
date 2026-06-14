@@ -21,8 +21,7 @@ public static class ApiDefaultsSetup
 
         OpenApiTypeMappings.RegisterGuildSaberTypeMappings();
 
-        builder.Services.AddOutputCache(options =>
-            options.AddBasePolicy(policy => policy.Expire(TimeSpan.FromMinutes(10))));
+        builder.Services.AddOutputCache();
         builder.Services.AddOpenApi(options =>
         {
             options.AddGlobalProblemDetails()
