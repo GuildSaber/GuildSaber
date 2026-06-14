@@ -2,6 +2,9 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
+using BeatLeader.API;
+using BeatLeader.Models;
+using BeatLeader.WebRequests;
 using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Api.Features.RankedMaps.Http;
 using GuildSaber.Api.Shared;
@@ -27,7 +30,7 @@ public sealed class RankedMapManager(
     StandardLevelDetailViewController levelDetailViewController,
     Logger logger) : IInitializable, IDisposable
 {
-    private static readonly TimeSpan _rankedMapsCacheDuration = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan _rankedMapsCacheDuration = TimeSpan.FromMinutes(15);
     private RankedMapEventData? _currentMapSelection;
 
     [field: MaybeNull, AllowNull]
@@ -43,6 +46,10 @@ public sealed class RankedMapManager(
         session.CurrentGuildContextChanged -= OnCurrentGuildContextChanged;
         levelDetailViewController.didChangeDifficultyBeatmapEvent -= OnDifficultyChanged;
         levelDetailViewController.didChangeContentEvent -= OnContentChanged;
+
+#pragma warning disable CS0618
+        UploadReplayRequest.StateChangedEvent -= OnUploadReplayStateChanged;
+#pragma warning restore CS0618
     }
 
     public void Initialize()
@@ -53,9 +60,28 @@ public sealed class RankedMapManager(
         levelDetailViewController.didChangeContentEvent -= OnContentChanged;
         levelDetailViewController.didChangeContentEvent += OnContentChanged;
 
-        //TODO: Find the hook for when a score is submitted and then call RefreshAfterCurrentRankedMapPassAsync with a small awaited delay.
-        // It's gonna trigger a player member stats refresh.
-        // thingy += (_) => _ = RefreshAfterCurrentRankedMapPassAsync();
+#pragma warning disable CS0618
+        UploadReplayRequest.StateChangedEvent += OnUploadReplayStateChanged;
+#pragma warning restore CS0618
+    }
+
+    private async void OnUploadReplayStateChanged(
+        IWebRequest<ScoreUploadResponse> instance, RequestState state, string? failReason)
+    {
+        try
+        {
+            if (state != RequestState.Finished)
+                return;
+
+            logger.Debug("Refreshing ranked map data after BeatLeader replay upload...");
+
+            await Task.Delay(5000);
+            await RefreshAfterCurrentRankedMapPassAsync();
+        }
+        catch (Exception exception)
+        {
+            logger.Error($"Error refreshing ranked map after BeatLeader replay upload: {exception}");
+        }
     }
 
     /// <summary>Fired when a new map selection is available (including changes in difficulty/content).</summary>
