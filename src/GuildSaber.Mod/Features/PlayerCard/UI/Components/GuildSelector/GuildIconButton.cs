@@ -2,30 +2,25 @@ using System;
 using System.Collections.Generic;
 using CP_SDK.XUI;
 using GuildSaber.Common.StrongTypes;
-using GuildSaber.CSharpClient;
-using GuildSaber.Mod.Features.GuildSaber;
-using GuildSaber.Mod.Helpers;
+using GuildSaber.Mod.Features.GuildSaber.Caching;
 using UnityEngine;
 
 namespace GuildSaber.Mod.Features.PlayerCard.UI.Components.GuildSelector;
 
 public class GuildIconButton : XUIIconButton
 {
-    private readonly GuildSaberClient _client;
-    private readonly GuildSaberCache _guildSaberData;
+    private readonly GuildAssetCache _guildAssetCache;
     private readonly List<Action<GuildId>> _onGuildSelected = [];
 
     //////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////
 
     private GuildId _guildID;
 
-    public GuildIconButton(GuildSaberCache guildSaberData, Texture2D whiteLogo, GuildSaberClient client,
-                           Action<GuildId>? onGuildSelected)
+    public GuildIconButton(GuildAssetCache guildAssetCache, Texture2D whiteLogo, Action<GuildId>? onGuildSelected)
         : base("GuildIconButton", null)
     {
-        _guildSaberData = guildSaberData;
-        _client = client;
+        _guildAssetCache = guildAssetCache;
 
         var sprite = Sprite.Create(whiteLogo,
             new Rect(0, 0, whiteLogo.width, whiteLogo.width),
@@ -37,13 +32,12 @@ public class GuildIconButton : XUIIconButton
     }
 
     public static GuildIconButton
-        Make(GuildSaberCache guildSaberData, Texture2D whiteLogo, GuildSaberClient client,
-             Action<GuildId>? onGuildSelected)
-        => new(guildSaberData, whiteLogo, client, onGuildSelected);
+        Make(GuildAssetCache guildAssetCache, Texture2D whiteLogo, Action<GuildId>? onGuildSelected)
+        => new(guildAssetCache, whiteLogo, onGuildSelected);
 
 
     //////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////
 
     public async void SetGuild(GuildId guildId)
     {
@@ -51,19 +45,17 @@ public class GuildIconButton : XUIIconButton
 
         _guildID = guildId;
 
-        var guildLogo = await _guildSaberData.FetchGuildIconTexture(guildId, _client);
-        if (guildLogo == null)
+        var roundedLogo = await _guildAssetCache.GetOrFetchRoundedGuildIcon(guildId);
+        if (roundedLogo == null)
             return;
 
-        var roundedLogo = await TextureUtils.CreateRoundedTextureAsync(guildLogo, guildLogo.width * 0.1f);
-
-        SetSprite(Sprite.Create(roundedLogo, new Rect(0, 0, guildLogo.width, guildLogo.height), Vector2.zero));
+        SetSprite(Sprite.Create(roundedLogo, new Rect(0, 0, roundedLogo.width, roundedLogo.height), Vector2.zero));
         SetWidth(8);
         SetHeight(8);
     }
 
     //////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////
 
     public GuildIconButton OnGuildSelected(Action<GuildId> x)
     {

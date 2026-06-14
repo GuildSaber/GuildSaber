@@ -1,4 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.4.2">
+<Project Sdk="Aspire.AppHost.Sdk/13.4.3">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -13,6 +13,7 @@
         <PackageReference Include="Aspire.Hosting.PostgreSQL" />
         <PackageReference Include="Aspire.Hosting.Redis" />
         <PackageReference Include="Aspire.Hosting.Valkey" />
+        <PackageReference Include="MessagePack" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

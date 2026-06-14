@@ -78,7 +78,7 @@ public partial class UserModuleSlash
         };
 
         List<RankedMapWithScores> rankedMapsWithScores = [];
-        await foreach (var rankedMapWithScore in Client.Value.RankedMaps.GetAsyncWithScoreAtMeEnumerable(
+        await foreach (var rankedMapWithScore in Client.Value.RankedMaps.GetAsyncWithScoresAtMeEnumerable(
                                contextId, new RankedMapRequests.Filters(), requestOptions)
                            .SelectMany(x => x.Unwrap()))
         {

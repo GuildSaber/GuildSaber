@@ -3,9 +3,9 @@ using System.Linq;
 using CP_SDK_BS.UI;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds.Http;
-using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Features.Common.UI;
-using GuildSaber.Mod.Features.GuildSaber;
+using GuildSaber.Mod.Features.GuildSaber.Caching;
+using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using GuildSaber.Mod.Resources;
 using TMPro;
 using UnityEngine;
@@ -17,12 +17,12 @@ namespace GuildSaber.Mod.Features.PlayerCard.UI.Components.GuildSelector;
 internal class GuildSelectorViewController : ViewController<GuildSelectorViewController>
 {
     public GuildSelectorFlowCoordinator guildSelectorFlowCoordinator = null!;
-
-    [Inject] private readonly GuildSaberClient _client = null!;
     [Inject(Id = nameof(ResourceMap.TekoMedium))] private readonly TMP_FontAsset _font = null!;
+
+    [Inject] private readonly GuildAssetCache _guildAssetCache = null!;
     protected readonly List<GuildButton> _guildButtons = new();
 
-    [Inject] private readonly GuildSaberCache _guildSaberCache = null!;
+    [Inject] private readonly GuildSaberSession _session = null!;
 
     [Inject] private readonly UIFactory _uiFactory = null!;
 
@@ -56,9 +56,9 @@ internal class GuildSelectorViewController : ViewController<GuildSelectorViewCon
     {
         if (_guildButtons.Any()) return;
 
-        foreach (var (_, guildExtended) in _guildSaberCache.GuildsExtended)
+        foreach (var guildExtended in _session.GetAvailableGuilds())
         {
-            var button = GuildButton.Make(_guildSaberCache, _uiFactory, _whiteLogoTexture, _font, _client);
+            var button = GuildButton.Make(_guildAssetCache, _uiFactory, _whiteLogoTexture, _font);
             button.OnClicked += OnGuildButtonClicked;
             button.SetWidth(70);
             button.SetHeight(10);

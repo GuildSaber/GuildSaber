@@ -3,7 +3,7 @@ using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 
 namespace GuildSaber.Mod.Features.RankedMap;
 
-public sealed record RankedMapEventData(
+public readonly record struct RankedMapEventData(
     BeatmapKey BeatmapKey,
     SongHash? SongHash,
     RankedMapResponses.RankedMapWithScores? RankedMapWithScores

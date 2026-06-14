@@ -1,5 +1,6 @@
 using BeatSaberMarkupLanguage.FloatingScreen;
 using GuildSaber.CSharpClient;
+using GuildSaber.Mod.Features.PlayerCard.Patches;
 using GuildSaber.Mod.Features.PlayerCard.UI;
 using GuildSaber.Mod.Features.PlayerCard.UI.Components.GuildSelector;
 using GuildSaber.Mod.Features.PlayerCard.UI.Settings;
@@ -63,5 +64,7 @@ public class PlayerCardInstaller(GuildSaberClient client, Logger logger) : Insta
 
         Container.Bind<GuildSelectorViewController>().FromNewComponentAsViewController().AsSingle();
         Container.Bind<GuildSelectorFlowCoordinator>().FromNewComponentOnNewGameObject().AsSingle();
+
+        Container.BindInterfacesAndSelfTo<GameReloadAffinityPatch>().AsSingle();
     }
 }

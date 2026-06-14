@@ -1,50 +1,47 @@
 ﻿using System;
-using System.Linq;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Common.StrongTypes;
-using GuildSaber.CSharpClient;
-using GuildSaber.Mod.Features.GuildSaber;
+using GuildSaber.Mod.Features.GuildSaber.Caching;
+using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using UnityEngine;
 
 namespace GuildSaber.Mod.Features.PlayerCard.UI.Components.GuildSelector;
 
 public class GuildSelector : XUIHLayout
 {
-    private readonly GuildSaberCache _guildSaberData;
-    private readonly GuildSaberManager _guildSaberManager;
+    private readonly GuildAssetCache _guildAssetCache;
     private readonly GuildSelectorFlowCoordinator _guildSelectorFlowCoordinator;
+    private readonly GuildSaberSession _session;
 
     protected XUIIconButton ArrowButton = null!;
 
     ///////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////
 
     protected GuildIconButton Guild1 = null!;
     protected GuildIconButton Guild2 = null!;
 
-    protected Action<GuildResponses.GuildExtended> OnGuildSelected = null!;
+    protected Action<GuildResponses.GuildExtended> OnGuildSelected = _ => { };
 
     public GuildSelector(
         GuildSelectorFlowCoordinator guildSelectorFlowCoordinator,
         Texture2D downArrowTexture,
         Texture2D whiteArrowTexture,
-        GuildSaberCache guildSaberCache,
-        GuildSaberManager guildSaberManager,
-        GuildSaberClient client)
+        GuildSaberSession session,
+        GuildAssetCache guildAssetCache)
         : base("GuildSelector")
     {
         var whiteLogoTexture = whiteArrowTexture;
         var downArrowTexture1 = downArrowTexture;
         _guildSelectorFlowCoordinator = guildSelectorFlowCoordinator;
-        _guildSaberData = guildSaberCache;
-        _guildSaberManager = guildSaberManager;
-        var client1 = client;
+        _session = session;
+        _guildAssetCache = guildAssetCache;
 
         OnReady(element =>
         {
-            Guild1 = new GuildIconButton(_guildSaberData, whiteLogoTexture, client1, OnIconGuildSelected);
-            Guild2 = new GuildIconButton(_guildSaberData, whiteLogoTexture, client1, OnIconGuildSelected);
+            Guild1 = new GuildIconButton(_guildAssetCache, whiteLogoTexture, OnIconGuildSelected);
+            Guild2 = new GuildIconButton(_guildAssetCache, whiteLogoTexture, OnIconGuildSelected);
 
             Make(
                 Guild1,
@@ -64,8 +61,11 @@ public class GuildSelector : XUIHLayout
 
             try
             {
-                Guild1.SetGuild(_guildSaberData.GuildsExtended.First().Value.Guild.Id);
-                Guild2.SetGuild(_guildSaberData.GuildsExtended.ElementAt(1).Value.Guild.Id);
+                if (_session.TryGetAvailableGuildAt(0, out var firstGuild))
+                    Guild1.SetGuild(firstGuild.Guild.Id);
+
+                if (_session.TryGetAvailableGuildAt(1, out var secondGuild))
+                    Guild2.SetGuild(secondGuild.Guild.Id);
             }
             catch
             {
@@ -76,32 +76,31 @@ public class GuildSelector : XUIHLayout
 
     public static GuildSelector Make(
         GuildSelectorFlowCoordinator guildSelectorFlowCoordinator,
-        GuildSaberCache guildSaberCache,
-        GuildSaberManager guildSaberManager,
-        GuildSaberClient client,
+        GuildSaberSession session,
+        GuildAssetCache guildAssetCache,
         Texture2D downArrowTexture,
-        Texture2D whiteArrowTexture) => new(guildSelectorFlowCoordinator, downArrowTexture, whiteArrowTexture,
-        guildSaberCache, guildSaberManager, client);
+        Texture2D whiteArrowTexture)
+        => new(guildSelectorFlowCoordinator, downArrowTexture, whiteArrowTexture, session, guildAssetCache);
 
     public void UpdateGuildButtons()
     {
-        if (_guildSaberData.GuildsExtended.Any())
-            Guild1.SetGuild(_guildSaberData.GuildsExtended.First().Value.Guild.Id);
+        if (_session.TryGetAvailableGuildAt(0, out var firstGuild))
+            Guild1.SetGuild(firstGuild.Guild.Id);
         else
             Guild1.SetActive(false);
 
-        if (_guildSaberData.GuildsExtended.Count >= 2)
-            Guild2.SetGuild(_guildSaberData.GuildsExtended.ElementAt(1).Value.Guild.Id);
+        if (_session.TryGetAvailableGuildAt(1, out var secondGuild))
+            Guild2.SetGuild(secondGuild.Guild.Id);
         else
             Guild2.SetActive(false);
     }
 
     private void OnIconGuildSelected(GuildId guildId)
     {
-        var guild = _guildSaberData.GuildsExtended[guildId];
-        if (guild == null) return;
+        if (!_session.TryGetGuild(guildId, out var guild))
+            return;
 
-        _guildSaberManager.SetGuild(guild);
+        OnGuildSelected.Invoke(guild);
     }
 
     private void OnArrowButtonClicked() => _guildSelectorFlowCoordinator.Show(OnGuildSelected);

@@ -7,7 +7,7 @@ using CP_SDK.XUI;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;
-using GuildSaber.Mod.Features.GuildSaber;
+using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using GuildSaber.Mod.Features.PlaylistDownloader.UI.Components;
 using SongCore;
 using UnityEngine;
@@ -18,10 +18,9 @@ namespace GuildSaber.Mod.Features.PlaylistDownloader.UI;
 
 public class PlaylistDownloaderViewController : ViewController<PlaylistDownloaderViewController>
 {
-    [Inject] private readonly GuildSaberCache _cache = null!;
     private readonly List<CategoryView> _categoryViews = [];
-    [Inject] private readonly GuildSaberConfig _config = null!;
     [Inject] private readonly PlaylistDownloader _playlistDownloader = null!;
+    [Inject] private readonly GuildSaberSession _session = null!;
     [Inject] private readonly UIFactory _uiFactory = null!;
 
     private XUIVLayout _categoriesListLayout = null!;
@@ -95,9 +94,10 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
 
     protected override void OnViewActivation()
     {
-        var guildName = _cache.GuildsExtended[_config.GuildId].Guild.Info.Name;
-        var levels = _cache.MemberLevelStats[_config.ContextId];
-        var categories = _cache.GuildsExtended[_config.GuildId].Categories;
+        var currentGuild = _session.CurrentGuild;
+        var guildName = currentGuild.Guild.Info.Name;
+        var levels = _session.CurrentMemberLevelStats;
+        var categories = currentGuild.Categories;
 
         _guildNameText.SetText($"Download or update {guildName} playlists:");
 

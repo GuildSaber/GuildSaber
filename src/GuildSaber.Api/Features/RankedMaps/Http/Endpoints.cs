@@ -41,13 +41,13 @@ public class RankedMapEndpoints : IEndpoints
 
         group.MapGet("/with-scores/{playerId}", GetRankedMapsWithScoresAsync)
             .WithName("GetRankedMapsWithScores")
-            .WithSummary("Get ranked maps for a context with a player score.")
+            .WithSummary("Get ranked maps for a context with the player's point scores.")
             .WithDescription("Get ranked maps for a context by its Id, with optional search and sorting, including " +
                              "the player's best point scores on each map.");
 
         group.MapGet("/with-scores/@me", GetRankedMapsWithScoresAtMeAsync)
             .WithName("GetRankedMapsWithScoresAtMe")
-            .WithSummary("Get ranked maps for a context with the current player's score.")
+            .WithSummary("Get ranked maps for a context with the current player's point scores.")
             .WithDescription("Get ranked maps for a context by its Id, with optional search and sorting, including " +
                              "the current player's best point scores on each map.")
             .RequireAuthorization();

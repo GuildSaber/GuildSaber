@@ -2,10 +2,18 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
+using BeatLeader.API;
+using BeatLeader.Models;
+using BeatLeader.WebRequests;
+using GuildSaber.Api.Features.Guilds.Http;
+using GuildSaber.Api.Features.RankedMaps.Http;
+using GuildSaber.Api.Shared;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Features.GuildSaber;
+using GuildSaber.Mod.Features.GuildSaber.Caching;
+using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using GuildSaber.Mod.Helpers;
 using SongCore.Utilities;
 using Zenject;
@@ -14,13 +22,17 @@ using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapResponses;
 namespace GuildSaber.Mod.Features.RankedMap;
 
 public sealed class RankedMapManager(
-    GuildSaberCache cache,
+    GuildSaberManager guildSaberManager,
+    GuildSaberCacheStore cacheStore,
+    GuildSaberSession session,
     GuildSaberConfig config,
     GuildSaberClient client,
     StandardLevelDetailViewController levelDetailViewController,
-    Logger logger)
-    : IInitializable, IDisposable
+    Logger logger) : IInitializable, IDisposable
 {
+    private static readonly TimeSpan _rankedMapsCacheDuration = TimeSpan.FromMinutes(15);
+    private RankedMapEventData? _currentMapSelection;
+
     [field: MaybeNull, AllowNull]
     private Func<BeatmapLevel, string> GetCustomHashMethodVersionAgnostic => field ??= typeof(Hashing).GetMethods()
         .Where(m => m.Name is "ComputeCustomLevelHash" or "GetCustomLevelHash" &&
@@ -31,21 +43,53 @@ public sealed class RankedMapManager(
 
     public void Dispose()
     {
+        session.CurrentGuildContextChanged -= OnCurrentGuildContextChanged;
         levelDetailViewController.didChangeDifficultyBeatmapEvent -= OnDifficultyChanged;
         levelDetailViewController.didChangeContentEvent -= OnContentChanged;
+
+#pragma warning disable CS0618
+        UploadReplayRequest.StateChangedEvent -= OnUploadReplayStateChanged;
+#pragma warning restore CS0618
     }
 
     public void Initialize()
     {
+        session.CurrentGuildContextChanged += OnCurrentGuildContextChanged;
         levelDetailViewController.didChangeDifficultyBeatmapEvent -= OnDifficultyChanged;
         levelDetailViewController.didChangeDifficultyBeatmapEvent += OnDifficultyChanged;
         levelDetailViewController.didChangeContentEvent -= OnContentChanged;
         levelDetailViewController.didChangeContentEvent += OnContentChanged;
+
+#pragma warning disable CS0618
+        UploadReplayRequest.StateChangedEvent += OnUploadReplayStateChanged;
+#pragma warning restore CS0618
+    }
+
+    private async void OnUploadReplayStateChanged(
+        IWebRequest<ScoreUploadResponse> instance, RequestState state, string? failReason)
+    {
+        try
+        {
+            if (state != RequestState.Finished)
+                return;
+
+            logger.Debug("Refreshing ranked map data after BeatLeader replay upload...");
+
+            await Task.Delay(5000);
+            await RefreshAfterCurrentRankedMapPassAsync();
+        }
+        catch (Exception exception)
+        {
+            logger.Error($"Error refreshing ranked map after BeatLeader replay upload: {exception}");
+        }
     }
 
     /// <summary>Fired when a new map selection is available (including changes in difficulty/content).</summary>
     /// <remarks>If the map cannot be resolved to a ranked map, the underlying RankedMapWithScores will be null.</remarks>
     public event Action<RankedMapEventData>? OnMapSelected;
+
+    public void RemoveCachedRankedMaps(ContextId contextId, SongHash hash)
+        => cacheStore.Remove(GetRankedMapsCacheKey(contextId, hash));
 
     private void OnDifficultyChanged(StandardLevelDetailViewController controller)
         => _ = UpdateSelection(controller.beatmapKey, controller.beatmapLevel);
@@ -57,13 +101,16 @@ public sealed class RankedMapManager(
         _ = UpdateSelection(controller.beatmapKey, controller.beatmapLevel);
     }
 
+    private void OnCurrentGuildContextChanged(GuildResponses.GuildExtended guild, ContextId contextId)
+        => _ = UpdateSelection(levelDetailViewController.beatmapKey, levelDetailViewController.beatmapLevel);
+
     private async Task UpdateSelection(BeatmapKey beatmapKey, BeatmapLevel? beatmap)
     {
-        if (cache.PlayerExtended == null || beatmap == null || !SongHash
+        if (!guildSaberManager.Initialized || beatmap == null || !SongHash
                 .TryCreate(GetCustomHashMethodVersionAgnostic.Invoke(beatmap))
                 .TryGetValue(out var songHash))
         {
-            PublishSelection(beatmapKey, songHash: null, rankedMapWithScores: null);
+            PublishMapSelected(new RankedMapEventData(beatmapKey, SongHash: null, RankedMapWithScores: null));
             return;
         }
 
@@ -72,7 +119,7 @@ public sealed class RankedMapManager(
         {
             rankedMapWithScores = await FetchRankedMapWithScoresOfPlayer(
                 config.ContextId,
-                cache.PlayerExtended!.Player.Id,
+                session.PlayerId,
                 songHash,
                 beatmapKey.beatmapCharacteristic.serializedName,
                 beatmapKey.difficulty.ToEDifficulty()
@@ -81,19 +128,67 @@ public sealed class RankedMapManager(
         catch (Exception exception)
         {
             logger.Error(exception);
-            PublishSelection(beatmapKey, songHash, rankedMapWithScores: null);
+            rankedMapWithScores = null;
+        }
+
+        PublishMapSelected(new RankedMapEventData(beatmapKey, songHash, rankedMapWithScores));
+    }
+
+    /// <summary>Refreshes the cached map score data and member stats after the current map may have changed them.</summary>
+    public async Task RefreshAfterCurrentRankedMapPassAsync()
+    {
+        var beatmap = levelDetailViewController.beatmapLevel;
+        if (beatmap == null) return;
+
+        var beatmapKey = levelDetailViewController.beatmapKey;
+        if (!SongHash.TryCreate(GetCustomHashMethodVersionAgnostic.Invoke(beatmap)).TryGetValue(out var songHash))
+        {
+            logger.Warn("Failed to create song hash for current map, cannot refresh after map pass.");
             return;
         }
 
-        PublishSelection(beatmapKey, songHash, rankedMapWithScores);
+        if (!IsCurrentSelectedRankedMap(beatmapKey, songHash))
+            return;
+
+        RemoveCachedRankedMaps(config.ContextId, songHash);
+        await guildSaberManager.RefreshCurrentMemberStatsAsync();
+
+        await UpdateSelection(beatmapKey, beatmap);
     }
 
-    private void PublishSelection(BeatmapKey beatmapKey, SongHash? songHash, RankedMapWithScores? rankedMapWithScores)
-        => OnMapSelected?.Invoke(new RankedMapEventData(beatmapKey, songHash, rankedMapWithScores));
+    private bool IsCurrentSelectedRankedMap(BeatmapKey beatmapKey, SongHash songHash)
+        => _currentMapSelection is { RankedMapWithScores: not null } selection
+           && selection.BeatmapKey.Equals(beatmapKey)
+           && selection.SongHash is { } selectedSongHash
+           && selectedSongHash.Equals(songHash);
+
+    private void PublishMapSelected(RankedMapEventData eventData)
+    {
+        _currentMapSelection = eventData;
+        OnMapSelected?.Invoke(eventData);
+    }
 
     private async Task<RankedMapWithScores?> FetchRankedMapWithScoresOfPlayer(
         ContextId contextId, PlayerId playerId, SongHash hash, string mode, EDifficulty difficulty)
-        => (await cache.FetchRankedMaps(contextId, playerId, hash, client))
+        => (await FetchRankedMaps(contextId, playerId, hash))
             .FirstOrDefault(x => x.RankedMap.Versions
                 .Any(v => v.Difficulty.GameMode == mode && v.Difficulty.Difficulty == difficulty));
+
+    private Task<RankedMapWithScores[]> FetchRankedMaps(ContextId contextId, PlayerId playerId, SongHash hash)
+        => cacheStore.GetOrCreateAsync(
+            GetRankedMapsCacheKey(contextId, hash),
+            async () =>
+            {
+                var searchResult = await client.RankedMaps.GetWithScoresAsync(
+                    contextId,
+                    playerId,
+                    new RankedMapRequests.Filters(Search: hash),
+                    new PaginatedRequestOptions<RankedMapRequests.ERankedMapSorter>(Page: 1, PageSize: 8)
+                );
+
+                return searchResult.TryGetValue(out var mapList) && mapList.TotalCount != 0 ? mapList.Data : [];
+            }, _rankedMapsCacheDuration);
+
+    private static string GetRankedMapsCacheKey(ContextId contextId, SongHash hash)
+        => $"ranked-maps:{contextId.Value}:{hash}";
 }

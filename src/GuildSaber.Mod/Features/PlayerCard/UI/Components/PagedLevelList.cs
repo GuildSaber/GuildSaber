@@ -4,7 +4,7 @@ using CP_SDK.XUI;
 using GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;
-using GuildSaber.Mod.Features.GuildSaber;
+using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using GuildSaber.Mod.Helpers;
 using UnityEngine;
 
@@ -14,25 +14,17 @@ public class PagedLevelList : XUIVLayout
 {
     private const int LevelsCountByPage = 4;
 
-    private readonly GuildSaberConfig _config;
-    private readonly GuildSaberCache _guildSaberCache;
     private readonly List<GSText> _levelTextInCurrentPage = [];
+    private readonly GuildSaberSession _session;
 
     private int _currentPage;
-    private Logger _logger;
-
     private GSSecondaryButton _pageLeftButton = null!;
     private GSSecondaryButton _pageRightButton = null!;
     private XUIGLayout _playerLevelsContainer = null!;
 
-    public PagedLevelList(UIFactory factory, GuildSaberCache guildSaberCache, GuildSaberConfig config, Logger logger)
-        : base("PagedLevelList")
+    public PagedLevelList(UIFactory uiFactory, GuildSaberSession session) : base("PagedLevelList")
     {
-        var uiFactory = factory;
-        _guildSaberCache = guildSaberCache;
-        _config = config;
-        _logger = logger;
-
+        _session = session;
         OnReady(x =>
         {
             XUIGLayout.Make()
@@ -52,12 +44,12 @@ public class PagedLevelList : XUIVLayout
             }
 
             XUIHLayout.Make(
-                    factory.SecondaryButton("<", PageLeft)
+                    uiFactory.SecondaryButton("<", PageLeft)
                         .Bind(ref _pageLeftButton)
                         .SetColor(Color.white)
                         .SetWidth(5)
                         .SetHeight(5),
-                    factory.SecondaryButton(">", PageRight)
+                    uiFactory.SecondaryButton(">", PageRight)
                         .Bind(ref _pageRightButton)
                         .SetColor(Color.white)
                         .SetWidth(5)
@@ -70,9 +62,7 @@ public class PagedLevelList : XUIVLayout
 
     public readonly record struct CategoryLevelData(string CategoryName, string LevelName, Color Color);
 
-    public static PagedLevelList Make(
-        UIFactory factory, GuildSaberCache guildSaberCache, GuildSaberConfig config, Logger logger)
-        => new(factory, guildSaberCache, config, logger);
+    public static PagedLevelList Make(UIFactory factory, GuildSaberSession session) => new(factory, session);
 
     public void CleanRefresh()
     {
@@ -83,11 +73,11 @@ public class PagedLevelList : XUIVLayout
     private void RefreshUI()
     {
         EmptyCurrentLevelTexts();
-        if (_guildSaberCache.MemberLevelStats.Count == 0)
+        if (!_session.HasCurrentMemberStats)
             return;
 
-        var categories = _guildSaberCache.GuildsExtended[_config.GuildId].Categories;
-        var levelStats = _guildSaberCache.MemberLevelStats[_config.ContextId];
+        var categories = _session.CurrentGuild.Categories;
+        var levelStats = _session.CurrentMemberLevelStats;
 
         var categoryLevels = categories
             .Select(category => (category, level: levelStats.GetCategoryLevel(category.Id)))

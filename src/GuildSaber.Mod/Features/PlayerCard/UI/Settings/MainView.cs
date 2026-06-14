@@ -4,6 +4,7 @@ using CP_SDK.XUI;
 using GuildSaber.Mod.Features.Common.Timer;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.GuildSaber;
+using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using UnityEngine;
 using Zenject;
 
@@ -16,8 +17,9 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
 
     [Inject] private readonly PlayerCardView _cardView = null!;
     [Inject] private readonly GuildSaberConfig _config = null!;
+    [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
 
-    [Inject] private readonly GuildSaberCache _guildSaberCache = null!;
+    [Inject] private readonly GuildSaberSession _session = null!;
     [Inject] private readonly Timer _timer = null!;
     [Inject] private readonly UIFactory _uiFactory = null!;
     private XUIColorInput _color0Input = null!;
@@ -63,12 +65,12 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
             ).Bind(ref _useGradientLayout),
             XUIVLayout.Make(
                 XUIHLayout.Make(
-                    _uiFactory.Text("Main color: "),
-                    XUIColorInput.Make()
-                        .OnValueChanged(OnColorChanged)
-                        .Bind(ref _mainColorInput)
-                ),
-                XUIHLayout.Make(
+                    XUIHLayout.Make(
+                        _uiFactory.Text("Main color: "),
+                        XUIColorInput.Make()
+                            .OnValueChanged(OnColorChanged)
+                            .Bind(ref _mainColorInput)
+                    ),
                     XUIHLayout.Make(
                         _uiFactory.Text("Color 0: "),
                         XUIColorInput.Make()
@@ -151,21 +153,15 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
 
     private void UpdateUI()
     {
-        if (_guildSaberCache.PlayerExtended is not null
-            && _guildSaberCache.MemberLevelStats.TryGetValue(_config.ContextId, out var memberLevelStat))
+        if (_guildSaberManager.Initialized
+            && _session.TryGetCurrentMemberLevelStats(out var memberLevelStat)
+            && PlayerCardLibrary.CanPlayerUseCustomColors(memberLevelStat, _session.PlayerExtended.Player))
         {
-            var canPlayerUseColors = PlayerCardLibrary.CanPlayerUseCustomColors(
-                memberLevelStat,
-                _guildSaberCache.PlayerExtended.Player);
+            _useCustomColorsLayout.SetActive(true);
+            _useGradientLayout.SetActive(_config.PlayerCard.ColorSettings.UseCustomColors);
+            _customColorsLayout.SetActive(_config.PlayerCard.ColorSettings.UseCustomColors);
 
-            if (canPlayerUseColors)
-            {
-                _useCustomColorsLayout.SetActive(true);
-                _useGradientLayout.SetActive(_config.PlayerCard.ColorSettings.UseCustomColors);
-                _customColorsLayout.SetActive(_config.PlayerCard.ColorSettings.UseCustomColors);
-
-                return;
-            }
+            return;
         }
 
         _useCustomColorsLayout.SetActive(false);
