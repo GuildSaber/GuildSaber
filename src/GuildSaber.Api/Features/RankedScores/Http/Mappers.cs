@@ -67,6 +67,7 @@ public static class RankedScoreMappers
         => rankedScore => rankedScore.Type == RankedScore.ERankedScoreType.Valid
             ? new RankedScoreResponses.RankedScore.ValidRankedScore(
                 rankedScore.Id,
+                rankedScore.PlayerId,
                 rankedScore.PointId,
                 rankedScore.RankedMapId,
                 rankedScore.EditedAt,
@@ -79,6 +80,7 @@ public static class RankedScoreMappers
             : rankedScore.Type == RankedScore.ERankedScoreType.Accepted
                 ? new RankedScoreResponses.RankedScore.AcceptedRankedScore(
                     rankedScore.Id,
+                    rankedScore.PlayerId,
                     rankedScore.PointId,
                     rankedScore.RankedMapId,
                     rankedScore.EditedAt,
@@ -91,6 +93,7 @@ public static class RankedScoreMappers
                 : rankedScore.Type == RankedScore.ERankedScoreType.Pending
                     ? new RankedScoreResponses.RankedScore.PendingRankedScore(
                         rankedScore.Id,
+                        rankedScore.PlayerId,
                         rankedScore.PointId,
                         rankedScore.RankedMapId,
                         rankedScore.EditedAt,
@@ -102,6 +105,7 @@ public static class RankedScoreMappers
                     : rankedScore.Type == RankedScore.ERankedScoreType.Refused
                         ? new RankedScoreResponses.RankedScore.RefusedRankedScore(
                             rankedScore.Id,
+                            rankedScore.PlayerId,
                             rankedScore.PointId,
                             rankedScore.RankedMapId,
                             rankedScore.EditedAt,
@@ -112,6 +116,7 @@ public static class RankedScoreMappers
                             rankedScore.EffectiveScore)
                         : new RankedScoreResponses.RankedScore.InvalidRankedScore(
                             rankedScore.Id,
+                            rankedScore.PlayerId,
                             rankedScore.PointId,
                             rankedScore.RankedMapId,
                             rankedScore.EditedAt,

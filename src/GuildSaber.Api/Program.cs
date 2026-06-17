@@ -7,6 +7,7 @@ using GuildSaber.Api.Features.Guilds.Members;
 using GuildSaber.Api.Features.LegacyGS;
 using GuildSaber.Api.Features.Players;
 using GuildSaber.Api.Features.RankedMaps;
+using GuildSaber.Api.Features.RankedScores;
 using GuildSaber.Api.Features.Scores;
 using GuildSaber.Api.Setup;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -47,6 +48,7 @@ builder.Services
     .AddGuildsFeature()
     .AddGuildMembersFeature()
     .AddLegacyGuildSaberFeature()
+    .AddRankedScoresFeature()
     .AddRankedMapsFeature();
 
 var app = builder.Build();

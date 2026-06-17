@@ -193,22 +193,22 @@ public static class RankedMapExtensions
             // Filtering only applies when there is a player and a filter for their scores, otherwise the map is gonna be included.
             if (playerId is not null && filters.RankedScoreTypes is not RankedScoreRequests.ERankedScoreType.None)
             {
-                var valid = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Valid);
-                var invalid = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Invalid);
-                var pending = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Pending);
-                var accepted = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Accepted);
-                var refused = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Refused);
+                var validFilter = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Valid);
+                var invalidFilter = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Invalid);
+                var pendingFilter = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Pending);
+                var acceptedFilter = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Accepted);
+                var refusedFilter = filters.RankedScoreTypes.HasFlag(RankedScoreRequests.ERankedScoreType.Refused);
 
                 var playerHaveNoScore = (Expression<Func<ServerRankedMap, bool>>)
                     (map => !map.RankedScores.Any(rs => rs.PlayerId == playerId.Value && rs.IsSelected));
 
                 var scoreTypeFilter = (Expression<Func<ServerRankedMap, bool>>)
                     (map => map.RankedScores.Any(rs => rs.PlayerId == playerId.Value && rs.IsSelected && (
-                        valid && rs is ValidRankedScore
-                        || invalid && rs is InvalidRankedScore
-                        || pending && rs is PendingRankedScore
-                        || accepted && rs is AcceptedRankedScore
-                        || refused && rs is RefusedRankedScore
+                        validFilter && rs is ValidRankedScore
+                        || invalidFilter && rs is InvalidRankedScore
+                        || pendingFilter && rs is PendingRankedScore
+                        || acceptedFilter && rs is AcceptedRankedScore
+                        || refusedFilter && rs is RefusedRankedScore
                     )));
 
                 query = filters.IncludeMapsWithoutScore
