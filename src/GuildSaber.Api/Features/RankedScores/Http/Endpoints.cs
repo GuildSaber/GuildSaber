@@ -8,6 +8,7 @@ using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.RankedScores;
 using Microsoft.AspNetCore.Http.HttpResults;
 using ServerRankedScore = GuildSaber.Database.Models.Server.RankedScores.RankedScore;
+using ConfirmationResponse = GuildSaber.Api.Features.RankedScores.RankedScoreService.ConfirmationResponse;
 using static GuildSaber.Api.Features.RankedScores.Http.RankedScoreRequests;
 using static GuildSaber.Api.Features.RankedScores.Http.RankedScoreResponses;
 
@@ -18,12 +19,34 @@ public class RankedScoreEndpoints : IEndpoints
     public static void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/contexts/{contextId}/ranked-scores")
-            .WithTag("RankedScores", description: "Endpoints for managing guild context ranked scores.");
+            .WithTag("Context.RankedScores", description: "Endpoints for managing guild context ranked scores.");
 
         group.MapGet("/", GetRankedScoresAsync)
             .WithName("GetRankedScores")
             .WithSummary("Get all ranked scores paginated")
             .WithDescription("Get all ranked scores of a specific context by its Id, with optional sorting.");
+
+        group.MapPost("/{rankedScoreId}/set-confirmed", SetConfirmedRankedScoreAsync)
+            .WithName("SetRankedScoreConfirmed")
+            .WithSummary("Confirm a pending-compatible ranked score")
+            .WithDescription("Set a pending-compatible ranked score as accepted by the scoring team.")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .RequireGuildPermission(EPermission.ScoringTeam);
+
+        group.MapPost("/{rankedScoreId}/set-denied", SetDeniedRankedScoreAsync)
+            .WithName("SetRankedScoreDenied")
+            .WithSummary("Deny a pending-compatible ranked score")
+            .WithDescription("Set a pending-compatible ranked score as refused by the scoring team.")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .RequireGuildPermission(EPermission.ScoringTeam);
+
+        group.MapPost("/{rankedScoreId}/revert-to-pending", RevertRankedScoreToPendingAsync)
+            .WithName("RevertRankedScoreToPending")
+            .WithSummary("Revert a ranked score confirmation")
+            .WithDescription("Set a pending-compatible ranked score back to pending.")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .RequireGuildPermission(EPermission.ScoringTeam);
 
         var withPlayerGroup = endpoints.MapGroup("/players")
             .WithTag("Players.RankedScores", description: "Endpoints for managing players' ranked scores.");
@@ -126,6 +149,45 @@ public class RankedScoreEndpoints : IEndpoints
             .ApplySortOrder(sortBy, order)
             .Select(RankedScoreMappers.MapRankedScoreWithRankedMapExpression)
             .ToPagedListAsync(page, pageSize));
+
+    private static Task<Results<Ok<RankedScoreResponses.RankedScore>, NotFound, ProblemHttpResult>>
+        SetConfirmedRankedScoreAsync(
+            [FromRoute] ContextId contextId,
+            [FromRoute] RankedScoreId rankedScoreId,
+            RankedScoreService rankedScoreService,
+            CancellationToken token)
+        => HandleConfirmationResponseAsync(rankedScoreService.SetConfirmedAsync(contextId, rankedScoreId, token));
+
+    private static Task<Results<Ok<RankedScoreResponses.RankedScore>, NotFound, ProblemHttpResult>>
+        SetDeniedRankedScoreAsync(
+            [FromRoute] ContextId contextId,
+            [FromRoute] RankedScoreId rankedScoreId,
+            RankedScoreService rankedScoreService,
+            CancellationToken token)
+        => HandleConfirmationResponseAsync(rankedScoreService.SetDeniedAsync(contextId, rankedScoreId, token));
+
+    private static Task<Results<Ok<RankedScoreResponses.RankedScore>, NotFound, ProblemHttpResult>>
+        RevertRankedScoreToPendingAsync(
+            [FromRoute] ContextId contextId,
+            [FromRoute] RankedScoreId rankedScoreId,
+            RankedScoreService rankedScoreService,
+            CancellationToken token)
+        => HandleConfirmationResponseAsync(rankedScoreService.RevertToPendingAsync(contextId, rankedScoreId, token));
+
+    private static async Task<Results<Ok<RankedScoreResponses.RankedScore>, NotFound, ProblemHttpResult>>
+        HandleConfirmationResponseAsync(Task<ConfirmationResponse> responseTask)
+        => await responseTask switch
+        {
+            ConfirmationResponse.Success(var rankedScore) => TypedResults.Ok(rankedScore.Map()),
+            ConfirmationResponse.NotFound => TypedResults.NotFound(),
+            ConfirmationResponse.NotPendingCompatible => TypedResults.Problem(
+                "Only pending, accepted, or refused ranked scores can be updated by scoring team confirmation.",
+                statusCode: StatusCodes.Status400BadRequest),
+            ConfirmationResponse.StateChangedBeforeUpdate => TypedResults.Problem(
+                "Ranked score state changed before the confirmation update could be applied.",
+                statusCode: StatusCodes.Status400BadRequest),
+            _ => throw new ArgumentOutOfRangeException(nameof(responseTask), "Unexpected confirmation response.")
+        };
 }
 
 public static class RankedScoreEndpointExtensions

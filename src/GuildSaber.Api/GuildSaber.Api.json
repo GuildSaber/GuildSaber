@@ -8,7 +8,7 @@
     "/contexts/{contextId}/ranked-scores": {
       "get": {
         "tags": [
-          "RankedScores"
+          "Context.RankedScores"
         ],
         "summary": "Get all ranked scores paginated",
         "description": "Get all ranked scores of a specific context by its Id, with optional sorting.",
@@ -161,6 +161,247 @@
             }
           }
         }
+      }
+    },
+    "/contexts/{contextId}/ranked-scores/{rankedScoreId}/set-confirmed": {
+      "post": {
+        "tags": [
+          "Context.RankedScores"
+        ],
+        "summary": "Confirm a pending ranked score",
+        "description": "Set a pending-compatible ranked score as accepted by the scoring team.",
+        "operationId": "SetRankedScoreConfirmed",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ContextId"
+            }
+          },
+          {
+            "name": "rankedScoreId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RankedScoreId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankedScore"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "POST contexts/{contextId}/ranked-scores/{rankedScoreId}/set-confirmed",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/ranked-scores/{rankedScoreId}/set-confirmed",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/ranked-scores/{rankedScoreId}/set-denied": {
+      "post": {
+        "tags": [
+          "Context.RankedScores"
+        ],
+        "summary": "Deny a pending ranked score",
+        "description": "Set a pending-compatible ranked score as refused by the scoring team.",
+        "operationId": "SetRankedScoreDenied",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ContextId"
+            }
+          },
+          {
+            "name": "rankedScoreId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RankedScoreId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankedScore"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "POST contexts/{contextId}/ranked-scores/{rankedScoreId}/set-denied",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/ranked-scores/{rankedScoreId}/set-denied",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/ranked-scores/{rankedScoreId}/revert-to-pending": {
+      "post": {
+        "tags": [
+          "Context.RankedScores"
+        ],
+        "summary": "Revert a ranked score confirmation",
+        "description": "Set a pending-compatible ranked score back to pending.",
+        "operationId": "RevertRankedScoreToPending",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ContextId"
+            }
+          },
+          {
+            "name": "rankedScoreId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RankedScoreId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankedScore"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/ranked-scores/{rankedScoreId}/revert-to-pending",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/ranked-scores/{rankedScoreId}/revert-to-pending",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
       }
     },
     "/players/{playerId}/contexts/{contextId}/ranked-scores": {
@@ -8327,7 +8568,7 @@
   },
   "tags": [
     {
-      "name": "RankedScores",
+      "name": "Context.RankedScores",
       "description": "Endpoints for managing guild context ranked scores."
     },
     {
