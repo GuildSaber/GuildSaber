@@ -63,6 +63,7 @@ public static class RankedScoreResponses
     [JsonDerivedType(typeof(InvalidRankedScore), "Invalid")]
     public abstract record RankedScore(
         RankedScoreId Id,
+        PlayerId PlayerId,
         int PointId,
         long RankedMapId,
         DateTimeOffset EditedAt,
@@ -74,6 +75,7 @@ public static class RankedScoreResponses
     {
         public sealed record ValidRankedScore(
             RankedScoreId Id,
+            PlayerId PlayerId,
             int PointId,
             long RankedMapId,
             DateTimeOffset EditedAt,
@@ -83,10 +85,11 @@ public static class RankedScoreResponses
             float RawPoints,
             int EffectiveScore,
             int Rank
-        ) : RankedScore(Id, PointId, RankedMapId, EditedAt, Score, PrevScore, IsSelected, EffectiveScore);
+        ) : RankedScore(Id, PlayerId, PointId, RankedMapId, EditedAt, Score, PrevScore, IsSelected, EffectiveScore);
 
         public sealed record PendingRankedScore(
             RankedScoreId Id,
+            PlayerId PlayerId,
             int PointId,
             long RankedMapId,
             DateTimeOffset EditedAt,
@@ -95,10 +98,11 @@ public static class RankedScoreResponses
             bool IsSelected,
             float RawPoints,
             int EffectiveScore
-        ) : RankedScore(Id, PointId, RankedMapId, EditedAt, Score, PrevScore, IsSelected, EffectiveScore);
+        ) : RankedScore(Id, PlayerId, PointId, RankedMapId, EditedAt, Score, PrevScore, IsSelected, EffectiveScore);
 
         public sealed record AcceptedRankedScore(
             RankedScoreId Id,
+            PlayerId PlayerId,
             int PointId,
             long RankedMapId,
             DateTimeOffset EditedAt,
@@ -108,10 +112,11 @@ public static class RankedScoreResponses
             float RawPoints,
             int EffectiveScore,
             int Rank
-        ) : RankedScore(Id, PointId, RankedMapId, EditedAt, Score, PrevScore, IsSelected, EffectiveScore);
+        ) : RankedScore(Id, PlayerId, PointId, RankedMapId, EditedAt, Score, PrevScore, IsSelected, EffectiveScore);
 
         public sealed record RefusedRankedScore(
             RankedScoreId Id,
+            PlayerId PlayerId,
             int PointId,
             long RankedMapId,
             DateTimeOffset EditedAt,
@@ -120,10 +125,11 @@ public static class RankedScoreResponses
             bool IsSelected,
             float RawPoints,
             int EffectiveScore
-        ) : RankedScore(Id, PointId, RankedMapId, EditedAt, Score, PrevScore, IsSelected, EffectiveScore);
+        ) : RankedScore(Id, PlayerId, PointId, RankedMapId, EditedAt, Score, PrevScore, IsSelected, EffectiveScore);
 
         public sealed record InvalidRankedScore(
             RankedScoreId Id,
+            PlayerId PlayerId,
             int PointId,
             long RankedMapId,
             DateTimeOffset EditedAt,
@@ -132,7 +138,7 @@ public static class RankedScoreResponses
             bool IsSelected,
             int EffectiveScore,
             EInvalidReason InvalidReason
-        ) : RankedScore(Id, PointId, RankedMapId, EditedAt, Score, PrevScore, IsSelected, EffectiveScore);
+        ) : RankedScore(Id, PlayerId, PointId, RankedMapId, EditedAt, Score, PrevScore, IsSelected, EffectiveScore);
     }
 
     public record RankedScoreWithPlayer(

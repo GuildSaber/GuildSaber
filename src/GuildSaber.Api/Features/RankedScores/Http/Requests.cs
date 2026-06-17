@@ -2,6 +2,28 @@ namespace GuildSaber.Api.Features.RankedScores.Http;
 
 public static class RankedScoreRequests
 {
+    /// <summary>
+    /// Filters for querying ranked scores.
+    /// </summary>
+    /// <param name="RankedScoreTypes">
+    /// If not None, only returns selected ranked scores with any of the specified ranked score types.
+    /// </param>
+    /// <param name="DifficultyStarFrom">The minimum difficulty star rating to filter scores.</param>
+    /// <param name="DifficultyStarTo">The maximum difficulty star rating to filter scores.</param>
+    /// <param name="AccuracyStarFrom">The minimum accuracy star rating to filter scores.</param>
+    /// <param name="AccuracyStarTo">The maximum accuracy star rating to filter scores.</param>
+    /// <param name="BpmFrom">The minimum BPM to filter scores.</param>
+    /// <param name="BpmTo">The maximum BPM to filter scores.</param>
+    public record struct Filters(
+        [FromQuery(Name = "rankedScoreTypes")] ERankedScoreType RankedScoreTypes = ERankedScoreType.None,
+        [FromQuery(Name = "difficultyStarFrom")] float? DifficultyStarFrom = null,
+        [FromQuery(Name = "difficultyStarTo")] float? DifficultyStarTo = null,
+        [FromQuery(Name = "accuracyStarFrom")] float? AccuracyStarFrom = null,
+        [FromQuery(Name = "accuracyStarTo")] float? AccuracyStarTo = null,
+        [FromQuery(Name = "bpmFrom")] float? BpmFrom = null,
+        [FromQuery(Name = "bpmTo")] float? BpmTo = null
+    );
+
     [Flags]
     public enum ERankedScoreType
     {

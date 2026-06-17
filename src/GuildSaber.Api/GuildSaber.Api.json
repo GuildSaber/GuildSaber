@@ -5,75 +5,29 @@
     "version": "1.0.0"
   },
   "paths": {
-    "/players/{playerId}/contexts/{contextId}/ranked-scores": {
+    "/contexts/{contextId}/ranked-scores": {
       "get": {
         "tags": [
-          "Players.RankedScores"
+          "RankedScores"
         ],
-        "summary": "Get all ranked scores of a player paginated",
-        "description": "Get all ranked scores of a specific player by their Id, with optional sorting.",
-        "operationId": "GetPlayerRankedScores",
+        "summary": "Get all ranked scores paginated",
+        "description": "Get all ranked scores of a specific context by its Id, with optional sorting.",
+        "operationId": "GetRankedScores",
         "parameters": [
-          {
-            "name": "playerId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "contextId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/ContextId"
             }
           },
           {
-            "name": "page",
+            "name": "rankedScoreTypes",
             "in": "query",
             "schema": {
-              "maximum": 2147483647,
-              "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32",
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "maximum": 100,
-              "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32",
-              "default": 10
-            }
-          },
-          {
-            "name": "sortBy",
-            "in": "query",
-            "schema": {
-              "default": "Points",
-              "$ref": "#/components/schemas/ERankedScoreSorter"
-            }
-          },
-          {
-            "name": "order",
-            "in": "query",
-            "schema": {
-              "default": "Desc",
-              "$ref": "#/components/schemas/EOrder"
+              "default": "None",
+              "$ref": "#/components/schemas/ERankedScoreType"
             }
           },
           {
@@ -89,7 +43,7 @@
             }
           },
           {
-            "name": "accuracyStarFrom",
+            "name": "difficultyStarTo",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -101,7 +55,7 @@
             }
           },
           {
-            "name": "difficultyStarTo",
+            "name": "accuracyStarFrom",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -149,11 +103,215 @@
             }
           },
           {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "default": "Points",
+              "$ref": "#/components/schemas/ERankedScoreSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "default": "Desc",
+              "$ref": "#/components/schemas/EOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfRankedScoreWithRankedMap"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/players/{playerId}/contexts/{contextId}/ranked-scores": {
+      "get": {
+        "tags": [
+          "Players.RankedScores"
+        ],
+        "summary": "Get all ranked scores of a player paginated",
+        "description": "Get all ranked scores of a specific player by their Id, with optional sorting.",
+        "operationId": "GetPlayerRankedScores",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PlayerId"
+            }
+          },
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ContextId"
+            }
+          },
+          {
             "name": "rankedScoreTypes",
             "in": "query",
             "schema": {
               "default": "None",
               "$ref": "#/components/schemas/ERankedScoreType"
+            }
+          },
+          {
+            "name": "difficultyStarFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "difficultyStarTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "accuracyStarFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "accuracyStarTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmFrom",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "bpmTo",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "default": "Points",
+              "$ref": "#/components/schemas/ERankedScoreSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "default": "Desc",
+              "$ref": "#/components/schemas/EOrder"
             }
           }
         ],
@@ -185,53 +343,15 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/ContextId"
             }
           },
           {
-            "name": "page",
+            "name": "rankedScoreTypes",
             "in": "query",
             "schema": {
-              "maximum": 2147483647,
-              "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32",
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "maximum": 100,
-              "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32",
-              "default": 10
-            }
-          },
-          {
-            "name": "sortBy",
-            "in": "query",
-            "schema": {
-              "default": "Points",
-              "$ref": "#/components/schemas/ERankedScoreSorter"
-            }
-          },
-          {
-            "name": "order",
-            "in": "query",
-            "schema": {
-              "default": "Desc",
-              "$ref": "#/components/schemas/EOrder"
+              "default": "None",
+              "$ref": "#/components/schemas/ERankedScoreType"
             }
           },
           {
@@ -247,7 +367,7 @@
             }
           },
           {
-            "name": "accuracyStarFrom",
+            "name": "difficultyStarTo",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -259,7 +379,7 @@
             }
           },
           {
-            "name": "difficultyStarTo",
+            "name": "accuracyStarFrom",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -307,11 +427,49 @@
             }
           },
           {
-            "name": "rankedScoreTypes",
+            "name": "page",
             "in": "query",
             "schema": {
-              "default": "None",
-              "$ref": "#/components/schemas/ERankedScoreType"
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "default": "Points",
+              "$ref": "#/components/schemas/ERankedScoreSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "default": "Desc",
+              "$ref": "#/components/schemas/EOrder"
             }
           }
         ],
@@ -329,7 +487,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -348,7 +506,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/PlayerId"
             }
           },
           {
@@ -356,53 +514,15 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/ContextId"
             }
           },
           {
-            "name": "page",
+            "name": "rankedScoreTypes",
             "in": "query",
             "schema": {
-              "maximum": 2147483647,
-              "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32",
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "maximum": 100,
-              "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32",
-              "default": 10
-            }
-          },
-          {
-            "name": "sortBy",
-            "in": "query",
-            "schema": {
-              "default": "Points",
-              "$ref": "#/components/schemas/ERankedScoreSorter"
-            }
-          },
-          {
-            "name": "order",
-            "in": "query",
-            "schema": {
-              "default": "Desc",
-              "$ref": "#/components/schemas/EOrder"
+              "default": "None",
+              "$ref": "#/components/schemas/ERankedScoreType"
             }
           },
           {
@@ -418,7 +538,7 @@
             }
           },
           {
-            "name": "accuracyStarFrom",
+            "name": "difficultyStarTo",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -430,7 +550,7 @@
             }
           },
           {
-            "name": "difficultyStarTo",
+            "name": "accuracyStarFrom",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -478,11 +598,49 @@
             }
           },
           {
-            "name": "rankedScoreTypes",
+            "name": "page",
             "in": "query",
             "schema": {
-              "default": "None",
-              "$ref": "#/components/schemas/ERankedScoreType"
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "default": "Points",
+              "$ref": "#/components/schemas/ERankedScoreSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "default": "Desc",
+              "$ref": "#/components/schemas/EOrder"
             }
           }
         ],
@@ -514,53 +672,15 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/ContextId"
             }
           },
           {
-            "name": "page",
+            "name": "rankedScoreTypes",
             "in": "query",
             "schema": {
-              "maximum": 2147483647,
-              "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32",
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "maximum": 100,
-              "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32",
-              "default": 10
-            }
-          },
-          {
-            "name": "sortBy",
-            "in": "query",
-            "schema": {
-              "default": "Points",
-              "$ref": "#/components/schemas/ERankedScoreSorter"
-            }
-          },
-          {
-            "name": "order",
-            "in": "query",
-            "schema": {
-              "default": "Desc",
-              "$ref": "#/components/schemas/EOrder"
+              "default": "None",
+              "$ref": "#/components/schemas/ERankedScoreType"
             }
           },
           {
@@ -576,7 +696,7 @@
             }
           },
           {
-            "name": "accuracyStarFrom",
+            "name": "difficultyStarTo",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -588,7 +708,7 @@
             }
           },
           {
-            "name": "difficultyStarTo",
+            "name": "accuracyStarFrom",
             "in": "query",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -636,11 +756,49 @@
             }
           },
           {
-            "name": "rankedScoreTypes",
+            "name": "page",
             "in": "query",
             "schema": {
-              "default": "None",
-              "$ref": "#/components/schemas/ERankedScoreType"
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "default": "Points",
+              "$ref": "#/components/schemas/ERankedScoreSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "default": "Desc",
+              "$ref": "#/components/schemas/EOrder"
             }
           }
         ],
@@ -1065,7 +1223,7 @@
         "tags": [
           "Context.RankedMaps"
         ],
-        "summary": "Get ranked maps for a context with a player score.",
+        "summary": "Get ranked maps for a context with the player's point scores.",
         "description": "Get ranked maps for a context by its Id, with optional search and sorting, including the player's best point scores on each map.",
         "operationId": "GetRankedMapsWithScores",
         "parameters": [
@@ -1300,7 +1458,7 @@
         "tags": [
           "Context.RankedMaps"
         ],
-        "summary": "Get ranked maps for a context with the current player's score.",
+        "summary": "Get ranked maps for a context with the current player's point scores.",
         "description": "Get ranked maps for a context by its Id, with optional search and sorting, including the current player's best point scores on each map.",
         "operationId": "GetRankedMapsWithScoresAtMe",
         "parameters": [
@@ -7131,6 +7289,7 @@
           "rawPoints",
           "rank",
           "id",
+          "playerId",
           "pointId",
           "rankedMapId",
           "editedAt",
@@ -7164,6 +7323,9 @@
           },
           "id": {
             "$ref": "#/components/schemas/RankedScoreId"
+          },
+          "playerId": {
+            "$ref": "#/components/schemas/PlayerId"
           },
           "pointId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -7219,6 +7381,7 @@
         "required": [
           "invalidReason",
           "id",
+          "playerId",
           "pointId",
           "rankedMapId",
           "editedAt",
@@ -7239,6 +7402,9 @@
           },
           "id": {
             "$ref": "#/components/schemas/RankedScoreId"
+          },
+          "playerId": {
+            "$ref": "#/components/schemas/PlayerId"
           },
           "pointId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -7290,6 +7456,7 @@
         "required": [
           "rawPoints",
           "id",
+          "playerId",
           "pointId",
           "rankedMapId",
           "editedAt",
@@ -7315,6 +7482,9 @@
           },
           "id": {
             "$ref": "#/components/schemas/RankedScoreId"
+          },
+          "playerId": {
+            "$ref": "#/components/schemas/PlayerId"
           },
           "pointId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -7366,6 +7536,7 @@
         "required": [
           "rawPoints",
           "id",
+          "playerId",
           "pointId",
           "rankedMapId",
           "editedAt",
@@ -7391,6 +7562,9 @@
           },
           "id": {
             "$ref": "#/components/schemas/RankedScoreId"
+          },
+          "playerId": {
+            "$ref": "#/components/schemas/PlayerId"
           },
           "pointId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -7443,6 +7617,7 @@
           "rawPoints",
           "rank",
           "id",
+          "playerId",
           "pointId",
           "rankedMapId",
           "editedAt",
@@ -7476,6 +7651,9 @@
           },
           "id": {
             "$ref": "#/components/schemas/RankedScoreId"
+          },
+          "playerId": {
+            "$ref": "#/components/schemas/PlayerId"
           },
           "pointId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -8148,6 +8326,10 @@
     }
   },
   "tags": [
+    {
+      "name": "RankedScores",
+      "description": "Endpoints for managing guild context ranked scores."
+    },
     {
       "name": "Players.RankedScores",
       "description": "Endpoints for managing players' ranked scores."
