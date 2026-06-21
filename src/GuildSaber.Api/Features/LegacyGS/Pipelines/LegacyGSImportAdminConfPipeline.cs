@@ -34,7 +34,7 @@ public class LegacyGSImportAdminConfPipeline(
         var impactedContextPoints = new HashSet<(ContextId, Point.PointId)>();
         var impactedRankedMapIds = new HashSet<RankedMap.RankedMapId>();
         await foreach (var data in dbContext.PendingRankedScores
-                           .Where(x => x.PlayerId == playerId)
+                           .Where(x => x.GuildId == guildId && x.PlayerId == playerId)
                            .Select(x => new
                            {
                                x.Id,
