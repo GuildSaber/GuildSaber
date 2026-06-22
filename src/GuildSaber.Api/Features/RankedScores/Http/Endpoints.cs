@@ -26,51 +26,57 @@ public class RankedScoreEndpoints : IEndpoints
             .WithSummary("Get all ranked scores paginated")
             .WithDescription("Get all ranked scores of a specific context by its Id, with optional sorting.");
 
-        group.MapPost("/{rankedScoreId}/set-confirmed", SetConfirmedRankedScoreAsync)
-            .WithName("SetRankedScoreConfirmed")
-            .WithSummary("Confirm a pending-compatible ranked score")
-            .WithDescription("Set a pending-compatible ranked score as accepted by the scoring team.")
+        var withScoreGroup = group.MapGroup("/scores")
+            .WithTag("Context.RankedScores",
+                description: "Endpoints for managing ranked scores from their underlying scoreIds.");
+
+        withScoreGroup.MapPost("/{scoreId}/set-confirmed", SetConfirmedRankedScoresFromScoreIdAsync)
+            .WithName("SetRankedScoresFromScoreIdToConfirmed")
+            .WithSummary("Confirm all pending-compatible ranked scores from their underlying scoreId")
+            .WithDescription(
+                "Set all pending-compatible ranked scores from their underlying scoreId as confirmed by the scoring team.")
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .RequireGuildPermission(EPermission.ScoringTeam);
 
-        group.MapPost("/{rankedScoreId}/set-denied", SetDeniedRankedScoreAsync)
-            .WithName("SetRankedScoreDenied")
-            .WithSummary("Deny a pending-compatible ranked score")
-            .WithDescription("Set a pending-compatible ranked score as refused by the scoring team.")
+        withScoreGroup.MapPost("/{scoreId}/set-denied", SetDeniedRankedScoresFromScoreIdAsync)
+            .WithName("SetRankedScoreFromScoreIdToDenied")
+            .WithSummary("Deny all pending-compatible ranked scores from their underlying scoreId")
+            .WithDescription(
+                "Set all pending-compatible ranked scores from their underlying scoreId as refused by the scoring team.")
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .RequireGuildPermission(EPermission.ScoringTeam);
 
-        group.MapPost("/{rankedScoreId}/revert-to-pending", RevertRankedScoreToPendingAsync)
-            .WithName("RevertRankedScoreToPending")
-            .WithSummary("Revert a ranked score confirmation")
-            .WithDescription("Set a pending-compatible ranked score back to pending.")
+        withScoreGroup.MapPost("/{scoreId}/revert-to-pending", RevertRankedScoresFromScoreIdToPendingAsync)
+            .WithName("RevertRankedScoresFromScoreIdToPending")
+            .WithSummary("Revert all pending-compatible ranked scores from their underlying scoreId back to pending")
+            .WithDescription("Set all pending-compatible ranked scores from their underlying scoreId back to pending.")
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .RequireGuildPermission(EPermission.ScoringTeam);
 
-        var withPlayerGroup = endpoints.MapGroup("/players")
+        var fromPlayerGroup = endpoints.MapGroup("/players")
             .WithTag("Players.RankedScores", description: "Endpoints for managing players' ranked scores.");
 
-        withPlayerGroup.MapGet("/{playerId}/contexts/{contextId}/ranked-scores", GetPlayerRankedScoresAsync)
+        fromPlayerGroup.MapGet("/{playerId}/contexts/{contextId}/ranked-scores", GetPlayerRankedScoresAsync)
             .WithName("GetPlayerRankedScores")
             .WithSummary("Get all ranked scores of a player paginated")
             .WithDescription("Get all ranked scores of a specific player by their Id, with optional sorting.");
 
-        withPlayerGroup.MapGet("/@me/contexts/{contextId}/ranked-scores", GetPlayerRankedScoresAtMeAsync)
+        fromPlayerGroup.MapGet("/@me/contexts/{contextId}/ranked-scores", GetPlayerRankedScoresAtMeAsync)
             .WithName("GetPlayerRankedScoresAtMe")
             .WithSummary("Get current player's ranked scores paginated")
             .WithDescription(
                 "Get the current player's ranked scores using their player id from claims, with optional sorting.")
             .RequireAuthorization();
 
-        withPlayerGroup.MapGet("/{playerId}/contexts/{contextId}/ranked-scores-with-ranked-map",
+        fromPlayerGroup.MapGet("/{playerId}/contexts/{contextId}/ranked-scores-with-ranked-map",
                 GetPlayerRankedScoresWithRankedMapAsync)
             .WithName("GetPlayerRankedScoresWithRankedMap")
             .WithSummary("Get all ranked scores of a player with ranked map paginated")
             .WithDescription(
                 "Get all ranked scores of a specific player by their Id along with ranked map, with optional sorting.");
 
-        withPlayerGroup.MapGet("/@me/contexts/{contextId}/ranked-scores-with-ranked-map",
+        fromPlayerGroup.MapGet("/@me/contexts/{contextId}/ranked-scores-with-ranked-map",
                 GetPlayerRankedScoresWithRankedMapAtMeAsync)
             .WithName("GetPlayerRankedScoresWithRankedMapAtMe")
             .WithSummary("Get current player's ranked scores with ranked map paginated")
@@ -150,42 +156,37 @@ public class RankedScoreEndpoints : IEndpoints
             .Select(RankedScoreMappers.MapRankedScoreWithRankedMapExpression)
             .ToPagedListAsync(page, pageSize));
 
-    private static Task<Results<Ok<RankedScoreResponses.RankedScore>, NotFound, ProblemHttpResult>>
-        SetConfirmedRankedScoreAsync(
+    private static Task<Results<Ok<RankedScoreResponses.RankedScore[]>, NotFound, ProblemHttpResult>>
+        SetConfirmedRankedScoresFromScoreIdAsync(
             [FromRoute] ContextId contextId,
-            [FromRoute] RankedScoreId rankedScoreId,
+            [FromRoute] ScoreId scoreId,
             RankedScoreService rankedScoreService,
             CancellationToken token)
-        => HandleConfirmationResponseAsync(rankedScoreService.SetConfirmedAsync(contextId, rankedScoreId, token));
+        => HandleConfirmationResponseAsync(rankedScoreService.SetConfirmedAsync(contextId, scoreId, token));
 
-    private static Task<Results<Ok<RankedScoreResponses.RankedScore>, NotFound, ProblemHttpResult>>
-        SetDeniedRankedScoreAsync(
+    private static Task<Results<Ok<RankedScoreResponses.RankedScore[]>, NotFound, ProblemHttpResult>>
+        SetDeniedRankedScoresFromScoreIdAsync(
             [FromRoute] ContextId contextId,
-            [FromRoute] RankedScoreId rankedScoreId,
+            [FromRoute] ScoreId scoreId,
             RankedScoreService rankedScoreService,
             CancellationToken token)
-        => HandleConfirmationResponseAsync(rankedScoreService.SetDeniedAsync(contextId, rankedScoreId, token));
+        => HandleConfirmationResponseAsync(rankedScoreService.SetDeniedAsync(contextId, scoreId, token));
 
-    private static Task<Results<Ok<RankedScoreResponses.RankedScore>, NotFound, ProblemHttpResult>>
-        RevertRankedScoreToPendingAsync(
+    private static Task<Results<Ok<RankedScoreResponses.RankedScore[]>, NotFound, ProblemHttpResult>>
+        RevertRankedScoresFromScoreIdToPendingAsync(
             [FromRoute] ContextId contextId,
-            [FromRoute] RankedScoreId rankedScoreId,
+            [FromRoute] ScoreId scoreId,
             RankedScoreService rankedScoreService,
             CancellationToken token)
-        => HandleConfirmationResponseAsync(rankedScoreService.RevertToPendingAsync(contextId, rankedScoreId, token));
+        => HandleConfirmationResponseAsync(rankedScoreService.RevertToPendingAsync(contextId, scoreId, token));
 
-    private static async Task<Results<Ok<RankedScoreResponses.RankedScore>, NotFound, ProblemHttpResult>>
+    private static async Task<Results<Ok<RankedScoreResponses.RankedScore[]>, NotFound, ProblemHttpResult>>
         HandleConfirmationResponseAsync(Task<ConfirmationResponse> responseTask)
         => await responseTask switch
         {
-            ConfirmationResponse.Success(var rankedScore) => TypedResults.Ok(rankedScore.Map()),
+            ConfirmationResponse.Success(var rankedScores) => TypedResults.Ok(rankedScores.Select(x => x.Map())
+                .ToArray()),
             ConfirmationResponse.NotFound => TypedResults.NotFound(),
-            ConfirmationResponse.NotPendingCompatible => TypedResults.Problem(
-                "Only pending, accepted, or refused ranked scores can be updated by scoring team confirmation.",
-                statusCode: StatusCodes.Status400BadRequest),
-            ConfirmationResponse.StateChangedBeforeUpdate => TypedResults.Problem(
-                "Ranked score state changed before the confirmation update could be applied.",
-                statusCode: StatusCodes.Status400BadRequest),
             _ => throw new ArgumentOutOfRangeException(nameof(responseTask), "Unexpected confirmation response.")
         };
 }

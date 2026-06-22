@@ -4,7 +4,6 @@ using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.Scores;
 using Microsoft.EntityFrameworkCore;
-using ScoreId = GuildSaber.Database.Models.Server.Scores.AbstractScore.ScoreId;
 
 namespace GuildSaber.Api.Features.Scores.Pipelines;
 

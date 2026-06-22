@@ -38,6 +38,7 @@ public class LegacyGSImportAdminConfPipeline(
                            .Select(x => new
                            {
                                x.Id,
+                               x.ScoreId,
                                x.ContextId,
                                x.PointId,
                                x.RankedMapId,
@@ -81,12 +82,22 @@ public class LegacyGSImportAdminConfPipeline(
                 continue;
 
             var updatedCount = await RankedScoreService.UpdateRankedScoreConfirmationStateAsync(
-                dbContext, timeProvider, data.ContextId, data.Id, stateToSet.Value, token);
+                dbContext, timeProvider, data.ContextId, data.ScoreId, stateToSet.Value, token);
             if (updatedCount == 0)
                 continue;
 
-            impactedContextPoints.Add((data.ContextId, data.PointId));
-            impactedRankedMapIds.Add(data.RankedMapId);
+            var affectedRankedScores = await dbContext.RankedScores
+                .Where(x => x.ContextId == data.ContextId
+                            && x.ScoreId == data.ScoreId
+                            && (x is PendingRankedScore || x is AcceptedRankedScore || x is RefusedRankedScore))
+                .Select(x => new { x.ContextId, x.PointId, x.RankedMapId })
+                .ToArrayAsync(token);
+
+            foreach (var rankedScore in affectedRankedScores)
+            {
+                impactedContextPoints.Add((rankedScore.ContextId, rankedScore.PointId));
+                impactedRankedMapIds.Add(rankedScore.RankedMapId);
+            }
         }
 
         if (impactedContextPoints.Count == 0)

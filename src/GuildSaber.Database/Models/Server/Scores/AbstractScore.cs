@@ -1,4 +1,3 @@
-using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using GuildSaber.Database.Models.StrongTypes;
@@ -26,27 +25,6 @@ public abstract class AbstractScore
 
     public EScoreType Type { get; private init; }
     public enum EScoreType : byte { ScoreSaber = 0, BeatLeader = 1 }
-
-    public readonly record struct ScoreId(int Value) : IEFStrongTypedId<ScoreId, int>
-    {
-        public static bool TryParse(string from, out ScoreId value)
-        {
-            if (int.TryParse(from, out var id))
-            {
-                value = new ScoreId(id);
-                return true;
-            }
-
-            value = default;
-            return false;
-        }
-
-        public static implicit operator int(ScoreId id)
-            => id.Value;
-
-        public override string ToString()
-            => Value.ToString();
-    }
 
     [Flags]
     public enum EModifiers
@@ -86,7 +64,7 @@ public class AbstractScoreConfiguration : IEntityTypeConfiguration<AbstractScore
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id)
-            .HasGenericConversion<AbstractScore.ScoreId, int>()
+            .HasConversion(from => from.Value, to => new ScoreId(to))
             .ValueGeneratedOnAdd();
 
         builder.HasIndex(x => x.SetAt);

@@ -30,6 +30,8 @@ public static class OpenApiTypeMappings
         OpenApiTypeTransformer.MapType<DiscordRoleId>(new OpenApiSchema
             { Type = JsonSchemaType.String, Example = "987654321098765432" });
 
+        OpenApiTypeTransformer.MapType<ScoreId>(new OpenApiSchema
+            { Type = JsonSchemaType.Integer, Format = "int32" });
         OpenApiTypeTransformer.MapType<RankedScoreId>(new OpenApiSchema
             { Type = JsonSchemaType.String, Example = "123456789" });
 

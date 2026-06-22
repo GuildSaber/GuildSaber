@@ -19,7 +19,7 @@ public sealed class RankedScoreService(
           SET "{{nameof(RankedScore.Type)}}" = {0},
               "{{nameof(PointGivingRankedScore.Rank)}}" = CASE WHEN {0} = {{(int)RankedScore.ERankedScoreType.Accepted}} THEN 0 ELSE NULL END,
               "{{nameof(RankedScore.EditedAt)}}" = {1}
-          WHERE "{{nameof(RankedScore.Id)}}" = {2}
+          WHERE "{{nameof(RankedScore.ScoreId)}}" = {2}
               AND "{{nameof(RankedScore.ContextId)}}" = {3}
               AND "{{nameof(RankedScore.Type)}}" IN (
                   {{(int)RankedScore.ERankedScoreType.Pending}},
@@ -28,11 +28,17 @@ public sealed class RankedScoreService(
               )
           """;
 
+    public abstract record ConfirmationResponse
+    {
+        public sealed record Success(RankedScore[] RankedScores) : ConfirmationResponse;
+        public sealed record NotFound : ConfirmationResponse;
+    }
+
     internal static Task<int> UpdateRankedScoreConfirmationStateAsync(
         ServerDbContext dbContext,
         TimeProvider timeProvider,
         ContextId contextId,
-        RankedScoreId rankedScoreId,
+        ScoreId scoreId,
         RankedScore.ERankedScoreType targetType,
         CancellationToken token)
         => dbContext.Database.ExecuteSqlAsync(
@@ -40,77 +46,56 @@ public sealed class RankedScoreService(
                 _updateRankedScoreConfirmationStateFormattableString,
                 (int)targetType,
                 timeProvider.GetUtcNow(),
-                rankedScoreId.Value,
+                scoreId.Value,
                 contextId.Value),
             token);
 
-    public abstract record ConfirmationResponse
-    {
-        public sealed record Success(RankedScore RankedScore) : ConfirmationResponse;
-        public sealed record NotFound : ConfirmationResponse;
-        public sealed record NotPendingCompatible : ConfirmationResponse;
-
-        /// <summary>
-        /// Unlikely case where the scores were reprocessed due to a map requirement change while the confirmation state was being
-        /// updated.
-        /// </summary>
-        public sealed record StateChangedBeforeUpdate : ConfirmationResponse;
-    }
-
     public Task<ConfirmationResponse> SetConfirmedAsync(
-        ContextId contextId, RankedScoreId rankedScoreId, CancellationToken token)
-        => SetConfirmationStateAsync(contextId, rankedScoreId, RankedScore.ERankedScoreType.Accepted, token);
+        ContextId contextId, ScoreId scoreId, CancellationToken token)
+        => SetConfirmationStateAsync(contextId, scoreId, RankedScore.ERankedScoreType.Accepted, token);
 
     public Task<ConfirmationResponse> SetDeniedAsync(
-        ContextId contextId, RankedScoreId rankedScoreId, CancellationToken token)
-        => SetConfirmationStateAsync(contextId, rankedScoreId, RankedScore.ERankedScoreType.Refused, token);
+        ContextId contextId, ScoreId scoreId, CancellationToken token)
+        => SetConfirmationStateAsync(contextId, scoreId, RankedScore.ERankedScoreType.Refused, token);
 
     public Task<ConfirmationResponse> RevertToPendingAsync(
-        ContextId contextId, RankedScoreId rankedScoreId, CancellationToken token)
-        => SetConfirmationStateAsync(contextId, rankedScoreId, RankedScore.ERankedScoreType.Pending, token);
+        ContextId contextId, ScoreId scoreId, CancellationToken token)
+        => SetConfirmationStateAsync(contextId, scoreId, RankedScore.ERankedScoreType.Pending, token);
 
     private async Task<ConfirmationResponse> SetConfirmationStateAsync(
         ContextId contextId,
-        RankedScoreId rankedScoreId,
+        ScoreId scoreId,
         RankedScore.ERankedScoreType targetType,
         CancellationToken token)
     {
-        var isPendingCompatible = await dbContext.RankedScores
-            .Where(x => x.ContextId == contextId && x.Id == rankedScoreId)
-            .Select(x => (bool?)(x is PendingRankedScore || x is AcceptedRankedScore || x is RefusedRankedScore))
-            .FirstOrDefaultAsync(token);
-
-        switch (isPendingCompatible)
-        {
-            case null: return new ConfirmationResponse.NotFound();
-            case false: return new ConfirmationResponse.NotPendingCompatible();
-        }
-
         var updatedCount = await UpdateRankedScoreConfirmationStateAsync(
             dbContext,
             timeProvider,
             contextId,
-            rankedScoreId,
+            scoreId,
             targetType,
             token
         );
 
         if (updatedCount == 0)
-            return new ConfirmationResponse.StateChangedBeforeUpdate();
+            return new ConfirmationResponse.NotFound();
 
         dbContext.ChangeTracker.Clear();
-        var rankedScore = await dbContext.RankedScores
+        var rankedScores = await dbContext.RankedScores
             .Include(x => x.Score)
             .Include(x => x.PrevScore)
-            .FirstAsync(x => x.Id == rankedScoreId, token);
+            .Where(x => x.ContextId == contextId && x.ScoreId == scoreId)
+            .ToArrayAsync(token);
 
+        var ids = rankedScores.Select(x => x.Id).ToArray();
         await taskQueue.QueueBackgroundWorkItemAsync(async cancellationToken =>
         {
             using var scope = serviceScopeFactory.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<RankedScoreConfirmationPipeline>()
-                .ExecuteAsync(contextId, rankedScoreId, cancellationToken);
+            foreach (var id in ids)
+                await scope.ServiceProvider.GetRequiredService<RankedScoreConfirmationPipeline>()
+                    .ExecuteAsync(contextId, id, cancellationToken);
         });
 
-        return new ConfirmationResponse.Success(rankedScore);
+        return new ConfirmationResponse.Success(rankedScores);
     }
 }
