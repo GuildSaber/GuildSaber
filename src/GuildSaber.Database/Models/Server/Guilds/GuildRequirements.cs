@@ -9,6 +9,7 @@ public readonly record struct GuildRequirements(
     int? MaxRank,
     int? MinPP,
     int? MaxPP,
+    int? MinPlayCount,
     int? AccountAgeUnix
 );
 
@@ -21,6 +22,7 @@ public static class GuildRequirementsExtensions
         public record MaxRank(int Value) : GuildRequirement;
         public record MinPP(int Value) : GuildRequirement;
         public record MaxPP(int Value) : GuildRequirement;
+        public record MinPlayCount(int Value) : GuildRequirement;
         public record AccountAgeUnix(int Value) : GuildRequirement;
     }
 
@@ -40,6 +42,9 @@ public static class GuildRequirementsExtensions
 
         if (requirements.MaxPP.HasValue)
             yield return new GuildRequirement.MaxPP(requirements.MaxPP.Value);
+
+        if (requirements.MinPlayCount.HasValue)
+            yield return new GuildRequirement.MinPlayCount(requirements.MinPlayCount.Value);
 
         if (requirements.AccountAgeUnix.HasValue)
             yield return new GuildRequirement.AccountAgeUnix(requirements.AccountAgeUnix.Value);

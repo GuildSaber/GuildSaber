@@ -139,32 +139,37 @@ public class MemberService(
     /// Success if all requirements are met, or Failure with specific validation errors when requirements are not met
     /// </returns>
     private static UnitResult<IEnumerable<KeyValuePair<string, string[]>>> GetRequirementsErrorAsFailure(
-        GuildRequirements requirements, PlayerResponseFullWithStats profile) => requirements.Collect()
-            .Select<GuildRequirementsExtensions.GuildRequirement, KeyValuePair<string, string[]>?>(reqEnum
-                => reqEnum switch
-                {
-                    RequireSubmission => null, // Technically not an error
-                    MinRank when profile.Rank > requirements.MinRank => new KeyValuePair<string, string[]>(
-                        nameof(MinRank),
-                        [
-                            $"Your rank ({profile.Rank}) is below the minimum required rank ({requirements.MinRank})."
-                        ]),
-                    MaxRank when profile.Rank < requirements.MaxRank => new KeyValuePair<string, string[]>(
-                        nameof(MaxRank),
-                        [
-                            $"Your rank ({profile.Rank}) is above the maximum allowed rank ({requirements.MaxRank})."
-                        ]),
-                    MinPP when profile.Pp < requirements.MinPP => new KeyValuePair<string, string[]>(nameof(MinPP),
-                        [$"Your PP ({profile.Pp}) is below the minimum required PP ({requirements.MinPP})."]),
-                    MaxPP when profile.Pp > requirements.MaxPP => new KeyValuePair<string, string[]>(nameof(MaxPP),
-                        [$"Your PP ({profile.Pp}) is above the maximum allowed PP ({requirements.MaxPP})."]),
-                    AccountAgeUnix when profile.ScoreStats.FirstScoreTime < requirements.AccountAgeUnix
-                        => new KeyValuePair<string, string[]>(nameof(AccountAgeUnix),
-                        [
-                            $"Your account age ({profile.ScoreStats.FirstScoreTime}) is below the minimum required account age ({requirements.AccountAgeUnix})."
-                        ]),
-                    _ => null
-                })
+        GuildRequirements requirements, PlayerResponseFullWithStats profile) => requirements
+            .Collect()
+            .Select<GuildRequirementsExtensions.GuildRequirement, KeyValuePair<string, string[]>?>(req => req switch
+            {
+                RequireSubmission => null, // Technically not an error
+                MinRank when profile.Rank > requirements.MinRank => new KeyValuePair<string, string[]>(
+                    nameof(MinRank),
+                    [
+                        $"Your rank ({profile.Rank}) is below the minimum required rank ({requirements.MinRank})."
+                    ]),
+                MaxRank when profile.Rank < requirements.MaxRank => new KeyValuePair<string, string[]>(
+                    nameof(MaxRank),
+                    [
+                        $"Your rank ({profile.Rank}) is above the maximum allowed rank ({requirements.MaxRank})."
+                    ]),
+                MinPP when profile.Pp < requirements.MinPP => new KeyValuePair<string, string[]>(nameof(MinPP),
+                    [$"Your PP ({profile.Pp}) is below the minimum required PP ({requirements.MinPP})."]),
+                MaxPP when profile.Pp > requirements.MaxPP => new KeyValuePair<string, string[]>(nameof(MaxPP),
+                    [$"Your PP ({profile.Pp}) is above the maximum allowed PP ({requirements.MaxPP})."]),
+                MinPlayCount when profile.ScoreStats.TotalPlayCount < requirements.MinPlayCount
+                    => new KeyValuePair<string, string[]>(nameof(MinPlayCount),
+                    [
+                        $"Your play count ({profile.ScoreStats.TotalPlayCount}) is below the minimum required play count ({requirements.MinPlayCount})."
+                    ]),
+                AccountAgeUnix when profile.ScoreStats.FirstScoreTime < requirements.AccountAgeUnix
+                    => new KeyValuePair<string, string[]>(nameof(AccountAgeUnix),
+                    [
+                        $"Your account age ({profile.ScoreStats.FirstScoreTime}) is below the minimum required account age ({requirements.AccountAgeUnix})."
+                    ]),
+                _ => null
+            })
             .Where(x => x is not null)
             .Select(errors => errors!.Value).ToArray() switch
         {
@@ -182,14 +187,14 @@ public class MemberService(
     /// </returns>
     private static async Task<Maybe<GuildRequirements>> GetGuildRequirements(
         ServerDbContext dbContext, GuildId guildId)
-    {
-        var res = await dbContext.Guilds
-            .Where(x => x.Id == guildId)
-            .Select(x => new { x.Requirements })
-            .FirstOrDefaultAsync();
-
-        return res is null ? Maybe<GuildRequirements>.None : From(res.Requirements);
-    }
+        => await dbContext.Guilds
+                .Where(x => x.Id == guildId)
+                .Select(x => new { x.Requirements })
+                .FirstOrDefaultAsync() switch
+            {
+                null => Maybe<GuildRequirements>.None,
+                var res => From(res.Requirements)
+            };
 
     /// <summary>
     /// Retrieves a player's linked BeatLeader ID

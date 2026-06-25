@@ -6166,6 +6166,7 @@
           "maxRank",
           "minPP",
           "maxPP",
+          "minPlayCount",
           "accountAgeUnix"
         ],
         "type": "object",
@@ -6201,6 +6202,15 @@
             "format": "int32"
           },
           "maxPP": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "minPlayCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
