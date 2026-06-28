@@ -3,8 +3,7 @@ import { getPlayerExtendedAtMeQueryKey } from "@/client/@tanstack/react-query.ge
 import Flag from "@/components/Flag"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import JoinCSGuild from "@/features/auth/components/JoinCSGuild"
-import DiscordLinkUser from "@/features/auth/components/providers/DiscordLinkProvider"
+import AuthSetupStepper from "@/features/auth/components/AuthSetupStepper"
 import SigninOptions from "@/features/auth/components/SigninOptions"
 import { useSession } from "@/features/auth/hooks/useSession"
 import { useQueryClient } from "@tanstack/react-query"
@@ -75,11 +74,7 @@ const Auth = () => {
         )}
         <CardContent>
           {session ? (
-            <>
-              <JoinCSGuild />
-              <hr className="my-4 text-slate-700" />
-              <DiscordLinkUser />
-            </>
+            <AuthSetupStepper />
           ) : (
             <>
               <SigninOptions />
