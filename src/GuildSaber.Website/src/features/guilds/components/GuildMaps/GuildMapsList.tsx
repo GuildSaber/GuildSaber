@@ -10,12 +10,10 @@ import { useGuildContext } from "@/features/guilds/contexts/guildContext"
 import { useGuildMapFilters } from "@/features/guilds/hooks/useGuildMapFilters"
 import { useQuery } from "@tanstack/react-query"
 import { Filter } from "lucide-react"
-import { useMediaQuery } from "usehooks-ts"
 
 const GuildMapsList = () => {
   const guild = useGuildContext()
   const [filters] = useGuildMapFilters()
-  const isDesktop = useMediaQuery("(min-width: 64rem)")
 
   const {
     data: maps,
@@ -55,23 +53,21 @@ const GuildMapsList = () => {
             <CardDescription>{maps?.totalCount} maps</CardDescription>
           </div>
 
-          {!isDesktop && (
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button size="icon" variant="outline" className="lg:hidden">
-                  <Filter />
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Search Filters</SheetTitle>
-                </SheetHeader>
-                <div className="overflow-y-auto px-4 pb-4">
-                  <GuildMapsFilters categories={guild?.categories} />
-                </div>
-              </SheetContent>
-            </Sheet>
-          )}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button size="icon" variant="outline" className="lg:hidden">
+                <Filter />
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>Search Filters</SheetTitle>
+              </SheetHeader>
+              <div className="overflow-y-auto px-4 pb-4">
+                <GuildMapsFilters categories={guild?.categories} />
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
         <div className="divide-y">
           {maps?.data?.map((map) => (
@@ -80,7 +76,7 @@ const GuildMapsList = () => {
         </div>
       </CardContent>
 
-      <Pagination maxVisiblePages={isDesktop ? 5 : 1} totalPages={maps?.totalPages as number} isLoading={isFetching} />
+      <Pagination totalPages={maps?.totalPages as number} isLoading={isFetching} />
     </Card>
   )
 }

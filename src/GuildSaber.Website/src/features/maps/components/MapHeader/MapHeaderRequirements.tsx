@@ -6,8 +6,8 @@ interface Props {
 
 const RequirementBadge = ({ label, value }: { label: string; value: string }) => (
   <div className="border-input flex items-center overflow-hidden rounded border text-xs sm:text-sm">
-    <span className="text-muted-foreground border-input border-r px-2 py-1 sm:px-3 sm:py-1.5">{label}</span>
-    <span className="px-2 py-1 font-medium sm:px-3 sm:py-1.5">{value}</span>
+    <span className="border-input bg-input/30 border-r px-2 py-1 font-medium sm:px-3 sm:py-1.5">{label}</span>
+    <span className="px-2 py-1 sm:px-3 sm:py-1.5">{value}</span>
   </div>
 )
 

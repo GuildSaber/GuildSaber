@@ -33,7 +33,7 @@ export const MapHeaderInfo = ({ map }: Props) => {
           className="flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs font-bold text-white md:px-2 md:py-1 md:text-sm"
           style={{ backgroundColor: difficulty.color, borderColor: difficulty.color }}
         >
-          {diffKey.difficulty}
+          {difficulty?.long ?? diffKey.difficulty}
         </div>
 
         {diffKey.gameMode !== MAP_GAME_MODE.Standard && (

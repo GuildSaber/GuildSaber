@@ -1,26 +1,18 @@
-import { getRankedMapOptions } from "@/client/@tanstack/react-query.gen"
 import Image from "@/components/Image"
 import { Card, CardContent } from "@/components/ui/card"
+import { useMapContext } from "@/features/maps/contexts/mapContext"
 import { getMapCover } from "@/utils/beatsaver"
 import { formatTime } from "@/utils/time"
-import { useQuery } from "@tanstack/react-query"
 import { MapHeaderActions } from "./MapHeaderActions"
 import { MapHeaderInfo } from "./MapHeaderInfo"
 import { MapHeaderRequirements } from "./MapHeaderRequirements"
 import { MapHeaderSkeleton } from "./MapHeaderSkeleton"
 import { MapStats } from "./MapHeaderStats"
 
-interface Props {
-  mapId: string | undefined
-}
+const MapHeader = () => {
+  const map = useMapContext()
 
-const MapHeader = ({ mapId }: Props) => {
-  const { data: map, isLoading } = useQuery({
-    ...getRankedMapOptions({ path: { rankedMapId: mapId || "" } }),
-    enabled: Boolean(mapId),
-  })
-
-  if (isLoading || !map) {
+  if (!map) {
     return <MapHeaderSkeleton />
   }
 

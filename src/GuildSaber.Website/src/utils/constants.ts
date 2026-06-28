@@ -15,22 +15,27 @@ export const MAP_DIFFICULTY = {
   Easy: {
     color: "#3cb371",
     short: "E",
+    long: "Easy",
   },
   Normal: {
     color: "#59b0f4",
     short: "N",
+    long: "Normal",
   },
   Hard: {
     color: "#ee5e44",
     short: "H",
+    long: "Hard",
   },
   Expert: {
     color: "#bf2a42",
     short: "Ex",
+    long: "Expert",
   },
   ExpertPlus: {
     color: "#8f48db",
     short: "Ex+",
+    long: "Expert+",
   },
 }
 
@@ -71,3 +76,13 @@ export const MAP_SORT_BY = {
   AccuracyStar: "Accuracy",
   Id: "ID",
 }
+
+export const LEADERBOARD_SORT_BY = {
+  Points: "Points",
+  EffectiveScore: "Score",
+}
+
+export const LEADERBOARD = {
+  BeatLeader: "BeatLeader",
+  ScoreSaber: "ScoreSaber",
+} as const
