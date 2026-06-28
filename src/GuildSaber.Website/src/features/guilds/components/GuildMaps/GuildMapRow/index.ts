@@ -1,5 +1,5 @@
 import { GuildMapRow } from "./GuildMapRow"
 
-export { GuildMapRowSkeleton } from "./GuildMapRow.skeleton"
+export { GuildMapRowSkeleton } from "./GuildMapRowSkeleton"
 
 export default GuildMapRow

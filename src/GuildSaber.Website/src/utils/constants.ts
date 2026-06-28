@@ -34,6 +34,35 @@ export const MAP_DIFFICULTY = {
   },
 }
 
+export const MAP_GAME_MODE: Record<string, string> = {
+  Standard: "Standard",
+  OneSaber: "One Saber",
+  NoArrows: "No Arrows",
+  "90Degree": "90°",
+  "360Degree": "360°",
+  Lightshow: "Lightshow",
+  Lawless: "Lawless",
+}
+
+export const MAP_MODIFIERS = [
+  "NF",
+  "IF",
+  "BE",
+  "DA",
+  "FS",
+  "SS",
+  "SF",
+  "GN",
+  "NA",
+  "NB",
+  "NO",
+  "PM",
+  "SA",
+  "SC",
+] as const
+
+export type MapModifier = (typeof MAP_MODIFIERS)[number]
+
 export const MAP_SORT_BY = {
   Name: "Name",
   EditTime: "Edit Time",

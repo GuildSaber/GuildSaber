@@ -7,6 +7,7 @@ import { useArcViewerStore } from "@/features/maps/stores/arcViewerStore"
 import { getMapCover } from "@/utils/beatsaver"
 import { MAP_DIFFICULTY } from "@/utils/constants"
 import { DownloadCloud, Play, Sparkles, Star } from "lucide-react"
+import { Link } from "react-router"
 import { useCopyToClipboard } from "usehooks-ts"
 
 interface Props {
@@ -50,7 +51,11 @@ export const GuildMapRow = ({ map }: Props) => {
         </div>
 
         <div>
-          <p className="line-clamp-2 min-w-0 overflow-hidden break-all text-blue-400">{song.info.name}</p>
+          <Link to={`/maps/${map.id}`} className="group">
+            <p className="line-clamp-2 min-w-0 overflow-hidden break-all text-blue-400 group-hover:underline">
+              {song.info.name}
+            </p>
+          </Link>
           <p className="text-sm">
             {song.info.authorName} <span className="text-muted-foreground text-xs">{song.info.mapperName}</span>
           </p>
