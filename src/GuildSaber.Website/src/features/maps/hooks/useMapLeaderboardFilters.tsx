@@ -11,6 +11,7 @@ export const useMapLeaderboardFilters = () =>
     point: parseAsString.withDefault(""),
     sortBy: parseAsStringLiteral(sortKeys).withDefault(sortKeys[1]),
     order: parseAsStringLiteral(orderKeys).withDefault(orderKeys[1]),
+    search: parseAsString.withDefault(""),
   })
 
 export type LeaderboardFilters = ReturnType<typeof useMapLeaderboardFilters>[0]

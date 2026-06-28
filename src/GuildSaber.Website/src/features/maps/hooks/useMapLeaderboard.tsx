@@ -25,7 +25,12 @@ export const useMapLeaderboard = () => {
   } = useQuery({
     ...getContextPointRankedMapLeaderboardOptions({
       path: { contextId: String(map?.contextId), pointId: effectivePointId, rankedMapId: String(map?.id) },
-      query: { page: filters.page, sortBy: filters.sortBy, order: filters.order },
+      query: {
+        page: filters.page,
+        sortBy: filters.sortBy,
+        order: filters.order,
+        search: filters.search,
+      },
     }),
     enabled: canFetch,
   })
