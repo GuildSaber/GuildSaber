@@ -9,7 +9,7 @@ export const useMapLeaderboardFilters = () =>
   useQueryStates({
     page: parseAsInteger.withDefault(1),
     point: parseAsString.withDefault(""),
-    sortBy: parseAsStringLiteral(sortKeys).withDefault(sortKeys[0]),
+    sortBy: parseAsStringLiteral(sortKeys).withDefault(sortKeys[1]),
     order: parseAsStringLiteral(orderKeys).withDefault(orderKeys[1]),
   })
 

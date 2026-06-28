@@ -77,7 +77,7 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
           <span className="truncate font-medium">{player.playerInfo.username}</span>
         </div>
 
-        <span className="text-muted-foreground shrink-0 text-sm tabular-nums">
+        <span className="text-muted-foreground shrink-0 text-right text-sm tabular-nums">
           {formatDate(rankedScore.score.setAt, isMobile ? "short" : "long")}
         </span>
 
@@ -89,7 +89,7 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
       <div className="col-span-full mt-1 flex flex-wrap items-center justify-end gap-2 sm:contents">
         {rawPoints !== null ? (
           <BadgeStat
-            className="flex-1 justify-center text-amber-400 tabular-nums md:flex-none"
+            className="flex-1 justify-center border-amber-800 bg-amber-800/10 text-amber-900 tabular-nums md:flex-none dark:border-amber-400 dark:bg-amber-400/20 dark:text-amber-400"
             label={`${formatPoints(rawPoints)} ${pointName}`}
           />
         ) : (
@@ -100,7 +100,7 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
 
         <BadgeStat
           className={cn(
-            "flex-1 justify-center tabular-nums md:flex-none",
+            "flex-1 justify-center border-blue-800 bg-blue-800/10 text-blue-900 tabular-nums md:flex-none dark:border-blue-400 dark:bg-blue-400/20 dark:text-blue-400",
             accuracy === null && "hidden sm:invisible sm:flex",
           )}
           label={accuracy !== null ? `${accuracy.toFixed(2)}%` : ""}
