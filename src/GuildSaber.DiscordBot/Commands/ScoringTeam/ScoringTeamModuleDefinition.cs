@@ -20,7 +20,7 @@ namespace GuildSaber.DiscordBot.Commands.ScoringTeam;
 /// to reflect the context and permissions required for the commands to be executed in this module.
 /// </remarks>
 [CommandContextType(InteractionContextType.Guild, InteractionContextType.PrivateChannel)]
-[PermissionHandler.RequirePermissionAttributeSlash(MemberResponses.EPermission.ScoringTeam, requireManager: false)]
+[PermissionHandler.RequirePermissionAttributeSlash(MemberResponses.EPermission.ScoringTeam)]
 public partial class ScoringTeamModuleSlash : InteractionModuleBase<SocketInteractionContext>
 {
     public ScoringTeamModuleSlash(

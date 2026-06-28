@@ -32,4 +32,8 @@
         </None>
     </ItemGroup>
 
+    <ItemGroup>
+        <Compile Include="Commands\ScoringTeam\Menu\MainMenu.bak" />
+    </ItemGroup>
+
 </Project>

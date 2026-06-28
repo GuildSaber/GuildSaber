@@ -29,7 +29,7 @@ public partial class ScoringTeamModuleSlash
         var sorter = new PaginatedRequestOptions<RankedScoreRequests.ERankedScoreSorter>
         {
             Page = 1,
-            PageSize = 4,
+            PageSize = 2,
             SortBy = RankedScoreRequests.ERankedScoreSorter.ScoreTime,
             Order = EOrder.Asc
         };
@@ -38,30 +38,27 @@ public partial class ScoringTeamModuleSlash
             .GetAsync(contextId, filter, sorter)
             .Unwrap();
 
-        await FollowupAsync("Scoring Team Menu",
-            components: ScoringTeamMenuView.BuildComponent(pendingScores.Data, categories, EmojiSettings));
+        var component = ScoringTeamMenuView.BuildComponent(pendingScores.Data, categories, EmojiSettings).Build();
+        await FollowupAsync(components: component);
     }
 }
 
 file static class ScoringTeamMenuView
 {
-    public static MessageComponent BuildComponent(
+    public static ComponentBuilderV2 BuildComponent(
         RankedScoreResponses.RankedScoreWithRankedMap[] pendingScores,
         CategoryResponses.Category[] categories,
         IOptions<EmojiSettings> emojiSettings)
     {
         var builder = new ComponentBuilderV2();
 
-        foreach (var pendingScore in pendingScores)
-            builder.WithContainer(BuildContainer(pendingScore, categories, emojiSettings))
-                .WithActionRow(x => x.WithButton(
-                    label: "Accept", customId: $"scoring-team-menu:score:{pendingScore.RankedScore.Score.Id}:accept",
-                    style: ButtonStyle.Success))
-                .WithActionRow(x => x.WithButton(
-                    label: "Refuse", customId: $"scoring-team-menu:score:{pendingScore.RankedScore.Score.Id}:refuse",
-                    style: ButtonStyle.Danger));
+        if (pendingScores.Length == 0)
+            return builder.WithTextDisplay("No pending scores found.");
 
-        return builder.Build();
+        foreach (var pendingScore in pendingScores)
+            builder.WithContainer(BuildContainer(pendingScore, categories, emojiSettings));
+
+        return builder;
     }
 
     private static ContainerBuilder BuildContainer(
@@ -148,15 +145,7 @@ file static class ScoringTeamMenuView
                 sb.Length -= 2;
             }
 
-            if (i > 0)
-                mapContainerBuilder.WithTextDisplay(sb.ToString());
-            else
-                mapContainerBuilder.WithSection(sectionBuilder
-                    .WithTextDisplay(sb.ToString())
-                    .WithAccessory(new ThumbnailBuilder()
-                        .WithMedia($"https://cdn.beatsaver.com/{rankedMap.Versions[0].Song.Hash}.jpg")));
-
-            mapContainerBuilder.WithSeparator();
+            var mapString = sb.ToString();
 
             var score = rankedScore.Score;
 
@@ -191,7 +180,28 @@ file static class ScoringTeamMenuView
                     ? $" [Replay](https://replay.beatleader.com/?scoreId={blScoreId})"
                     : null);
 
-            mapContainerBuilder.WithTextDisplay(sb.ToString());
+            mapContainerBuilder.WithSection(x => x.WithTextDisplay(sb.ToString()).WithAccessory(new ThumbnailBuilder()
+                .WithMedia("https://cdn.assets.beatleader.com/76561198134068431R18.png")));
+
+            mapContainerBuilder.WithActionRow(y => y
+                .WithButton(
+                    label: "Accept",
+                    customId: $"scoring-team-menu:score:{rankedScore.Score.Id}:accept",
+                    style: ButtonStyle.Success)
+                .WithButton(
+                    label: "Refuse",
+                    customId: $"scoring-team-menu:score:{rankedScore.Score.Id}:refuse",
+                    style: ButtonStyle.Danger));
+
+            mapContainerBuilder.WithSeparator();
+
+            if (i > 0)
+                mapContainerBuilder.WithTextDisplay(mapString);
+            else
+                mapContainerBuilder.WithSection(sectionBuilder
+                    .WithTextDisplay(mapString)
+                    .WithAccessory(new ThumbnailBuilder()
+                        .WithMedia($"https://cdn.beatsaver.com/{rankedMap.Versions[0].Song.Hash}.jpg")));
         }
 
         return mapContainerBuilder;
