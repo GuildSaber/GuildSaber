@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Leaderboards.Http;
@@ -19,10 +20,12 @@ public sealed class LeaderboardClient(
         int contextId,
         int pointId,
         long rankedMapId,
+        LeaderboardRequests.Filters requestFilters,
         PaginatedRequestOptions<LeaderboardRequests.ERankedMapLeaderboardSorter> requestOptions)
         => new(
             $"contexts/{contextId}/points/{pointId}/ranked-maps/{rankedMapId}/leaderboard?" +
-            $"page={requestOptions.Page}&pageSize={requestOptions.PageSize}" +
+            $"{(requestFilters.Search is null ? "" : $"search={requestFilters.Search}&")}page={requestOptions.Page}" +
+            $"&pageSize={requestOptions.PageSize}" +
             $"&order={requestOptions.Order}&sortBy={requestOptions.SortBy}",
             UriKind.Relative
         );
@@ -30,10 +33,12 @@ public sealed class LeaderboardClient(
     private Uri GetMemberPointStatLeaderboardUrl(
         int contextId,
         int pointId,
+        LeaderboardRequests.Filters requestFilters,
         PaginatedRequestOptions<LeaderboardRequests.EMemberStatLeaderboardSorter> requestOptions)
         => new(
             $"contexts/{contextId}/points/{pointId}/leaderboard?" +
-            $"page={requestOptions.Page}&pageSize={requestOptions.PageSize}" +
+            $"{(requestFilters.Search is null ? "" : $"search={requestFilters.Search}&")}page={requestOptions.Page}" +
+            $"&pageSize={requestOptions.PageSize}" +
             $"&order={requestOptions.Order}&sortBy={requestOptions.SortBy}",
             UriKind.Relative
         );
@@ -42,10 +47,12 @@ public sealed class LeaderboardClient(
         ContextId contextId,
         int pointId,
         CategoryId categoryId,
+        LeaderboardRequests.Filters requestFilters,
         PaginatedRequestOptions<LeaderboardRequests.EMemberStatLeaderboardSorter> requestOptions)
         => new(
             $"contexts/{contextId}/points/{pointId}/categories/{categoryId}/leaderboard?" +
-            $"page={requestOptions.Page}&pageSize={requestOptions.PageSize}" +
+            $"{(requestFilters.Search is null ? "" : $"search={requestFilters.Search}&")}page={requestOptions.Page}" +
+            $"&pageSize={requestOptions.PageSize}" +
             $"&order={requestOptions.Order}&sortBy={requestOptions.SortBy}",
             UriKind.Relative
         );
@@ -56,6 +63,7 @@ public sealed class LeaderboardClient(
     /// <param name="contextId">The context identifier.</param>
     /// <param name="pointId">The point identifier.</param>
     /// <param name="rankedMapId">The ranked map identifier.</param>
+    /// <param name="requestFilters">Filters to apply to the leaderboard request.</param>
     /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing a paginated list of ranked scores with player information.</returns>
@@ -63,10 +71,11 @@ public sealed class LeaderboardClient(
         int contextId,
         int pointId,
         long rankedMapId,
+        LeaderboardRequests.Filters requestFilters,
         PaginatedRequestOptions<LeaderboardRequests.ERankedMapLeaderboardSorter> requestOptions,
         CancellationToken token = default)
         => await httpClient.GetAsync(
-                    GetRankedMapLeaderboardUrl(contextId, pointId, rankedMapId, requestOptions), token)
+                    GetRankedMapLeaderboardUrl(contextId, pointId, rankedMapId, requestFilters, requestOptions), token)
                 .ConfigureAwait(false) switch
             {
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
@@ -82,16 +91,18 @@ public sealed class LeaderboardClient(
     /// </summary>
     /// <param name="contextId">The context identifier.</param>
     /// <param name="pointId">The point identifier.</param>
+    /// <param name="requestFilters">Filters to apply to the leaderboard request.</param>
     /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing a paginated list of member point stats.</returns>
     public async Task<Result<PagedList<MemberPointStat>>> GetMemberPointStatLeaderboardAsync(
         int contextId,
         int pointId,
+        LeaderboardRequests.Filters requestFilters,
         PaginatedRequestOptions<LeaderboardRequests.EMemberStatLeaderboardSorter> requestOptions,
         CancellationToken token = default)
         => await httpClient.GetAsync(
-                    GetMemberPointStatLeaderboardUrl(contextId, pointId, requestOptions), token)
+                    GetMemberPointStatLeaderboardUrl(contextId, pointId, requestFilters, requestOptions), token)
                 .ConfigureAwait(false) switch
             {
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
@@ -108,6 +119,7 @@ public sealed class LeaderboardClient(
     /// <param name="contextId">The context identifier.</param>
     /// <param name="pointId">The point identifier.</param>
     /// <param name="categoryId">The category identifier.</param>
+    /// <param name="requestFilters">Filters to apply to the leaderboard request.</param>
     /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing a paginated list of member point stats for the specified category.</returns>
@@ -115,10 +127,12 @@ public sealed class LeaderboardClient(
         ContextId contextId,
         int pointId,
         CategoryId categoryId,
+        LeaderboardRequests.Filters requestFilters,
         PaginatedRequestOptions<LeaderboardRequests.EMemberStatLeaderboardSorter> requestOptions,
         CancellationToken token = default)
         => await httpClient.GetAsync(
-                    GetMemberCategoryPointStatLeaderboardUrl(contextId, pointId, categoryId, requestOptions), token)
+                    GetMemberCategoryPointStatLeaderboardUrl(
+                        contextId, pointId, categoryId, requestFilters, requestOptions), token)
                 .ConfigureAwait(false) switch
             {
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
@@ -135,7 +149,9 @@ public sealed class LeaderboardClient(
     /// <param name="contextId">The context identifier.</param>
     /// <param name="pointId">The point identifier.</param>
     /// <param name="rankedMapId">The ranked map identifier.</param>
+    /// <param name="requestFilters">Filters to apply to the leaderboard request.</param>
     /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <param name="token">Cancellation token.</param>
     /// <returns>
     /// An async enumerable sequence of <see cref="Result{T}" /> containing nullable arrays of
     /// <see cref="RankedScoreWithPlayer" />.
@@ -150,12 +166,14 @@ public sealed class LeaderboardClient(
         int contextId,
         int pointId,
         long rankedMapId,
-        PaginatedRequestOptions<LeaderboardRequests.ERankedMapLeaderboardSorter> requestOptions)
+        LeaderboardRequests.Filters requestFilters,
+        PaginatedRequestOptions<LeaderboardRequests.ERankedMapLeaderboardSorter> requestOptions,
+        [EnumeratorCancellation] CancellationToken token = default)
     {
         while (requestOptions.Page <= requestOptions.MaxPage)
         {
-            var url = GetRankedMapLeaderboardUrl(contextId, pointId, rankedMapId, requestOptions);
-            var response = await httpClient.GetAsync(url).ConfigureAwait(false);
+            var url = GetRankedMapLeaderboardUrl(contextId, pointId, rankedMapId, requestFilters, requestOptions);
+            var response = await httpClient.GetAsync(url, token).ConfigureAwait(false);
             requestOptions.Page++;
 
             Result<RankedScoreWithPlayer[]> result;
@@ -165,7 +183,8 @@ public sealed class LeaderboardClient(
                     $"Failed to retrieve ranked map leaderboard at page {requestOptions.Page - 1}" +
                     $": {response.StatusCode} {response.ReasonPhrase}"),
                 _ => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<RankedScoreWithPlayer>>(jsonOptions))
+                        .ReadFromJsonAsync<PagedList<RankedScoreWithPlayer>>(
+                            jsonOptions, cancellationToken: token))
                     .Map(RankedScoreWithPlayer[] (parsed) => parsed.Data)
                     .ConfigureAwait(false)
             };
@@ -180,7 +199,9 @@ public sealed class LeaderboardClient(
     /// </summary>
     /// <param name="contextId">The context identifier.</param>
     /// <param name="pointId">The point identifier.</param>
+    /// <param name="requestFilters">Filters to apply to the leaderboard request.</param>
     /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <param name="token">Cancellation token.</param>
     /// <returns>
     /// An async enumerable sequence of <see cref="Result{T}" /> containing nullable arrays of
     /// <see cref="MemberPointStat" />.
@@ -194,12 +215,14 @@ public sealed class LeaderboardClient(
     public async IAsyncEnumerable<Result<MemberPointStat[]>> GetMemberPointStatLeaderboardAsyncEnumerable(
         int contextId,
         int pointId,
-        PaginatedRequestOptions<LeaderboardRequests.EMemberStatLeaderboardSorter> requestOptions)
+        LeaderboardRequests.Filters requestFilters,
+        PaginatedRequestOptions<LeaderboardRequests.EMemberStatLeaderboardSorter> requestOptions,
+        [EnumeratorCancellation] CancellationToken token = default)
     {
         while (requestOptions.Page <= requestOptions.MaxPage)
         {
-            var url = GetMemberPointStatLeaderboardUrl(contextId, pointId, requestOptions);
-            var response = await httpClient.GetAsync(url).ConfigureAwait(false);
+            var url = GetMemberPointStatLeaderboardUrl(contextId, pointId, requestFilters, requestOptions);
+            var response = await httpClient.GetAsync(url, token).ConfigureAwait(false);
             requestOptions.Page++;
 
             Result<MemberPointStat[]> result;
@@ -209,7 +232,7 @@ public sealed class LeaderboardClient(
                     $"Failed to retrieve member point stat leaderboard at page {requestOptions.Page - 1}" +
                     $": {response.StatusCode} {response.ReasonPhrase}"),
                 _ => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<MemberPointStat>>(jsonOptions))
+                        .ReadFromJsonAsync<PagedList<MemberPointStat>>(jsonOptions, cancellationToken: token))
                     .Map(MemberPointStat[] (parsed) => parsed.Data)
                     .ConfigureAwait(false)
             };
@@ -225,7 +248,9 @@ public sealed class LeaderboardClient(
     /// <param name="contextId">The context identifier.</param>
     /// <param name="pointId">The point identifier.</param>
     /// <param name="categoryId">The category identifier.</param>
+    /// <param name="requestFilters">Filters to apply to the leaderboard request.</param>
     /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <param name="token">Cancellation token.</param>
     /// <returns>
     /// An async enumerable sequence of <see cref="Result{T}" /> containing nullable arrays of
     /// <see cref="MemberPointStat" />.
@@ -240,12 +265,15 @@ public sealed class LeaderboardClient(
         ContextId contextId,
         int pointId,
         CategoryId categoryId,
-        PaginatedRequestOptions<LeaderboardRequests.EMemberStatLeaderboardSorter> requestOptions)
+        LeaderboardRequests.Filters requestFilters,
+        PaginatedRequestOptions<LeaderboardRequests.EMemberStatLeaderboardSorter> requestOptions,
+        [EnumeratorCancellation] CancellationToken token = default)
     {
         while (requestOptions.Page <= requestOptions.MaxPage)
         {
-            var url = GetMemberCategoryPointStatLeaderboardUrl(contextId, pointId, categoryId, requestOptions);
-            var response = await httpClient.GetAsync(url).ConfigureAwait(false);
+            var url = GetMemberCategoryPointStatLeaderboardUrl(
+                contextId, pointId, categoryId, requestFilters, requestOptions);
+            var response = await httpClient.GetAsync(url, token).ConfigureAwait(false);
             requestOptions.Page++;
 
             Result<MemberPointStat[]> result;
@@ -255,7 +283,7 @@ public sealed class LeaderboardClient(
                     $"Failed to retrieve member category point stat leaderboard at page {requestOptions.Page - 1}" +
                     $": {response.StatusCode} {response.ReasonPhrase}"),
                 _ => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<MemberPointStat>>(jsonOptions))
+                        .ReadFromJsonAsync<PagedList<MemberPointStat>>(jsonOptions, cancellationToken: token))
                     .Map(MemberPointStat[] (parsed) => parsed.Data)
                     .ConfigureAwait(false)
             };

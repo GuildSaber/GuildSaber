@@ -7,10 +7,12 @@ using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.RankedScores;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using RankedMapId = GuildSaber.Database.Models.Server.RankedMaps.RankedMap.RankedMapId;
 using PointId = GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId;
 using EMemberStatLeaderboardSorter =
     GuildSaber.Api.Features.Leaderboards.Http.LeaderboardRequests.EMemberStatLeaderboardSorter;
+using Filters = GuildSaber.Api.Features.Leaderboards.Http.LeaderboardRequests.Filters;
 
 namespace GuildSaber.Api.Features.Leaderboards.Http;
 
@@ -43,6 +45,7 @@ public class LeaderboardEndpoints : IEndpoints
         PointId pointId,
         RankedMapId rankedMapId,
         ServerDbContext dbContext,
+        [AsParameters] Filters filters,
         [Range(1, int.MaxValue)] int page = 1,
         [Range(1, 100)] int pageSize = 10,
         LeaderboardRequests.ERankedMapLeaderboardSorter sortBy = LeaderboardRequests.ERankedMapLeaderboardSorter.Points,
@@ -53,6 +56,7 @@ public class LeaderboardEndpoints : IEndpoints
                 x.PointId == pointId &&
                 x.RankedMapId == rankedMapId &&
                 x.IsSelected)
+            .ApplyFilters(filters)
             .ApplySortOrder(sortBy, order)
             .Select(RankedScoreMappers.MapRankedScoreWithPlayerExpression)
             .ToPagedListAsync(page, pageSize)
@@ -63,6 +67,7 @@ public class LeaderboardEndpoints : IEndpoints
             ContextId contextId,
             PointId pointId,
             ServerDbContext dbContext,
+            [AsParameters] Filters filters,
             [Range(1, int.MaxValue)] int page = 1,
             [Range(1, 100)] int pageSize = 10,
             EMemberStatLeaderboardSorter sortBy = EMemberStatLeaderboardSorter.Points,
@@ -72,6 +77,7 @@ public class LeaderboardEndpoints : IEndpoints
                 x.ContextId == contextId &&
                 x.PointId == pointId &&
                 x.CategoryId == null)
+            .ApplyFilters(filters)
             .ApplySortOrder(sortBy, order)
             .Select(LeaderboardMappers.MapMemberStatExpression)
             .ToPagedListAsync(page, pageSize)
@@ -83,6 +89,7 @@ public class LeaderboardEndpoints : IEndpoints
             PointId pointId,
             CategoryId categoryId,
             ServerDbContext dbContext,
+            [AsParameters] Filters filters,
             [Range(1, int.MaxValue)] int page = 1,
             [Range(1, 100)] int pageSize = 10,
             EMemberStatLeaderboardSorter sortBy = EMemberStatLeaderboardSorter.Points,
@@ -92,6 +99,7 @@ public class LeaderboardEndpoints : IEndpoints
                 x.ContextId == contextId &&
                 x.PointId == pointId &&
                 x.CategoryId == categoryId)
+            .ApplyFilters(filters)
             .ApplySortOrder(sortBy, order)
             .Select(LeaderboardMappers.MapMemberStatExpression)
             .ToPagedListAsync(page, pageSize)
@@ -100,6 +108,26 @@ public class LeaderboardEndpoints : IEndpoints
 
 public static class LeaderboardExtensions
 {
+    public static IQueryable<MemberPointStat> ApplyFilters(
+        this IQueryable<MemberPointStat> query,
+        Filters filters)
+    {
+        if (!string.IsNullOrWhiteSpace(filters.Search))
+            query = query.Where(x => EF.Functions.ILike(x.Player.Info.Username, $"%{filters.Search}%"));
+
+        return query;
+    }
+
+    public static IQueryable<RankedScore> ApplyFilters(
+        this IQueryable<RankedScore> query,
+        Filters filters)
+    {
+        if (!string.IsNullOrWhiteSpace(filters.Search))
+            query = query.Where(x => EF.Functions.ILike(x.Player.Info.Username, $"%{filters.Search}%"));
+
+        return query;
+    }
+
     public static IQueryable<MemberPointStat> ApplySortOrder(
         this IQueryable<MemberPointStat> query,
         EMemberStatLeaderboardSorter sortBy,
