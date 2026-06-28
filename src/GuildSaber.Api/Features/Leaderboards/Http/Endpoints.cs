@@ -120,8 +120,10 @@ public static class LeaderboardExtensions
         LeaderboardRequests.ERankedMapLeaderboardSorter.Points => query
             .OrderBy(x => x is ScoredRankedScore ? 0 : 1)
             .ThenBy(order, x => x is ScoredRankedScore ? ((ScoredRankedScore)x).RawPoints : default)
+            .ThenBy(order, x => x is PointGivingRankedScore ? ((PointGivingRankedScore)x).Rank : 0)
             .ThenBy(order, x => x.Id),
         LeaderboardRequests.ERankedMapLeaderboardSorter.EffectiveScore => query.OrderBy(order, x => x.EffectiveScore)
+            .ThenBy(order, x => x is PointGivingRankedScore ? ((PointGivingRankedScore)x).Rank : 0)
             .ThenBy(order, x => x.Id),
         _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
     };
