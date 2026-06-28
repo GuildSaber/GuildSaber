@@ -51,7 +51,8 @@ public class LeaderboardEndpoints : IEndpoints
             .Where(x =>
                 x.ContextId == contextId &&
                 x.PointId == pointId &&
-                x.RankedMapId == rankedMapId)
+                x.RankedMapId == rankedMapId &&
+                x.IsSelected)
             .ApplySortOrder(sortBy, order)
             .Select(RankedScoreMappers.MapRankedScoreWithPlayerExpression)
             .ToPagedListAsync(page, pageSize)
