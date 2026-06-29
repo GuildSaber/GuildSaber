@@ -33,7 +33,7 @@ public static class RankedScoreResponses
             int MissedNotes,
             int BadCuts,
             EHMD HMD,
-            //ScoreStatistics? Statistics,
+            bool HasStatistics,
             BeatLeaderScoreId? BeatLeaderScoreId
         ) : Score(Id, SongDifficultyId, BaseScore, Modifiers, SetAt, MaxCombo, IsFullCombo, MissedNotes, BadCuts, HMD);
 

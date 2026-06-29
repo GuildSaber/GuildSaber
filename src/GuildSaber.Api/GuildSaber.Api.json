@@ -8437,6 +8437,7 @@
       },
       "ScoreBeatLeaderScore": {
         "required": [
+          "hasStatistics",
           "beatLeaderScoreId",
           "id",
           "songDifficultyId",
@@ -8455,6 +8456,9 @@
               "BeatLeader"
             ],
             "type": "string"
+          },
+          "hasStatistics": {
+            "type": "boolean"
           },
           "beatLeaderScoreId": {
             "oneOf": [

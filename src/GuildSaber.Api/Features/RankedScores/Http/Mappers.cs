@@ -42,6 +42,7 @@ public static class RankedScoreMappers
                 score.MissedNotes,
                 score.BadCuts,
                 score.HMD.Map(),
+                ((BeatLeaderScore)score).Statistics != null,
                 ((BeatLeaderScore)score).BeatLeaderScoreId)
             : new RankedScoreResponses.Score.ScoreSaberScore(
                 score.Id,
