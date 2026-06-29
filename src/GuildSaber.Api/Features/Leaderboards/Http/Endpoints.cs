@@ -146,7 +146,7 @@ public static class LeaderboardExtensions
         EOrder order) => sortBy switch
     {
         LeaderboardRequests.ERankedMapLeaderboardSorter.Points => query
-            .OrderBy(x => x is ScoredRankedScore ? 0 : 1)
+            .OrderBy(order, x => x is ScoredRankedScore ? 0 : 1)
             .ThenBy(order, x => x is ScoredRankedScore ? ((ScoredRankedScore)x).RawPoints : default)
             .ThenBy(order, x => x is PointGivingRankedScore ? ((PointGivingRankedScore)x).Rank : 0)
             .ThenBy(order, x => x.Id),
