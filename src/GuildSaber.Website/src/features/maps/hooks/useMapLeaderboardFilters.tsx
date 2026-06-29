@@ -10,7 +10,7 @@ export const useMapLeaderboardFilters = () =>
     page: parseAsInteger.withDefault(1),
     point: parseAsString.withDefault(""),
     sortBy: parseAsStringLiteral(sortKeys).withDefault(sortKeys[0]),
-    order: parseAsStringLiteral(orderKeys).withDefault(orderKeys[0]),
+    order: parseAsStringLiteral(orderKeys).withDefault(orderKeys[1]),
     search: parseAsString.withDefault(""),
   })
 
