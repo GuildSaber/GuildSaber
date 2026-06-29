@@ -11,6 +11,7 @@ using GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
 using GuildSaber.CSharpClient.Routes.Leaderboards;
 using GuildSaber.CSharpClient.Routes.Players;
 using GuildSaber.CSharpClient.Routes.RankedMaps;
+using GuildSaber.CSharpClient.Routes.Scores;
 
 namespace GuildSaber.CSharpClient;
 
@@ -131,6 +132,12 @@ public class GuildSaberClient : IDisposable
     /// </summary>
     public RankedMapClient RankedMaps
         => field ??= new RankedMapClient(HttpClient, _authenticationHeader, _jsonOptions);
+
+    /// <summary>
+    /// Gets the score client for interacting with score endpoints.
+    /// </summary>
+    public ScoreClient Scores
+        => field ??= new ScoreClient(HttpClient, _jsonOptions);
 
     /// <summary>
     /// Gets the playlist client for interacting with playlist endpoints.

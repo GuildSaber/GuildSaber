@@ -5,6 +5,55 @@
     "version": "1.0.0"
   },
   "paths": {
+    "/scores/{scoreId}/statistics": {
+      "get": {
+        "tags": [
+          "Scores"
+        ],
+        "summary": "Get score statistics.",
+        "description": "Get score statistics by score Id (BeatLeader kind only).",
+        "operationId": "GetScoreStatistics",
+        "parameters": [
+          {
+            "name": "scoreId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ScoreId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreStatistics"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET scores/{scoreId}/statistics",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/contexts/{contextId}/ranked-scores": {
       "get": {
         "tags": [
@@ -5470,6 +5519,121 @@
   },
   "components": {
     "schemas": {
+      "AccuracyTracker": {
+        "required": [
+          "accRight",
+          "accLeft",
+          "leftPreSwing",
+          "rightPreSwing",
+          "leftPostSwing",
+          "rightPostSwing",
+          "leftTimeDependence",
+          "rightTimeDependence",
+          "leftAverageCutGraphGrid",
+          "rightAverageCutGraphGrid",
+          "accuracyGrid"
+        ],
+        "type": "object",
+        "properties": {
+          "accRight": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "accLeft": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "leftPreSwing": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "rightPreSwing": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "leftPostSwing": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "rightPostSwing": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "leftTimeDependence": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "rightTimeDependence": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "leftAverageCutGraphGrid": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          "rightAverageCutGraphGrid": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          },
+          "accuracyGrid": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          }
+        }
+      },
       "AddMapVersion": {
         "required": [
           "beatSaverKey"
@@ -5498,6 +5662,35 @@
             ],
             "format": "uint8",
             "default": 0
+          }
+        }
+      },
+      "AverageHeadPosition": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "y": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "z": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
           }
         }
       },
@@ -6047,6 +6240,94 @@
             "format": "int32"
           },
           "rankedScoreCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "HitTracker": {
+        "required": [
+          "max115Streak",
+          "leftTiming",
+          "rightTiming",
+          "leftMiss",
+          "rightMiss",
+          "leftBadCuts",
+          "rightBadCuts",
+          "leftBombs",
+          "rightBombs"
+        ],
+        "type": "object",
+        "properties": {
+          "max115Streak": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "leftTiming": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "rightTiming": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "leftMiss": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rightMiss": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "leftBadCuts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rightBadCuts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "leftBombs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rightBombs": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
@@ -8249,6 +8530,25 @@
           }
         }
       },
+      "ScoreGraphTracker": {
+        "required": [
+          "graph"
+        ],
+        "type": "object",
+        "properties": {
+          "graph": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "float"
+            }
+          }
+        }
+      },
       "ScoreId": {
         "type": "integer",
         "format": "int32"
@@ -8365,6 +8665,29 @@
           },
           "hmd": {
             "$ref": "#/components/schemas/EHMD"
+          }
+        }
+      },
+      "ScoreStatistics": {
+        "required": [
+          "winTracker",
+          "hitTracker",
+          "accuracyTracker",
+          "scoreGraphTracker"
+        ],
+        "type": "object",
+        "properties": {
+          "winTracker": {
+            "$ref": "#/components/schemas/WinTracker"
+          },
+          "hitTracker": {
+            "$ref": "#/components/schemas/HitTracker"
+          },
+          "accuracyTracker": {
+            "$ref": "#/components/schemas/AccuracyTracker"
+          },
+          "scoreGraphTracker": {
+            "$ref": "#/components/schemas/ScoreGraphTracker"
           }
         }
       },
@@ -8700,6 +9023,91 @@
             }
           }
         }
+      },
+      "WinTracker": {
+        "required": [
+          "isWin",
+          "endTime",
+          "pauseCount",
+          "totalPauseDuration",
+          "jumpDistance",
+          "averageHeight",
+          "totalScore",
+          "maxScore",
+          "averageHeadPosition"
+        ],
+        "type": "object",
+        "properties": {
+          "isWin": {
+            "type": "boolean"
+          },
+          "endTime": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "pauseCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPauseDuration": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "jumpDistance": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "averageHeight": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "totalScore": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxScore": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "averageHeadPosition": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AverageHeadPosition"
+              }
+            ]
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -8712,6 +9120,10 @@
     }
   },
   "tags": [
+    {
+      "name": "Scores",
+      "description": "Endpoints for accessing scores in the server."
+    },
     {
       "name": "Context.RankedScores",
       "description": "Endpoints for managing ranked scores from their underlying scoreIds."

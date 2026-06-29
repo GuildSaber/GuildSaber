@@ -201,46 +201,4 @@ public static class RankedScoreMappers
         PlayerHardwareInfo.EHMD.VarjoXR3 => RankedScoreResponses.EHMD.VarjoXR3,
         _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
     };
-
-    /*blScore.Statistics == null
-    ? null
-    : new RankedScoreResponses.ScoreStatistics(
-        new RankedScoreResponses.WinTracker(
-            blScore.Statistics.WinTracker.IsWin,
-            blScore.Statistics.WinTracker.EndTime,
-            blScore.Statistics.WinTracker.PauseCount,
-            blScore.Statistics.WinTracker.TotalPauseDuration,
-            blScore.Statistics.WinTracker.JumpDistance,
-            blScore.Statistics.WinTracker.AverageHeight,
-            blScore.Statistics.WinTracker.TotalScore,
-            blScore.Statistics.WinTracker.MaxScore,
-            blScore.Statistics.WinTracker.AverageHeadPosition == null
-                ? null
-                : new RankedScoreResponses.AverageHeadPosition(
-                    blScore.Statistics.WinTracker.AverageHeadPosition.Value.X,
-                    blScore.Statistics.WinTracker.AverageHeadPosition.Value.Y,
-                    blScore.Statistics.WinTracker.AverageHeadPosition.Value.Z)),
-        new RankedScoreResponses.HitTracker(
-            blScore.Statistics.HitTracker.Max115Streak,
-            blScore.Statistics.HitTracker.LeftTiming,
-            blScore.Statistics.HitTracker.RightTiming,
-            blScore.Statistics.HitTracker.LeftMiss,
-            blScore.Statistics.HitTracker.RightMiss,
-            blScore.Statistics.HitTracker.LeftBadCuts,
-            blScore.Statistics.HitTracker.RightBadCuts,
-            blScore.Statistics.HitTracker.LeftBombs,
-            blScore.Statistics.HitTracker.RightBombs),
-        new RankedScoreResponses.AccuracyTracker(
-            blScore.Statistics.AccuracyTracker.AccRight,
-            blScore.Statistics.AccuracyTracker.AccLeft,
-            blScore.Statistics.AccuracyTracker.LeftPreSwing,
-            blScore.Statistics.AccuracyTracker.RightPreSwing,
-            blScore.Statistics.AccuracyTracker.LeftPostSwing,
-            blScore.Statistics.AccuracyTracker.RightPostSwing,
-            blScore.Statistics.AccuracyTracker.LeftTimeDependence,
-            blScore.Statistics.AccuracyTracker.RightTimeDependence,
-            blScore.Statistics.AccuracyTracker.LeftAverageCutGraphGrid,
-            blScore.Statistics.AccuracyTracker.RightAverageCutGraphGrid,
-            blScore.Statistics.AccuracyTracker.AccuracyGrid),
-        new RankedScoreResponses.ScoreGraphTracker(blScore.Statistics.ScoreGraphTracker.Graph)),*/
 }
