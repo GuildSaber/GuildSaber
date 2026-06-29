@@ -23,11 +23,11 @@ const MapLeaderboardFilters = ({ contextPoints }: Props) => {
   const debouncedSearch = useDebounceCallback(handleSearchChange, 300)
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <div className="relative">
+    <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+      <div className="relative w-full sm:w-50">
         <Search className="text-muted-foreground absolute top-1/2 left-2 size-3.5 -translate-y-1/2" />
         <Input
-          className="h-8 w-full pl-7 sm:w-50"
+          className="h-8 w-full pl-7"
           placeholder="Search player..."
           defaultValue={filters.search}
           onChange={debouncedSearch}
@@ -36,7 +36,7 @@ const MapLeaderboardFilters = ({ contextPoints }: Props) => {
 
       {contextPoints.length > 1 && (
         <Select value={effectivePointId} onValueChange={handlePointChange}>
-          <SelectTrigger size="sm" className="w-auto">
+          <SelectTrigger size="sm" className="flex-1 md:w-auto">
             <SelectValue placeholder="Point" />
           </SelectTrigger>
 
@@ -51,7 +51,7 @@ const MapLeaderboardFilters = ({ contextPoints }: Props) => {
       )}
 
       <Select value={filters.sortBy} onValueChange={handleSortChange}>
-        <SelectTrigger size="sm" className="w-auto">
+        <SelectTrigger size="sm" className="flex-1 md:w-auto">
           <SelectValue />
         </SelectTrigger>
 
@@ -65,7 +65,7 @@ const MapLeaderboardFilters = ({ contextPoints }: Props) => {
       </Select>
 
       <Select value={filters.order} onValueChange={handleOrderChange}>
-        <SelectTrigger size="sm" className="w-auto">
+        <SelectTrigger size="sm" className="flex-1 md:w-auto">
           <SelectValue />
         </SelectTrigger>
 
