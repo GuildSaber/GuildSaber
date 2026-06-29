@@ -31,6 +31,19 @@ public class RankedMapEndpoints : IEndpoints
             .WithSummary("Get a ranked map.")
             .WithDescription("Get a ranked map in the server by its Id.");
 
+        rankedMapGroup.MapGet("/{rankedMapId}/with-scores/{playerId}", GetRankedMapWithScoresAsync)
+            .WithName("GetRankedMapWithScores")
+            .WithSummary("Get a ranked map with the player's point scores.")
+            .WithDescription(
+                "Get a ranked map in the server by its Id, including the player's best point scores on the map.");
+
+        rankedMapGroup.MapGet("/{rankedMapId}/with-scores/@me", GetRankedMapWithScoresAtMeAsync)
+            .WithName("GetRankedMapWithScoresAtMe")
+            .WithSummary("Get a ranked map with the current player's point scores.")
+            .WithDescription(
+                "Get a ranked map in the server by its Id, including the current player's best point scores on the map.")
+            .RequireAuthorization();
+
         var group = endpoints.MapGroup("contexts/{contextId}/ranked-maps")
             .WithTag("Context.RankedMaps", description: "Endpoints for managing ranked maps within a context.");
 
@@ -74,6 +87,24 @@ public class RankedMapEndpoints : IEndpoints
             .ProducesValidationProblem()
             .RequireGuildPermission(EPermission.RankingTeam);
     }
+
+    private static async Task<Results<Ok<RankedMapWithScores>, NotFound>> GetRankedMapWithScoresAtMeAsync(
+        RankedMapId rankedMapId,
+        ServerDbContext dbContext,
+        ClaimsPrincipal claimsPrincipal)
+        => await GetRankedMapWithScoresAsync(rankedMapId, claimsPrincipal.GetPlayerId()!.Value, dbContext);
+
+    private static async Task<Results<Ok<RankedMapWithScores>, NotFound>> GetRankedMapWithScoresAsync(
+        RankedMapId rankedMapId,
+        PlayerId playerId,
+        ServerDbContext dbContext) => await dbContext.RankedMaps.AsExpandable()
+            .Where(x => x.Id == rankedMapId)
+            .Select(RankedMapMappers.MapRankedMapWithScoresExpression(playerId))
+            .FirstOrDefaultAsync() switch
+        {
+            null => TypedResults.NotFound(),
+            var rankedMap => TypedResults.Ok(rankedMap)
+        };
 
     /// <remarks>
     /// This endpoint:

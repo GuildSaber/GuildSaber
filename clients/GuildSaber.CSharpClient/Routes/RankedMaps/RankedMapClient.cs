@@ -63,6 +63,9 @@ public class RankedMapClient(
             UriKind.Relative
         );
 
+    private static Uri GetRankedMapByIdWithScoresUrl(long rankedMapId, PlayerId? playerId)
+        => new($"ranked-maps/{rankedMapId}/with-scores/{(playerId is null ? "@me" : playerId)}", UriKind.Relative);
+
     /// <summary>
     /// Gets a ranked map by its ID.
     /// </summary>
@@ -79,6 +82,55 @@ public class RankedMapClient(
                         $"Failed to retrieve ranked map with ID {rankedMapId}, status code: {(int)statusCode} ({reasonPhrase})"),
                 var response => await Try(() => response.Content
                         .ReadFromJsonAsync<RankedMap>(jsonOptions, cancellationToken: cancellationToken))
+                    .ConfigureAwait(false)
+            };
+
+    /// <summary>
+    /// Gets a ranked map by its ID with point scores for a specific player.
+    /// </summary>
+    /// <param name="rankedMapId">The ID of the ranked map to retrieve.</param>
+    /// <param name="playerId">The player identifier.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the ranked map with scores if found, or null if not found.</returns>
+    public async Task<Result<RankedMapWithScores?>> GetByIdWithScoresAsync(
+        long rankedMapId,
+        PlayerId playerId,
+        CancellationToken token = default)
+        => await httpClient.GetAsync(GetRankedMapByIdWithScoresUrl(rankedMapId, playerId), token)
+                .ConfigureAwait(false) switch
+            {
+                { StatusCode: HttpStatusCode.NotFound } => Success<RankedMapWithScores?>(null),
+                { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                    => Failure<RankedMapWithScores?>(
+                        $"Failed to retrieve ranked map with ID {rankedMapId} and point scores for player {playerId}, status code: {(int)statusCode} ({reasonPhrase})"),
+                var response => await Try(() => response.Content
+                        .ReadFromJsonAsync<RankedMapWithScores>(jsonOptions, cancellationToken: token))
+                    .ConfigureAwait(false)
+            };
+
+    /// <summary>
+    /// Gets a ranked map by its ID with point scores for the current user (@me).
+    /// </summary>
+    /// <param name="rankedMapId">The ID of the ranked map to retrieve.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the ranked map with scores for @me if found, or null if not found.</returns>
+    public async Task<Result<RankedMapWithScores?>> GetByIdWithScoresAtMeAsync(
+        long rankedMapId,
+        CancellationToken token = default)
+        => await httpClient.SendAsync(new HttpRequestMessage(
+                    HttpMethod.Get, GetRankedMapByIdWithScoresUrl(rankedMapId, null))
+                {
+                    Headers = { Authorization = authenticationHeader }
+                }, token)
+                .ConfigureAwait(false) switch
+            {
+                { StatusCode: HttpStatusCode.Unauthorized or HttpStatusCode.NotFound }
+                    => Success<RankedMapWithScores?>(null),
+                { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                    => Failure<RankedMapWithScores?>(
+                        $"Failed to retrieve ranked map with ID {rankedMapId} and point scores for @me, status code: {(int)statusCode} ({reasonPhrase})"),
+                var response => await Try(() => response.Content
+                        .ReadFromJsonAsync<RankedMapWithScores>(jsonOptions, cancellationToken: token))
                     .ConfigureAwait(false)
             };
 
