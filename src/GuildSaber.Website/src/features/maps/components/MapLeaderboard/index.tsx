@@ -1,6 +1,7 @@
 import Pagination from "@/components/Pagination"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useMapLeaderboard } from "@/features/maps/hooks/useMapLeaderboard"
+import { AlertCircle, Logs } from "lucide-react"
 import MapLeaderboardFilters from "./MapLeaderboardFilters"
 import { MapLeaderboardRow } from "./MapLeaderboardRow"
 import { MapLeaderboardSkeleton } from "./MapLeaderboardSkeleton"
@@ -26,13 +27,23 @@ const MapLeaderboard = () => {
       </CardHeader>
 
       <CardContent>
-        {isLoading && <MapLeaderboardSkeleton />}
+        {!isReady && <MapLeaderboardSkeleton />}
 
-        {hasNoPoints && (
-          <p className="text-muted-foreground py-8 text-center text-sm">No points available for this map.</p>
+        {isReady && hasNoPoints && (
+          <div className="text-muted-foreground flex flex-col items-center gap-2 py-10">
+            <AlertCircle className="size-8 opacity-40" />
+            <p className="text-sm font-medium">No ranking available</p>
+            <p className="text-xs opacity-60">This map hasn't been assigned to any point category yet.</p>
+          </div>
         )}
 
-        {isReady && !hasScores && <p className="text-muted-foreground py-8 text-center text-sm">No scores yet.</p>}
+        {isReady && !hasScores && (
+          <div className="text-muted-foreground flex flex-col items-center gap-2 py-10">
+            <Logs className="size-8 opacity-40" />
+            <p className="text-sm font-medium">No scores recorded</p>
+            <p className="text-xs opacity-60">Be the first to set a score on this map!</p>
+          </div>
+        )}
 
         {hasScores && (
           <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 divide-y sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto_auto_auto]">
