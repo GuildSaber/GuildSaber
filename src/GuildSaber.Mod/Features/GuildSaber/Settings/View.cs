@@ -23,7 +23,7 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
     [Inject] private readonly PlayerCardView _playerCardView = null!;
     [Inject] private readonly RankedMapStats _rankedMapStats = null!;
     [Inject] private readonly UIFactory _uiFactory = null!;
-
+    
     private GSDropdown _apiDropdown = null!;
     private XUIToggle _displayMapRankedStatsToggle = null!;
     private XUIVLayout _mainLayout = null!;

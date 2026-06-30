@@ -5,6 +5,8 @@ namespace GuildSaber.Mod.Features.PlayerCard;
 
 public class PlayerCardConfig
 {
+    public bool Enabled = true;
+    
     public CardColors ColorSettings = new(false, false, Color.white, Color.white, Color.white);
 
     public TimerConfig TimerConfig = new();

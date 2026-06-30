@@ -20,7 +20,7 @@
         <DependsOn Include="BeatLeader" Version=">=0.9.33" />
         <DependsOn Include="ChatPlexSDK_BS" Version=">=6.4.0" />
         <DependsOn Include="SongCore" Version=">=3.14.15" />
-        <DependsOn Include="BeatLeader" Version=">=0.10.0" />
+        <DependsOn Include="BeatLeader" Version=">=0.1.0" />
     </ItemGroup>
 
     <PropertyGroup>
