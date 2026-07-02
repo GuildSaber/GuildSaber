@@ -151,11 +151,10 @@ file static class SearchCommand
         foreach (var rankedMap in pagedRankedMaps.Data)
             builder.WithContainer(BuildRankedMapWithScoresDisplayContainer(rankedMap, categories, emojiSettings));
 
-        builder.WithTextDisplay(
-            pagedRankedMaps.TotalPages == 0
-                ? "Nothing there!"
-                : $"Page: **{pagedRankedMaps.Page}**/{pagedRankedMaps.TotalPages} " +
-                  $"({pagedRankedMaps.TotalCount} maps)"
+        builder.WithTextDisplay(pagedRankedMaps.TotalPages == 0
+            ? "Nothing there!"
+            : $"Page: **{pagedRankedMaps.Page}**/{pagedRankedMaps.TotalPages} " +
+              $"({pagedRankedMaps.TotalCount} maps)"
         );
 
         var needConfirmationValue = requestFilters.NeedConfirmation switch
@@ -182,16 +181,18 @@ file static class SearchCommand
                 pendingCustomId[..100])
             : (prevCustomId, nextCustomId, unpassedCustomId, passedCustomId, pendingCustomId);
 
+        var hasPreviousPage = pagedRankedMaps.HasPreviousPage;
+        var hasNextPage = pagedRankedMaps.HasNextPage;
         return builder.WithActionRow(new ActionRowBuilder()
                 .WithButton(button => button
                     .WithLabel(!searchTermTooLong ? "Previous Page" : "Previous Page (search term too long!)")
                     .WithStyle(!searchTermTooLong ? ButtonStyle.Primary : ButtonStyle.Danger)
-                    .WithDisabled(searchTermTooLong || page <= 1)
+                    .WithDisabled(searchTermTooLong || !hasPreviousPage)
                     .WithCustomId(prevCustomId))
                 .WithButton(button => button
                     .WithLabel(!searchTermTooLong ? "Next Page" : "Next Page (search term too long!)")
                     .WithStyle(!searchTermTooLong ? ButtonStyle.Primary : ButtonStyle.Danger)
-                    .WithDisabled(searchTermTooLong || page >= totalPages)
+                    .WithDisabled(searchTermTooLong || !hasNextPage)
                     .WithCustomId(nextCustomId))
                 .WithButton(button => button
                     .WithLabel("Unpassed")

@@ -1,9 +1,10 @@
 using GuildSaber.Api.Features.RankedMaps.MapVersions.Http;
+using GuildSaber.Common.Helpers;
 using ERankedScoreType = GuildSaber.Api.Features.RankedScores.Http.RankedScoreRequests.ERankedScoreType;
 
 namespace GuildSaber.Api.Features.RankedMaps.Http;
 
-public class RankedMapRequests
+public static class RankedMapRequests
 {
     /// <summary>
     /// Filters for querying ranked maps.
@@ -82,6 +83,29 @@ public class RankedMapRequests
         /// </summary>
         ProhibitedDefaults = NoObstacles | NoBombs | NoFail | SlowerSong | NoArrows | OffPlatform
     }
+
+    public static string ToModifiersString(this EModifiers modifiers) => modifiers
+        .GetFlags()
+        .Aggregate<EModifiers, string>("", (current, modifier) => current + modifier switch
+        {
+            EModifiers.NoObstacles => "NO,",
+            EModifiers.NoBombs => "NB,",
+            EModifiers.NoFail => "NF,",
+            EModifiers.SlowerSong => "SS,",
+            EModifiers.BatteryEnergy => "BE,",
+            EModifiers.InstaFail => "IF,",
+            EModifiers.SmallNotes => "SC,",
+            EModifiers.ProMode => "PM,",
+            EModifiers.FasterSong => "FS,",
+            EModifiers.StrictAngles => "SA,",
+            EModifiers.DisappearingArrows => "DA,",
+            EModifiers.GhostNotes => "GN,",
+            EModifiers.NoArrows => "NA,",
+            EModifiers.SuperFastSong => "SF,",
+            EModifiers.OldDots => "OD,",
+            EModifiers.OffPlatform => "OP,",
+            _ => ""
+        });
 
     public enum ERankedMapSorter
     {

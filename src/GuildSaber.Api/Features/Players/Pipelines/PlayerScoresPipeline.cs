@@ -95,8 +95,9 @@ public sealed class PlayerScoresPipeline(
                 chunkedScoresToProcess.Add((scoreResponse, difficultyId));
             }
 
-            var scores =
-                await Task.WhenAll(chunkedScoresToProcess.Select(x => toBeatLeaderScoreAsync(x.Item1, x.Item2)));
+            var scores = await Task.WhenAll(chunkedScoresToProcess
+                .Select(x => toBeatLeaderScoreAsync(x.Item1, x.Item2)));
+
             foreach (var score in scores)
             {
                 var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(score, token);

@@ -36,14 +36,28 @@ public static class PermissionHandler
                         { IsManager: true } => Succeed(),
                         _ when requireManager
                             => await Error("You must be a guild manager to execute this command.", context),
-                        { DiscordGuildPermissions: var dict }
-                            when dict.TryGetValue(context.Guild.DiscordId, out var permission)
+                        { DiscordGuildPermissions: var userPermFromDiscordGuild }
+                            when userPermFromDiscordGuild.TryGetValue(context.Guild.DiscordId, out var permission)
                                  && permission.HasFlag(permissions)
-                            => Succeed(),
+                            => context.Interaction.Data switch
+                            {
+                                // Since commands can be executed with guildId or contextId, better check the command
+                                // guild and context is from the current guild since the perms validity depends on it.
+                                SocketSlashCommandData data => await VerifyGuildIdAndContextIdOwnership(data.Options),
+                                _ => throw new UnauthorizedAccessException("Unknown Interaction Data type")
+                            },
                         _ => await Error("You don't have the required permissions to execute this command.", context)
                     },
                 _ => await Error("You are not a valid user.", context)
             };
+
+        private static async Task<PreconditionResult> VerifyGuildIdAndContextIdOwnership(
+            IReadOnlyCollection<IApplicationCommandInteractionDataOption> options)
+        {
+            var guildId = options.FirstOrDefault(x => x.Name == "guild-id")?.Value as int?;
+            var contextId = options.FirstOrDefault(x => x.Name == "context-id")?.Value as int?;
+            if (guildId is null && contextId is null) return Succeed();
+        }
 
         /// <summary>
         /// Send an error message to the user and return a failed precondition result.

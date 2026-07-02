@@ -25,7 +25,7 @@ public class ContextAutocompleteHandler : AutocompleteHandler
         if (guildExtended is null) return AutocompletionResult.FromSuccess();
 
         return AutocompletionResult.FromSuccess(guildExtended.Contexts
-            .Select(c => new AutocompleteResult(c.Info.Name, c.Id.Value))
+            .Select(c => new AutocompleteResult(c.Info.Name.ToLowerInvariant(), c.Id.Value))
             .Take(AutocompletionResult.MaxSuggestionCount)
         );
     }

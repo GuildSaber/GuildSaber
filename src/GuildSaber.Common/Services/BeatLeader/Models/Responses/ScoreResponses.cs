@@ -48,6 +48,8 @@ public record ScoreResponse : IProcessedScore, IWithPP, IWithPlayer, IWithScoreI
     public required string Platform { get; init; }
     public required int MaxCombo { get; init; }
     public required HMD Hmd { get; init; }
+
+    //TODO: Add Controller to BeatLeaderScore. (Might not be needed to be displayed on the website, but it could still be sent through the api).
     public required ControllerEnum Controller { get; init; }
     public required string TimeSet { get; init; }
     public required int TimePost { get; init; }

@@ -1,6 +1,8 @@
 ﻿using Discord;
 using Discord.Interactions;
+using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Api.Features.Guilds.Members.Http;
+using GuildSaber.Common.Result;
 using GuildSaber.CSharpClient;
 using GuildSaber.Database.Contexts.DiscordBot;
 using GuildSaber.DiscordBot.Core.Extensions;
@@ -46,4 +48,8 @@ public partial class ScoringTeamModuleSlash : InteractionModuleBase<SocketIntera
     public async ValueTask<GuildId> GetGuildIdAsync() =>
         (await Cache.FindGuildIdFromDiscordGuildIdAsync(Context.Guild.DiscordId, Client.Value))
         .ValueOrGuildMissingException();
+
+    public async ValueTask<GuildResponses.Guild> GetGuildAsync() =>
+        (await Client.Value.Guilds.GetByIdAsync(await GetGuildIdAsync()))
+        .Unwrap().ValueOrGuildMissingException();
 }

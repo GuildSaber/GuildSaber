@@ -143,7 +143,7 @@ file static class SearchCommand
                             .WithLabel("Previous Page")
                             .WithStyle(ButtonStyle.Primary)
                             .WithCustomId(id)
-                            .WithDisabled(pagedRankedMaps.Page <= 1)
+                            .WithDisabled(!pagedRankedMaps.HasPreviousPage)
                     })
             .WithButton(
                 $"search_{contextId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{pagedRankedMaps.Page + 1}_{needConfirmationValue}_{requestFilters.Search}"
@@ -157,7 +157,7 @@ file static class SearchCommand
                             .WithLabel("Next Page")
                             .WithStyle(ButtonStyle.Primary)
                             .WithCustomId(id)
-                            .WithDisabled(pagedRankedMaps.Page >= pagedRankedMaps.TotalPages)
+                            .WithDisabled(!pagedRankedMaps.HasNextPage)
                     }));
 
         return builder;
