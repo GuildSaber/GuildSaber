@@ -1,7 +1,9 @@
 import Discord from "@/components/icons/Discord"
+import { Button } from "@/components/ui/button"
 import { useSession } from "@/features/auth/hooks/useSession"
+import { generateAuthUrl } from "@/features/auth/utils"
 import { cn } from "@/lib/utils"
-import { Check, CircleCheck } from "lucide-react"
+import { Check, CircleCheck, Link as LinkIcon } from "lucide-react"
 import { Link } from "react-router"
 import JoinCSGuild from "./JoinCSGuild"
 import DiscordLinkUser from "./providers/DiscordLinkProvider"
@@ -32,6 +34,10 @@ interface StepContentProps {
 }
 
 const StepContent = ({ isMember, hasDiscord, discordId }: StepContentProps) => {
+  const handleRelink = () => {
+    window.location.href = generateAuthUrl("discord", "link")
+  }
+
   if (!isMember) {
     return <JoinCSGuild />
   }
@@ -60,13 +66,17 @@ const StepContent = ({ isMember, hasDiscord, discordId }: StepContentProps) => {
           <Discord className="h-12 w-12 fill-white" />
         </div>
         <div>
+          <p className="text-gray-200">
+            Discord ID: <span className="rounded bg-gray-800 px-1 font-mono text-white">{discordId}</span>
+          </p>
           <p className="flex items-center text-green-500">
             <CircleCheck className="mr-1 inline h-5 w-5" />
             Linked
           </p>
-          <p className="mt-1 text-gray-200">
-            Discord ID: <span className="rounded bg-gray-800 px-1 font-mono text-white">{discordId}</span>
-          </p>
+          <Button className="mt-1" size="sm" variant="outline" onClick={handleRelink}>
+            <LinkIcon className="inline h-4 w-4" />
+            Relink
+          </Button>
         </div>
       </div>
     </div>
