@@ -29,23 +29,15 @@ public partial class ScoringTeamModuleSlash
                     .WithAccessory(new ThumbnailBuilder()
                         .WithMedia(Client.Value.Guilds.GetLogoUrl(guild.Id).ToString())))
                 .WithSeparator()
-                .WithSection(content =>
-                {
-                    if (pendingCount == 0)
-                    {
-                        _ = content.WithTextDisplay(
-                            $"**No scores** to review today! {EmojiSettings.Value.Congrats}");
-                        return;
-                    }
-
-                    content
-                        .WithTextDisplay(
-                            $"There are **{pendingCount} scores** to review today {EmojiSettings.Value.NeedConfirmation}")
-                        .WithAccessory(new ButtonBuilder()
-                            .WithLabel("Review scores")
-                            .WithCustomId($"scoring_admin_conf:{contextId},1")
-                            .WithStyle(ButtonStyle.Success));
-                }))
+                .WithSection(content => content.WithTextDisplay(
+                        pendingCount == 0
+                            ? $"**No scores** to review today! {EmojiSettings.Value.Congrats}"
+                            : $"There are **{pendingCount} scores** to review today {EmojiSettings.Value.NeedConfirmation}")
+                    .WithAccessory(new ButtonBuilder()
+                        .WithLabel("Review scores")
+                        .WithCustomId($"scoring_admin_conf:{contextId},1")
+                        .WithStyle(ButtonStyle.Success)
+                        .WithDisabled(pendingCount == 0))))
             .Build();
 
         switch (Context.Interaction)

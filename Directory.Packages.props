@@ -69,7 +69,7 @@
         <PackageVersion Include="TickerQ" Version="10.4.0" />
         <PackageVersion Include="TickerQ.Dashboard" Version="10.4.0" />
         <PackageVersion Include="TickerQ.EntityFrameworkCore" Version="10.4.0" />
-        <PackageVersion Include="TUnit" Version="1.56.35" />
+        <PackageVersion Include="TUnit" Version="1.58.0" />
         <PackageVersion Include="AwesomeAssertions" Version="9.4.0" />
         <PackageVersion Include="CSharpFunctionalExtensions.AwesomeAssertions" Version="9.4.0" />
         <PackageVersion Include="PolySharp" Version="1.16.0" />
