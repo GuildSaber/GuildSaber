@@ -16,7 +16,7 @@ using GuildSaber.Database.Models.DiscordBot.FlexHistories;
 using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.StrongTypes;
-using GuildSaber.DiscordBot.AutocompleteHandlers;
+using GuildSaber.DiscordBot.Core.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Extensions;
 using GuildSaber.DiscordBot.Core.Handlers;
 using GuildSaber.DiscordBot.Settings;

@@ -2,8 +2,8 @@ using Discord;
 using Discord.Interactions;
 using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Result;
-using GuildSaber.DiscordBot.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Commands.Users.Me;
+using GuildSaber.DiscordBot.Core.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Handlers;
 using QuestPDF.Fluent;
 

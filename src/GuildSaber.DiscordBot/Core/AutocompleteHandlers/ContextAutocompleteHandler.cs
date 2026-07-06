@@ -4,7 +4,7 @@ using GuildSaber.CSharpClient;
 using GuildSaber.DiscordBot.Core.Extensions;
 using Microsoft.Extensions.Caching.Hybrid;
 
-namespace GuildSaber.DiscordBot.AutocompleteHandlers;
+namespace GuildSaber.DiscordBot.Core.AutocompleteHandlers;
 
 public class ContextAutocompleteHandler : AutocompleteHandler
 {

@@ -4,7 +4,7 @@ using Discord.WebSocket;
 using GuildSaber.Api.Features.RankedScores.Http;
 using GuildSaber.Api.Shared;
 using GuildSaber.Common.Result;
-using GuildSaber.DiscordBot.AutocompleteHandlers;
+using GuildSaber.DiscordBot.Core.AutocompleteHandlers;
 
 namespace GuildSaber.DiscordBot.Commands.ScoringTeam;
 

@@ -4,7 +4,7 @@ using Discord.Interactions;
 using GuildSaber.Api.Features.Guilds.Levels.Playlists.Http;
 using GuildSaber.Common.Helpers;
 using GuildSaber.CSharpClient.Routes.Guilds.Levels.Playlists;
-using GuildSaber.DiscordBot.AutocompleteHandlers;
+using GuildSaber.DiscordBot.Core.AutocompleteHandlers;
 
 namespace GuildSaber.DiscordBot.Commands.Users;
 

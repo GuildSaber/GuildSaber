@@ -1115,7 +1115,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -1623,7 +1623,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -2090,7 +2090,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -2186,7 +2186,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -2357,7 +2357,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -2401,7 +2401,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -2494,7 +2494,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -2970,7 +2970,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3144,7 +3144,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3305,7 +3305,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3416,7 +3416,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3688,7 +3688,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3805,7 +3805,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       },
@@ -3850,7 +3850,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4247,7 +4247,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4337,7 +4337,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       },
@@ -4390,7 +4390,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4445,7 +4445,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4484,7 +4484,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4533,7 +4533,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4552,7 +4552,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4571,7 +4571,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4590,7 +4590,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4619,7 +4619,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4648,7 +4648,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4677,7 +4677,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4696,7 +4696,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4724,7 +4724,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4743,7 +4743,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4772,7 +4772,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4801,7 +4801,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -5417,7 +5417,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -5453,7 +5453,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -5482,7 +5482,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -5511,7 +5511,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -5694,7 +5694,7 @@
           }
         }
       },
-      "BeatLeaderScoreId": { },
+      "BeatLeaderScoreId": {},
       "BeatSaverKey": {
         "type": "string",
         "example": "a3c3"
@@ -6424,7 +6424,7 @@
                 "path": {
                   "type": "string"
                 },
-                "value": { }
+                "value": {}
               },
               "additionalProperties": false
             },
@@ -8481,12 +8481,7 @@
             ]
           },
           "id": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int64"
+            "$ref": "#/components/schemas/ScoreId"
           },
           "songDifficultyId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -8572,7 +8567,7 @@
         "format": "int64",
         "example": "12345678901234567"
       },
-      "ScoreSaberScoreId": { },
+      "ScoreSaberScoreId": {},
       "ScoreScoreSaberScore": {
         "required": [
           "scoreSaberScoreId",
@@ -8619,12 +8614,7 @@
             ]
           },
           "id": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int64"
+            "$ref": "#/components/schemas/ScoreId"
           },
           "songDifficultyId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
