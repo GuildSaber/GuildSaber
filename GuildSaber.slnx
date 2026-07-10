@@ -8,6 +8,8 @@
         <File Path="LICENSE-NOTICE.md" />
         <File Path="CONTRIBUTORS.md" />
         <File Path="CONTRIBUTING.md" />
+        <File Path="replay.tape" />
+        <File Path="replay-latest-commit.sh" />
     </Folder>
     <Folder Name="/aspire/">
         <Project Path="aspire\GuildSaber.AppHost\GuildSaber.AppHost.csproj" />

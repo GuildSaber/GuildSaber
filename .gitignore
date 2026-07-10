@@ -407,3 +407,5 @@ FodyWeavers.xsd
 .env.*
 !.env.example
 
+# VHS render output
+replay.mp4
