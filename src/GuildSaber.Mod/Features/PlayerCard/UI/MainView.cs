@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using BeatSaberMarkupLanguage.FloatingScreen;
-using CP_SDK_BS.Game;
 using CP_SDK_BS.UI;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.Guilds.Http;
@@ -218,23 +217,12 @@ public class PlayerCardView : ViewController<PlayerCardView>
                 x.CSizeFitter.verticalFit = x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained)
             .BuildUI(transform);
 
+        OnTimeInit();
+        _timer.OnTimeUpdate += OnTimerChanged;
+
         // So the component persists when scene changes.
         DontDestroyOnLoad(transform.parent.gameObject);
-
-        OnTimeInit();
-
-        _timer.OnTimeUpdate += OnTimerChanged;
-        Logic.OnSceneChange += OnSceneChanged;
-        _cardFloatingScreen.HandleReleased += (_, x) =>
-        {
-            if (Logic.ActiveScene != Logic.ESceneType.Playing)
-                _config.PlayerCard.Transforms.Menu = new CardTransform(x.Position, x.Rotation);
-            else
-                _config.PlayerCard.Transforms.InSong = new CardTransform(x.Position, x.Rotation);
-        };
     }
-
-    protected override void OnViewDestruction() => Logic.OnSceneChange -= OnSceneChanged;
 
     private void AskForGuild() => AskForGuild(false);
 
@@ -273,23 +261,6 @@ public class PlayerCardView : ViewController<PlayerCardView>
         if (time.Seconds % 20 != 0) return;
 
         _config.PlayerCard.TimerConfig.PlayDurationSec += 20;
-    }
-
-    private void OnSceneChanged(Logic.ESceneType x)
-    {
-        switch (x)
-        {
-            case Logic.ESceneType.Menu:
-                SetCardToMenuTransform();
-                TimeText.SetActive(true);
-                break;
-            case Logic.ESceneType.Playing:
-                SetCardToInSongTransform();
-                TimeText.SetActive(false);
-                break;
-            case Logic.ESceneType.None:
-            default: return;
-        }
     }
 
     private void EventGuildSelected(GuildResponses.GuildExtended? guildExtended)
@@ -337,7 +308,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
             if (displayCardLevelsDetails && memberLevelStats.Length > 0)
                 width += 30;
 
-            GetCardFloatingScreen().ScreenSize = new Vector2(
+            _cardFloatingScreen.ScreenSize = new Vector2(
                 width + _session.PlayerExtended.Player.PlayerInfo.Username.Length,
                 40
             );
@@ -389,18 +360,6 @@ public class PlayerCardView : ViewController<PlayerCardView>
             _logger.Error("[GuildSaberMod][RefreshCard] Error");
             _logger.Error(e);
         }
-    }
-
-    public void SetCardToMenuTransform()
-    {
-        GetCardFloatingScreen().transform.position = _config.PlayerCard.Transforms.Menu.Position;
-        GetCardFloatingScreen().transform.rotation = _config.PlayerCard.Transforms.Menu.Rotation;
-    }
-
-    public void SetCardToInSongTransform()
-    {
-        GetCardFloatingScreen().transform.position = _config.PlayerCard.Transforms.InSong.Position;
-        GetCardFloatingScreen().transform.rotation = _config.PlayerCard.Transforms.InSong.Rotation;
     }
 
     private void DisplaySettings()
@@ -457,8 +416,6 @@ public class PlayerCardView : ViewController<PlayerCardView>
     }
 
     public void RefreshLevelsDetails() => MainPlayerLevelsContainer.CleanRefresh();
-
-    public FloatingScreen GetCardFloatingScreen() => _cardFloatingScreen;
 
     public void RefreshMemberStats()
     {
@@ -541,4 +498,6 @@ public class PlayerCardView : ViewController<PlayerCardView>
 
         PointsContainer.Refresh();
     }
+
+    public void SetTimerVisibility(bool visible) => TimeText.SetActive(visible);
 }
