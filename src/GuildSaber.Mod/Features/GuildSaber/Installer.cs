@@ -22,7 +22,9 @@ public class GuildSaberInstaller(GuildSaberConfig config) : Installer
 {
     public override void InstallBindings()
     {
-        Container.Bind<GuildSaberClient>().FromFactory<GuildSaberClientFactory>().AsSingle();
+        Container.BindInterfacesAndSelfTo<GuildSaberClient>()
+            .FromFactory<GuildSaberClient, GuildSaberClientFactory>()
+            .AsSingle();
 
         Container.Bind<GuildSaberSession>().AsSingle();
         Container.BindInterfacesAndSelfTo<GuildSaberManager>().AsSingle();

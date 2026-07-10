@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using CP_SDK_BS.UI;
 using CP_SDK.XUI;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;
 using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using GuildSaber.Mod.Features.MenuTweaks.RankedMapStats;
-using GuildSaber.Mod.Features.PlayerCard;
-using GuildSaber.Mod.Features.PlayerCard.UI;
 using Zenject;
 
 namespace GuildSaber.Mod.Features.GuildSaber.Settings;
@@ -20,14 +19,15 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
 
     [Inject] private readonly GuildSaberConfig _config = null!;
     [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
-    [Inject] private readonly PlayerCardView _playerCardView = null!;
     [Inject] private readonly RankedMapStats _rankedMapStats = null!;
     [Inject] private readonly UIFactory _uiFactory = null!;
-    
+
     private GSDropdown _apiDropdown = null!;
     private XUIToggle _displayMapRankedStatsToggle = null!;
     private XUIVLayout _mainLayout = null!;
 
+    public event Action OnResetCardMenuPosition = () => { };
+    public event Action OnResetCardInSongPosition = () => { };
 
     private void CreateUI() => _mainLayout = Templates.FullRectLayoutMainView(
         _uiFactory.Text("Api environment:"),
@@ -39,10 +39,16 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
         XUIToggle.Make()
             .OnValueChanged(OnDisplayMapRankedStatsChanged)
             .Bind(ref _displayMapRankedStatsToggle),
-        _uiFactory.SecondaryButton("Reset card position")
-            .SetWidth(40)
-            .SetHeight(5)
-            .OnClick(ResetCardPosition)
+        XUIVLayout.Make(
+            _uiFactory.SecondaryButton("Reset card menu position")
+                .SetWidth(40)
+                .SetHeight(5)
+                .OnClick(OnResetCardMenuPosition),
+            _uiFactory.SecondaryButton("Reset card in-song position")
+                .SetWidth(40)
+                .SetHeight(5)
+                .OnClick(OnResetCardInSongPosition)
+        )
     ).OnReady(_ => UpdateValues());
 
     protected override void OnViewCreation()
@@ -69,11 +75,5 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
     {
         _config.RankedMapStats.Enabled = value;
         _rankedMapStats.SetActive(value);
-    }
-
-    private void ResetCardPosition()
-    {
-        _config.PlayerCard.Transforms.Menu = new PlayerCardConfig().Transforms.Menu;
-        _playerCardView.SetCardToMenuTransform();
     }
 }

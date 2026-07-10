@@ -18,6 +18,7 @@ using GuildSaber.Mod.Helpers;
 using SongCore.Utilities;
 using Zenject;
 using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapResponses;
+using RequestState = BeatLeader.WebRequests.RequestState;
 
 namespace GuildSaber.Mod.Features.RankedMap;
 
@@ -47,9 +48,16 @@ public sealed class RankedMapManager(
         levelDetailViewController.didChangeDifficultyBeatmapEvent -= OnDifficultyChanged;
         levelDetailViewController.didChangeContentEvent -= OnContentChanged;
 
+        try
+        {
 #pragma warning disable CS0618
-        UploadReplayRequest.StateChangedEvent -= OnUploadReplayStateChanged;
+            UploadReplayRequest.StateChangedEvent -= OnUploadReplayStateChanged;
 #pragma warning restore CS0618
+        }
+        catch
+        {
+            // ignored because beatleader might dispose it before we do (false warning in logs if not ignored).
+        }
     }
 
     public void Initialize()
@@ -65,8 +73,8 @@ public sealed class RankedMapManager(
 #pragma warning restore CS0618
     }
 
-    private async void OnUploadReplayStateChanged(
-        IWebRequest<ScoreUploadResponse> instance, RequestState state, string? failReason)
+    private async void OnUploadReplayStateChanged(IWebRequest<ScoreUploadResponse> instance, RequestState state,
+                                                  string? failReason)
     {
         try
         {
@@ -137,6 +145,8 @@ public sealed class RankedMapManager(
     /// <summary>Refreshes the cached map score data and member stats after the current map may have changed them.</summary>
     public async Task RefreshAfterCurrentRankedMapPassAsync()
     {
+        if (levelDetailViewController == null) return;
+
         var beatmap = levelDetailViewController.beatmapLevel;
         if (beatmap == null) return;
 

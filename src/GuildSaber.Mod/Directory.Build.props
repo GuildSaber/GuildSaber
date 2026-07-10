@@ -7,7 +7,7 @@
         <PluginName>GuildSaber</PluginName>
         <PluginHint>GuildSaber.Mod.Plugin</PluginHint>
         <Authors>SheepVand,Kuurama</Authors>
-        <Version>0.6.6</Version>
+        <Version>0.6.7</Version>
         <GameVersion>&gt;=1.40.2</GameVersion>
         <Description>The official GuildSaber mod for Beat Saber</Description>
         <ProjectHome>https://github.com/GuildSaber/GuildSaber</ProjectHome>
@@ -17,10 +17,9 @@
     <ItemGroup>
         <DependsOn Include="BSIPA" Version="^4.3.6" />
         <DependsOn Include="BS Utils" Version="^1.14.2" />
-        <DependsOn Include="BeatLeader" Version=">=0.9.33" />
         <DependsOn Include="ChatPlexSDK_BS" Version=">=6.4.0" />
         <DependsOn Include="SongCore" Version=">=3.14.15" />
-        <DependsOn Include="BeatLeader" Version=">=0.1.0" />
+        <DependsOn Include="BeatLeader" Version=">=0.10.0" />
     </ItemGroup>
 
     <PropertyGroup>

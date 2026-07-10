@@ -1,3 +1,4 @@
+using System;
 using BeatSaberMarkupLanguage.FloatingScreen;
 using CP_SDK_BS.UI;
 using CP_SDK.XUI;
@@ -35,6 +36,9 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
     private XUIToggle _useCustomColorsToggle = null!;
     private XUIHLayout _useGradientLayout = null!;
     private XUIToggle _useGradientToggle = null!;
+
+    public event Action OnResetMenuPosition = () => { };
+    public event Action OnResetInSongPosition = () => { };
 
     protected override void OnViewCreation()
     {
@@ -93,25 +97,16 @@ public class PlayerCardSettingsMainView : ViewController<PlayerCardSettingsMainV
                 _uiFactory.SecondaryButton("Reset menu position")
                     .SetWidth(40)
                     .SetHeight(5)
-                    .OnClick(ResetMenuPosition),
-                _uiFactory.SecondaryButton("Reset in song position")
+                    .OnClick(OnResetMenuPosition),
+                _uiFactory.SecondaryButton("Reset in-song position")
                     .SetWidth(40)
                     .SetHeight(5)
-                    .OnClick(ResetInSongPosition)
+                    .OnClick(OnResetInSongPosition)
             )
         ).BuildUI(transform);
 
         LoadConfig();
     }
-
-    private void ResetMenuPosition()
-    {
-        _config.PlayerCard.Transforms.Menu = new PlayerCardConfig().Transforms.Menu;
-        _cardView.SetCardToMenuTransform();
-    }
-
-    private void ResetInSongPosition()
-        => _config.PlayerCard.Transforms.InSong = new PlayerCardConfig().Transforms.InSong;
 
     private void ResetTimer()
     {

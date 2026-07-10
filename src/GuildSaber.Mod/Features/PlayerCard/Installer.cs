@@ -59,12 +59,13 @@ public class PlayerCardInstaller(GuildSaberClient client, Logger logger) : Insta
         Container.Bind<PlayerCardView>().FromNewComponentAsViewController().AsSingle();
         Container.Bind<PlayerCardSettingsMainView>().FromNewComponentAsViewController().AsSingle();
         Container.Bind<PlayerCardSettingsCoordinator>().FromNewComponentOnNewGameObject().AsSingle();
-        Container.BindInterfacesTo<PlayerCardManager>().AsSingle();
         Container.Bind<StandardLevelDetailView>().FromComponentInHierarchy().AsCached();
+        Container.BindInterfacesAndSelfTo<PlayerCardManager>().AsSingle();
 
         Container.Bind<GuildSelectorViewController>().FromNewComponentAsViewController().AsSingle();
         Container.Bind<GuildSelectorFlowCoordinator>().FromNewComponentOnNewGameObject().AsSingle();
 
         Container.BindInterfacesAndSelfTo<GameReloadAffinityPatch>().AsSingle();
+        Container.BindInterfacesAndSelfTo<PauseHookAffinityPatch>().AsSingle();
     }
 }
