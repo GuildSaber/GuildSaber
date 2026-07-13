@@ -3,12 +3,15 @@ import { BadgeStat } from "@/components/BadgeStat"
 import Flag from "@/components/Flag"
 import Image from "@/components/Image"
 import { Button } from "@/components/ui/button"
+import { MapScoreStats } from "@/features/maps/components/MapScoreStats"
 import { useMapContext } from "@/features/maps/contexts/mapContext"
+import { useMapScoreStats } from "@/features/maps/hooks/useMapScoreStats"
 import { useReplayStore } from "@/features/maps/stores/replayStore"
 import { formatDate, formatPoints, formatScore } from "@/features/maps/utils"
 import { cn } from "@/lib/utils"
 import { LEADERBOARD } from "@/utils/constants"
-import { Play } from "lucide-react"
+import { ChevronDown, Loader2, Play } from "lucide-react"
+import { useState } from "react"
 import { useMediaQuery } from "usehooks-ts"
 
 const TYPES_WITH_RANK = ["Valid", "Accepted"] as const
@@ -56,8 +59,17 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
 
   const isMobile = useMediaQuery("(max-width: 639px)")
   const hasReplay = rankedScore.score.type === LEADERBOARD.BeatLeader && Boolean(rankedScore.score.beatLeaderScoreId)
+  const hasStatistics = rankedScore.score.type === LEADERBOARD.BeatLeader && rankedScore.score.hasStatistics
 
   const handleReplay = () => openReplay(rankedScore.score)
+
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const toggleDetails = () => setIsDetailsOpen((prev) => !prev)
+
+  const { isLoading: isLoadingDetails } = useMapScoreStats({
+    scoreId: Number(rankedScore.score.id),
+    enabled: isDetailsOpen,
+  })
 
   return (
     <div className="col-span-full grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 py-2.5 sm:grid-cols-subgrid">
@@ -81,9 +93,23 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
           {formatDate(rankedScore.score.setAt, isMobile ? "short" : "long")}
         </span>
 
-        <Button size="xs" variant="outline" disabled={!hasReplay} onClick={handleReplay}>
-          <Play className="size-3" />
-        </Button>
+        <div className="flex items-center justify-end gap-2">
+          {hasStatistics && (
+            <Button size="xs" variant="ghost" onClick={toggleDetails} aria-expanded={isDetailsOpen}>
+              {isDetailsOpen && isLoadingDetails ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <ChevronDown className={cn("transition-transform", isDetailsOpen && "rotate-180")} />
+              )}
+            </Button>
+          )}
+
+          {hasReplay && (
+            <Button size="xs" variant="outline" onClick={handleReplay}>
+              <Play className="size-3" />
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="col-span-full mt-1 flex flex-wrap items-center justify-end gap-2 sm:contents">
@@ -111,6 +137,8 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
           label={formatScore(rankedScore.score.baseScore)}
         />
       </div>
+
+      {isDetailsOpen && <MapScoreStats rankedScore={rankedScore} />}
     </div>
   )
 }

@@ -10,7 +10,7 @@ interface BadgeStatProps {
 export const BadgeStat = ({ icon, label, className }: BadgeStatProps) => (
   <div
     className={cn(
-      "border-input flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs md:px-2 md:py-1 md:text-sm",
+      "border-input flex items-center gap-1 rounded border px-1.5 py-0.5 text-sm md:px-2 md:py-1",
       className,
     )}
   >
