@@ -11,8 +11,8 @@ using GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
 using GuildSaber.CSharpClient.Routes.Leaderboards;
 using GuildSaber.CSharpClient.Routes.Players;
 using GuildSaber.CSharpClient.Routes.RankedMaps;
-using GuildSaber.CSharpClient.Routes.Scores;
 using GuildSaber.CSharpClient.Routes.RankedScores;
+using GuildSaber.CSharpClient.Routes.Scores;
 
 namespace GuildSaber.CSharpClient;
 

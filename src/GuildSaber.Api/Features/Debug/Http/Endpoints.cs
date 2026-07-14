@@ -7,7 +7,6 @@ using GuildSaber.Api.Features.RankedMaps.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Transformers;
 using GuildSaber.Database.Contexts.Server;
-using GuildSaber.Database.Models.Server.RankedMaps;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
@@ -356,7 +355,7 @@ public class DebugEndpoints : IEndpoints
     }
 
     private static async Task<Ok> TriggerEditMapPipeline(
-        RankedMap.RankedMapId rankedMapId, IBackgroundTaskQueue taskQueue, IServiceScopeFactory serviceScopeFactory)
+        RankedMapId rankedMapId, IBackgroundTaskQueue taskQueue, IServiceScopeFactory serviceScopeFactory)
     {
         await taskQueue.QueueBackgroundWorkItemAsync(async token =>
         {

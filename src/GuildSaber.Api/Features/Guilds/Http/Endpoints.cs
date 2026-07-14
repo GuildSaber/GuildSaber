@@ -250,7 +250,7 @@ public class GuildEndpoints : IEndpoints
                         $"Only managers can reassign Discord Guild IDs."
                     );
 
-                otherGuild.DiscordInfo = new GuildDiscordInfo(null, null);
+                otherGuild.DiscordInfo = new GuildDiscordInfo(null, null, null, null);
                 await dbContext.UpdateAndSaveAsync(otherGuild);
             }
         }

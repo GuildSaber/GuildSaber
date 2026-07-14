@@ -4,6 +4,7 @@ using Discord;
 using GuildSaber.Api.Features.Guilds.Categories.Http;
 using GuildSaber.Api.Features.RankedMaps.Http;
 using GuildSaber.Api.Features.RankedScores.Http;
+using GuildSaber.Api.Features.Scores.Http;
 using GuildSaber.Database.Models.StrongTypes;
 using GuildSaber.DiscordBot.Settings;
 using Microsoft.Extensions.Options;
@@ -134,7 +135,7 @@ public static class RankedMapExtensions
                         sb.Append(" | Mods: ").Append(rankedScore.Score.Modifiers).Append(' ');
 
                     sb.Append(TimestampTag.FormatFromDateTimeOffset(score.SetAt, TimestampTagStyles.ShortDateTime))
-                        .AppendLine(score is RankedScoreResponses.Score.BeatLeaderScore
+                        .AppendLine(score is ScoreResponses.Score.BeatLeaderScore
                         {
                             BeatLeaderScoreId: { } blScoreId
                         }

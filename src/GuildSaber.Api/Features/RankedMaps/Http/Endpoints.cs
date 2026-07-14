@@ -12,7 +12,6 @@ using GuildSaber.Database.Models.Server.RankedScores;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using ServerRankedMap = GuildSaber.Database.Models.Server.RankedMaps.RankedMap;
-using RankedMapId = GuildSaber.Database.Models.Server.RankedMaps.RankedMap.RankedMapId;
 using static GuildSaber.Api.Features.RankedMaps.RankedMapService;
 using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapRequests;
 using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapResponses;

@@ -24,7 +24,9 @@ public static class GuildResponses
 
     public record GuildDiscordInfo(
         DiscordGuildId? MainDiscordGuildId,
-        string? InviteCode
+        string? InviteCode,
+        DiscordChannelId? ConfirmedScoreFeedChannelId,
+        DiscordChannelId? RefusedScoreFeedChannelId
     );
 
     public record Guild(

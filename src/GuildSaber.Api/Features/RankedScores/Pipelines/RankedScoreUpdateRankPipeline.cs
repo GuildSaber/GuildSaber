@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using GuildSaber.Database.Contexts.Server;
-using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.RankedScores;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,7 +36,7 @@ public static class RankedScoreUpdateRankPipeline
     /// The database context to use for the operation.
     /// </param>
     public static async ValueTask UpdateRanksForRankedMapsAsync(
-        IEnumerable<RankedMap.RankedMapId> rankedMapIds,
+        IEnumerable<RankedMapId> rankedMapIds,
         ServerDbContext dbContext)
     {
         foreach (var rankedMapId in rankedMapIds)

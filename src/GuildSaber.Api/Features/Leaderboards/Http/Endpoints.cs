@@ -8,7 +8,6 @@ using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.RankedScores;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
-using RankedMapId = GuildSaber.Database.Models.Server.RankedMaps.RankedMap.RankedMapId;
 using PointId = GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId;
 using EMemberStatLeaderboardSorter =
     GuildSaber.Api.Features.Leaderboards.Http.LeaderboardRequests.EMemberStatLeaderboardSorter;

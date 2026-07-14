@@ -228,18 +228,18 @@ public class RankedScoreClient(
             };
 
     /// <summary>
-    /// Sets all pending-compatible ranked scores for an underlying score as denied.
+    /// Sets all pending-compatible ranked scores for an underlying score as refused.
     /// </summary>
     /// <param name="contextId">The context identifier.</param>
     /// <param name="scoreId">The underlying score identifier.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing the updated ranked scores, or null if none were found.</returns>
-    public async Task<Result<RankedScore[]?>> SetDeniedAsync(
+    public async Task<Result<RankedScore[]?>> SetRefusedAsync(
         ContextId contextId,
         ScoreId scoreId,
         CancellationToken token = default)
         => await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Post,
-                $"contexts/{contextId}/ranked-scores/scores/{scoreId}/set-denied")
+                $"contexts/{contextId}/ranked-scores/scores/{scoreId}/set-refused")
             {
                 Headers = { Authorization = authenticationHeader }
             }, token).ConfigureAwait(false) switch
@@ -247,7 +247,7 @@ public class RankedScoreClient(
                 { StatusCode: HttpStatusCode.NotFound } => Success<RankedScore[]?>(null),
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<RankedScore[]?>(
-                        $"Failed to deny ranked scores from score ID {scoreId} for context ID {contextId}, status code: {(int)statusCode} ({reasonPhrase})"),
+                        $"Failed to refuse ranked scores from score ID {scoreId} for context ID {contextId}, status code: {(int)statusCode} ({reasonPhrase})"),
                 var response => await Try(() => response.Content
                         .ReadFromJsonAsync<RankedScore[]>(jsonOptions, cancellationToken: token))
                     .ConfigureAwait(false)

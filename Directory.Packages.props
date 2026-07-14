@@ -9,8 +9,8 @@
         <PackageVersion Include="Aspire.Hosting.Redis" Version="13.4.6" />
         <PackageVersion Include="Aspire.Hosting.Valkey" Version="13.4.6" />
         <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.4.6" />
-        <PackageVersion Include="ILRepack.Lib.MSBuild.Task" Version="2.0.45" />
-        <PackageVersion Include="MessagePack" Version="3.1.7" />
+        <PackageVersion Include="ILRepack.Lib.MSBuild.Task" Version="2.0.46" />
+        <PackageVersion Include="MessagePack" Version="3.1.8" />
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
         <PackageVersion Include="AspNet.Security.OAuth.Discord" Version="10.0.0" />
         <PackageVersion Include="Bogus" Version="35.6.5" />
@@ -31,7 +31,7 @@
         <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
         <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.16.0" />
         <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.16.0" />
-        <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
+        <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.16.0" />
         <PackageVersion Include="CSharpFunctionalExtensions" Version="3.7.0" />
         <PackageVersion Include="CSharpFunctionalExtensions.Analyzers" Version="1.4.1" />
         <PackageVersion Include="CSharpFunctionalExtensions.HttpResults" Version="1.2.1" />
@@ -39,9 +39,9 @@
         <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9" />
         <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.9" />
         <PackageVersion Include="MyCSharp.HttpUserAgentParser.AspNetCore" Version="3.1.6" />
-        <PackageVersion Include="QuestPDF" Version="2026.6.1" />
-        <PackageVersion Include="Scalar.AspNetCore" Version="2.16.10" />
-        <PackageVersion Include="Scalar.AspNetCore.Microsoft" Version="2.16.10" />
+        <PackageVersion Include="QuestPDF" Version="2026.7.1" />
+        <PackageVersion Include="Scalar.AspNetCore" Version="2.16.11" />
+        <PackageVersion Include="Scalar.AspNetCore.Microsoft" Version="2.16.11" />
         <PackageVersion Include="JetBrains.Annotations" Version="2026.2.0" />
         <PackageVersion Include="Discord.Net" Version="3.20.1" />
         <PackageVersion Include="Aspire.Hosting.Testing" Version="13.4.6" />
@@ -69,7 +69,7 @@
         <PackageVersion Include="TickerQ" Version="10.4.0" />
         <PackageVersion Include="TickerQ.Dashboard" Version="10.4.0" />
         <PackageVersion Include="TickerQ.EntityFrameworkCore" Version="10.4.0" />
-        <PackageVersion Include="TUnit" Version="1.58.0" />
+        <PackageVersion Include="TUnit" Version="1.59.0" />
         <PackageVersion Include="AwesomeAssertions" Version="9.4.0" />
         <PackageVersion Include="CSharpFunctionalExtensions.AwesomeAssertions" Version="9.4.0" />
         <PackageVersion Include="PolySharp" Version="1.16.0" />

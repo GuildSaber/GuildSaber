@@ -24,27 +24,6 @@ public class RankedMap
     public IList<Category> Categories { get; init; } = null!;
     public IList<RankedMapListLevel> Levels { get; init; } = null!;
     public IList<RankedScore> RankedScores { get; init; } = null!;
-
-    public readonly record struct RankedMapId(long Value) : IEFStrongTypedId<RankedMapId, long>
-    {
-        public static bool TryParse(string from, out RankedMapId value)
-        {
-            if (long.TryParse(from, out var id))
-            {
-                value = new RankedMapId(id);
-                return true;
-            }
-
-            value = default;
-            return false;
-        }
-
-        public static implicit operator long(RankedMapId id)
-            => id.Value;
-
-        public override string ToString()
-            => Value.ToString();
-    }
 }
 
 public class RankedMapConfiguration : IEntityTypeConfiguration<RankedMap>
@@ -52,7 +31,8 @@ public class RankedMapConfiguration : IEntityTypeConfiguration<RankedMap>
     public void Configure(EntityTypeBuilder<RankedMap> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Id).HasGenericConversion<RankedMap.RankedMapId, long>()
+        builder.Property(x => x.Id)
+            .HasConversion(x => x.Value, x => new RankedMapId(x))
             .ValueGeneratedOnAdd();
         builder.HasIndex(x => x.ContextId);
 

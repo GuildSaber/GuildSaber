@@ -153,7 +153,7 @@ public class GuildService(ServerDbContext dbContext, TimeProvider timeProvider, 
             Requirements = tuple.Item2,
             Status = Guild.EGuildStatus.Unverified,
             // Discord Guild should only be set after by a patch request (by the guild leader or a manager)
-            DiscordInfo = new GuildDiscordInfo(null, tuple.DiscordInviteCode)
+            DiscordInfo = new GuildDiscordInfo(null, tuple.DiscordInviteCode, null, null)
         });
     }
 

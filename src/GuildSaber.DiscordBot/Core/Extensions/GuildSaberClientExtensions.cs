@@ -1,5 +1,4 @@
 using GuildSaber.Common.Settings;
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using GuildSaber.CSharpClient.Auth;
 using GuildSaber.DiscordBot.Settings;

@@ -22,6 +22,7 @@ using GuildSaber.DiscordBot.Core.Handlers;
 using GuildSaber.DiscordBot.Settings;
 using Microsoft.EntityFrameworkCore;
 using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapResponses;
+using static GuildSaber.Api.Features.Scores.Http.ScoreResponses;
 using static GuildSaber.Api.Features.RankedScores.Http.RankedScoreResponses;
 using static GuildSaber.Api.Features.RankedScores.Http.RankedScoreResponses.RankedScore;
 

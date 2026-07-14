@@ -205,7 +205,7 @@ public class LegacyGuildSaberMapImportPipeline(
     }
 
     public async Task<bool> UpdateMapAsync(
-        RankedMap.RankedMapId rankedMapId, ContextId contextId, RankedMapRequests.UpdateRankedMap request,
+        RankedMapId rankedMapId, ContextId contextId, RankedMapRequests.UpdateRankedMap request,
         CancellationToken token)
     {
         var result = await rankedMapService.UpdateRankedMapAsync(rankedMapId, contextId, request);

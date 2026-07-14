@@ -18,7 +18,7 @@ public abstract class RankedScore : IComparable<RankedScore>
 
     public required GuildId GuildId { get; init; }
     public required ContextId ContextId { get; init; }
-    public required RankedMap.RankedMapId RankedMapId { get; init; }
+    public required RankedMapId RankedMapId { get; init; }
     public required SongDifficultyId SongDifficultyId { get; init; }
     public required PointId PointId { get; init; }
     public required PlayerId PlayerId { get; init; }

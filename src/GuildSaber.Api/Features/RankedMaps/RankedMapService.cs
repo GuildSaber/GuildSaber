@@ -102,7 +102,7 @@ public class RankedMapService(
         };
 
     public async Task<UpdateResponse> UpdateRankedMapAsync(
-        RankedMap.RankedMapId rankedMapId, ContextId contextId, RankedMapRequests.UpdateRankedMap request)
+        RankedMapId rankedMapId, ContextId contextId, RankedMapRequests.UpdateRankedMap request)
         => await GetParentGuildAsync(contextId) switch
         {
             null => new UpdateResponse.ValidationFailure("ContextId",
@@ -183,7 +183,7 @@ public class RankedMapService(
             }, Task.FromResult);
 
     private async Task<UpdateResponse> UpdateRankedMapAsync(
-        RankedMap.RankedMapId rankedMapId, GuildId guildId, ContextId contextId,
+        RankedMapId rankedMapId, GuildId guildId, ContextId contextId,
         RankedMapRequests.UpdateRankedMap request)
     {
         var rankedMap = await dbContext.RankedMaps
