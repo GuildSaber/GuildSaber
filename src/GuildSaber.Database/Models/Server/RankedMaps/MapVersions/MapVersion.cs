@@ -3,7 +3,6 @@ using GuildSaber.Database.Models.Server.Songs;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using RankedMapId = GuildSaber.Database.Models.Server.RankedMaps.RankedMap.RankedMapId;
 using SongDifficultyId = GuildSaber.Database.Models.Server.Songs.SongDifficulties.SongDifficulty.SongDifficultyId;
 using SongId = GuildSaber.Database.Models.Server.Songs.Song.SongId;
 using PlayModeId = GuildSaber.Database.Models.Server.RankedMaps.MapVersions.PlayModes.PlayMode.PlayModeId;

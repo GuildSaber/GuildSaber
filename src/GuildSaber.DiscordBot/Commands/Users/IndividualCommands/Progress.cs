@@ -4,7 +4,7 @@ using Discord.Interactions;
 using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Result;
-using GuildSaber.DiscordBot.AutocompleteHandlers;
+using GuildSaber.DiscordBot.Core.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Extensions;
 using GuildSaber.DiscordBot.Core.Handlers;
 using GuildSaber.DiscordBot.Settings;

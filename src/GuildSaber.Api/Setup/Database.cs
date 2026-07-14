@@ -8,9 +8,6 @@ public static class DatabaseSetup
 {
     public static WebApplicationBuilder AddDatabase(this WebApplicationBuilder builder)
     {
-        // https://github.com/dotnet/efcore/issues/38105
-        AppContext.SetSwitch("Microsoft.EntityFrameworkCore.Issue37337", true);
-
         builder.Services.AddDbContext<ServerDbContext>((_, options) =>
             options.UseNpgsql(builder.Configuration.GetConnectionString(Constants.ServerDbConnectionStringKey))
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)

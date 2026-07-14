@@ -295,14 +295,14 @@
         ]
       }
     },
-    "/contexts/{contextId}/ranked-scores/scores/{scoreId}/set-denied": {
+    "/contexts/{contextId}/ranked-scores/scores/{scoreId}/set-refused": {
       "post": {
         "tags": [
           "Context.RankedScores"
         ],
-        "summary": "Deny all pending-compatible ranked scores from their underlying scoreId",
+        "summary": "Refuse all pending-compatible ranked scores from their underlying scoreId",
         "description": "Set all pending-compatible ranked scores from their underlying scoreId as refused by the scoring team.",
-        "operationId": "SetRankedScoreFromScoreIdToDenied",
+        "operationId": "SetRankedScoreFromScoreIdToRefused",
         "parameters": [
           {
             "name": "contextId",
@@ -346,7 +346,7 @@
                   "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
                   "title": "Not Found",
                   "status": 404,
-                  "instance": "POST contexts/{contextId}/ranked-scores/scores/{scoreId}/set-denied",
+                  "instance": "POST contexts/{contextId}/ranked-scores/scores/{scoreId}/set-refused",
                   "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
                 }
               }
@@ -364,7 +364,7 @@
                   "title": "Bad Request",
                   "status": 400,
                   "detail": null,
-                  "instance": "POST contexts/{contextId}/ranked-scores/scores/{scoreId}/set-denied",
+                  "instance": "POST contexts/{contextId}/ranked-scores/scores/{scoreId}/set-refused",
                   "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
                 }
               }
@@ -5814,6 +5814,10 @@
           }
         }
       },
+      "DiscordChannelId": {
+        "type": "string",
+        "example": "987654321098765432"
+      },
       "DiscordGuildId": {
         "type": "string",
         "example": "987654321098765432"
@@ -6068,7 +6072,9 @@
       "GuildDiscordInfo": {
         "required": [
           "mainDiscordGuildId",
-          "inviteCode"
+          "inviteCode",
+          "confirmedScoreFeedChannelId",
+          "refusedScoreFeedChannelId"
         ],
         "type": "object",
         "properties": {
@@ -6086,6 +6092,26 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "confirmedScoreFeedChannelId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DiscordChannelId"
+              }
+            ]
+          },
+          "refusedScoreFeedChannelId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DiscordChannelId"
+              }
             ]
           }
         }
@@ -6166,6 +6192,7 @@
           "maxRank",
           "minPP",
           "maxPP",
+          "minPlayCount",
           "accountAgeUnix"
         ],
         "type": "object",
@@ -6201,6 +6228,15 @@
             "format": "int32"
           },
           "maxPP": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "minPlayCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -7760,12 +7796,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int64"
+            "$ref": "#/components/schemas/RankedMapId"
           },
           "guildId": {
             "$ref": "#/components/schemas/GuildId"
@@ -7816,6 +7847,10 @@
             }
           }
         }
+      },
+      "RankedMapId": {
+        "type": "string",
+        "example": "123456789"
       },
       "RankedMapInfo": {
         "required": [
@@ -7999,12 +8034,7 @@
             "format": "int32"
           },
           "rankedMapId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int64"
+            "$ref": "#/components/schemas/RankedMapId"
           },
           "editedAt": {
             "type": "string",
@@ -8078,12 +8108,7 @@
             "format": "int32"
           },
           "rankedMapId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int64"
+            "$ref": "#/components/schemas/RankedMapId"
           },
           "editedAt": {
             "type": "string",
@@ -8158,12 +8183,7 @@
             "format": "int32"
           },
           "rankedMapId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int64"
+            "$ref": "#/components/schemas/RankedMapId"
           },
           "editedAt": {
             "type": "string",
@@ -8238,12 +8258,7 @@
             "format": "int32"
           },
           "rankedMapId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int64"
+            "$ref": "#/components/schemas/RankedMapId"
           },
           "editedAt": {
             "type": "string",
@@ -8327,12 +8342,7 @@
             "format": "int32"
           },
           "rankedMapId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int64"
+            "$ref": "#/components/schemas/RankedMapId"
           },
           "editedAt": {
             "type": "string",
@@ -8437,6 +8447,8 @@
       },
       "ScoreBeatLeaderScore": {
         "required": [
+          "pauseCount",
+          "totalPauseDuration",
           "hasStatistics",
           "beatLeaderScoreId",
           "id",
@@ -8457,6 +8469,24 @@
             ],
             "type": "string"
           },
+          "pauseCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPauseDuration": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
           "hasStatistics": {
             "type": "boolean"
           },
@@ -8471,12 +8501,7 @@
             ]
           },
           "id": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int64"
+            "$ref": "#/components/schemas/ScoreId"
           },
           "songDifficultyId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -8609,12 +8634,7 @@
             ]
           },
           "id": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int64"
+            "$ref": "#/components/schemas/ScoreId"
           },
           "songDifficultyId": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",

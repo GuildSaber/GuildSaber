@@ -19,7 +19,7 @@ namespace GuildSaber.Database.Contexts.Server.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.8")
+                .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -220,12 +220,18 @@ namespace GuildSaber.Database.Contexts.Server.Migrations
                         {
                             b1.IsRequired();
 
+                            b1.Property<decimal?>("ConfirmedScoreFeedChannelId")
+                                .HasColumnType("numeric(20,0)");
+
                             b1.Property<string>("DiscordInviteCode")
                                 .HasMaxLength(32)
                                 .HasColumnType("character varying(32)")
                                 .HasColumnName("DiscordInfo_DiscordInviteCode");
 
                             b1.Property<decimal?>("MainDiscordGuildId")
+                                .HasColumnType("numeric(20,0)");
+
+                            b1.Property<decimal?>("RefusedScoreFeedChannelId")
                                 .HasColumnType("numeric(20,0)");
                         });
 
@@ -275,6 +281,10 @@ namespace GuildSaber.Database.Contexts.Server.Migrations
                             b1.Property<int?>("MinPP")
                                 .HasColumnType("integer")
                                 .HasColumnName("Requirements_MinPP");
+
+                            b1.Property<int?>("MinPlayCount")
+                                .HasColumnType("integer")
+                                .HasColumnName("Requirements_MinPlayCount");
 
                             b1.Property<int?>("MinRank")
                                 .HasColumnType("integer")

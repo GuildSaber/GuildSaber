@@ -1,6 +1,5 @@
 using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Database.Contexts.Server;
-using GuildSaber.Database.Models.Server.RankedMaps;
 using Microsoft.EntityFrameworkCore;
 
 namespace GuildSaber.Api.Features.RankedMaps.Pipelines;
@@ -10,7 +9,7 @@ public class EditRankedMapPipeline(
     ScoreAddOrUpdatePipeline scoreAddOrUpdatePipeline,
     ILogger<EditRankedMapPipeline> logger)
 {
-    public async Task ExecuteAsync(RankedMap.RankedMapId rankedMapId, CancellationToken token)
+    public async Task ExecuteAsync(RankedMapId rankedMapId, CancellationToken token)
     {
         logger.LogInformation("Executing edit pipeline for ranked map with Id {RankedMapId}", rankedMapId);
 

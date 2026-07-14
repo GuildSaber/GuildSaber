@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using GuildSaber.Api.Features.RankedScores.Pipelines;
 using GuildSaber.Database.Contexts.Server;
-using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.Scores;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,7 +8,7 @@ namespace GuildSaber.Api.Features.Scores.Pipelines;
 
 public class ScoreDeletionPipeline(ServerDbContext dbContext)
 {
-    private readonly record struct GuildsWithRankedMaps(GuildId[] GuildIds, RankedMap.RankedMapId[] RankedMapIds);
+    private readonly record struct GuildsWithRankedMaps(GuildId[] GuildIds, RankedMapId[] RankedMapIds);
 
     public async Task ExecuteAsync(AbstractScore score)
         => await ExecuteAsync(score, await GetImpactedGuildsAndRankedMapsFromScoreIdsIfDeletionAsync(score.Id));

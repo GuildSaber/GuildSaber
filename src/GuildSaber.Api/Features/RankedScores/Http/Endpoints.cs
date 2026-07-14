@@ -38,9 +38,9 @@ public class RankedScoreEndpoints : IEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .RequireGuildPermission(EPermission.ScoringTeam);
 
-        withScoreGroup.MapPost("/{scoreId}/set-denied", SetDeniedRankedScoresFromScoreIdAsync)
-            .WithName("SetRankedScoreFromScoreIdToDenied")
-            .WithSummary("Deny all pending-compatible ranked scores from their underlying scoreId")
+        withScoreGroup.MapPost("/{scoreId}/set-refused", SetRefusedRankedScoresFromScoreIdAsync)
+            .WithName("SetRankedScoreFromScoreIdToRefused")
+            .WithSummary("Refuse all pending-compatible ranked scores from their underlying scoreId")
             .WithDescription(
                 "Set all pending-compatible ranked scores from their underlying scoreId as refused by the scoring team.")
             .ProducesProblem(StatusCodes.Status400BadRequest)
@@ -165,12 +165,12 @@ public class RankedScoreEndpoints : IEndpoints
         => HandleConfirmationResponseAsync(rankedScoreService.SetConfirmedAsync(contextId, scoreId, token));
 
     private static Task<Results<Ok<RankedScoreResponses.RankedScore[]>, NotFound, ProblemHttpResult>>
-        SetDeniedRankedScoresFromScoreIdAsync(
+        SetRefusedRankedScoresFromScoreIdAsync(
             [FromRoute] ContextId contextId,
             [FromRoute] ScoreId scoreId,
             RankedScoreService rankedScoreService,
             CancellationToken token)
-        => HandleConfirmationResponseAsync(rankedScoreService.SetDeniedAsync(contextId, scoreId, token));
+        => HandleConfirmationResponseAsync(rankedScoreService.SetRefusedAsync(contextId, scoreId, token));
 
     private static Task<Results<Ok<RankedScoreResponses.RankedScore[]>, NotFound, ProblemHttpResult>>
         RevertRankedScoresFromScoreIdToPendingAsync(

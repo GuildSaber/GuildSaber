@@ -1,16 +1,14 @@
 using System.Linq.Expressions;
 using GuildSaber.Api.Features.Players.Http;
 using GuildSaber.Api.Features.RankedMaps.Http;
+using GuildSaber.Api.Features.Scores.Http;
 using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.Server.RankedScores;
-using GuildSaber.Database.Models.Server.Scores;
 
 namespace GuildSaber.Api.Features.RankedScores.Http;
 
 public static class RankedScoreMappers
 {
-    private static Func<AbstractScore, RankedScoreResponses.Score>? _mapScoreImpl;
-
     private static Func<RankedScore, RankedScoreResponses.RankedScore>? _mapRankedScoreImpl;
 
     public static Expression<Func<RankedScore, RankedScoreResponses.RankedScoreWithPlayer>>
@@ -24,41 +22,6 @@ public static class RankedScoreMappers
         rankedScore.Map(),
         rankedScore.RankedMap.Map()
     );
-
-    [Expandable(nameof(MapScoreExpression))]
-    public static RankedScoreResponses.Score Map(this AbstractScore self)
-        => (_mapScoreImpl ??= MapScoreExpression().Compile())(self);
-
-    private static Expression<Func<AbstractScore, RankedScoreResponses.Score>> MapScoreExpression()
-        => score => score.Type == AbstractScore.EScoreType.BeatLeader
-            ? new RankedScoreResponses.Score.BeatLeaderScore(
-                score.Id,
-                score.SongDifficultyId,
-                score.BaseScore,
-                score.Modifiers.Map(),
-                score.SetAt,
-                score.MaxCombo,
-                score.IsFullCombo,
-                score.MissedNotes,
-                score.BadCuts,
-                score.HMD.Map(),
-                ((BeatLeaderScore)score).Statistics != null,
-                ((BeatLeaderScore)score).BeatLeaderScoreId)
-            : new RankedScoreResponses.Score.ScoreSaberScore(
-                score.Id,
-                score.SongDifficultyId,
-                score.BaseScore,
-                score.Modifiers.Map(),
-                score.SetAt,
-                score.MaxCombo,
-                score.IsFullCombo,
-                score.MissedNotes,
-                score.BadCuts,
-                score.HMD.Map(),
-                ((ScoreSaberScore)score).ScoreSaberScoreId,
-                ((ScoreSaberScore)score).DeviceHmd,
-                ((ScoreSaberScore)score).DeviceControllerLeft,
-                ((ScoreSaberScore)score).DeviceControllerRight);
 
     [Expandable(nameof(MapRankedScoreExpression))]
     public static RankedScoreResponses.RankedScore Map(this RankedScore self)
@@ -147,59 +110,59 @@ public static class RankedScoreMappers
             })
             .Aggregate(RankedScoreResponses.EInvalidReason.Unspecified, (acc, mapped) => acc | mapped);
 
-    public static RankedScoreResponses.EHMD Map(this PlayerHardwareInfo.EHMD self) => self switch
+    public static ScoreResponses.EHMD Map(this PlayerHardwareInfo.EHMD self) => self switch
     {
-        PlayerHardwareInfo.EHMD.Unknown => RankedScoreResponses.EHMD.Unknown,
-        PlayerHardwareInfo.EHMD.Rift => RankedScoreResponses.EHMD.Rift,
-        PlayerHardwareInfo.EHMD.Vive => RankedScoreResponses.EHMD.Vive,
-        PlayerHardwareInfo.EHMD.VivePro => RankedScoreResponses.EHMD.VivePro,
-        PlayerHardwareInfo.EHMD.WMR => RankedScoreResponses.EHMD.WMR,
-        PlayerHardwareInfo.EHMD.RiftS => RankedScoreResponses.EHMD.RiftS,
-        PlayerHardwareInfo.EHMD.Quest => RankedScoreResponses.EHMD.Quest,
-        PlayerHardwareInfo.EHMD.Index => RankedScoreResponses.EHMD.Index,
-        PlayerHardwareInfo.EHMD.ViveCosmos => RankedScoreResponses.EHMD.ViveCosmos,
-        PlayerHardwareInfo.EHMD.Quest2 => RankedScoreResponses.EHMD.Quest2,
-        PlayerHardwareInfo.EHMD.Quest3 => RankedScoreResponses.EHMD.Quest3,
-        PlayerHardwareInfo.EHMD.Quest3S => RankedScoreResponses.EHMD.Quest3S,
-        PlayerHardwareInfo.EHMD.PicoNeo3 => RankedScoreResponses.EHMD.PicoNeo3,
-        PlayerHardwareInfo.EHMD.PicoNeo2 => RankedScoreResponses.EHMD.PicoNeo2,
-        PlayerHardwareInfo.EHMD.VivePro2 => RankedScoreResponses.EHMD.VivePro2,
-        PlayerHardwareInfo.EHMD.ViveElite => RankedScoreResponses.EHMD.ViveElite,
-        PlayerHardwareInfo.EHMD.Miramar => RankedScoreResponses.EHMD.Miramar,
-        PlayerHardwareInfo.EHMD.Pimax8K => RankedScoreResponses.EHMD.Pimax8K,
-        PlayerHardwareInfo.EHMD.Pimax5K => RankedScoreResponses.EHMD.Pimax5K,
-        PlayerHardwareInfo.EHMD.PimaxArtisan => RankedScoreResponses.EHMD.PimaxArtisan,
-        PlayerHardwareInfo.EHMD.HpReverb => RankedScoreResponses.EHMD.HpReverb,
-        PlayerHardwareInfo.EHMD.SamsungWMR => RankedScoreResponses.EHMD.SamsungWMR,
-        PlayerHardwareInfo.EHMD.QiyuDream => RankedScoreResponses.EHMD.QiyuDream,
-        PlayerHardwareInfo.EHMD.Disco => RankedScoreResponses.EHMD.Disco,
-        PlayerHardwareInfo.EHMD.LenovoExplorer => RankedScoreResponses.EHMD.LenovoExplorer,
-        PlayerHardwareInfo.EHMD.AcerWMR => RankedScoreResponses.EHMD.AcerWMR,
-        PlayerHardwareInfo.EHMD.ViveFocus => RankedScoreResponses.EHMD.ViveFocus,
-        PlayerHardwareInfo.EHMD.Arpara => RankedScoreResponses.EHMD.Arpara,
-        PlayerHardwareInfo.EHMD.DellVisor => RankedScoreResponses.EHMD.DellVisor,
-        PlayerHardwareInfo.EHMD.E3 => RankedScoreResponses.EHMD.E3,
-        PlayerHardwareInfo.EHMD.ViveDvt => RankedScoreResponses.EHMD.ViveDvt,
-        PlayerHardwareInfo.EHMD.Glasses20 => RankedScoreResponses.EHMD.Glasses20,
-        PlayerHardwareInfo.EHMD.Hedy => RankedScoreResponses.EHMD.Hedy,
-        PlayerHardwareInfo.EHMD.Vaporeon => RankedScoreResponses.EHMD.Vaporeon,
-        PlayerHardwareInfo.EHMD.Huaweivr => RankedScoreResponses.EHMD.Huaweivr,
-        PlayerHardwareInfo.EHMD.AsusWMR => RankedScoreResponses.EHMD.AsusWMR,
-        PlayerHardwareInfo.EHMD.CloudXR => RankedScoreResponses.EHMD.CloudXR,
-        PlayerHardwareInfo.EHMD.Vridge => RankedScoreResponses.EHMD.Vridge,
-        PlayerHardwareInfo.EHMD.Medion => RankedScoreResponses.EHMD.Medion,
-        PlayerHardwareInfo.EHMD.PicoNeo4 => RankedScoreResponses.EHMD.PicoNeo4,
-        PlayerHardwareInfo.EHMD.QuestPro => RankedScoreResponses.EHMD.QuestPro,
-        PlayerHardwareInfo.EHMD.PimaxCrystal => RankedScoreResponses.EHMD.PimaxCrystal,
-        PlayerHardwareInfo.EHMD.E4 => RankedScoreResponses.EHMD.E4,
-        PlayerHardwareInfo.EHMD.Controllable => RankedScoreResponses.EHMD.Controllable,
-        PlayerHardwareInfo.EHMD.BigScreenBeyond => RankedScoreResponses.EHMD.BigScreenBeyond,
-        PlayerHardwareInfo.EHMD.Nolosonic => RankedScoreResponses.EHMD.Nolosonic,
-        PlayerHardwareInfo.EHMD.Hypereal => RankedScoreResponses.EHMD.Hypereal,
-        PlayerHardwareInfo.EHMD.Varjoaero => RankedScoreResponses.EHMD.Varjoaero,
-        PlayerHardwareInfo.EHMD.PSVR2 => RankedScoreResponses.EHMD.PSVR2,
-        PlayerHardwareInfo.EHMD.Megane1 => RankedScoreResponses.EHMD.Megane1,
-        PlayerHardwareInfo.EHMD.VarjoXR3 => RankedScoreResponses.EHMD.VarjoXR3,
+        PlayerHardwareInfo.EHMD.Unknown => ScoreResponses.EHMD.Unknown,
+        PlayerHardwareInfo.EHMD.Rift => ScoreResponses.EHMD.Rift,
+        PlayerHardwareInfo.EHMD.Vive => ScoreResponses.EHMD.Vive,
+        PlayerHardwareInfo.EHMD.VivePro => ScoreResponses.EHMD.VivePro,
+        PlayerHardwareInfo.EHMD.WMR => ScoreResponses.EHMD.WMR,
+        PlayerHardwareInfo.EHMD.RiftS => ScoreResponses.EHMD.RiftS,
+        PlayerHardwareInfo.EHMD.Quest => ScoreResponses.EHMD.Quest,
+        PlayerHardwareInfo.EHMD.Index => ScoreResponses.EHMD.Index,
+        PlayerHardwareInfo.EHMD.ViveCosmos => ScoreResponses.EHMD.ViveCosmos,
+        PlayerHardwareInfo.EHMD.Quest2 => ScoreResponses.EHMD.Quest2,
+        PlayerHardwareInfo.EHMD.Quest3 => ScoreResponses.EHMD.Quest3,
+        PlayerHardwareInfo.EHMD.Quest3S => ScoreResponses.EHMD.Quest3S,
+        PlayerHardwareInfo.EHMD.PicoNeo3 => ScoreResponses.EHMD.PicoNeo3,
+        PlayerHardwareInfo.EHMD.PicoNeo2 => ScoreResponses.EHMD.PicoNeo2,
+        PlayerHardwareInfo.EHMD.VivePro2 => ScoreResponses.EHMD.VivePro2,
+        PlayerHardwareInfo.EHMD.ViveElite => ScoreResponses.EHMD.ViveElite,
+        PlayerHardwareInfo.EHMD.Miramar => ScoreResponses.EHMD.Miramar,
+        PlayerHardwareInfo.EHMD.Pimax8K => ScoreResponses.EHMD.Pimax8K,
+        PlayerHardwareInfo.EHMD.Pimax5K => ScoreResponses.EHMD.Pimax5K,
+        PlayerHardwareInfo.EHMD.PimaxArtisan => ScoreResponses.EHMD.PimaxArtisan,
+        PlayerHardwareInfo.EHMD.HpReverb => ScoreResponses.EHMD.HpReverb,
+        PlayerHardwareInfo.EHMD.SamsungWMR => ScoreResponses.EHMD.SamsungWMR,
+        PlayerHardwareInfo.EHMD.QiyuDream => ScoreResponses.EHMD.QiyuDream,
+        PlayerHardwareInfo.EHMD.Disco => ScoreResponses.EHMD.Disco,
+        PlayerHardwareInfo.EHMD.LenovoExplorer => ScoreResponses.EHMD.LenovoExplorer,
+        PlayerHardwareInfo.EHMD.AcerWMR => ScoreResponses.EHMD.AcerWMR,
+        PlayerHardwareInfo.EHMD.ViveFocus => ScoreResponses.EHMD.ViveFocus,
+        PlayerHardwareInfo.EHMD.Arpara => ScoreResponses.EHMD.Arpara,
+        PlayerHardwareInfo.EHMD.DellVisor => ScoreResponses.EHMD.DellVisor,
+        PlayerHardwareInfo.EHMD.E3 => ScoreResponses.EHMD.E3,
+        PlayerHardwareInfo.EHMD.ViveDvt => ScoreResponses.EHMD.ViveDvt,
+        PlayerHardwareInfo.EHMD.Glasses20 => ScoreResponses.EHMD.Glasses20,
+        PlayerHardwareInfo.EHMD.Hedy => ScoreResponses.EHMD.Hedy,
+        PlayerHardwareInfo.EHMD.Vaporeon => ScoreResponses.EHMD.Vaporeon,
+        PlayerHardwareInfo.EHMD.Huaweivr => ScoreResponses.EHMD.Huaweivr,
+        PlayerHardwareInfo.EHMD.AsusWMR => ScoreResponses.EHMD.AsusWMR,
+        PlayerHardwareInfo.EHMD.CloudXR => ScoreResponses.EHMD.CloudXR,
+        PlayerHardwareInfo.EHMD.Vridge => ScoreResponses.EHMD.Vridge,
+        PlayerHardwareInfo.EHMD.Medion => ScoreResponses.EHMD.Medion,
+        PlayerHardwareInfo.EHMD.PicoNeo4 => ScoreResponses.EHMD.PicoNeo4,
+        PlayerHardwareInfo.EHMD.QuestPro => ScoreResponses.EHMD.QuestPro,
+        PlayerHardwareInfo.EHMD.PimaxCrystal => ScoreResponses.EHMD.PimaxCrystal,
+        PlayerHardwareInfo.EHMD.E4 => ScoreResponses.EHMD.E4,
+        PlayerHardwareInfo.EHMD.Controllable => ScoreResponses.EHMD.Controllable,
+        PlayerHardwareInfo.EHMD.BigScreenBeyond => ScoreResponses.EHMD.BigScreenBeyond,
+        PlayerHardwareInfo.EHMD.Nolosonic => ScoreResponses.EHMD.Nolosonic,
+        PlayerHardwareInfo.EHMD.Hypereal => ScoreResponses.EHMD.Hypereal,
+        PlayerHardwareInfo.EHMD.Varjoaero => ScoreResponses.EHMD.Varjoaero,
+        PlayerHardwareInfo.EHMD.PSVR2 => ScoreResponses.EHMD.PSVR2,
+        PlayerHardwareInfo.EHMD.Megane1 => ScoreResponses.EHMD.Megane1,
+        PlayerHardwareInfo.EHMD.VarjoXR3 => ScoreResponses.EHMD.VarjoXR3,
         _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
     };
 }

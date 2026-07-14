@@ -1,7 +1,6 @@
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Api.Features.Players.Http;
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.DiscordBot.Core.Handlers;
 
 namespace GuildSaber.DiscordBot.Core.Extensions;

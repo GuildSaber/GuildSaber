@@ -4,9 +4,9 @@ using GuildSaber.CSharpClient;
 using GuildSaber.DiscordBot.Core.Extensions;
 using Microsoft.Extensions.Caching.Hybrid;
 
-namespace GuildSaber.DiscordBot.AutocompleteHandlers;
+namespace GuildSaber.DiscordBot.Core.AutocompleteHandlers;
 
-public class CategoryAutocompleteHandler : AutocompleteHandler
+public class ContextAutocompleteHandler : AutocompleteHandler
 {
     public override async Task<AutocompletionResult> GenerateSuggestionsAsync(
         IInteractionContext context, IAutocompleteInteraction autocompleteInteraction,
@@ -21,9 +21,11 @@ public class CategoryAutocompleteHandler : AutocompleteHandler
         var guildId = await cache.FindGuildIdFromDiscordGuildIdAsync(context.Guild.DiscordId, client);
         if (guildId is null) return AutocompletionResult.FromSuccess();
 
-        var categories = await cache.GetGuildCategoriesAsync(guildId.Value, client);
-        return AutocompletionResult.FromSuccess(categories
-            .Select(c => new AutocompleteResult(c.Info.Name, c.Id.Value))
+        var guildExtended = await cache.GetGuildExtendedAsync(guildId.Value, client);
+        if (guildExtended is null) return AutocompletionResult.FromSuccess();
+
+        return AutocompletionResult.FromSuccess(guildExtended.Contexts
+            .Select(c => new AutocompleteResult(c.Info.Name.ToLowerInvariant(), c.Id.Value))
             .Take(AutocompletionResult.MaxSuggestionCount)
         );
     }

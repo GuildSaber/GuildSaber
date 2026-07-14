@@ -5,7 +5,6 @@ using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Services.LegacyGuildSaber;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds.Points;
-using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.RankedScores;
 using Microsoft.EntityFrameworkCore;
 using OldGSState = GuildSaber.Common.Services.LegacyGuildSaber.Models.EState;
@@ -32,7 +31,7 @@ public class LegacyGSImportAdminConfPipeline(
             .FirstAsync(token);
 
         var impactedContextPoints = new HashSet<(ContextId, Point.PointId)>();
-        var impactedRankedMapIds = new HashSet<RankedMap.RankedMapId>();
+        var impactedRankedMapIds = new HashSet<RankedMapId>();
         await foreach (var data in dbContext.PendingRankedScores
                            .Where(x => x.GuildId == guildId && x.PlayerId == playerId)
                            .Select(x => new

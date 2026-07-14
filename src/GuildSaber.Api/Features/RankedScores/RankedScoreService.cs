@@ -26,6 +26,7 @@ public sealed class RankedScoreService(
                   {{(int)RankedScore.ERankedScoreType.Accepted}},
                   {{(int)RankedScore.ERankedScoreType.Refused}}
               )
+              AND "{{nameof(RankedScore.Type)}}" != {0}
           """;
 
     public abstract record ConfirmationResponse
@@ -54,7 +55,7 @@ public sealed class RankedScoreService(
         ContextId contextId, ScoreId scoreId, CancellationToken token)
         => SetConfirmationStateAsync(contextId, scoreId, RankedScore.ERankedScoreType.Accepted, token);
 
-    public Task<ConfirmationResponse> SetDeniedAsync(
+    public Task<ConfirmationResponse> SetRefusedAsync(
         ContextId contextId, ScoreId scoreId, CancellationToken token)
         => SetConfirmationStateAsync(contextId, scoreId, RankedScore.ERankedScoreType.Refused, token);
 

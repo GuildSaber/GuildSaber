@@ -1,16 +1,12 @@
-using System.Text;
-using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using GuildSaber.Api.Features.Players.Http;
 using GuildSaber.Api.Features.RankedMaps.Http;
-using GuildSaber.Api.Features.RankedScores.Http;
 using GuildSaber.Api.Shared;
 using GuildSaber.Common.Helpers;
 using GuildSaber.CSharpClient;
-using GuildSaber.Database.Models.StrongTypes;
-using GuildSaber.DiscordBot.AutocompleteHandlers;
+using GuildSaber.DiscordBot.Core.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Extensions;
 using GuildSaber.DiscordBot.Settings;
 using Microsoft.Extensions.Caching.Hybrid;
@@ -148,14 +144,13 @@ file static class SearchCommand
                     } + $"\n{(requestFilters.Search is null ? "" : $"> Search term: '{requestFilters.Search}'")}")
                 .WithAccessory(new ThumbnailBuilder().WithMedia(player.PlayerInfo.AvatarUrl))));
 
-        foreach (var rankedMap in pagedRankedMaps.Data)
-            builder.WithContainer(BuildRankedMapWithScoresDisplayContainer(rankedMap, categories, emojiSettings));
+        foreach (var data in pagedRankedMaps.Data)
+            builder.WithContainer(data.RankedMap.ToContainerBuilder(data.RankedScores, categories, emojiSettings));
 
-        builder.WithTextDisplay(
-            pagedRankedMaps.TotalPages == 0
-                ? "Nothing there!"
-                : $"Page: **{pagedRankedMaps.Page}**/{pagedRankedMaps.TotalPages} " +
-                  $"({pagedRankedMaps.TotalCount} maps)"
+        builder.WithTextDisplay(pagedRankedMaps.TotalPages == 0
+            ? "Nothing there!"
+            : $"Page: **{pagedRankedMaps.Page}**/{pagedRankedMaps.TotalPages} " +
+              $"({pagedRankedMaps.TotalCount} maps)"
         );
 
         var needConfirmationValue = requestFilters.NeedConfirmation switch
@@ -165,7 +160,8 @@ file static class SearchCommand
             false => 0
         };
 
-        var (page, totalPages, playerId) = (pagedRankedMaps.Page, pagedRankedMaps.TotalPages, player.Id);
+        var (page, hasPreviousPage, hasNextPage, playerId) =
+            (pagedRankedMaps.Page, pagedRankedMaps.HasPreviousPage, pagedRankedMaps.HasNextPage, player.Id);
         var includeMapsWithoutScoreValue = requestFilters.IncludeMapsWithoutScore ? 1 : 0;
         var (prevCustomId, nextCustomId, unpassedCustomId, passedCustomId, pendingCustomId) = (
             $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_{page - 1}_{(int)requestFilters.RankedScoreTypes}_{includeMapsWithoutScoreValue}_{needConfirmationValue}_{requestFilters.Search}",
@@ -186,12 +182,12 @@ file static class SearchCommand
                 .WithButton(button => button
                     .WithLabel(!searchTermTooLong ? "Previous Page" : "Previous Page (search term too long!)")
                     .WithStyle(!searchTermTooLong ? ButtonStyle.Primary : ButtonStyle.Danger)
-                    .WithDisabled(searchTermTooLong || page <= 1)
+                    .WithDisabled(searchTermTooLong || !hasPreviousPage)
                     .WithCustomId(prevCustomId))
                 .WithButton(button => button
                     .WithLabel(!searchTermTooLong ? "Next Page" : "Next Page (search term too long!)")
                     .WithStyle(!searchTermTooLong ? ButtonStyle.Primary : ButtonStyle.Danger)
-                    .WithDisabled(searchTermTooLong || page >= totalPages)
+                    .WithDisabled(searchTermTooLong || !hasNextPage)
                     .WithCustomId(nextCustomId))
                 .WithButton(button => button
                     .WithLabel("Unpassed")
@@ -212,148 +208,11 @@ file static class SearchCommand
     }
 
     private static bool IsPassed(Filters filters)
-        => filters.RankedScoreTypes == ERankedScoreType.PointGiving && !filters.IncludeMapsWithoutScore;
+        => filters is { RankedScoreTypes: ERankedScoreType.PointGiving, IncludeMapsWithoutScore: false };
 
     private static bool IsUnpassed(Filters filters)
-        => filters.RankedScoreTypes == ERankedScoreType.NonPointGivingNoPending && filters.IncludeMapsWithoutScore;
+        => filters is { RankedScoreTypes: ERankedScoreType.NonPointGivingNoPending, IncludeMapsWithoutScore: true };
 
     private static bool IsPending(Filters filters)
-        => filters.RankedScoreTypes == ERankedScoreType.Pending && !filters.IncludeMapsWithoutScore;
-
-    private static ContainerBuilder BuildRankedMapWithScoresDisplayContainer(
-        RankedMapResponses.RankedMapWithScores data,
-        Category[] categories,
-        IOptions<EmojiSettings> emojiSettings)
-    {
-        var sectionBuilder = new SectionBuilder();
-        var mapContainerBuilder = new ContainerBuilder();
-
-        var rankedMap = data.RankedMap;
-        var rankedScores = data.RankedScores;
-        foreach (var (i, version) in rankedMap.Versions.Index())
-        {
-            var song = version.Song;
-            if (i > 0) mapContainerBuilder.WithSeparator();
-            else mapContainerBuilder.WithAccentColor(Color.FromDifficulty(version.Difficulty.Difficulty));
-
-            var sb = new StringBuilder()
-                .Append("**[").Append(song.Info.BeatSaverName).Append("](https://beatsaver.com/maps/")
-                .Append(song.Key).Append(")**")
-                .Append(" (").Append(song.Key is { } key ? key.ToBsrKey() : "no !bsr").Append(")\n")
-                .Append("Mapper(s): ").AppendLine(song.Info.MapperName)
-                .Append("Difficulty: ").Append(version.Difficulty.Difficulty.ToString())
-                .Append(", ").AppendLine(version.Difficulty.GameMode)
-                .AppendLine();
-
-            sb.Append("⭐: ").Append(rankedMap.Rating.DiffStar.ToString("0.00")).Append(" | ");
-            sb.Append("✨: ").Append(rankedMap.Rating.AccStar.ToString("0.00"));
-
-            if (rankedMap.Requirements.MinAccuracy is { } minAcc)
-                sb.Append(" (Acc > ").Append(minAcc.ToString("0.##")).Append("%)");
-
-            sb.AppendLine();
-
-            if (rankedMap.CategoryIds.Length != 0)
-            {
-                sb.Append("Categories: ");
-                var categoryNames = rankedMap.CategoryIds
-                    .Select(id => categories.TryFirst(c => c.Id == id)
-                        .Match(x => x.Info.Name, () => "Unknown"))
-                    .ToArray();
-                sb.Append(string.Join(", ", categoryNames));
-            }
-
-            sb.AppendLine()
-                .Append("NJS: ").Append(version.Difficulty.Stats.NJS.ToString("0.##")).Append(" | ")
-                .Append("Length: ")
-                .Append(TimeSpan.FromSeconds(version.Song.Stats.DurationSec) switch
-                {
-                    { Hours: > 0 } ts => ts.ToString(@"hh\:mm\:ss"),
-                    var ts => ts.ToString(@"mm\:ss")
-                }).Append(" | ")
-                .Append("BPM: ").Append(version.Song.Stats.BPM.ToString("0.##"))
-                .AppendLine();
-
-            if (rankedMap.Requirements.ProhibitedModifiers != RankedMapRequests.EModifiers.ProhibitedDefaults)
-                sb.AppendLine()
-                    .Append("Prohibited Modifiers: ")
-                    .Append(rankedMap.Requirements.ProhibitedModifiers);
-
-            if (rankedMap.Requirements.MandatoryModifiers != RankedMapRequests.EModifiers.None)
-                sb.AppendLine()
-                    .Append("Mandatory Modifiers: ")
-                    .Append(rankedMap.Requirements.MandatoryModifiers | RankedMapRequests.EModifiers.FasterSong);
-
-            if (rankedMap.Requirements.NeedConfirmation
-                || rankedMap.Requirements.MaxPauseDurationSec is not null
-                || rankedMap.Requirements.NeedFullCombo)
-            {
-                sb.AppendLine()
-                    .Append("Requirements: ");
-
-                if (rankedMap.Requirements.NeedFullCombo)
-                    sb.Append("***FC***, ");
-
-                if (rankedMap.Requirements.MaxPauseDurationSec is { } pauseSecs)
-                    sb.Append("⏸️ < ").Append(pauseSecs.ToString("0.##")).Append("s, ");
-
-                if (rankedMap.Requirements.NeedConfirmation)
-                    sb.Append(emojiSettings.Value.NeedConfirmation).Append(", ");
-
-                // Remove last ", "
-                sb.Length -= 2;
-            }
-
-            if (i > 0)
-                mapContainerBuilder.WithTextDisplay(sb.ToString());
-            else
-                mapContainerBuilder.WithSection(sectionBuilder
-                    .WithTextDisplay(sb.ToString())
-                    .WithAccessory(new ThumbnailBuilder()
-                        .WithMedia($"https://cdn.beatsaver.com/{rankedMap.Versions[0].Song.Hash}.jpg")));
-
-            // There should always only be one score, so you shouldn't really need to worry about anything there.
-            foreach (var rankedScore in rankedScores)
-            {
-                mapContainerBuilder.WithSeparator();
-
-                var score = rankedScore.Score;
-
-                sb.Clear()
-                    .Append(rankedScore switch
-                    {
-                        RankedScoreResponses.RankedScore.InvalidRankedScore => ":x: ",
-                        RankedScoreResponses.RankedScore.PendingRankedScore => ":hourglass: ",
-                        RankedScoreResponses.RankedScore.AcceptedRankedScore => emojiSettings.Value.Confirmed,
-                        RankedScoreResponses.RankedScore.RefusedRankedScore => emojiSettings.Value.Refused,
-                        RankedScoreResponses.RankedScore.ValidRankedScore => ":white_check_mark: ",
-                        _ => string.Empty
-                    }).Append(((float)Accuracy.From(
-                            BaseScore.CreateUnsafe(score.BaseScore).Value,
-                            MaxScore.CreateUnsafe(version.Difficulty.Stats.MaxScore).Value))
-                        .ToString("N1")).Append("% ");
-
-                if (rankedScore.PrevScore is { } prevScore)
-                {
-                    var diff = score.BaseScore - prevScore.BaseScore;
-                    sb.Append(" (").Append(diff >= 0 ? "+" : "").Append(diff.ToString("N0")).Append(") ");
-                }
-
-                if (rankedScore.Score.Modifiers != RankedMapRequests.EModifiers.None)
-                    sb.Append(" | Mods: ").Append(rankedScore.Score.Modifiers).Append(' ');
-
-                sb.Append(TimestampTag.FormatFromDateTimeOffset(score.SetAt, TimestampTagStyles.ShortDateTime))
-                    .AppendLine(score is RankedScoreResponses.Score.BeatLeaderScore
-                    {
-                        BeatLeaderScoreId: { } blScoreId
-                    }
-                        ? $" [Replay](https://replay.beatleader.com/?scoreId={blScoreId})"
-                        : null);
-
-                mapContainerBuilder.WithTextDisplay(sb.ToString());
-            }
-        }
-
-        return mapContainerBuilder;
-    }
+        => filters is { RankedScoreTypes: ERankedScoreType.Pending, IncludeMapsWithoutScore: false };
 }

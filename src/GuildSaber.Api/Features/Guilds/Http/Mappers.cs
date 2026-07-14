@@ -25,6 +25,7 @@ public static class GuildMappers
                 MaxRank: self.Requirements.MaxRank,
                 MinPP: self.Requirements.MinPP,
                 MaxPP: self.Requirements.MaxPP,
+                MinPlayCount: self.Requirements.MinPlayCount,
                 AccountAgeUnix: self.Requirements.AccountAgeUnix
             ),
             self.Status.Map(),
@@ -50,6 +51,7 @@ public static class GuildMappers
                     MaxRank: self.Requirements.MaxRank,
                     MinPP: self.Requirements.MinPP,
                     MaxPP: self.Requirements.MaxPP,
+                    MinPlayCount: self.Requirements.MinPlayCount,
                     AccountAgeUnix: self.Requirements.AccountAgeUnix
                 ),
                 self.Status.Map(),
@@ -99,6 +101,7 @@ public static class GuildMappers
             MaxRank: self.Requirements.MaxRank,
             MinPP: self.Requirements.MinPP,
             MaxPP: self.Requirements.MaxPP,
+            MinPlayCount: self.Requirements.MinPlayCount,
             AccountAgeUnix: self.Requirements.AccountAgeUnix
         ),
         self.Status.Map(),
@@ -111,6 +114,7 @@ public static class GuildMappers
         MaxRank: self.MaxRank,
         MinPP: self.MinPP,
         MaxPP: self.MaxPP,
+        MinPlayCount: self.MinPlayCount,
         AccountAgeUnix: self.AccountAgeUnix
     );
 
@@ -125,10 +129,12 @@ public static class GuildMappers
     };
 
     public static Result<GuildDiscordInfo> Map(this GuildResponses.GuildDiscordInfo self)
-        => new GuildDiscordInfo(self.MainDiscordGuildId, self.InviteCode);
+        => new GuildDiscordInfo(self.MainDiscordGuildId, self.InviteCode, self.ConfirmedScoreFeedChannelId,
+            self.RefusedScoreFeedChannelId);
 
     public static GuildResponses.GuildDiscordInfo Map(this GuildDiscordInfo self)
-        => new(self.MainDiscordGuildId, self.DiscordInviteCode);
+        => new(self.MainDiscordGuildId, self.DiscordInviteCode, self.ConfirmedScoreFeedChannelId,
+            self.RefusedScoreFeedChannelId);
 
     public static GuildResponses.EGuildStatus Map(this Guild.EGuildStatus self) => self switch
     {

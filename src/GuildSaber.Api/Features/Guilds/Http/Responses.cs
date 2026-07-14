@@ -18,12 +18,15 @@ public static class GuildResponses
         int? MaxRank,
         int? MinPP,
         int? MaxPP,
+        int? MinPlayCount,
         int? AccountAgeUnix
     );
 
     public record GuildDiscordInfo(
         DiscordGuildId? MainDiscordGuildId,
-        string? InviteCode
+        string? InviteCode,
+        DiscordChannelId? ConfirmedScoreFeedChannelId,
+        DiscordChannelId? RefusedScoreFeedChannelId
     );
 
     public record Guild(

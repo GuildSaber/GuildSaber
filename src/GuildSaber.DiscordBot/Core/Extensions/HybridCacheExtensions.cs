@@ -1,8 +1,8 @@
 using GuildSaber.Api.Features.Guilds.Categories.Http;
 using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Api.Features.Guilds.Members.Http;
+using GuildSaber.Api.Features.Players.Http;
 using GuildSaber.Common.Result;
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using Microsoft.Extensions.Caching.Hybrid;
 
@@ -60,6 +60,16 @@ public static class HybridCacheExtensions
                 new HybridCacheEntryOptions
                 {
                     Expiration = TimeSpan.FromHours(5)
+                });
+
+        public ValueTask<PlayerResponses.Player?> GetPlayerByIdAsync(PlayerId id, GuildSaberClient client)
+            => self.GetOrCreateAsync($"Player_{id}", (id, client),
+                async static (state, token) => await state.client.Players
+                    .GetByIdAsync(state.id, token)
+                    .Unwrap(),
+                new HybridCacheEntryOptions
+                {
+                    Expiration = TimeSpan.FromMinutes(20)
                 });
 
         public ValueTask<GuildResponses.Guild?> GetGuildFromDiscordGuildIdAsync(

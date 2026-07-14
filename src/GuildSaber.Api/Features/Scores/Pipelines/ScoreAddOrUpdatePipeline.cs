@@ -237,7 +237,7 @@ public sealed class ScoreAddOrUpdatePipeline(
             .ToArrayAsync();
         var rankedMapsIds = rankedMaps
             .Select(x => x.Id)
-            .ToArray() as IEnumerable<RankedMap.RankedMapId>;
+            .ToArray() as IEnumerable<RankedMapId>;
         var rankedScores = await dbContext.RankedScores
             .AsNoTracking()
             .Where(x => x.PlayerId == playerId && rankedMapsIds.Contains(x.RankedMapId))

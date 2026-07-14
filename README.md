@@ -48,18 +48,22 @@ First, the menu player card:
 And second, the in-game player card:
 ![In-game player card](src/GuildSaber.Mod/docs/images/player-card-in-game.png)
 
-As you can see, there is a little timer at the botton left of the player card. This represents how much time you've
+As you can see, there is a little timer at the bottom left of the player card. This represents how much time you've
 spent playing during this whole day. (It does persist during restarts until the day ends, and you close the game.)
 
-There is a special feature you guys should be aware of. As you can see, the playercard have a nice looking gradient
+There is a special feature you guys should be aware of. As you can see, the player card have a nice looking gradient
 background. This background capabilities is unlocked by **reaching level 30** on Challenge Saber.
+
+Here is a screenshot of one of our fellow tester that reached level 30 and unlocked it ^^
+![Player card gradient](src/GuildSaber.Mod/docs/images/player-card-lvl30.png)
+
 Note that this might also be a feature available for future patreon supporters, however, I still believe players
 deserves to have those cosmetic rewards accessible through time and effort too, and not just through support money.
 
 Regarding the player card settings, accessing them is pretty easy, just **click on your avatar**:
 ![Player card settings](src/GuildSaber.Mod/docs/images/player-card-settings.png)
 
-And as you can see, there is a playlist button hidding in there :eyes:
+And as you can see, there is a playlist button hiding in there :eyes:
 
 ## The Playlist Downloader
 
@@ -113,6 +117,9 @@ Currently, it offers the following features:
 
 - The ability to sign in using BeatLeader, creating a new account, which is necessary to use the mod and the bot.
   ![Sign in page](src/GuildSaber.Website/docs/images/sign-in.png)
+
+- A small stepper that makes you join Challenge Saber and then link discord:
+  ![Sign in stepper](src/GuildSaber.Website/docs/images/signin-stepper.png)
 
 - A small dashboard where you can link your Discord account to use the bot, but also join the Challenge Saber guild.
   ![Signed in page](src/GuildSaber.Website/docs/images/signed-in.png)

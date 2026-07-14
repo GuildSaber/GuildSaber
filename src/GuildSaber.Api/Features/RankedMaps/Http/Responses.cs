@@ -58,7 +58,7 @@ public static class RankedMapResponses
     );
 
     public record RankedMap(
-        long Id,
+        RankedMapId Id,
         GuildId GuildId,
         int ContextId,
         RankedMapInfo Info,
