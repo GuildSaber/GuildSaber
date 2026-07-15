@@ -1,4 +1,5 @@
 import type { AccuracyTracker } from "@/client"
+import { Badge } from "@/components/Badge"
 import { cn } from "@/lib/utils"
 
 const RING_CIRCUMFERENCE = 100
@@ -88,16 +89,16 @@ const AccuracyRing = ({ data }: { data: AccuracyRingData }) => {
       <div className={cn("flex items-center gap-3", !isLeft && "flex-row-reverse")}>
         <div className="hidden flex-col gap-1 sm:flex">
           {pills.map((pill) => (
-            <span
+            <Badge
               key={pill.label}
               className={cn(
-                "flex items-center justify-between gap-1.5 rounded border border-current/30 bg-current/10 px-1.5 py-0.5 text-xs font-medium tabular-nums",
+                "justify-between gap-1.5 border-current/30 bg-current/10 text-xs font-medium tabular-nums",
                 colorClass,
               )}
             >
               <span className="opacity-70">{pill.label}</span>
               {pill.value}
-            </span>
+            </Badge>
           ))}
         </div>
 
@@ -131,16 +132,16 @@ const AccuracyRing = ({ data }: { data: AccuracyRingData }) => {
 
       <div className="flex w-full flex-col gap-1 sm:hidden">
         {pills.map((pill) => (
-          <span
+          <Badge
             key={pill.label}
             className={cn(
-              "flex w-full items-center justify-between gap-1.5 rounded border border-current/30 bg-current/10 px-1.5 py-0.5 text-xs font-medium tabular-nums",
+              "w-full justify-between gap-1.5 border-current/30 bg-current/10 text-xs font-medium tabular-nums",
               colorClass,
             )}
           >
             <span className="opacity-70">{pill.label}</span>
             {pill.value}
-          </span>
+          </Badge>
         ))}
       </div>
     </div>

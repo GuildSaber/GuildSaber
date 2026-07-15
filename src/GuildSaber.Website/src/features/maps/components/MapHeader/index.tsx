@@ -28,20 +28,20 @@ const MapHeader = () => {
   return (
     <Card className="overflow-hidden p-0">
       <CardContent className="flex flex-col gap-4 p-4">
-        <div className="flex items-center gap-4 sm:gap-6">
+        <div className="xs:flex-row xs:gap-6 flex flex-col items-center gap-4">
           <div className="shrink-0">
-            <Image src={cover} className="size-24 rounded-lg sm:size-44 lg:size-52" />
+            <Image src={cover} className="xs:size-36 size-28 rounded-lg md:size-44" />
           </div>
 
-          <div className="flex flex-1 flex-col gap-1">
+          <div className="xs:items-start flex flex-1 flex-col items-center gap-1">
             <MapHeaderInfo map={map} />
-            <MapStats stats={stats} className="mt-1 hidden sm:flex" />
-            <MapHeaderActions map={map} className="mt-1 hidden sm:flex" />
+            <MapStats stats={stats} className="xs:flex mt-1 hidden" />
+            <MapHeaderActions map={map} className="xs:flex mt-1 hidden" />
           </div>
         </div>
 
-        <MapStats stats={stats} className="sm:hidden" />
-        <MapHeaderActions map={map} className="w-full *:flex-1 sm:hidden" />
+        <MapStats stats={stats} className="xs:hidden justify-center" />
+        <MapHeaderActions map={map} className="xs:hidden w-full *:flex-1" />
         <MapHeaderRequirements map={map} />
       </CardContent>
     </Card>

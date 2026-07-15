@@ -1,20 +1,20 @@
 import { cn } from "@/lib/utils"
 import React from "react"
 
-interface BadgeStatProps {
-  icon?: React.ReactNode
-  label: string
+interface BadgeProps {
   className?: string
+  style?: React.CSSProperties
+  children: React.ReactNode
 }
 
-export const BadgeStat = ({ icon, label, className }: BadgeStatProps) => (
+export const Badge = ({ children, className, style }: BadgeProps) => (
   <div
+    style={style}
     className={cn(
       "border-input flex items-center gap-1 rounded border px-1.5 py-0.5 text-sm md:px-2 md:py-1",
       className,
     )}
   >
-    {icon}
-    <span>{label}</span>
+    {children}
   </div>
 )

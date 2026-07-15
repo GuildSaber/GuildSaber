@@ -1,5 +1,5 @@
 import type { RankedScoreWithPlayer } from "@/client"
-import { BadgeStat } from "@/components/BadgeStat"
+import { Badge } from "@/components/Badge"
 import Flag from "@/components/Flag"
 import Image from "@/components/Image"
 import { Button } from "@/components/ui/button"
@@ -114,28 +114,27 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
 
       <div className="col-span-full mt-1 flex flex-wrap items-center justify-end gap-2 sm:contents">
         {rawPoints !== null ? (
-          <BadgeStat
-            className="flex-1 justify-center border-amber-800 bg-amber-800/10 text-amber-900 tabular-nums md:flex-none dark:border-amber-400 dark:bg-amber-400/20 dark:text-amber-400"
-            label={`${formatPoints(rawPoints)} ${pointName}`}
-          />
+          <Badge className="flex-1 justify-center border-amber-800 bg-amber-800/10 text-amber-900 tabular-nums md:flex-none dark:border-amber-400 dark:bg-amber-400/20 dark:text-amber-400">
+            {formatPoints(rawPoints)} {pointName}
+          </Badge>
         ) : (
           <span className="text-muted-foreground flex-1 text-center text-xs italic">
             {rankedScore.type?.toLowerCase() ?? "–"}
           </span>
         )}
 
-        <BadgeStat
+        <Badge
           className={cn(
             "flex-1 justify-center border-blue-800 bg-blue-800/10 text-blue-900 tabular-nums md:flex-none dark:border-blue-400 dark:bg-blue-400/20 dark:text-blue-400",
             accuracy === null && "hidden sm:invisible sm:flex",
           )}
-          label={accuracy !== null ? `${accuracy.toFixed(2)}%` : ""}
-        />
+        >
+          {accuracy !== null ? `${accuracy.toFixed(2)}%` : ""}
+        </Badge>
 
-        <BadgeStat
-          className="flex-1 justify-center tabular-nums md:flex-none"
-          label={formatScore(rankedScore.score.baseScore)}
-        />
+        <Badge className="flex-1 justify-center tabular-nums md:flex-none">
+          {formatScore(rankedScore.score.baseScore)}
+        </Badge>
       </div>
 
       {isDetailsOpen && <MapScoreStats rankedScore={rankedScore} />}

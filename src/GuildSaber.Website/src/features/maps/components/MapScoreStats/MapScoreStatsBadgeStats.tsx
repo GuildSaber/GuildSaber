@@ -1,4 +1,5 @@
 import type { HitTracker, WinTracker } from "@/client"
+import { Badge } from "@/components/Badge"
 import { cn } from "@/lib/utils"
 import { formatTime } from "@/utils/time"
 import type { ReactNode } from "react"
@@ -77,7 +78,7 @@ interface StatPillData {
 }
 
 const StatPill = ({ stat }: { stat: StatPillData }) => (
-  <div className="border-input flex items-center gap-1.5 rounded border px-1.5 py-0.5 text-sm md:px-2 md:py-1">
+  <Badge className="gap-1.5">
     <span className="text-muted-foreground font-medium">{stat.label}</span>
     {stat.value !== undefined && <span className="tabular-nums">{stat.value}</span>}
 
@@ -92,5 +93,5 @@ const StatPill = ({ stat }: { stat: StatPillData }) => (
         {part.value}
       </span>
     ))}
-  </div>
+  </Badge>
 )

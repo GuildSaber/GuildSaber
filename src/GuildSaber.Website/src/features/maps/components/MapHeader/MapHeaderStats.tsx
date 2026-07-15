@@ -1,4 +1,4 @@
-import { BadgeStat } from "@/components/BadgeStat"
+import { Badge } from "@/components/Badge"
 import Bpm from "@/components/icons/Bpm"
 import Njs from "@/components/icons/Njs"
 import Nps from "@/components/icons/Nps"
@@ -18,10 +18,18 @@ interface MapStatsProps {
 }
 
 export const MapStats = ({ stats, className }: MapStatsProps) => (
-  <div className={cn("flex flex-wrap gap-2", className)}>
-    <BadgeStat icon={<Bpm className="size-4" />} label={`${stats.bpm} BPM`} />
-    <BadgeStat icon={<Njs className="size-4" />} label={`${stats.njs} NJS`} />
-    <BadgeStat icon={<Nps className="size-4" />} label={`${parseFloat(stats.nps as string).toFixed(2)} NPS`} />
-    <BadgeStat icon={<Clock className="size-4" />} label={stats.duration} />
+  <div className={cn("flex flex-wrap gap-1.5 md:gap-2", className)}>
+    <Badge>
+      <Bpm className="size-3 md:size-4" /> {stats.bpm} BPM
+    </Badge>
+    <Badge>
+      <Njs className="size-3 md:size-4" /> {stats.njs} NJS
+    </Badge>
+    <Badge>
+      <Nps className="size-3 md:size-4" /> {parseFloat(stats.nps as string).toFixed(2)} NPS
+    </Badge>
+    <Badge>
+      <Clock className="size-3 md:size-4" /> {stats.duration}
+    </Badge>
   </div>
 )

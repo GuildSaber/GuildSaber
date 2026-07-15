@@ -56,7 +56,6 @@ const RequirementValue = ({ value, tooltip }: { value: string | string[]; toolti
 const RequirementBadge = ({ label, value, tooltip }: { label: string; value: string | string[]; tooltip?: string }) => (
   <div className="border-input flex items-center overflow-hidden rounded border text-xs sm:text-sm">
     <span className="bg-input/30 px-2 py-1 font-medium sm:px-3 sm:py-1.5">{label}</span>
-    <Separator />
     <RequirementValue value={value} tooltip={tooltip} />
   </div>
 )
