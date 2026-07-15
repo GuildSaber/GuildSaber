@@ -260,6 +260,9 @@ public static class RankedScoreEndpointExtensions
                 .OrderBy(x => x is PointGivingRankedScore ? 0 : 1)
                 .ThenBy(order, x => x.Score.SetAt)
                 .ThenBy(x => x.Id),
+            ERankedScoreSorter.EditTime => query
+                .OrderBy(order, x => x.EditedAt)
+                .ThenBy(x => x.Id),
             _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
         };
     }

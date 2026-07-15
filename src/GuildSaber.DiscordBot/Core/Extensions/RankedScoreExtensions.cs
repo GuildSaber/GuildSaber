@@ -20,6 +20,7 @@ public static class RankedScoreExtensions
             PlayerResponses.Player player,
             RankedMapResponses.RankedMap rankedMap,
             ScoreResponses.ScoreStatistics? scoreStatistic,
+            DateTimeOffset? editedAt,
             IOptions<EmojiSettings> emojiSettings)
         {
             var builder = new SectionBuilder();
@@ -48,8 +49,15 @@ public static class RankedScoreExtensions
                     .AppendLine(") ");
             }
 
-            stringBuilder.AppendLine(
-                TimestampTag.FormatFromDateTimeOffset(score.SetAt, TimestampTagStyles.ShortDateTime));
+            stringBuilder.AppendLine(TimestampTag
+                .FormatFromDateTimeOffset(score.SetAt, TimestampTagStyles.ShortDateTime));
+
+            if (editedAt is not null)
+            {
+                stringBuilder.Append("Edited On: ");
+                stringBuilder.AppendLine(TimestampTag
+                    .FormatFromDateTimeOffset(editedAt.Value, TimestampTagStyles.ShortDateTime));
+            }
 
             var mods = score.Modifiers;
             if (mods != RankedMapRequests.EModifiers.None)

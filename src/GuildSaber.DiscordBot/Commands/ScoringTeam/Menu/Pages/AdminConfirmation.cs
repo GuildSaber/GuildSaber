@@ -13,6 +13,7 @@ using GuildSaber.DiscordBot.Core.Extensions;
 using GuildSaber.DiscordBot.Settings;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Options;
+using static GuildSaber.Api.Features.RankedScores.Http.RankedScoreRequests;
 
 namespace GuildSaber.DiscordBot.Commands.ScoringTeam;
 
@@ -26,12 +27,12 @@ public partial class ScoringTeamModuleSlash
         var guildId = await GetGuildIdAsync();
         var categories = await Cache.GetGuildCategoriesAsync(guildId, Client.Value);
 
-        var filter = new RankedScoreRequests.Filters(RankedScoreTypes: RankedScoreRequests.ERankedScoreType.Pending);
-        var sorter = new PaginatedRequestOptions<RankedScoreRequests.ERankedScoreSorter>
+        var filter = new Filters(RankedScoreTypes: ERankedScoreType.Pending);
+        var sorter = new PaginatedRequestOptions<ERankedScoreSorter>
         {
             Page = page,
             PageSize = 3,
-            SortBy = RankedScoreRequests.ERankedScoreSorter.ScoreTime,
+            SortBy = ERankedScoreSorter.EditTime,
             Order = EOrder.Asc
         };
 
@@ -140,7 +141,7 @@ file static class ScoringTeamMenuView
 
         return new ComponentBuilderV2()
             .WithContainer(rankedMap.ToContainerBuilder([], categories, emojiSettings))
-            .WithSection(rankedScore.ToSection(player, rankedMap, scoreStatistics, emojiSettings))
+            .WithSection(rankedScore.ToSection(player, rankedMap, scoreStatistics, rankedScore.EditedAt, emojiSettings))
             .WithActionRow(x => x.WithButton(
                 label: "View Replay",
                 url: $"https://replay.beatleader.com/?scoreId={blScoreId}",
@@ -174,7 +175,8 @@ file static class ScoringTeamMenuView
             var blScoreId = (data.RankedScore.Score as ScoreResponses.Score.BeatLeaderScore)?.BeatLeaderScoreId;
             builder.WithContainer(data.RankedMap.ToContainerBuilder([], categories, emojiSettings)
                 .WithSeparator()
-                .WithSection(data.RankedScore.ToSection(player, data.RankedMap, scoreStatistics, emojiSettings))
+                .WithSection(data.RankedScore.ToSection(player, data.RankedMap, scoreStatistics,
+                    data.RankedScore.EditedAt, emojiSettings))
                 .WithActionRow(y => y
                     .WithButton(
                         label: "Accept",

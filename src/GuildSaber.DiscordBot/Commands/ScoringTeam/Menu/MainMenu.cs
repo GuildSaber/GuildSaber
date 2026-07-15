@@ -38,6 +38,11 @@ public partial class ScoringTeamModuleSlash
                         .WithCustomId($"scoring_admin_conf:{contextId},1")
                         .WithStyle(ButtonStyle.Success)
                         .WithDisabled(pendingCount == 0))))
+            .WithActionRow(actionRow => actionRow
+                .WithButton(new ButtonBuilder()
+                    .WithLabel("See previous reviews")
+                    .WithCustomId($"scoring_admin_conf_reviewed:{contextId},1")
+                    .WithStyle(ButtonStyle.Secondary)))
             .Build();
 
         switch (Context.Interaction)

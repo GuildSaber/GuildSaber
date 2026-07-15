@@ -5992,7 +5992,8 @@
           "AccuracyStar",
           "Score",
           "Accuracy",
-          "ScoreTime"
+          "ScoreTime",
+          "EditTime"
         ]
       },
       "ERankedScoreType": {

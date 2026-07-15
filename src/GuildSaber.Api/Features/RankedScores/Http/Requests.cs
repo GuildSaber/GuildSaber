@@ -46,6 +46,7 @@ public static class RankedScoreRequests
         AccuracyStar = 2,
         Score = 3,
         Accuracy = 4,
-        ScoreTime = 5
+        ScoreTime = 5,
+        EditTime = 6
     }
 }
