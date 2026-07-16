@@ -35,24 +35,26 @@ public static class PlaylistUtilities
             GuildResponses.GuildExtended guildExtended)
         {
 #if NET6_0_OR_GREATER
-            await using var zipArchive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true);
+            await using (var zipArchive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
 #else
-            using var zipArchive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true);
+            using (var zipArchive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
 #endif
-            foreach (var (level, playlist) in levelsWithPlaylists)
             {
-                if (playlist is null)
-                    continue;
+                foreach (var (level, playlist) in levelsWithPlaylists)
+                {
+                    if (playlist is null)
+                        continue;
 
-                var fileName = GetPlaylistFileName(level, guildExtended);
-                var entry = zipArchive.CreateEntry(fileName, CompressionLevel.Optimal);
+                    var fileName = GetPlaylistFileName(level, guildExtended);
+                    var entry = zipArchive.CreateEntry(fileName, CompressionLevel.Optimal);
 
 #if NET6_0_OR_GREATER
-                await using var entryStream = await entry.OpenAsync();
+                    await using var entryStream = await entry.OpenAsync();
 #else
-                await using var entryStream = entry.Open();
+                    await using var entryStream = entry.Open();
 #endif
-                await self.WriteToStream(entryStream, playlist.Value);
+                    await self.WriteToStream(entryStream, playlist.Value);
+                }
             }
 
             if (stream.CanSeek)
