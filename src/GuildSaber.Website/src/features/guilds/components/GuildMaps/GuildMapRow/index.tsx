@@ -15,7 +15,7 @@ interface Props {
   map: GetRankedMapResponse
 }
 
-export const GuildMapRow = ({ map }: Props) => {
+const GuildMapRow = ({ map }: Props) => {
   const [{ song, difficulty: diffKey }] = map.versions
   const difficulty = MAP_DIFFICULTY[diffKey.difficulty]
 
@@ -113,3 +113,5 @@ export const GuildMapRow = ({ map }: Props) => {
     </div>
   )
 }
+
+export default GuildMapRow
