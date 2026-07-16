@@ -7,8 +7,9 @@ interface BadgeProps {
   children: React.ReactNode
 }
 
-export const Badge = ({ children, className, style }: BadgeProps) => (
+export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(({ children, className, style }, ref) => (
   <div
+    ref={ref}
     style={style}
     className={cn(
       "border-input flex items-center gap-1 rounded border px-1.5 py-0.5 text-sm md:px-2 md:py-1",
@@ -17,4 +18,6 @@ export const Badge = ({ children, className, style }: BadgeProps) => (
   >
     {children}
   </div>
-)
+))
+
+Badge.displayName = "Badge"

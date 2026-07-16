@@ -14,16 +14,17 @@ const MapLeaderboardRowSkeleton = () => (
       <Skeleton className="h-6 w-8 rounded" />
     </div>
 
-    <div className="col-span-full mt-1 flex flex-wrap items-center justify-end gap-2 sm:contents">
-      <Skeleton className="h-5 flex-1 sm:w-20 sm:flex-none" />
-      <Skeleton className="h-5 flex-1 sm:w-16 sm:flex-none" />
-      <Skeleton className="h-5 flex-1 sm:w-16 sm:flex-none" />
+    <div className="col-span-full mt-1 grid grid-cols-2 items-center gap-2 sm:contents">
+      <Skeleton className="h-5 sm:w-20" />
+      <Skeleton className="h-5 sm:w-16" />
+      <Skeleton className="h-5 sm:w-16" />
+      <Skeleton className="h-5 sm:w-16" />
     </div>
   </div>
 )
 
 export const MapLeaderboardSkeleton = () => (
-  <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 divide-y sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto_auto_auto]">
+  <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 divide-y sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto_auto_auto_auto]">
     {Array.from({ length: 10 }).map((_, i) => (
       <MapLeaderboardRowSkeleton key={i} />
     ))}

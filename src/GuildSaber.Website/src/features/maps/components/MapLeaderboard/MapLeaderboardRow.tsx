@@ -3,6 +3,7 @@ import { Badge } from "@/components/Badge"
 import Flag from "@/components/Flag"
 import Image from "@/components/Image"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { MapScoreStats } from "@/features/maps/components/MapScoreStats"
 import { useMapContext } from "@/features/maps/contexts/mapContext"
 import { useMapScoreStats } from "@/features/maps/hooks/useMapScoreStats"
@@ -10,7 +11,8 @@ import { useReplayStore } from "@/features/maps/stores/replayStore"
 import { formatDate, formatPoints, formatScore } from "@/features/maps/utils"
 import { cn } from "@/lib/utils"
 import { LEADERBOARD } from "@/utils/constants"
-import { ChevronDown, Loader2, Play } from "lucide-react"
+import { formatTime } from "@/utils/time"
+import { ChevronDown, Loader2, Pause, Play, X } from "lucide-react"
 import { useState } from "react"
 import { useMediaQuery } from "usehooks-ts"
 
@@ -58,8 +60,15 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
   })()
 
   const isMobile = useMediaQuery("(max-width: 639px)")
-  const hasReplay = rankedScore.score.type === LEADERBOARD.BeatLeader && Boolean(rankedScore.score.beatLeaderScoreId)
-  const hasStatistics = rankedScore.score.type === LEADERBOARD.BeatLeader && rankedScore.score.hasStatistics
+  const beatLeaderScore = rankedScore.score.type === LEADERBOARD.BeatLeader ? rankedScore.score : undefined
+
+  const hasReplay = Boolean(beatLeaderScore?.beatLeaderScoreId)
+  const hasStatistics = Boolean(beatLeaderScore?.hasStatistics)
+  const pauseCount = beatLeaderScore?.pauseCount ?? null
+  const hasPause = Boolean(pauseCount)
+  const totalPauseDuration = beatLeaderScore?.totalPauseDuration ?? null
+  const { isFullCombo, missedNotes, badCuts } = rankedScore.score
+  const missCount = Number(missedNotes) + Number(badCuts)
 
   const handleReplay = () => openReplay(rankedScore.score)
 
@@ -72,7 +81,7 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
   })
 
   return (
-    <div className="col-span-full grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 py-2.5 sm:grid-cols-subgrid">
+    <div className="col-span-full grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 py-2.5 md:grid-cols-subgrid">
       <span
         className={cn(
           "text-center text-sm font-semibold tabular-nums",
@@ -82,16 +91,29 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
         {rank ? `#${rank}` : "–"}
       </span>
 
-      <div className="flex min-w-0 items-center gap-2 sm:contents">
+      <div className="flex min-w-0 items-center gap-2 md:contents">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <Image src={player.playerInfo.avatarUrl} className="size-6 shrink-0 rounded-lg object-cover md:size-8" />
           <Flag code={player.playerInfo.country} className="h-3.5 w-5 shrink-0 object-cover" />
           <span className="truncate font-medium">{player.playerInfo.username}</span>
         </div>
 
-        <span className="text-muted-foreground shrink-0 text-right text-sm tabular-nums">
-          {formatDate(rankedScore.score.setAt, isMobile ? "short" : "long")}
-        </span>
+        <div className="flex items-center justify-end gap-3 text-right">
+          {hasPause && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="hidden items-center justify-center text-right text-sm text-red-900 tabular-nums sm:flex dark:text-red-400">
+                  {formatTime(Number(totalPauseDuration))}
+                  <Pause className="ml-1 size-3" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{pauseCount ?? "–"} pauses</TooltipContent>
+            </Tooltip>
+          )}
+          <span className="text-muted-foreground shrink-0 text-right text-sm tabular-nums">
+            {formatDate(rankedScore.score.setAt, isMobile ? "short" : "long")}
+          </span>
+        </div>
 
         <div className="flex items-center justify-end gap-2">
           {hasStatistics && (
@@ -112,29 +134,59 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
         </div>
       </div>
 
-      <div className="col-span-full mt-1 flex flex-wrap items-center justify-end gap-2 sm:contents">
+      <div className="col-span-full mt-1 grid grid-cols-2 items-center gap-2 md:contents">
         {rawPoints !== null ? (
-          <Badge className="flex-1 justify-center border-amber-800 bg-amber-800/10 text-amber-900 tabular-nums md:flex-none dark:border-amber-400 dark:bg-amber-400/20 dark:text-amber-400">
+          <Badge className="justify-center border-amber-800 bg-amber-800/10 text-amber-900 tabular-nums dark:border-amber-400 dark:bg-amber-400/20 dark:text-amber-400">
             {formatPoints(rawPoints)} {pointName}
           </Badge>
         ) : (
-          <span className="text-muted-foreground flex-1 text-center text-xs italic">
+          <span className="text-muted-foreground text-center text-xs italic">
             {rankedScore.type?.toLowerCase() ?? "–"}
           </span>
         )}
 
         <Badge
           className={cn(
-            "flex-1 justify-center border-blue-800 bg-blue-800/10 text-blue-900 tabular-nums md:flex-none dark:border-blue-400 dark:bg-blue-400/20 dark:text-blue-400",
+            "justify-center border-blue-800 bg-blue-800/10 text-blue-900 tabular-nums dark:border-blue-400 dark:bg-blue-400/20 dark:text-blue-400",
             accuracy === null && "hidden sm:invisible sm:flex",
           )}
         >
           {accuracy !== null ? `${accuracy.toFixed(2)}%` : ""}
         </Badge>
 
-        <Badge className="flex-1 justify-center tabular-nums md:flex-none">
-          {formatScore(rankedScore.score.baseScore)}
-        </Badge>
+        <Badge className="justify-center tabular-nums">{formatScore(rankedScore.score.baseScore)}</Badge>
+
+        <div className="flex gap-2 sm:gap-3">
+          {hasPause && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge className="flex-1 justify-center border-red-800 bg-red-800/10 text-red-900 tabular-nums sm:hidden dark:border-red-400 dark:bg-red-400/20 dark:text-red-400">
+                  {formatTime(Number(totalPauseDuration))}
+                  <Pause className="ml-1 size-3" />
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>{pauseCount ?? "–"} pause</TooltipContent>
+            </Tooltip>
+          )}
+
+          <Badge
+            className={cn(
+              "flex-1 justify-center tabular-nums",
+              isFullCombo
+                ? "border-green-800 bg-green-800/10 text-green-900 dark:border-green-400 dark:bg-green-400/20 dark:text-green-400"
+                : "border-red-800 bg-red-800/10 text-red-900 dark:border-red-400 dark:bg-red-400/20 dark:text-red-400",
+            )}
+          >
+            {isFullCombo ? (
+              "FC"
+            ) : (
+              <>
+                <X className="size-4" />
+                {missCount}
+              </>
+            )}
+          </Badge>
+        </div>
       </div>
 
       {isDetailsOpen && <MapScoreStats rankedScore={rankedScore} />}
