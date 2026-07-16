@@ -109,16 +109,24 @@ const AccuracyRing = ({ data }: { data: AccuracyRingData }) => {
           ))}
         </div>
 
-        <div className={cn("flex size-20 shrink-0 items-center justify-center md:size-22", colorClass)}>
-          <GaugeChart
-            color="currentColor"
-            data={toGaugeData(grid)}
-            mirror={!isLeft}
-            size={isMdUp ? GAUGE_SIZE_MD : GAUGE_SIZE}
-            ringWidth={8}
-            centerValue={value}
-            valueClassName="text-base font-semibold tabular-nums"
-          />
+        <div className={cn("flex items-center gap-2", !isLeft && "flex-row-reverse")}>
+          <div className={cn("flex flex-col items-center gap-0.5 text-sm tabular-nums", colorClass)}>
+            <span>{grid[0].toFixed(2)}</span>
+            <span>{grid[1].toFixed(2)}</span>
+            <span>{grid[2].toFixed(2)}</span>
+          </div>
+
+          <div className={cn("flex size-20 shrink-0 items-center justify-center md:size-22", colorClass)}>
+            <GaugeChart
+              color="currentColor"
+              data={toGaugeData(grid)}
+              mirror={!isLeft}
+              size={isMdUp ? GAUGE_SIZE_MD : GAUGE_SIZE}
+              ringWidth={8}
+              centerValue={value}
+              valueClassName="text-base font-semibold tabular-nums"
+            />
+          </div>
         </div>
       </div>
 
