@@ -1,9 +1,14 @@
+const isoToTwemoji = (iso: string) =>
+  [...iso.toUpperCase()].map((c) => (0x1f1e6 + c.charCodeAt(0) - 65).toString(16)).join("-")
+
 const getSvgFlag = (countryCode: string | undefined) => {
   if (!countryCode) {
     return ""
   }
 
-  return `https://cdn.jsdelivr.net/gh/lipis/flag-icons/flags/4x3/${countryCode.toLowerCase()}.svg`
+  const filename = isoToTwemoji(countryCode)
+
+  return `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${filename}.svg`
 }
 
 interface Props {
