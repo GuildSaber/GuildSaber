@@ -1,13 +1,13 @@
 import Image from "@/components/Image"
 import { Card, CardContent } from "@/components/ui/card"
+import { MapHeaderActions } from "@/features/maps/components/MapHeader/MapHeaderActions"
+import { MapHeaderInfo } from "@/features/maps/components/MapHeader/MapHeaderInfo"
+import { MapHeaderRequirements } from "@/features/maps/components/MapHeader/MapHeaderRequirements"
+import { MapHeaderSkeleton } from "@/features/maps/components/MapHeader/MapHeaderSkeleton"
+import { MapStats } from "@/features/maps/components/MapHeader/MapHeaderStats"
 import { useMapContext } from "@/features/maps/contexts/mapContext"
 import { getMapCover } from "@/utils/beatsaver"
 import { formatTime } from "@/utils/time"
-import { MapHeaderActions } from "./MapHeaderActions"
-import { MapHeaderInfo } from "./MapHeaderInfo"
-import { MapHeaderRequirements } from "./MapHeaderRequirements"
-import { MapHeaderSkeleton } from "./MapHeaderSkeleton"
-import { MapStats } from "./MapHeaderStats"
 
 const MapHeader = () => {
   const map = useMapContext()

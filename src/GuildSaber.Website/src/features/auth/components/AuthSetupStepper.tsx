@@ -1,12 +1,12 @@
 import Discord from "@/components/icons/Discord"
 import { Button } from "@/components/ui/button"
+import JoinCSGuild from "@/features/auth/components/JoinCSGuild"
+import DiscordLinkUser from "@/features/auth/components/providers/DiscordLinkProvider"
 import { useSession } from "@/features/auth/hooks/useSession"
 import { generateAuthUrl } from "@/features/auth/utils"
 import { cn } from "@/lib/utils"
 import { Check, CircleCheck, Link as LinkIcon } from "lucide-react"
 import { Link } from "react-router"
-import JoinCSGuild from "./JoinCSGuild"
-import DiscordLinkUser from "./providers/DiscordLinkProvider"
 
 interface StepIndicatorProps {
   step: number

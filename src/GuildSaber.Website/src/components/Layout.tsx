@@ -1,6 +1,7 @@
-import { Outlet, ScrollRestoration } from "react-router"
-import Footer from "./Footer"
-import Header from "./Header"
+
+import Footer from "@/components/Footer"
+import Header from "@/components/Header"
+import { Outlet } from "react-router"
 
 const Layout = () => (
   <div className="text-foreground flex min-h-screen w-full flex-col">

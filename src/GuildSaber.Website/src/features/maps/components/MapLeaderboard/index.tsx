@@ -1,10 +1,10 @@
 import Pagination from "@/components/Pagination"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import MapLeaderboardFilters from "@/features/maps/components/MapLeaderboard/MapLeaderboardFilters"
+import { MapLeaderboardRow } from "@/features/maps/components/MapLeaderboard/MapLeaderboardRow"
+import { MapLeaderboardSkeleton } from "@/features/maps/components/MapLeaderboard/MapLeaderboardSkeleton"
 import { useMapLeaderboard } from "@/features/maps/hooks/useMapLeaderboard"
 import { AlertCircle, Logs } from "lucide-react"
-import MapLeaderboardFilters from "./MapLeaderboardFilters"
-import { MapLeaderboardRow } from "./MapLeaderboardRow"
-import { MapLeaderboardSkeleton } from "./MapLeaderboardSkeleton"
 
 const MapLeaderboard = () => {
   const { contextPoints, effectivePointName, leaderboard, isLoading, isFetching } = useMapLeaderboard()
