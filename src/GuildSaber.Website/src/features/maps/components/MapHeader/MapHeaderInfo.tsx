@@ -2,6 +2,7 @@ import type { RankedMap } from "@/client"
 import { Badge } from "@/components/Badge"
 import { MAP_DIFFICULTY, MAP_GAME_MODE } from "@/utils/constants"
 import { Sparkles, Star } from "lucide-react"
+import { CategoryBadge, useMapCategories } from "./MapHeaderCategories"
 
 interface Props {
   map: RankedMap
@@ -11,6 +12,7 @@ export const MapHeaderInfo = ({ map }: Props) => {
   const [{ song, difficulty: diffKey }] = map.versions
   const difficulty = MAP_DIFFICULTY[diffKey.difficulty]
   const gameMode = MAP_GAME_MODE[diffKey.gameMode] ?? diffKey.gameMode
+  const mapCategories = useMapCategories(map)
 
   return (
     <div className="xs:items-start xs:text-left flex flex-col items-center gap-1 text-center">
@@ -46,7 +48,21 @@ export const MapHeaderInfo = ({ map }: Props) => {
         <Badge className="border-teal-800 bg-teal-800/10 text-teal-900 dark:border-teal-400 dark:bg-teal-400/20 dark:text-teal-400">
           {parseFloat(map.rating.accStar as string).toFixed(2)} <Sparkles className="size-3 md:size-4" />
         </Badge>
+
+        {mapCategories?.map((category, index) => (
+          <CategoryBadge key={`${category.id}-${index}`} category={category} className="hidden md:flex" />
+        ))}
+
+        {mapCategories?.length === 1 && <CategoryBadge category={mapCategories[0]} className="md:hidden" />}
       </div>
+
+      {mapCategories && mapCategories.length > 1 && (
+        <div className="mt-2 flex flex-wrap justify-center gap-1.5 md:hidden">
+          {mapCategories.map((category, index) => (
+            <CategoryBadge key={`${category.id}-${index}`} category={category} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
