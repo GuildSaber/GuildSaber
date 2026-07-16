@@ -1,25 +1,25 @@
-import { useCallback, useState, type ComponentProps } from "react"
+import { useState, type ComponentProps } from "react"
 
 interface Props extends ComponentProps<"img"> {
   banner?: boolean
 }
 
 const Image = ({ src, banner, ...props }: Props) => {
-  const fallback = useCallback(() => {
+  const fallback = (() => {
     if (banner) {
       return "/images/fallback-banner.svg"
     }
 
     return "/images/fallback.svg"
-  }, [banner])
+  })()
 
-  const [imgSrc, setImgSrc] = useState(src ?? fallback())
+  const [erroredSrc, setErroredSrc] = useState<typeof src>()
 
-  const handleError = () => {
-    setImgSrc(fallback())
-  }
+  const imgSrc = !src || src === erroredSrc ? fallback : src
 
-  return <img data-slot="image" src={imgSrc} onError={() => handleError()} {...props} />
+  const handleError = () => setErroredSrc(src)
+
+  return <img data-slot="image" src={imgSrc} onError={handleError} {...props} />
 }
 
 export default Image

@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
-import GuildMapRow, { GuildMapRowSkeleton } from "@/features/guilds/components/GuildMaps/GuildMapRow/index"
+import GuildMapRow from "@/features/guilds/components/GuildMaps/GuildMapRow"
+import { GuildMapRowSkeleton } from "@/features/guilds/components/GuildMaps/GuildMapRow/GuildMapRowSkeleton"
 import GuildMapsFilters from "@/features/guilds/components/GuildMaps/GuildMapsFilters"
 import { useGuildContext } from "@/features/guilds/contexts/guildContext"
 import { useGuildMapFilters } from "@/features/guilds/hooks/useGuildMapFilters"
@@ -40,7 +41,7 @@ const GuildMapsList = () => {
     enabled: Boolean(guild),
   })
 
-  if (isLoading) {
+  if (isLoading || !guild) {
     return <LoadingSkeleton />
   }
 
