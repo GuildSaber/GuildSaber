@@ -11,6 +11,7 @@ import { useReplayStore } from "@/features/maps/stores/replayStore"
 import { formatDate, formatPoints, formatScore } from "@/features/maps/utils"
 import { cn } from "@/lib/utils"
 import { LEADERBOARD } from "@/utils/constants"
+import { getModifierByLong } from "@/utils/modifiers"
 import { formatTime } from "@/utils/time"
 import { ChevronDown, Loader2, Pause, Play, X } from "lucide-react"
 import { useState } from "react"
@@ -98,7 +99,7 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
           <span className="truncate font-medium">{player.playerInfo.username}</span>
         </div>
 
-        <div className="flex items-center justify-end gap-3 text-right">
+        <div className="flex items-center justify-end gap-3 text-right md:flex-col-reverse md:items-end md:gap-1">
           {hasPause && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -115,7 +116,7 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
           </span>
         </div>
 
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-3 md:flex-col-reverse">
           {hasStatistics && (
             <Button size="xs" variant="ghost" onClick={toggleDetails} aria-expanded={isDetailsOpen}>
               {isDetailsOpen && isLoadingDetails ? (
@@ -134,7 +135,7 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
         </div>
       </div>
 
-      <div className="col-span-full mt-1 grid grid-cols-2 items-center gap-2 md:contents">
+      <div className="col-span-full mt-1 grid grid-cols-2 gap-2 md:col-span-2 md:mt-0">
         {rawPoints !== null ? (
           <Badge className="justify-center border-amber-800 bg-amber-800/10 text-amber-900 tabular-nums dark:border-amber-400 dark:bg-amber-400/20 dark:text-amber-400">
             {formatPoints(rawPoints)} {pointName}
@@ -154,7 +155,17 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
           {accuracy !== null ? `${accuracy.toFixed(2)}%` : ""}
         </Badge>
 
-        <Badge className="justify-center tabular-nums">{formatScore(rankedScore.score.baseScore)}</Badge>
+        <Badge className="justify-center gap-1 tabular-nums">
+          {formatScore(rankedScore.score.baseScore)}
+          {rankedScore.score.modifiers && rankedScore.score.modifiers.toLowerCase() !== "none" && (
+            <span className="text-muted-foreground self-end text-xs">
+              {rankedScore.score.modifiers
+                .split(",")
+                .map((m) => getModifierByLong(m.trim()))
+                .join(", ")}
+            </span>
+          )}
+        </Badge>
 
         <div className="flex gap-2 sm:gap-3">
           {hasPause && (

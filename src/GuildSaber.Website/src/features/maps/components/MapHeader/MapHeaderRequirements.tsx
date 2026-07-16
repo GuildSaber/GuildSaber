@@ -1,6 +1,6 @@
 import type { RankedMap, RankedMapRequirements } from "@/client"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { PROHIBITED_DEFAULT_KEYS } from "@/utils/constants"
+import { PROHIBITED_DEFAULT_KEYS } from "@/utils/modifiers"
 import { Info } from "lucide-react"
 import { useState } from "react"
 

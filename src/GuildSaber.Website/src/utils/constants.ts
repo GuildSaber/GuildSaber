@@ -49,35 +49,6 @@ export const MAP_GAME_MODE: Record<string, string> = {
   Lawless: "Lawless",
 }
 
-export const MAP_MODIFIERS = {
-  NF: "NF",
-  IF: "IF",
-  BE: "BE",
-  DA: "DA",
-  FS: "FS",
-  SS: "SS",
-  SF: "SF",
-  GN: "GN",
-  NA: "NA",
-  NB: "NB",
-  NO: "NO",
-  PM: "PM",
-  SA: "SA",
-  SC: "SC",
-  OP: "OP",
-} as const
-
-export type MapModifier = keyof typeof MAP_MODIFIERS
-
-export const PROHIBITED_DEFAULT_KEYS = [
-  MAP_MODIFIERS.NO,
-  MAP_MODIFIERS.NB,
-  MAP_MODIFIERS.NF,
-  MAP_MODIFIERS.SS,
-  MAP_MODIFIERS.NA,
-  MAP_MODIFIERS.OP,
-] as const
-
 export const MAP_SORT_BY = {
   Name: "Name",
   EditTime: "Edit Time",
