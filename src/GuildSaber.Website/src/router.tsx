@@ -3,6 +3,7 @@ import Layout from "@/components/Layout"
 import Auth from "@/pages/Auth"
 import NotFound from "@/pages/NotFound"
 import HomeGuild from "@/pages/guilds/Index"
+import MapsPage from "@/pages/maps/Index"
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router"
 
 const router = createBrowserRouter([
@@ -19,6 +20,10 @@ const router = createBrowserRouter([
           {
             path: "guilds",
             children: [{ path: ":guildId", element: <HomeGuild /> }],
+          },
+          {
+            path: "maps/:mapId",
+            element: <MapsPage />,
           },
           { path: "*", element: <NotFound /> },
         ],

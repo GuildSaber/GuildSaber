@@ -1,4 +1,5 @@
 import type { GetRankedMapResponse } from "@/client"
+import { Badge } from "@/components/Badge"
 import BeatSaver from "@/components/icons/BeatSaver"
 import Twitch from "@/components/icons/Twitch"
 import Image from "@/components/Image"
@@ -7,13 +8,14 @@ import { useArcViewerStore } from "@/features/maps/stores/arcViewerStore"
 import { getMapCover } from "@/utils/beatsaver"
 import { MAP_DIFFICULTY } from "@/utils/constants"
 import { DownloadCloud, Play, Sparkles, Star } from "lucide-react"
+import { Link } from "react-router"
 import { useCopyToClipboard } from "usehooks-ts"
 
 interface Props {
   map: GetRankedMapResponse
 }
 
-export const GuildMapRow = ({ map }: Props) => {
+const GuildMapRow = ({ map }: Props) => {
   const [{ song, difficulty: diffKey }] = map.versions
   const difficulty = MAP_DIFFICULTY[diffKey.difficulty]
 
@@ -50,19 +52,23 @@ export const GuildMapRow = ({ map }: Props) => {
         </div>
 
         <div>
-          <p className="line-clamp-2 min-w-0 overflow-hidden break-all text-blue-400">{song.info.name}</p>
+          <Link to={`/maps/${map.id}`} className="group">
+            <p className="line-clamp-2 min-w-0 overflow-hidden break-all text-blue-400 group-hover:underline">
+              {song.info.name}
+            </p>
+          </Link>
           <p className="text-sm">
             {song.info.authorName} <span className="text-muted-foreground text-xs">{song.info.mapperName}</span>
           </p>
         </div>
 
         <div className="flex flex-col items-end justify-end gap-1">
-          <div className="flex h-7 items-center gap-1 rounded border border-amber-800 bg-amber-800/10 p-1 px-2 text-sm text-amber-900 dark:border-amber-400 dark:bg-amber-400/20 dark:text-amber-400">
+          <Badge className="h-7 border-amber-800 bg-amber-800/10 px-2 py-1 text-amber-900 dark:border-amber-400 dark:bg-amber-400/20 dark:text-amber-400">
             {map.rating.diffStar} <Star className="size-4" />
-          </div>
-          <div className="flex h-7 items-center gap-1 rounded border border-teal-800 bg-teal-800/10 p-1 px-2 text-sm text-teal-900 dark:border-teal-400 dark:bg-teal-400/20 dark:text-teal-400">
+          </Badge>
+          <Badge className="h-7 border-teal-800 bg-teal-800/10 px-2 py-1 text-teal-900 dark:border-teal-400 dark:bg-teal-400/20 dark:text-teal-400">
             {parseFloat(map.rating.accStar as string).toFixed(2)} <Sparkles className="size-4" />
-          </div>
+          </Badge>
         </div>
       </div>
 
@@ -107,3 +113,5 @@ export const GuildMapRow = ({ map }: Props) => {
     </div>
   )
 }
+
+export default GuildMapRow

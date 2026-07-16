@@ -12,16 +12,17 @@ import {
 import { cn } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
 import { parseAsInteger, useQueryState } from "nuqs"
+import { useMediaQuery } from "usehooks-ts"
 
 interface Props {
   totalPages: number
-  pageSize?: number
   showEllipsis?: boolean
-  maxVisiblePages?: number
   isLoading?: boolean
 }
 
-const Pagination = ({ totalPages, showEllipsis = true, maxVisiblePages = 5, isLoading }: Props) => {
+const Pagination = ({ totalPages, showEllipsis = true, isLoading }: Props) => {
+  const isMobile = useMediaQuery("(max-width: 639px)")
+  const maxVisiblePages = isMobile ? 1 : 5
   const [currentPage, setCurrentPage] = useQueryState("page", parseAsInteger.withDefault(1))
 
   if (totalPages <= 1) {

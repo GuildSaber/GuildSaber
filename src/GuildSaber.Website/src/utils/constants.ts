@@ -15,23 +15,38 @@ export const MAP_DIFFICULTY = {
   Easy: {
     color: "#3cb371",
     short: "E",
+    long: "Easy",
   },
   Normal: {
     color: "#59b0f4",
     short: "N",
+    long: "Normal",
   },
   Hard: {
     color: "#ee5e44",
     short: "H",
+    long: "Hard",
   },
   Expert: {
     color: "#bf2a42",
     short: "Ex",
+    long: "Expert",
   },
   ExpertPlus: {
     color: "#8f48db",
     short: "Ex+",
+    long: "Expert+",
   },
+}
+
+export const MAP_GAME_MODE: Record<string, string> = {
+  Standard: "Standard",
+  OneSaber: "One Saber",
+  NoArrows: "No Arrows",
+  "90Degree": "90°",
+  "360Degree": "360°",
+  Lightshow: "Lightshow",
+  Lawless: "Lawless",
 }
 
 export const MAP_SORT_BY = {
@@ -42,3 +57,13 @@ export const MAP_SORT_BY = {
   AccuracyStar: "Accuracy",
   Id: "ID",
 }
+
+export const LEADERBOARD_SORT_BY = {
+  Points: "Points",
+  EffectiveScore: "Score",
+}
+
+export const LEADERBOARD = {
+  BeatLeader: "BeatLeader",
+  ScoreSaber: "ScoreSaber",
+} as const

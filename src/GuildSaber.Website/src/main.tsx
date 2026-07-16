@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@/components/Theme"
 import { Toaster } from "@/components/ui/sonner"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import DialogArcViewer from "@/features/maps/components/DialogArcViewer"
 import "@/index.css"
 import "@/lib/client"
@@ -18,13 +19,15 @@ if (rootElement) {
   createRoot(rootElement).render(
     <StrictMode>
       <ThemeProvider defaultTheme="dark">
-        <NuqsAdapter>
-          <QueryClientProvider client={queryClient}>
-            <Router />
-            <DialogArcViewer />
-            <Toaster />
-          </QueryClientProvider>
-        </NuqsAdapter>
+        <TooltipProvider>
+          <NuqsAdapter>
+            <QueryClientProvider client={queryClient}>
+              <Router />
+              <DialogArcViewer />
+              <Toaster />
+            </QueryClientProvider>
+          </NuqsAdapter>
+        </TooltipProvider>
       </ThemeProvider>
     </StrictMode>,
   )
