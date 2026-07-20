@@ -321,12 +321,6 @@ public class PlayerCardView : ViewController<PlayerCardView>
     {
         try
         {
-            if (!_guildSaberManager.Initialized)
-            {
-                _logger.Error("[PlayerCard/RefreshCard]: GuildSaber is not initialized.");
-                return;
-            }
-
             var texture = new Texture2D(100, 100);
 
             try
@@ -359,6 +353,7 @@ public class PlayerCardView : ViewController<PlayerCardView>
         {
             _logger.Error("[GuildSaberMod][RefreshCard] Error");
             _logger.Error(e);
+            DisplayCard(EDisplayMode.Error);
         }
     }
 

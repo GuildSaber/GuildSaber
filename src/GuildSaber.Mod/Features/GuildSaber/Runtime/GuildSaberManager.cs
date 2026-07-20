@@ -21,6 +21,7 @@ public class GuildSaberManager(
 ) : IInitializable
 {
     public bool Initialized;
+    public bool Errored;
 
     public async void Initialize()
     {
@@ -31,6 +32,7 @@ public class GuildSaberManager(
         {
             logger.Warn($"Failed to parse BeatLeaderId: {error}. " +
                         "Invoking OnPlayerIdFetched with null and terminating Initialize.");
+            Errored = true;
             OnInitializationError("Failed to parse BeatLeaderId from user information.");
             return;
         }
@@ -42,6 +44,7 @@ public class GuildSaberManager(
         {
             logger.Error($"Failed to fetch PlayerId: {error}. " +
                          "Invoking OnPlayerIdFetched with null and terminating Initialize.");
+            Errored = true;
             OnInitializationError("Failed to fetch PlayerId from GuildSaber.");
             return;
         }
@@ -50,6 +53,7 @@ public class GuildSaberManager(
         {
             logger.Error("PlayerId is null, user does not have an account on GuildSaber. " +
                          "Invoking OnPlayerIdFetched with null and terminating Initialize.");
+            Errored = true;
             OnInitializationError("User does not have an account on GuildSaber.");
             return;
         }
@@ -59,6 +63,7 @@ public class GuildSaberManager(
         {
             logger.Error($"Failed to fetch extended player: {error}");
             logger.Error("Terminating");
+            Errored = true;
             OnInitializationError.Invoke(error);
             return;
         }
@@ -66,6 +71,7 @@ public class GuildSaberManager(
         if (extendedPlayer == null)
         {
             logger.Error("Extended player response is null.");
+            Errored = true;
             OnInitializationError.Invoke("Failed to fetch extended player from GuildSaber.");
             return;
         }
@@ -78,6 +84,7 @@ public class GuildSaberManager(
             if (guildResponse.TryGetValue(out var guild, out var guildError)) return guild;
 
             logger.Error($"Failed to fetch guild: {guildError}. ");
+            Errored = true;
             OnInitializationError("Failed to fetch PlayerId from GuildSaber.");
             return null;
         }));
@@ -146,6 +153,7 @@ public class GuildSaberManager(
             return;
 
         Initialized = true;
+        Errored = false;
 
         // Things can subscribe and check for the Initialized property, so this shall be last.
         session.SetCurrentGuildContext(guild, contextId);

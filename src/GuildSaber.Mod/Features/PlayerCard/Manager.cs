@@ -33,9 +33,7 @@ public class PlayerCardManager(
 
     public void Initialize()
     {
-        if (manager.Initialized) playerCardView.RefreshCard();
         session.CurrentGuildContextChanged += (_, _) => playerCardView.RefreshCard();
-
         manager.OnGuildSelectionStarted += () => playerCardView.DisplayCard(PlayerCardView.EDisplayMode.Loading);
         manager.OnMemberStatsRefreshed += contextId =>
         {
@@ -68,6 +66,9 @@ public class PlayerCardManager(
         guildSaberSettingsView.OnResetCardInSongPosition += OnResetInSongMenuPosition;
         cardSettingsView.OnResetMenuPosition += OnResetCardMenuPosition;
         cardSettingsView.OnResetInSongPosition += OnResetInSongMenuPosition;
+
+        if (manager.Errored) playerCardView.DisplayCard(PlayerCardView.EDisplayMode.Error);
+        else if (manager.Initialized) playerCardView.RefreshCard();
     }
 
     private void OnResetCardMenuPosition()
