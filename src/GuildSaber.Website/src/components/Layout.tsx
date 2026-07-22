@@ -1,4 +1,5 @@
-import { Outlet } from "react-router"
+import { Outlet, ScrollRestoration } from "react-router"
+import Footer from "./Footer"
 import Header from "./Header"
 
 const Layout = () => (
@@ -7,6 +8,8 @@ const Layout = () => (
     <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col p-3">
       <Outlet />
     </div>
+    <Footer />
+    <ScrollRestoration />
   </div>
 )
 

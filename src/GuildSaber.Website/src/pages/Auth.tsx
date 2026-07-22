@@ -9,6 +9,7 @@ import { useSession } from "@/features/auth/hooks/useSession"
 import { useQueryClient } from "@tanstack/react-query"
 import { CircleX, LogOut } from "lucide-react"
 import { useQueryState } from "nuqs"
+import { Link } from "react-router"
 
 const Auth = () => {
   const queryClient = useQueryClient()
@@ -74,6 +75,13 @@ const Auth = () => {
               )}
             </>
           )}
+          <p className="text-muted-foreground mt-5 text-xs leading-5">
+            GuildSaber processes account and provider data when you sign in or link an account. See the{" "}
+            <Link className="text-primary underline underline-offset-4" to="/privacy-policy">
+              privacy policy
+            </Link>
+            .
+          </p>
         </CardContent>
       </Card>
     </main>
