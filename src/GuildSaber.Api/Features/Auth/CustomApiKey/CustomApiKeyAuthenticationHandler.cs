@@ -43,10 +43,4 @@ public class CustomApiKeyAuthenticationHandler(
             ? Task.FromResult(AuthenticateResult.Fail("Error decoding credentials from header value."))
             : authenticationService.AuthenticateAsync(credential, Request.HttpContext.Connection.RemoteIpAddress);
     }
-
-    protected override Task HandleChallengeAsync(AuthenticationProperties properties)
-    {
-        Response.Headers.WWWAuthenticate = BasicAuthenticationDefaults.AuthenticationScheme;
-        return base.HandleChallengeAsync(properties);
-    }
 }
