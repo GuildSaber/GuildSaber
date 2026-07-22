@@ -73,8 +73,8 @@ public sealed class RankedMapManager(
 #pragma warning restore CS0618
     }
 
-    private async void OnUploadReplayStateChanged(IWebRequest<ScoreUploadResponse> instance, RequestState state,
-                                                  string? failReason)
+    private async void OnUploadReplayStateChanged(
+        IWebRequest<ScoreUploadResponse> instance, RequestState state, string? failReason)
     {
         try
         {

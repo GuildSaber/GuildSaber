@@ -214,6 +214,54 @@ public class RankedMapClient(
             };
 
     /// <summary>
+    /// Creates a new ranked map for a context.
+    /// </summary>
+    /// <param name="contextId">The ID of the context to create the ranked map for.</param>
+    /// <param name="request">The ranked map creation request.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the created ranked map.</returns>
+    public async Task<Result<RankedMap>> CreateAsync(
+        ContextId contextId, CreateRankedMap request, CancellationToken token = default)
+        => await httpClient.SendAsync(
+                new HttpRequestMessage(HttpMethod.Post, $"contexts/{contextId}/ranked-maps")
+                {
+                    Headers = { Authorization = authenticationHeader },
+                    Content = JsonContent.Create(request, options: jsonOptions)
+                }, token).ConfigureAwait(false) switch
+            {
+                { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                    => Failure<RankedMap>(
+                        $"Failed to create ranked map for context ID {contextId}: {(int)statusCode} ({reasonPhrase})"),
+                var response => (await Try(() => response.Content
+                    .ReadFromJsonAsync<RankedMap>(jsonOptions, cancellationToken: token)).ConfigureAwait(false))!
+            };
+
+    /// <summary>
+    /// Updates an existing ranked map for a context.
+    /// </summary>
+    /// <param name="contextId">The ID of the context the ranked map belongs to.</param>
+    /// <param name="rankedMapId">The ID of the ranked map to update.</param>
+    /// <param name="request">The ranked map update request.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result containing the updated ranked map.</returns>
+    public async Task<Result<RankedMap>> UpdateAsync(
+        ContextId contextId, RankedMapId rankedMapId, UpdateRankedMap request,
+        CancellationToken token = default)
+        => await httpClient.SendAsync(
+                new HttpRequestMessage(HttpMethod.Put, $"contexts/{contextId}/ranked-maps/{rankedMapId}")
+                {
+                    Headers = { Authorization = authenticationHeader },
+                    Content = JsonContent.Create(request, options: jsonOptions)
+                }, token).ConfigureAwait(false) switch
+            {
+                { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                    => Failure<RankedMap>(
+                        $"Failed to update ranked map {rankedMapId} for context ID {contextId}: {(int)statusCode} ({reasonPhrase})"),
+                var response => (await Try(() => response.Content
+                    .ReadFromJsonAsync<RankedMap>(jsonOptions, cancellationToken: token)).ConfigureAwait(false))!
+            };
+
+    /// <summary>
     /// Asynchronously retrieves ranked maps with automatic pagination.
     /// </summary>
     /// <param name="contextId">The context identifier.</param>
