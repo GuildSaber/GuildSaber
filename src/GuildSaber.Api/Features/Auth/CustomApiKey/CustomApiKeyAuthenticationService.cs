@@ -2,7 +2,6 @@
 using System.Security.Claims;
 using GuildSaber.Api.Features.Auth.CustomApiKey.Interfaces;
 using GuildSaber.Api.Features.Auth.CustomApiKey.ValidationTypes;
-using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;

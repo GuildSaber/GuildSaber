@@ -72,8 +72,10 @@ public class LegacyGSImportAdminConfPipeline(
 
             var stateToSet = state switch
             {
-                _ when state.HasAnyFlag(OldGSState.ScoringTeamConfirmed | OldGSState.Allowed) => RankedScore.ERankedScoreType.Accepted,
-                _ when state.HasAnyFlag(OldGSState.ScoringTeamDenied | OldGSState.Denied) => RankedScore.ERankedScoreType.Refused,
+                _ when state.HasAnyFlag(OldGSState.ScoringTeamConfirmed | OldGSState.Allowed) => RankedScore
+                    .ERankedScoreType.Accepted,
+                _ when state.HasAnyFlag(OldGSState.ScoringTeamDenied | OldGSState.Denied) => RankedScore
+                    .ERankedScoreType.Refused,
                 _ => (RankedScore.ERankedScoreType?)null
             };
 

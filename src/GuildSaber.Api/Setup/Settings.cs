@@ -1,4 +1,4 @@
-using GuildSaber.Api.Features.Auth.Settings;
+using GuildSaber.Api.Features.Auth;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Common.Settings;
@@ -20,8 +20,8 @@ public static class SettingsSetup
             .AddOptionsWithValidateOnStart<SessionSettings>()
             .Bind(authSettings.GetSection(nameof(AuthSettings.Session))).ValidateDataAnnotations();
         builder.Services
-            .AddOptionsWithValidateOnStart<JwtAuthSettings>()
-            .Bind(authSettings.GetSection(nameof(AuthSettings.Jwt))).ValidateDataAnnotations();
+            .AddOptionsWithValidateOnStart<SessionCookieAuthSettings>()
+            .Bind(authSettings.GetSection(nameof(AuthSettings.SessionCookie))).ValidateDataAnnotations();
         builder.Services
             .AddOptionsWithValidateOnStart<BeatLeaderAuthSettings>()
             .Bind(authSettings.GetSection(nameof(AuthSettings.BeatLeader))).ValidateDataAnnotations();

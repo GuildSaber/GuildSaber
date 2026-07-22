@@ -3,14 +3,13 @@ import { getApiUrl } from "@/utils/url"
 
 client.setConfig({
   baseUrl: getApiUrl(),
+  credentials: "include",
 })
 
-client.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token")
-
-  if (token) {
-    config.headers.set("Authorization", `Bearer ${token}`)
+client.interceptors.request.use((request) => {
+  if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) {
+    request.headers.set("X-GuildSaber-Request", "1")
   }
 
-  return config
+  return request
 })

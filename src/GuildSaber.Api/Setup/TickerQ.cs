@@ -1,5 +1,5 @@
 using System.Reflection;
-using GuildSaber.Api.Features.Auth.Settings;
+using GuildSaber.Api.Features.Auth;
 using GuildSaber.Database.Contexts.Server;
 using TickerQ.Dashboard.DependencyInjection;
 using TickerQ.DependencyInjection;

@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Headers;
+﻿using System.Net;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using GuildSaber.CSharpClient.Auth;
@@ -22,10 +23,8 @@ namespace GuildSaber.CSharpClient;
 /// </summary>
 public class GuildSaberClient : IDisposable
 {
-    /// <summary>
-    /// The underlying HTTP client used for all API requests.
-    /// </summary>
-    public readonly HttpClient HttpClient;
+    private const string RequestVerificationHeaderName = "X-GuildSaber-Request";
+    private const string RequestVerificationHeaderValue = "1";
 
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
@@ -34,9 +33,15 @@ public class GuildSaberClient : IDisposable
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
     };
 
-    private readonly bool _disposeHttpClient;
     private readonly AuthenticationHeaderValue? _authenticationHeader;
     private readonly Uri _cdnBaseUri;
+
+    private readonly bool _disposeHttpClient;
+
+    /// <summary>
+    /// The underlying HTTP client used for all API requests.
+    /// </summary>
+    public readonly HttpClient HttpClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GuildSaberClient" /> class using an existing HTTP client.
@@ -44,54 +49,48 @@ public class GuildSaberClient : IDisposable
     /// <param name="httpClient">The HTTP client to use. Must have a BaseAddress set.</param>
     /// <param name="cdnBaseUri">The base URI for the CDN. This is used for constructing URLs to access media assets.</param>
     /// <param name="authentication">Optional authentication credentials.</param>
+    /// <remarks>
+    /// Session authentication is carried by cookies. The supplied client must reuse a cookie-enabled handler for
+    /// authentication responses and subsequent API requests to share the same cookie container.
+    /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when httpClient is null or BaseAddress is not set.</exception>
     public GuildSaberClient(HttpClient httpClient, Uri cdnBaseUri, GuildSaberAuthentication? authentication)
     {
-        if (httpClient.BaseAddress is null)
-            throw new ArgumentNullException(nameof(httpClient.BaseAddress), "HttpClient must have a BaseAddress set.");
         HttpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        if (HttpClient.BaseAddress is null)
+            throw new ArgumentNullException(nameof(httpClient.BaseAddress), "HttpClient must have a BaseAddress set.");
         HttpClient.Timeout = TimeSpan.FromSeconds(30);
 
         if (!HttpClient.DefaultRequestHeaders.Contains("User-Agent"))
             HttpClient.DefaultRequestHeaders.Add("User-Agent", "GuildSaber.CSharpClient/1.0");
+        if (!HttpClient.DefaultRequestHeaders.Contains(RequestVerificationHeaderName))
+            HttpClient.DefaultRequestHeaders.Add(RequestVerificationHeaderName, RequestVerificationHeaderValue);
 
         _authenticationHeader = authentication?.ToAuthenticationHeader();
         _cdnBaseUri = cdnBaseUri;
     }
 
-#if NETCOREAPP2_1_OR_GREATER
     /// <summary>
     /// Initializes a new instance of the <see cref="GuildSaberClient" /> class with a base URI.
-    /// Creates an internal HTTP client with optimized connection pooling settings.
+    /// Creates an internal cookie-enabled HTTP client.
     /// </summary>
     /// <param name="baseUri">The base URI for the GuildSaber API.</param>
     /// <param name="cdnBaseUri">The base URI for the CDN. This is used for constructing URLs to access media assets.</param>
     /// <param name="authentication">Optional authentication credentials.</param>
     public GuildSaberClient(Uri baseUri, Uri cdnBaseUri, GuildSaberAuthentication? authentication) :
-        this(new HttpClient(new SocketsHttpHandler
-        {
-            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
-            PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
-            MaxConnectionsPerServer = int.MaxValue
-        })
-        {
-            BaseAddress = baseUri,
-            Timeout = TimeSpan.FromSeconds(30)
-        }, cdnBaseUri, authentication) => _disposeHttpClient = true;
-#else
+        this(baseUri, cdnBaseUri, new CookieContainer(), authentication) { }
+
     /// <summary>
-    /// Initializes a new instance of the <see cref="GuildSaberClient" /> class with a base URI.
-    /// Creates an internal HTTP client.
+    /// Initializes a client with a caller-owned cookie container.
+    /// Reuse the container to retain a session established by an authentication request made with this client.
     /// </summary>
     /// <param name="baseUri">The base URI for the GuildSaber API.</param>
-    /// <param name="cdnBaseUri">The base URI for the CDN. This is used for constructing URLs to access media assets.</param>
-    /// <param name="authentication">Optional authentication credentials.</param>
-    public GuildSaberClient(Uri baseUri, Uri cdnBaseUri, GuildSaberAuthentication? authentication) : this(new HttpClient
-    {
-        BaseAddress = baseUri,
-        Timeout = TimeSpan.FromSeconds(30)
-    }, cdnBaseUri, authentication) => _disposeHttpClient = true;
-#endif
+    /// <param name="cdnBaseUri">The base URI for the CDN.</param>
+    /// <param name="cookieContainer">The cookie container used for authentication and subsequent requests.</param>
+    /// <param name="authentication">Optional Basic API-key credentials.</param>
+    public GuildSaberClient(
+        Uri baseUri, Uri cdnBaseUri, CookieContainer cookieContainer, GuildSaberAuthentication? authentication) :
+        this(CreateHttpClient(baseUri, cookieContainer), cdnBaseUri, authentication) => _disposeHttpClient = true;
 
     /// <summary>
     /// Gets the guild client for interacting with guild endpoints.
@@ -162,5 +161,34 @@ public class GuildSaberClient : IDisposable
     {
         if (_disposeHttpClient)
             HttpClient.Dispose();
+    }
+
+    private static HttpClient CreateHttpClient(Uri baseUri, CookieContainer cookieContainer)
+    {
+        if (cookieContainer is null)
+            throw new ArgumentNullException(nameof(cookieContainer));
+
+#if NETCOREAPP2_1_OR_GREATER
+        var handler = new SocketsHttpHandler
+        {
+            UseCookies = true,
+            CookieContainer = cookieContainer,
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+            MaxConnectionsPerServer = int.MaxValue
+        };
+#else
+        var handler = new HttpClientHandler
+        {
+            UseCookies = true,
+            CookieContainer = cookieContainer
+        };
+#endif
+
+        return new HttpClient(handler)
+        {
+            BaseAddress = baseUri,
+            Timeout = TimeSpan.FromSeconds(30)
+        };
     }
 }

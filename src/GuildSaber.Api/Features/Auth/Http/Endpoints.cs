@@ -5,14 +5,12 @@ using AspNet.Security.OAuth.Discord;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
-using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Transformers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Options;
-using static GuildSaber.Api.Features.Auth.Http.AuthResponse;
 
 namespace GuildSaber.Api.Features.Auth.Http;
 
@@ -44,7 +42,8 @@ public class AuthEndpoints : IEndpoints
             .WithName("DiscordLink")
             .WithSummary("Initiate linking Discord from authentication flow.")
             .WithDescription("Initiate the Discord authentication flow to link Discord account"
-                             + " to an existing authenticated user with optional callback path.");
+                             + " to an existing authenticated user with optional callback path.")
+            .RequireSession();
 
         group.MapGet("/callback/link/discord", HandleDiscordLinkCallbackAsync)
             .WithName(DiscordLinkCallbackName)
@@ -53,7 +52,8 @@ public class AuthEndpoints : IEndpoints
                 "Handles the callback from Discord to link Discord account to existing authenticated user.")
             .Produces<RedirectHttpResult>()
             .Produces(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
+            .RequireSession();
 
         group.MapGet("/callback/link/discord/redirect", HandleDiscordLinkCallbackWithRedirectAsync)
             .WithName(DiscordLinkCallbackWithRedirectName)
@@ -63,13 +63,14 @@ public class AuthEndpoints : IEndpoints
                              + " from the calling origin with ?type=discordLink&{error}&status as query params.")
             .Produces<RedirectHttpResult>()
             .Produces(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
+            .RequireSession();
 
         group.MapGet("/callback/beatleader", HandleBeatLeaderCallbackAsync)
             .WithName(BeatLeaderCallbackName)
-            .WithSummary("Get session token after authenticating with BeatLeader.")
-            .WithDescription("Handles the callback from BeatLeader after authentication and returns a token.")
-            .Produces<TokenResponse>()
+            .WithSummary("Create a session cookie after authenticating with BeatLeader.")
+            .WithDescription("Handles the callback from BeatLeader and sets the GuildSaber session cookie.")
+            .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
@@ -77,9 +78,9 @@ public class AuthEndpoints : IEndpoints
 
         group.MapGet("/callback/discord", HandleDiscordCallbackAsync)
             .WithName(DiscordCallbackName)
-            .WithSummary("Get session token after authenticating with Discord.")
-            .WithDescription("Handles the callback from Discord after authentication and returns a token.")
-            .Produces<TokenResponse>()
+            .WithSummary("Create a session cookie after authenticating with Discord.")
+            .WithDescription("Handles the callback from Discord and sets the GuildSaber session cookie.")
+            .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
@@ -87,9 +88,9 @@ public class AuthEndpoints : IEndpoints
 
         group.MapGet("/callback/discord/redirect", HandleDiscordCallbackWithRedirectAsync)
             .WithName(DiscordCallbackWithRedirectName)
-            .WithSummary("Redirect with session token or error after Discord authentication.")
-            .WithDescription("Handles the callback from Discord after authentication and redirects to a specified path"
-                             + " from the calling origin with ?type=auth&{token/error}&status as query params.")
+            .WithSummary("Set the session cookie and redirect after Discord authentication.")
+            .WithDescription("Handles the callback from Discord, sets the GuildSaber session cookie, and redirects"
+                             + " with authentication status or error query parameters.")
             .Produces<RedirectHttpResult>()
             .Produces(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
@@ -98,10 +99,10 @@ public class AuthEndpoints : IEndpoints
 
         group.MapGet("/callback/beatleader/redirect", HandleBeatLeaderCallbackWithRedirectAsync)
             .WithName(BeatLeaderCallbackWithRedirectName)
-            .WithSummary("Redirect with session token or error after BeatLeader authentication.")
+            .WithSummary("Set the session cookie and redirect after BeatLeader authentication.")
             .WithDescription(
-                "Handles the callback from BeatLeader after authentication and redirects to a specified path"
-                + " from the calling origin with ?type=auth&{token/error}&status as query params.")
+                "Handles the callback from BeatLeader, sets the GuildSaber session cookie, and redirects"
+                + " with authentication status or error query parameters.")
             .Produces<RedirectHttpResult>()
             .Produces(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
@@ -111,23 +112,23 @@ public class AuthEndpoints : IEndpoints
         group.MapPost("/logout", HandleLogoutAsync)
             .WithName("Logout")
             .WithSummary("Log out the current user by invalidating their session.")
-            .RequireAuthorization();
+            .RequireSession();
 
         group.MapPost("/logout-all", HandleLogoutAllAsync)
             .WithName("LogoutAll")
             .WithSummary("Log out the current user from all sessions by invalidating all their sessions.")
-            .RequireAuthorization();
+            .RequireSession();
 
-        group.MapGet("/logout/redirect", HandleLogoutWithRedirectAsync)
+        group.MapPost("/logout/redirect", HandleLogoutWithRedirectAsync)
             .WithName("LogoutWithRedirect")
             .WithSummary("Log out the current user by invalidating their session and redirecting.")
-            .RequireAuthorization();
+            .RequireSession();
 
-        group.MapGet("/logout-all/redirect", HandleLogoutAllWithRedirectAsync)
+        group.MapPost("/logout-all/redirect", HandleLogoutAllWithRedirectAsync)
             .WithName("LogoutAllWithRedirect")
             .WithSummary(
                 "Log out the current user from all sessions by invalidating all their sessions and redirecting.")
-            .RequireAuthorization();
+            .RequireSession();
     }
 
     private static ChallengeHttpResult HandleBeatLeaderLogin(
@@ -158,21 +159,17 @@ public class AuthEndpoints : IEndpoints
         }, [DiscordAuthenticationDefaults.AuthenticationScheme]);
 
     private static async Task<Results<RedirectHttpResult, ProblemHttpResult>> HandleDiscordLinkCallbackAsync(
-        HttpContext httpContext, AuthService authService)
+        HttpContext httpContext, ClaimsPrincipal claimsPrincipal, AuthService authService)
     {
-        if (!(await AuthenticateAsync(httpContext, DiscordAuthenticationDefaults.AuthenticationScheme))
-            .TryGetValue(out var discordAuthValue))
+        var discordAuthResult =
+            await AuthenticateAsync(httpContext, DiscordAuthenticationDefaults.AuthenticationScheme);
+        await httpContext.SignOutAsync(AuthConstants.DiscordCookieScheme);
+        if (!discordAuthResult.TryGetValue(out var discordAuthValue))
             return TypedResults.Problem("Authentication failed. Please ensure you are logged in with Discord.",
                 statusCode: StatusCodes.Status401Unauthorized);
 
-        var blClaims = (await AuthenticateAsync(httpContext, BeatLeaderAuthenticationDefaults.AuthenticationScheme))
-            .Match(static ClaimsPrincipal? (authValue) => authValue.claimsPrincipal, _ => null);
-
-        if (blClaims is null)
-            return TypedResults.Problem("You must be logged in with BeatLeader to link your Discord account.",
-                statusCode: StatusCodes.Status401Unauthorized);
-
-        var result = await DiscordLinkPipeline(authService, discordAuthValue.claimsPrincipal, blClaims);
+        var result = await DiscordLinkPipeline(
+            authService, discordAuthValue.claimsPrincipal, claimsPrincipal.GetPlayerId()!.Value);
         if (result.TryGetError(out var error))
             return error;
 
@@ -181,56 +178,57 @@ public class AuthEndpoints : IEndpoints
 
     private static async Task<Results<RedirectHttpResult, ProblemHttpResult>>
         HandleDiscordLinkCallbackWithRedirectAsync(
-            HttpContext httpContext, AuthService authService, [FromQuery] string returnUrl,
+            HttpContext httpContext, ClaimsPrincipal claimsPrincipal, AuthService authService,
+            [FromQuery] string returnUrl,
             IOptionsSnapshot<RedirectSettings> redirectSettings)
     {
         if (!IsValidRedirectUrl(returnUrl, redirectSettings.Value))
             return TypedResults.Problem("Invalid return URL. Please ensure the URL is allowed.",
                 statusCode: StatusCodes.Status400BadRequest);
 
-        if (!(await AuthenticateAsync(httpContext, DiscordAuthenticationDefaults.AuthenticationScheme))
-            .TryGetValue(out var discordAuthValue))
+        var discordAuthResult =
+            await AuthenticateAsync(httpContext, DiscordAuthenticationDefaults.AuthenticationScheme);
+        await httpContext.SignOutAsync(AuthConstants.DiscordCookieScheme);
+        if (!discordAuthResult.TryGetValue(out var discordAuthValue))
             return TypedResults.Problem("Authentication failed. Please ensure you are logged in with Discord.",
                 statusCode: StatusCodes.Status401Unauthorized);
 
-        var blClaims = (await AuthenticateAsync(httpContext, BeatLeaderAuthenticationDefaults.AuthenticationScheme))
-            .Match(static ClaimsPrincipal? (authValue) => authValue.claimsPrincipal, _ => null);
-
-        if (blClaims is null)
-            return TypedResults.Problem("You must be logged in with BeatLeader to link your Discord account.",
-                statusCode: StatusCodes.Status401Unauthorized);
-
-        var result = await DiscordLinkPipeline(authService, discordAuthValue.claimsPrincipal, blClaims);
-        return BuildLinkCallBackRedirect(result, eventType: "discordLink", returnUrl);
+        var result = await DiscordLinkPipeline(
+            authService, discordAuthValue.claimsPrincipal, claimsPrincipal.GetPlayerId()!.Value);
+        return BuildCallbackRedirect(result, eventType: "discordLink", returnUrl);
     }
 
-    private static async Task<Results<Ok<TokenResponse>, ProblemHttpResult>> HandleDiscordCallbackAsync(
+    private static async Task<Results<NoContent, ProblemHttpResult>> HandleDiscordCallbackAsync(
         HttpContext httpContext, AuthService authService)
     {
-        if (!(await AuthenticateAsync(httpContext, DiscordAuthenticationDefaults.AuthenticationScheme))
-            .TryGetValue(out var discordAuthValue))
+        var discordAuthResult =
+            await AuthenticateAsync(httpContext, DiscordAuthenticationDefaults.AuthenticationScheme);
+        await httpContext.SignOutAsync(AuthConstants.DiscordCookieScheme);
+        if (!discordAuthResult.TryGetValue(out var discordAuthValue))
             return TypedResults.Problem("Authentication failed. Please ensure you are logged in with Discord.",
                 statusCode: StatusCodes.Status401Unauthorized);
 
-        var blClaims = (await AuthenticateAsync(httpContext, BeatLeaderAuthenticationDefaults.AuthenticationScheme))
-            .Match(static ClaimsPrincipal? (authValue) => authValue.claimsPrincipal, _ => null);
-
-        return await DiscordCallBackPipeline(httpContext, authService, discordAuthValue.claimsPrincipal, blClaims)
-            .Match(token => token, error => (Results<Ok<TokenResponse>, ProblemHttpResult>)error);
+        var result = await DiscordCallBackPipeline(httpContext, authService, discordAuthValue.claimsPrincipal);
+        return result.Match(
+            onSuccess: () => (Results<NoContent, ProblemHttpResult>)TypedResults.NoContent(),
+            onFailure: error => (Results<NoContent, ProblemHttpResult>)error);
     }
 
-    private static async Task<Results<Ok<TokenResponse>, ProblemHttpResult>> HandleBeatLeaderCallbackAsync(
+    private static async Task<Results<NoContent, ProblemHttpResult>> HandleBeatLeaderCallbackAsync(
         HttpContext httpContext, AuthService authService, IBackgroundTaskQueue taskQueue,
         IServiceScopeFactory scopeFactory)
     {
         var authResult = await AuthenticateAsync(httpContext, BeatLeaderAuthenticationDefaults.AuthenticationScheme);
+        await httpContext.SignOutAsync(AuthConstants.BeatLeaderCookieScheme);
         if (!authResult.TryGetValue(out var authValue))
             return TypedResults.Problem("Authentication failed. Please ensure you are logged in with BeatLeader.",
                 statusCode: StatusCodes.Status401Unauthorized);
 
-        return await BeatLeaderCallBackPipeline(
-                httpContext, authService, authValue.claimsPrincipal, taskQueue, scopeFactory)
-            .Match(token => token, error => (Results<Ok<TokenResponse>, ProblemHttpResult>)error);
+        var result = await BeatLeaderCallBackPipeline(
+            httpContext, authService, authValue.claimsPrincipal, taskQueue, scopeFactory);
+        return result.Match(
+            onSuccess: () => (Results<NoContent, ProblemHttpResult>)TypedResults.NoContent(),
+            onFailure: error => (Results<NoContent, ProblemHttpResult>)error);
     }
 
     private static async Task<Results<RedirectHttpResult, ProblemHttpResult>> HandleDiscordCallbackWithRedirectAsync(
@@ -242,15 +240,13 @@ public class AuthEndpoints : IEndpoints
                 statusCode: StatusCodes.Status400BadRequest);
 
         var authResult = await AuthenticateAsync(httpContext, DiscordAuthenticationDefaults.AuthenticationScheme);
+        await httpContext.SignOutAsync(AuthConstants.DiscordCookieScheme);
         if (!authResult.TryGetValue(out var authValue))
             return TypedResults.Problem("Authentication failed. Please ensure you are logged in with Discord.",
                 statusCode: StatusCodes.Status401Unauthorized);
 
-        var blClaims = (await AuthenticateAsync(httpContext, BeatLeaderAuthenticationDefaults.AuthenticationScheme))
-            .Match(static ClaimsPrincipal? (authValue) => authValue.claimsPrincipal, _ => null);
-
-        var result = await DiscordCallBackPipeline(httpContext, authService, authValue.claimsPrincipal, blClaims);
-        return BuildTokenCallbackRedirect(result, returnUrl);
+        var result = await DiscordCallBackPipeline(httpContext, authService, authValue.claimsPrincipal);
+        return BuildCallbackRedirect(result, eventType: "auth", returnUrl);
     }
 
     private static async Task<Results<RedirectHttpResult, ProblemHttpResult>> HandleBeatLeaderCallbackWithRedirectAsync(
@@ -263,32 +259,17 @@ public class AuthEndpoints : IEndpoints
                 statusCode: StatusCodes.Status400BadRequest);
 
         var authResult = await AuthenticateAsync(httpContext, BeatLeaderAuthenticationDefaults.AuthenticationScheme);
+        await httpContext.SignOutAsync(AuthConstants.BeatLeaderCookieScheme);
         if (!authResult.TryGetValue(out var authValue))
             return TypedResults.Problem("Authentication failed. Please ensure you are logged in with BeatLeader.",
                 statusCode: StatusCodes.Status401Unauthorized);
 
         var result = await BeatLeaderCallBackPipeline(httpContext, authService, authValue.claimsPrincipal,
             taskQueue, scopeFactory);
-        return BuildTokenCallbackRedirect(result, returnUrl);
+        return BuildCallbackRedirect(result, eventType: "auth", returnUrl);
     }
 
-    private static RedirectHttpResult BuildTokenCallbackRedirect(
-        Result<Ok<TokenResponse>, ProblemHttpResult> result, string returnUrl)
-    {
-        var uriBuilder = new UriBuilder(returnUrl);
-        var query = HttpUtility.ParseQueryString(uriBuilder.Query);
-        query["type"] = "auth";
-        query["status"] = result.IsSuccess ? "200" : result.Error.ProblemDetails.Status.ToString();
-        result.Match(
-            onSuccess: token => query["token"] = HttpUtility.UrlEncode(token.Value.Token),
-            onFailure: problem => query["error"] = HttpUtility.UrlEncode(problem.ProblemDetails.Detail)
-        );
-        uriBuilder.Query = query.ToString();
-
-        return TypedResults.Redirect(uriBuilder.ToString());
-    }
-
-    private static RedirectHttpResult BuildLinkCallBackRedirect(
+    private static RedirectHttpResult BuildCallbackRedirect(
         UnitResult<ProblemHttpResult> result, string eventType, string returnUrl)
     {
         var uriBuilder = new UriBuilder(returnUrl);
@@ -304,57 +285,32 @@ public class AuthEndpoints : IEndpoints
         return TypedResults.Redirect(uriBuilder.ToString());
     }
 
-    private static async Task<Result<Ok<TokenResponse>, ProblemHttpResult>> DiscordCallBackPipeline(
-        HttpContext httpContext, AuthService authService, ClaimsPrincipal discordClaims, ClaimsPrincipal? blClaims)
+    private static async Task<UnitResult<ProblemHttpResult>> DiscordCallBackPipeline(
+        HttpContext httpContext, AuthService authService, ClaimsPrincipal discordClaims)
         => await DiscordId.TryParse(discordClaims.FindFirstValue(ClaimTypes.NameIdentifier))
             .MapError(_ => TypedResults.Problem("Failed to parse Discord ID from authentication claims.",
                 statusCode: StatusCodes.Status400BadRequest))
             .Bind(discordId => authService
                 .GetPlayerIdAsync(discordId)
-                .ToResult(() => "Treating as result")
-                .Compensate(_ => BeatLeaderId
-                    .TryParse(blClaims?.FindFirstValue(ClaimTypes.NameIdentifier))
-                    .MapError(_ => TypedResults.Problem(
-                        "Discord account is not linked to any player, please create/login in an account using BeatLeader first.",
-                        statusCode: StatusCodes.Status422UnprocessableEntity))
-                    .Bind(beatleaderId => authService
-                        .GetPlayerIdAsync(beatleaderId)
-                        .Tap(playerId => authService.UpdatePlayerInfoAsync(playerId, beatleaderId))
-                        .ToResult(() => TypedResults.Problem(
-                            "Can't find the player linked to the provided BeatLeader account.",
-                            statusCode: StatusCodes.Status500InternalServerError)))
-                    .Bind(async playerId => await authService.LinkDiscordIdAsync(playerId, discordId)
-                        ? Success<PlayerId, ProblemHttpResult>(playerId)
-                        : Failure<PlayerId, ProblemHttpResult>(TypedResults.Problem(
-                            "Failed to link Discord account to player.",
-                            statusCode: StatusCodes.Status500InternalServerError)))))
+                .ToResult(() => TypedResults.Problem(
+                    "Discord account is not linked to a player. Log in with BeatLeader first, then link Discord.",
+                    statusCode: StatusCodes.Status422UnprocessableEntity)))
             .Bind(playerId => authService
                 .CreateSession(playerId, httpContext)
-                .MapError(MapSessionCreationErrorResponse))
-            .Map(token => TypedResults.Ok(new TokenResponse(token)));
+                .MapError(MapSessionCreationErrorResponse));
 
     private static async Task<UnitResult<ProblemHttpResult>> DiscordLinkPipeline(
-        AuthService authService, ClaimsPrincipal discordClaims, ClaimsPrincipal blClaims)
+        AuthService authService, ClaimsPrincipal discordClaims, PlayerId playerId)
         => await DiscordId.TryParse(discordClaims.FindFirstValue(ClaimTypes.NameIdentifier))
             .MapError(_ => TypedResults.Problem("Failed to parse Discord ID from authentication claims.",
                 statusCode: StatusCodes.Status400BadRequest))
-            .Bind(discordId => BeatLeaderId
-                .TryParse(blClaims.FindFirstValue(ClaimTypes.NameIdentifier))
-                .MapError(_ => TypedResults.Problem(
-                    "You must be logged in with BeatLeader to link your Discord account.",
-                    statusCode: StatusCodes.Status401Unauthorized))
-                .Bind(beatleaderId => authService
-                    .GetPlayerIdAsync(beatleaderId)
-                    .ToResult(() => TypedResults.Problem(
-                        "Can't find the player linked to the provided BeatLeader account.",
-                        statusCode: StatusCodes.Status500InternalServerError)))
-                .Bind(async playerId => await authService.LinkDiscordIdAsync(playerId, discordId)
-                    ? UnitResult.Success<ProblemHttpResult>()
-                    : Failure(TypedResults.Problem(
-                        "Failed to link Discord account to player.",
-                        statusCode: StatusCodes.Status500InternalServerError))));
+            .Bind(async discordId => await authService.LinkDiscordIdAsync(playerId, discordId)
+                ? UnitResult.Success<ProblemHttpResult>()
+                : Failure(TypedResults.Problem(
+                    "Failed to link Discord account to player.",
+                    statusCode: StatusCodes.Status500InternalServerError)));
 
-    private static async Task<Result<Ok<TokenResponse>, ProblemHttpResult>> BeatLeaderCallBackPipeline(
+    private static async Task<UnitResult<ProblemHttpResult>> BeatLeaderCallBackPipeline(
         HttpContext httpContext, AuthService authService, ClaimsPrincipal claimsPrincipal,
         IBackgroundTaskQueue taskQueue, IServiceScopeFactory scopeFactory)
         => await BeatLeaderId.TryParse(claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier))
@@ -387,8 +343,7 @@ public class AuthEndpoints : IEndpoints
                         statusCode: StatusCodes.Status422UnprocessableEntity))))
             .Bind(playerId => authService
                 .CreateSession(playerId, httpContext)
-                .MapError(MapSessionCreationErrorResponse))
-            .Map(token => TypedResults.Ok(new TokenResponse(token)));
+                .MapError(MapSessionCreationErrorResponse));
 
     private static ProblemHttpResult MapSessionCreationErrorResponse(SessionCreationError error) => error switch
     {
@@ -423,53 +378,51 @@ public class AuthEndpoints : IEndpoints
         var returnOrigin = uri.GetLeftPart(UriPartial.Authority);
 
         return redirectSettings.AllowedOriginUrls
-            .Any(origin => string.Equals(origin, returnOrigin, StringComparison.OrdinalIgnoreCase));
+            .Any(origin => Uri.TryCreate(origin, UriKind.Absolute, out var allowedUri) &&
+                           string.Equals(allowedUri.GetLeftPart(UriPartial.Authority), returnOrigin,
+                               StringComparison.OrdinalIgnoreCase));
     }
 
-    private static async Task<Results<NoContent, InternalServerError>> HandleLogoutAsync(
-        ClaimsPrincipal claimsPrincipal, AuthService authService)
-        => await authService.InvalidateSessionAsync(claimsPrincipal.GetSessionId()!.Value) switch
-        {
-            true => TypedResults.NoContent(),
-            false => TypedResults.InternalServerError()
-        };
+    private static async Task<NoContent> HandleLogoutAsync(
+        HttpContext httpContext, ClaimsPrincipal claimsPrincipal, AuthService authService)
+    {
+        await authService.InvalidateSessionAsync(claimsPrincipal.GetSessionId()!.Value);
+        authService.DeleteSessionCookie(httpContext.Response);
+        return TypedResults.NoContent();
+    }
 
-    private static async Task<Results<NoContent, InternalServerError>> HandleLogoutAllAsync(
-        ClaimsPrincipal claimsPrincipal, AuthService authService)
-        => await authService.InvalidateAllSessionsAsync(claimsPrincipal.GetPlayerId()!.Value) switch
-        {
-            true => TypedResults.NoContent(),
-            false => TypedResults.InternalServerError()
-        };
+    private static async Task<NoContent> HandleLogoutAllAsync(
+        HttpContext httpContext, ClaimsPrincipal claimsPrincipal, AuthService authService)
+    {
+        await authService.InvalidateAllSessionsAsync(claimsPrincipal.GetPlayerId()!.Value);
+        authService.DeleteSessionCookie(httpContext.Response);
+        return TypedResults.NoContent();
+    }
 
     private static async Task<Results<RedirectHttpResult, ProblemHttpResult>> HandleLogoutWithRedirectAsync(
-        ClaimsPrincipal claimsPrincipal, AuthService authService, IOptionsSnapshot<RedirectSettings> redirectSettings,
-        [FromQuery] string returnUrl)
+        HttpContext httpContext, ClaimsPrincipal claimsPrincipal, AuthService authService,
+        IOptionsSnapshot<RedirectSettings> redirectSettings, [FromQuery] string returnUrl)
     {
         if (!IsValidRedirectUrl(returnUrl, redirectSettings.Value))
             return TypedResults.Problem("Invalid return URL. Please ensure the URL is allowed.",
                 statusCode: StatusCodes.Status400BadRequest);
 
-        var invalidateResult = await authService.InvalidateSessionAsync(claimsPrincipal.GetSessionId()!.Value);
-        if (!invalidateResult)
-            return TypedResults.Problem("Failed to log out the user.",
-                statusCode: StatusCodes.Status500InternalServerError);
+        await authService.InvalidateSessionAsync(claimsPrincipal.GetSessionId()!.Value);
+        authService.DeleteSessionCookie(httpContext.Response);
 
         return TypedResults.Redirect(returnUrl);
     }
 
     private static async Task<Results<RedirectHttpResult, ProblemHttpResult>> HandleLogoutAllWithRedirectAsync(
-        ClaimsPrincipal claimsPrincipal, AuthService authService, IOptionsSnapshot<RedirectSettings> redirectSettings,
-        [FromQuery] string returnUrl)
+        HttpContext httpContext, ClaimsPrincipal claimsPrincipal, AuthService authService,
+        IOptionsSnapshot<RedirectSettings> redirectSettings, [FromQuery] string returnUrl)
     {
         if (!IsValidRedirectUrl(returnUrl, redirectSettings.Value))
             return TypedResults.Problem("Invalid return URL. Please ensure the URL is allowed.",
                 statusCode: StatusCodes.Status400BadRequest);
 
-        var invalidateResult = await authService.InvalidateAllSessionsAsync(claimsPrincipal.GetPlayerId()!.Value);
-        if (!invalidateResult)
-            return TypedResults.Problem("Failed to log out the user from all sessions.",
-                statusCode: StatusCodes.Status500InternalServerError);
+        await authService.InvalidateAllSessionsAsync(claimsPrincipal.GetPlayerId()!.Value);
+        authService.DeleteSessionCookie(httpContext.Response);
 
         return TypedResults.Redirect(returnUrl);
     }

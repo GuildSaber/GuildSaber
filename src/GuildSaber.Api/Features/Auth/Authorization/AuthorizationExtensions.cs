@@ -1,5 +1,5 @@
 using GuildSaber.Api.Features.Auth.CustomApiKey;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using GuildSaber.Api.Features.Auth.Sessions;
 using Microsoft.AspNetCore.Authorization;
 
 namespace GuildSaber.Api.Features.Auth.Authorization;
@@ -9,11 +9,13 @@ public static class AuthorizationExtensions
     private const string GuildPermissionPolicyPrefix = "GuildPermission_";
 
     private static readonly IList<string> _authenticationSchemes =
-        [JwtBearerDefaults.AuthenticationScheme, BasicAuthenticationDefaults.AuthenticationScheme];
-
+        [SessionCookieDefaults.AuthenticationScheme, BasicAuthenticationDefaults.AuthenticationScheme];
 
     extension(RouteHandlerBuilder builder)
     {
+        public RouteHandlerBuilder RequireSession() => builder
+            .RequireAuthorization(AuthConstants.SessionPolicy);
+
         public RouteHandlerBuilder RequireManager() => builder
             .RequireAuthorization(AuthConstants.ManagerPolicy);
 

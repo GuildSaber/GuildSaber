@@ -25,7 +25,7 @@ public static class ApiDefaultsSetup
         builder.Services.AddOpenApi(options =>
         {
             options.AddGlobalProblemDetails()
-                .AddBearerSecurityScheme()
+                .AddSessionCookieSecurityScheme()
                 .AddEndpointsHttpSecuritySchemeResolution()
                 .AddTagDescriptionSupport()
                 .AddScalarTransformers()

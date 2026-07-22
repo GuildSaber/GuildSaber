@@ -290,7 +290,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -373,7 +373,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -457,7 +457,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -786,7 +786,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -1115,7 +1115,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -1275,7 +1275,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -1623,7 +1623,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -2090,7 +2090,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -2186,7 +2186,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -2357,7 +2357,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -2401,7 +2401,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -2494,7 +2494,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -2970,7 +2970,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -3144,7 +3144,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -3305,7 +3305,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -3416,7 +3416,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -3688,7 +3688,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -3805,7 +3805,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       },
@@ -3850,7 +3850,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4247,7 +4247,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4337,7 +4337,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       },
@@ -4390,7 +4390,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4445,7 +4445,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4484,7 +4484,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4533,7 +4533,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4552,7 +4552,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4571,7 +4571,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4590,7 +4590,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4619,7 +4619,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4648,7 +4648,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4677,7 +4677,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4696,7 +4696,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4724,7 +4724,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4743,7 +4743,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4772,7 +4772,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4801,7 +4801,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -4875,7 +4875,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ]
+          }
+        ]
       }
     },
     "/auth/callback/link/discord": {
@@ -4932,7 +4937,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ]
+          }
+        ]
       }
     },
     "/auth/callback/link/discord/redirect": {
@@ -4999,7 +5009,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ]
+          }
+        ]
       }
     },
     "/auth/callback/beatleader": {
@@ -5007,19 +5022,12 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Get session token after authenticating with BeatLeader.",
-        "description": "Handles the callback from BeatLeader after authentication and returns a token.",
+        "summary": "Create a session cookie after authenticating with BeatLeader.",
+        "description": "Handles the callback from BeatLeader and sets the GuildSaber session cookie.",
         "operationId": "BeatLeaderCallback",
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TokenResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "401": {
             "description": "Unauthorized",
@@ -5098,19 +5106,12 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Get session token after authenticating with Discord.",
-        "description": "Handles the callback from Discord after authentication and returns a token.",
+        "summary": "Create a session cookie after authenticating with Discord.",
+        "description": "Handles the callback from Discord and sets the GuildSaber session cookie.",
         "operationId": "DiscordCallback",
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TokenResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "401": {
             "description": "Unauthorized",
@@ -5189,8 +5190,8 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Redirect with session token or error after Discord authentication.",
-        "description": "Handles the callback from Discord after authentication and redirects to a specified path from the calling origin with ?type=auth&{token/error}&status as query params.",
+        "summary": "Set the session cookie and redirect after Discord authentication.",
+        "description": "Handles the callback from Discord, sets the GuildSaber session cookie, and redirects with authentication status or error query parameters.",
         "operationId": "DiscordCallbackWithRedirect",
         "parameters": [
           {
@@ -5290,8 +5291,8 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Redirect with session token or error after BeatLeader authentication.",
-        "description": "Handles the callback from BeatLeader after authentication and redirects to a specified path from the calling origin with ?type=auth&{token/error}&status as query params.",
+        "summary": "Set the session cookie and redirect after BeatLeader authentication.",
+        "description": "Handles the callback from BeatLeader, sets the GuildSaber session cookie, and redirects with authentication status or error query parameters.",
         "operationId": "BeatLeaderCallbackWithRedirect",
         "parameters": [
           {
@@ -5396,28 +5397,11 @@
         "responses": {
           "204": {
             "description": "No Content"
-          },
-          "500": {
-            "description": "An error occurred while processing your request.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.6.1",
-                  "title": "An error occurred while processing your request.",
-                  "status": 500,
-                  "instance": "POST auth/logout",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
           }
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -5432,34 +5416,17 @@
         "responses": {
           "204": {
             "description": "No Content"
-          },
-          "500": {
-            "description": "An error occurred while processing your request.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.6.1",
-                  "title": "An error occurred while processing your request.",
-                  "status": 500,
-                  "instance": "POST auth/logout-all",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
           }
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
     },
     "/auth/logout/redirect": {
-      "get": {
+      "post": {
         "tags": [
           "Auth"
         ],
@@ -5482,13 +5449,13 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
     },
     "/auth/logout-all/redirect": {
-      "get": {
+      "post": {
         "tags": [
           "Auth"
         ],
@@ -5511,7 +5478,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -8991,14 +8958,6 @@
         "format": "int64",
         "example": "12345678901234567"
       },
-      "TokenResponse": {
-        "type": "object",
-        "properties": {
-          "token": {
-            "type": "string"
-          }
-        }
-      },
       "UpdateCategory": {
         "type": "object",
         "properties": {
@@ -9136,11 +9095,11 @@
       }
     },
     "securitySchemes": {
-      "Bearer": {
-        "type": "http",
-        "description": "Bearer authentication using a JWT.",
-        "scheme": "bearer",
-        "bearerFormat": "Json Web Token"
+      "SessionCookie": {
+        "type": "apiKey",
+        "description": "GuildSaber session cookie. Browsers and cookie-enabled HTTP clients send it automatically.",
+        "name": "__Host-GuildSaber.Session",
+        "in": "cookie"
       }
     }
   },

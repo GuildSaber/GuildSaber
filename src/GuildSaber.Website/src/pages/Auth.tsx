@@ -9,31 +9,18 @@ import { useSession } from "@/features/auth/hooks/useSession"
 import { useQueryClient } from "@tanstack/react-query"
 import { CircleX, LogOut } from "lucide-react"
 import { useQueryState } from "nuqs"
-import { useEffect } from "react"
 
 const Auth = () => {
   const queryClient = useQueryClient()
-  const [token, setToken] = useQueryState("token")
   const [error] = useQueryState("error")
 
   const handleLogout = async () => {
     await logout()
-    localStorage.removeItem("token")
 
     queryClient.setQueryData(getPlayerExtendedAtMeQueryKey(), null)
   }
 
   const { data: session } = useSession()
-
-  useEffect(() => {
-    if (token) {
-      localStorage.setItem("token", token)
-
-      setToken(null)
-
-      queryClient.invalidateQueries({ queryKey: getPlayerExtendedAtMeQueryKey() })
-    }
-  }, [token, setToken, queryClient])
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center">

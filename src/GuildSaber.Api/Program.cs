@@ -2,6 +2,7 @@ using System.Reflection;
 using GuildSaber.Api;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth;
+using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.Guilds.Members;
 using GuildSaber.Api.Features.LegacyGS;
@@ -10,7 +11,6 @@ using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Api.Features.RankedScores;
 using GuildSaber.Api.Features.Scores;
 using GuildSaber.Api.Setup;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using MyCSharp.HttpUserAgentParser.AspNetCore.DependencyInjection;
 using MyCSharp.HttpUserAgentParser.DependencyInjection;
 using Scalar.AspNetCore;
@@ -36,11 +36,19 @@ builder.Services
     .AddHttpUserAgentParser()
     .AddHttpUserAgentParserAccessor();
 
+var allowedWebsiteOrigins = builder.Configuration
+    .GetSection($"{AuthSettings.AuthSettingsSectionKey}:{nameof(AuthSettings.Redirect)}")
+    .Get<RedirectSettings>()?.AllowedOriginUrls
+    .Select(url => new Uri(url).GetLeftPart(UriPartial.Authority))
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray() ?? [];
+
 builder.Services.AddCors(options => options
     .AddDefaultPolicy(policy => policy
-        .AllowAnyOrigin()
+        .WithOrigins(allowedWebsiteOrigins)
         .AllowAnyMethod()
-        .AllowAnyHeader()));
+        .AllowAnyHeader()
+        .AllowCredentials()));
 
 builder.Services
     .AddPlayersFeature()
@@ -58,6 +66,7 @@ app.UseExceptionHandler()
 
 app.UseCors()
     .UseAuthentication()
+    .UseMiddleware<SessionCookieRequestVerificationMiddleware>()
     .UseAuthorization()
     .UseOutputCache();
 
@@ -75,7 +84,7 @@ app.MapScalarApiReference("/docs", options => options
     .WithTitle("GuildSaber's Api")
     .WithTheme(ScalarTheme.Purple)
     .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch)
-    .AddPreferredSecuritySchemes(JwtBearerDefaults.AuthenticationScheme)
+    .AddPreferredSecuritySchemes(SessionCookieDefaults.AuthenticationScheme)
     .EnablePersistentAuthentication());
 
 app.MapGet("/", () => Results.Redirect("/docs")).ExcludeFromDescription();

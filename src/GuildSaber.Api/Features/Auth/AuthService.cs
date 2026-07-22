@@ -1,6 +1,5 @@
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Auth.Sessions;
-using GuildSaber.Api.Features.Auth.Settings;
 using GuildSaber.Api.Features.Players.Http;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.ScoreSaber;
@@ -19,7 +18,8 @@ using MyCSharp.HttpUserAgentParser.AspNetCore;
 namespace GuildSaber.Api.Features.Auth;
 
 public class AuthService(
-    JwtService jwtService,
+    SessionTokenService sessionTokenService,
+    SessionCookieService sessionCookieService,
     IOptions<SessionSettings> sessionSettings,
     IOptions<ManagerSettings> managerSettings,
     IHttpUserAgentParserAccessor userAgentParser,
@@ -66,7 +66,7 @@ public class AuthService(
     private Task<int> GetValidSessionCountAsync(PlayerId playerId, DateTimeOffset currentTime)
         => dbContext.Sessions.CountAsync(s => s.PlayerId == playerId && s.IsValid && s.ExpiresAt > currentTime);
 
-    public async Task<Result<string, SessionCreationError>> CreateSession(PlayerId playerId, HttpContext httpContext)
+    public async Task<UnitResult<SessionCreationError>> CreateSession(PlayerId playerId, HttpContext httpContext)
     {
         var userAgent = userAgentParser.Get(httpContext);
         if (userAgent is null)
@@ -78,7 +78,7 @@ public class AuthService(
         if (sessionCount >= settings.MaxSessionCount)
             return new TooManyOpenSession(sessionCount, settings.MaxSessionCount);
 
-        var token = jwtService.CreateToken(settings.ExpireAfter);
+        var token = sessionTokenService.CreateToken(settings.ExpireAfter);
         var session = new Session
         {
             SessionId = token.Identifier,
@@ -93,7 +93,8 @@ public class AuthService(
 
         _ = await dbContext.AddAndSaveAsync(session);
 
-        return token.Token;
+        sessionCookieService.Append(httpContext.Response, token.Token, token.ExpireAt);
+        return UnitResult.Success<SessionCreationError>();
     }
 
     public async ValueTask<bool> InvalidateSessionAsync(UuidV7 sessionId)
@@ -124,6 +125,8 @@ public class AuthService(
 
         return true;
     }
+
+    public void DeleteSessionCookie(HttpResponse response) => sessionCookieService.Delete(response);
 
     public Task<Result<Player>> CreatePlayerAsync(BeatLeaderId beatleaderId)
         => beatLeaderApi.GetPlayerProfileWithStatsAsync(beatleaderId)

@@ -84,9 +84,12 @@ if (builder.ExecutionContext.IsPublishMode)
         .WithEnvironment("AuthSettings:Session:ExpireAfter", builder.AddParameter("AuthSettings-Session-ExpireAfter"))
         .WithEnvironment("AuthSettings:Session:MaxSessionCount",
             builder.AddParameter("AuthSettings-Session-MaxSessionCount"))
-        .WithEnvironment("AuthSettings:Jwt:Issuer", builder.AddParameter("AuthSettings-Jwt-Issuer"))
-        .WithEnvironment("AuthSettings:Jwt:Audience", builder.AddParameter("AuthSettings-Jwt-Audience"))
-        .WithEnvironment("AuthSettings:Jwt:Secret", builder.AddParameter("AuthSettings-Jwt-Secret", secret: true))
+        .WithEnvironment("AuthSettings:SessionCookie:Issuer",
+            builder.AddParameter("AuthSettings-SessionCookie-Issuer"))
+        .WithEnvironment("AuthSettings:SessionCookie:Audience",
+            builder.AddParameter("AuthSettings-SessionCookie-Audience"))
+        .WithEnvironment("AuthSettings:SessionCookie:SigningKey",
+            builder.AddParameter("AuthSettings-SessionCookie-SigningKey", secret: true))
         .WithEnvironment("AuthSettings:BeatLeader:ClientId", builder.AddParameter("AuthSettings-BeatLeader-ClientId"))
         .WithEnvironment("AuthSettings:BeatLeader:ClientSecret",
             builder.AddParameter("AuthSettings-BeatLeader-ClientSecret", secret: true))
