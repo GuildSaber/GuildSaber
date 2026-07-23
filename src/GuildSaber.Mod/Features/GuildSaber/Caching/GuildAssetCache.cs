@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Helpers;
 using UnityEngine;
@@ -14,6 +13,7 @@ public sealed class GuildAssetCache(GuildSaberCacheStore cacheStore, GuildSaberC
 {
     private const string RoundedGuildIconCacheKeyPrefix = "rounded-guild-icon:";
     private const string RoundedCategoryIconCacheKeyPrefix = "rounded-category-icon:";
+    private const string PlayerAvatarCacheKeyPrefix = "player-avatar:";
 
     // MemoryCache only stores managed references; Unity textures still need Object.Destroy on dispose.
     private readonly List<Texture2D> _ownedTextures = [];
@@ -37,40 +37,45 @@ public sealed class GuildAssetCache(GuildSaberCacheStore cacheStore, GuildSaberC
         $"{RoundedGuildIconCacheKeyPrefix}{guildId}", client.Guilds.GetLogoUrl(guildId));
 
     public Task<Texture2D?> GetOrFetchRoundedCategoryIcon(CategoryId categoryId) => GetOrFetchCachedTextureAsync(
-        $"{RoundedCategoryIconCacheKeyPrefix}{categoryId}", client.Categories.GetLogoUrl(categoryId));
+        $"{RoundedCategoryIconCacheKeyPrefix}{categoryId}", client.Categories.GetLogoUrl(categoryId), round: true);
 
-    private async Task<Texture2D?> GetOrFetchCachedTextureAsync(string key, Uri uri)
+    public Task<Texture2D?> GetOrFetchPlayerAvatar(PlayerId playerId, string avatarUrl)
+        => GetOrFetchCachedTextureAsync(
+            $"{PlayerAvatarCacheKeyPrefix}{playerId}:{avatarUrl}",
+            new Uri(avatarUrl),
+            round: false);
+
+    private async Task<Texture2D?> GetOrFetchCachedTextureAsync(string key, Uri uri, bool round = true)
     {
-        var texture = await cacheStore.GetOrCreateAsync(key, () => FetchAndRoundTextureAsync(uri));
+        var texture = await cacheStore.GetOrCreateAsync(key, () => FetchTextureAsync(uri, round));
         if (texture == null) cacheStore.Remove(key);
 
         return texture;
     }
 
-    private async Task<Texture2D?> FetchAndRoundTextureAsync(Uri uri)
+    private async Task<Texture2D?> FetchTextureAsync(Uri uri, bool round)
     {
         var texture = new Texture2D(100, 100);
         try
         {
             var bytes = await client.HttpClient.GetByteArrayAsync(uri);
             texture.LoadImage(bytes, false);
-
-            var roundedTexture = await TextureUtils.CreateRoundedTextureAsync(texture, texture.width * 0.2f);
+            var result = round
+                ? await TextureUtils.CreateRoundedTextureAsync(texture, texture.width * 0.2f)
+                : texture;
 
             lock (_ownedTexturesLock)
             {
-                _ownedTextures.Add(roundedTexture);
+                _ownedTextures.Add(result);
             }
 
-            return roundedTexture;
+            if (round) Object.Destroy(texture);
+            return result;
         }
         catch
         {
-            return null;
-        }
-        finally
-        {
             Object.Destroy(texture);
+            return null;
         }
     }
 }

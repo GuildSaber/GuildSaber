@@ -26,7 +26,6 @@ public class GuildSaberInstaller(GuildSaberConfig config) : Installer
             .FromFactory<GuildSaberClient, GuildSaberClientFactory>()
             .AsSingle();
 
-        Container.Bind<GuildSaberSession>().AsSingle();
         Container.BindInterfacesAndSelfTo<GuildSaberManager>().AsSingle();
         Container.BindInterfacesAndSelfTo<GuildAssetCache>().AsSingle();
         Container.BindInterfacesAndSelfTo<GuildSaberCacheStore>().AsSingle();
