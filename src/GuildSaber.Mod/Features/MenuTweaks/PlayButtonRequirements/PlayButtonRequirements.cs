@@ -28,13 +28,6 @@ public sealed class PlayButtonRequirements(
     private ImageView[] _actionButtonRedImageViews = null!;
     private RankedMapResponses.RankedMap? _rankedMap;
 
-    public void Dispose()
-    {
-        rankedMapManager.OnMapSelected -= OnMapSelected;
-        gameplayModifiersPanelController.didChangeGameplayModifiersEvent -= OnModifiersChanged;
-        //_actionButton.selectionStateDidChangeEvent -= OnActionButtonStateChange;
-    }
-
     public void Initialize()
     {
         _actionButtonBaseImageViews = _actionButton.GetComponentsInChildren<ImageView>()
@@ -64,7 +57,12 @@ public sealed class PlayButtonRequirements(
 
         rankedMapManager.OnMapSelected += OnMapSelected;
         gameplayModifiersPanelController.didChangeGameplayModifiersEvent += OnModifiersChanged;
-        //_actionButton.selectionStateDidChangeEvent += OnActionButtonStateChange;
+    }
+
+    public void Dispose()
+    {
+        rankedMapManager.OnMapSelected -= OnMapSelected;
+        gameplayModifiersPanelController.didChangeGameplayModifiersEvent -= OnModifiersChanged;
     }
 
     private void OnMapSelected(RankedMapEventData eventData)

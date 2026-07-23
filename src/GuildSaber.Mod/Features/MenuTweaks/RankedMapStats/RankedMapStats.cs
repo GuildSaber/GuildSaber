@@ -29,7 +29,6 @@ public class RankedMapStats(
     [Inject(Id = nameof(ResourceMap.DenyShield))] Texture2D denyShieldTexture,
     GuildSaberConfig config,
     GuildAssetCache assetCache,
-    GuildSaberSession session,
     RankedMapManager rankedMapManager,
     StandardLevelDetailView standardLevelDetailView,
     UIFactory factory,
@@ -40,13 +39,8 @@ public class RankedMapStats(
     private XUIImage _guildIcon = null!;
     private GSText _mapCategories = null!;
     private GSText _mapLevel = null!;
+    private int _renderVersion;
     private XUIImage _whiteMarkImage = null!;
-
-    public void Dispose()
-    {
-        logger.Info("Disposing..");
-        rankedMapManager.OnMapSelected -= OnMapSelected;
-    }
 
     public void Initialize()
     {
@@ -103,24 +97,37 @@ public class RankedMapStats(
         logger.Info("UI created and attached to levelParamsPanel");
     }
 
+    public void Dispose()
+    {
+        _renderVersion++;
+        logger.Info("Disposing..");
+        rankedMapManager.OnMapSelected -= OnMapSelected;
+    }
+
     private void OnMapSelected(RankedMapEventData eventData)
     {
-        if (!config.RankedMapStats.Enabled || eventData.RankedMapWithScores is null)
+        var version = ++_renderVersion;
+        if (!config.RankedMapStats.Enabled ||
+            eventData is not { RankedMapWithScores: { } rankedMap, Snapshot: { } snapshot })
         {
             SetActive(false);
             return;
         }
 
-        _ = UpdateUI(eventData.RankedMapWithScores);
+        _ = UpdateUI(rankedMap, snapshot, version);
     }
 
-    private async Task UpdateUI(RankedMapResponses.RankedMapWithScores rankedMapWithScoresOfPlayer)
+    private async Task UpdateUI(
+        RankedMapResponses.RankedMapWithScores rankedMapWithScoresOfPlayer,
+        GuildSaberSnapshot snapshot,
+        int version)
     {
         var (rankedMap, rankedScores) = rankedMapWithScoresOfPlayer;
 
-        var guild = session.CurrentGuild;
-        var guildIcon = await assetCache.GetOrFetchRoundedGuildIcon(guild.Guild.Id) ?? placeHolderIcon;
+        var guildIcon = await assetCache.GetOrFetchRoundedGuildIcon(snapshot.CurrentGuildExtended.Guild.Id)
+                        ?? placeHolderIcon;
 
+        if (version != _renderVersion) return;
         if (rankedMap.CategoryIds.Length == 0)
         {
             _categoryIcon.SetActive(false);
@@ -128,13 +135,14 @@ public class RankedMapStats(
         }
         else
         {
-            var categories = guild.Categories
+            var categories = snapshot.CurrentGuildExtended.Categories
                 .Where(x => rankedMap.CategoryIds.Contains(x.Id)).ToArray();
 
             var hasCategoryIcon = false;
             if (categories.Length == 1)
             {
                 var categoryIcon = await assetCache.GetOrFetchRoundedCategoryIcon(categories[0].Id);
+                if (version != _renderVersion) return;
                 if (categoryIcon != null)
                 {
                     _categoryIcon.SetSprite(Sprite.Create(
