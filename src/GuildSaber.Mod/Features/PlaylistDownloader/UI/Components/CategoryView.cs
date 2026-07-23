@@ -1,7 +1,6 @@
 ﻿using System;
 using CP_SDK.UI.Components;
 using CP_SDK.XUI;
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.Common.UI.Components;
 using UnityEngine;
