@@ -37,7 +37,7 @@ public static class StringExtensions
             if (string.IsNullOrEmpty(value) || value.Length <= length)
                 return value;
 
-            return value[..(length - 3)] + "...";
+            return value[..(length - 2)] + "..";
         }
     }
 }

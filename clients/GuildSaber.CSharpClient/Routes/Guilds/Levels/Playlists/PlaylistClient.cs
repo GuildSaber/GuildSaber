@@ -40,8 +40,9 @@ public sealed class PlaylistClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<Playlist?>(
                         $"Failed to retrieve playlist for level with ID {levelId}, status code: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<Playlist?>(jsonOptions, cancellationToken: cancellationToken))
+                var response => await TryAsync(() => response.Content
+                            .ReadFromJsonAsync<Playlist?>(jsonOptions, cancellationToken: cancellationToken),
+                        cancellationToken)
                     .ConfigureAwait(false)
             };
 

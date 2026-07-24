@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using B83.Image.GIF;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Helpers;
 using UnityEngine;
@@ -9,7 +11,10 @@ using Object = UnityEngine.Object;
 
 namespace GuildSaber.Mod.Features.GuildSaber.Caching;
 
-public sealed class GuildAssetCache(GuildSaberCacheStore cacheStore, GuildSaberClient client) : IDisposable
+public sealed class GuildAssetCache(
+    GuildSaberCacheStore cacheStore,
+    GuildSaberClient client,
+    Logger logger) : IDisposable
 {
     private const string RoundedGuildIconCacheKeyPrefix = "rounded-guild-icon:";
     private const string RoundedCategoryIconCacheKeyPrefix = "rounded-category-icon:";
@@ -55,11 +60,15 @@ public sealed class GuildAssetCache(GuildSaberCacheStore cacheStore, GuildSaberC
 
     private async Task<Texture2D?> FetchTextureAsync(Uri uri, bool round)
     {
-        var texture = new Texture2D(100, 100);
+        Texture2D? texture = null;
         try
         {
             var bytes = await client.HttpClient.GetByteArrayAsync(uri);
-            texture.LoadImage(bytes, false);
+            texture = IsGif(bytes) ? LoadGif(bytes) : LoadImage(bytes);
+
+            if (texture is null)
+                return null;
+
             var result = round
                 ? await TextureUtils.CreateRoundedTextureAsync(texture, texture.width * 0.2f)
                 : texture;
@@ -72,10 +81,44 @@ public sealed class GuildAssetCache(GuildSaberCacheStore cacheStore, GuildSaberC
             if (round) Object.Destroy(texture);
             return result;
         }
-        catch
+        catch (Exception exception)
         {
-            Object.Destroy(texture);
+            if (texture != null) Object.Destroy(texture);
+            logger.Warn($"Failed to load image from {uri}: {exception.Message}");
             return null;
         }
     }
+
+    private static Texture2D? LoadImage(byte[] bytes)
+    {
+        var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        if (texture.LoadImage(bytes, false)) return texture;
+
+        Object.Destroy(texture);
+        return null;
+    }
+
+    private static Texture2D? LoadGif(byte[] bytes)
+    {
+        using var reader = new BinaryReader(new MemoryStream(bytes));
+        var gif = new GIFLoader().Load(reader);
+        if (gif.imageData.Count == 0 || gif.screen.width == 0 || gif.screen.height == 0)
+            return null;
+
+        var texture = new Texture2D(gif.screen.width, gif.screen.height, TextureFormat.RGBA32, false);
+        var pixels = new Color32[texture.width * texture.height];
+        gif.DrawImageTo(0, pixels, texture.width, texture.height);
+        texture.SetPixels32(pixels);
+        texture.Apply();
+        return texture;
+    }
+
+    private static bool IsGif(byte[] bytes)
+        => bytes.Length >= 6
+           && bytes[0] == 'G'
+           && bytes[1] == 'I'
+           && bytes[2] == 'F'
+           && bytes[3] == '8'
+           && bytes[5] == 'a'
+           && bytes[4] is 0x37 or 0x39;
 }

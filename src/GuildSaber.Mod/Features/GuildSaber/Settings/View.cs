@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using CP_SDK_BS.UI;
 using CP_SDK.XUI;
-using GuildSaber.Mod.Features.Common.UI;
-using GuildSaber.Mod.Features.Common.UI.Components;
 using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using GuildSaber.Mod.Features.MenuTweaks.RankedMapStats;
 using GuildSaber.Mod.Features.PlayerCard.UI;
@@ -21,22 +19,21 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
     [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
     [Inject] private readonly PlayerCardSettings _playerCardSettings = null!;
     [Inject] private readonly RankedMapStats _rankedMapStats = null!;
-    [Inject] private readonly UIFactory _uiFactory = null!;
 
-    private GSDropdown _apiDropdown = null!;
+    private XUIDropdown _apiDropdown = null!;
     private XUIToggle _displayMapRankedStatsToggle = null!;
 
     protected override void OnViewCreation() => Templates.FullRectLayoutMainView(
-            _uiFactory.Text("Api environment:"),
-            _uiFactory.Dropdown()
+            XUIText.Make("Api environment:"),
+            XUIDropdown.Make()
                 .Bind(ref _apiDropdown)
                 .SetOptions(_apiEnvironments)
                 .OnValueChanged(OnApiEnvChanged),
-            _uiFactory.Text("Display RankedMap Stats:"),
+            XUIText.Make("Display RankedMap Stats:"),
             XUIToggle.Make()
                 .OnValueChanged(OnDisplayMapRankedStatsChanged)
                 .Bind(ref _displayMapRankedStatsToggle),
-            _uiFactory.SecondaryButton("Player card settings")
+            XUISecondaryButton.Make("Player card settings")
                 .SetWidth(40)
                 .SetHeight(5)
                 .OnClick(_playerCardSettings.Present))

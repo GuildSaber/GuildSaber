@@ -31,8 +31,8 @@ public sealed class ContextStatClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<MemberContextStat?>(
                         $"Failed to retrieve context stats for player {playerId} in context {contextId}: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<MemberContextStat?>(jsonOptions, cancellationToken: token))
+                var response => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<MemberContextStat?>(jsonOptions, cancellationToken: token), token)
                     .ConfigureAwait(false)
             };
 
@@ -55,8 +55,8 @@ public sealed class ContextStatClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<MemberContextStat?>(
                         $"Failed to retrieve context stats for current player in context {contextId}: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<MemberContextStat?>(jsonOptions, cancellationToken: token))
+                var response => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<MemberContextStat?>(jsonOptions, cancellationToken: token), token)
                     .ConfigureAwait(false)
             };
 }

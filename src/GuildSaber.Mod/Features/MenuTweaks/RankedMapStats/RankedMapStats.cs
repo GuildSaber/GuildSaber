@@ -3,8 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using CP_SDK.XUI;
 using GuildSaber.Api.Features.RankedMaps.Http;
-using GuildSaber.Mod.Features.Common.UI;
-using GuildSaber.Mod.Features.Common.UI.Components;
 using GuildSaber.Mod.Features.GuildSaber;
 using GuildSaber.Mod.Features.GuildSaber.Caching;
 using GuildSaber.Mod.Features.GuildSaber.Runtime;
@@ -21,24 +19,23 @@ namespace GuildSaber.Mod.Features.MenuTweaks.RankedMapStats;
 /// Displays a map's ranked stats if ranked (map categories, map level, and if the player has passed the map).
 /// </summary>
 public class RankedMapStats(
-    [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D placeHolderIcon,
-    [Inject(Id = nameof(ResourceMap.CheckMark))] Texture2D checkMarkTexture,
-    [Inject(Id = nameof(ResourceMap.DenyMark))] Texture2D denyMarkTexture,
-    [Inject(Id = nameof(ResourceMap.QuestionMark))] Texture2D questionMarkTexture,
-    [Inject(Id = nameof(ResourceMap.CheckShield))] Texture2D checkShieldTexture,
-    [Inject(Id = nameof(ResourceMap.DenyShield))] Texture2D denyShieldTexture,
+    [Inject(Id = ResourceMap.GsWhiteLogo)] Texture2D placeHolderIcon,
+    [Inject(Id = ResourceMap.CheckMark)] Texture2D checkMarkTexture,
+    [Inject(Id = ResourceMap.DenyMark)] Texture2D denyMarkTexture,
+    [Inject(Id = ResourceMap.QuestionMark)] Texture2D questionMarkTexture,
+    [Inject(Id = ResourceMap.CheckShield)] Texture2D checkShieldTexture,
+    [Inject(Id = ResourceMap.DenyShield)] Texture2D denyShieldTexture,
     GuildSaberConfig config,
     GuildAssetCache assetCache,
     RankedMapManager rankedMapManager,
     StandardLevelDetailView standardLevelDetailView,
-    UIFactory factory,
     Logger logger
 ) : XUIVLayout("MapRankedStats"), IInitializable, IDisposable
 {
     private XUIImage _categoryIcon = null!;
     private XUIImage _guildIcon = null!;
-    private GSText _mapCategories = null!;
-    private GSText _mapLevel = null!;
+    private XUIText _mapCategories = null!;
+    private XUIText _mapLevel = null!;
     private int _renderVersion;
     private XUIImage _whiteMarkImage = null!;
 
@@ -55,7 +52,7 @@ public class RankedMapStats(
                         .SetActive(false)
                         .SetHeight(6)
                         .SetWidth(6),
-                    factory.Text(string.Empty)
+                    XUIText.Make(string.Empty)
                         .Bind(ref _mapLevel)
                         .SetFontSize(5)
                         .SetAlpha(0.55f))
@@ -63,7 +60,7 @@ public class RankedMapStats(
                 .BuildUI(element.transform);
 
             XUIHLayout.Make(
-                factory.Text(string.Empty)
+                XUIText.Make(string.Empty)
                     .Bind(ref _mapCategories)
                     .SetFontSize(4)
                     .SetAlpha(0.55f)

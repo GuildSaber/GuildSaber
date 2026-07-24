@@ -54,9 +54,10 @@ public static class LevelStatsUtilities
             var categoryLevelOrders = categoryIds
                 .Select(categoryId => (int)(self.GetCategoryLevel(categoryId)?.Order ?? 0))
                 .ToList();
+            var average = categoryLevelOrders.Count == 0 ? 0 : categoryLevelOrders.Average();
 
-            return categoryLevelOrders.Count > 1
-                ? Math.Max(0f, 100f - StandardDeviation(categoryLevelOrders) * 100f / categoryLevelOrders.Average())
+            return categoryLevelOrders.Count > 1 && average > 0
+                ? Math.Max(0f, 100f - StandardDeviation(categoryLevelOrders) * 100f / average)
                 : 100f;
         }
     }

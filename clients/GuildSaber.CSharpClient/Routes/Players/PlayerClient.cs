@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Players.Http;
@@ -37,8 +38,8 @@ public sealed class PlayerClient(
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<Player?>(
                     $"Failed to retrieve player with ID {playerId}, status code: {(int)statusCode} ({reasonPhrase})"),
-            var response => await Try(() => response.Content
-                .ReadFromJsonAsync<Player?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+            var response => await TryAsync(() => response.Content
+                .ReadFromJsonAsync<Player?>(jsonOptions, cancellationToken: token), token).ConfigureAwait(false)
         };
 
     /// <summary>
@@ -55,8 +56,8 @@ public sealed class PlayerClient(
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<PlayerExtended?>(
                     $"Failed to retrieve player extended with ID {playerId}, status code: {(int)statusCode} ({reasonPhrase})"),
-            var response => await Try(() => response.Content
-                .ReadFromJsonAsync<PlayerExtended?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+            var response => await TryAsync(() => response.Content
+                .ReadFromJsonAsync<PlayerExtended?>(jsonOptions, cancellationToken: token), token).ConfigureAwait(false)
         };
 
     /// <summary>
@@ -75,8 +76,8 @@ public sealed class PlayerClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<Player?>(
                         $"Failed to retrieve current player, status code: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                    .ReadFromJsonAsync<Player?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+                var response => await TryAsync(() => response.Content
+                    .ReadFromJsonAsync<Player?>(jsonOptions, cancellationToken: token), token).ConfigureAwait(false)
             };
 
     /// <summary>
@@ -95,8 +96,8 @@ public sealed class PlayerClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<PlayerExtended?>(
                         $"Failed to retrieve current player extended, status code: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                    .ReadFromJsonAsync<PlayerExtended?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+                var response => await TryAsync(() => response.Content
+                    .ReadFromJsonAsync<PlayerExtended?>(jsonOptions, token), token).ConfigureAwait(false)
             };
 
     /// <summary>
@@ -113,8 +114,8 @@ public sealed class PlayerClient(
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<PlayerId?>(
                     $"Failed to lookup player by Discord ID {discordId}, status code: {(int)statusCode} ({reasonPhrase})"),
-            var response => await Try(() => response.Content
-                .ReadFromJsonAsync<PlayerId?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+            var response => await TryAsync(() => response.Content
+                .ReadFromJsonAsync<PlayerId?>(jsonOptions, cancellationToken: token), token).ConfigureAwait(false)
         };
 
     /// <summary>
@@ -131,8 +132,8 @@ public sealed class PlayerClient(
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<PlayerId?>(
                     $"Failed to lookup player by BeatLeader ID {beatleaderId}, status code: {(int)statusCode} ({reasonPhrase})"),
-            var response => await Try(() => response.Content
-                .ReadFromJsonAsync<PlayerId?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+            var response => await TryAsync(() => response.Content
+                .ReadFromJsonAsync<PlayerId?>(jsonOptions, cancellationToken: token), token).ConfigureAwait(false)
         };
 
     /// <summary>
@@ -171,8 +172,9 @@ public sealed class PlayerClient(
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<PagedList<Player>>(
                     $"Failed to retrieve Players at page {requestOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
-            var response => await Try(() => response.Content
-                .ReadFromJsonAsync<PagedList<Player>>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+            var response => await TryAsync(() => response.Content
+                    .ReadFromJsonAsync<PagedList<Player>>(jsonOptions, cancellationToken: token), token)
+                .ConfigureAwait(false)
         };
 
     /// <summary>
@@ -180,6 +182,7 @@ public sealed class PlayerClient(
     /// </summary>
     /// <param name="search">Optional search term to filter Players by name.</param>
     /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <param name="token">Cancellation token.</param>
     /// <returns>
     /// An async enumerable sequence of <see cref="Result{T}" /> containing nullable arrays of
     /// <see cref="Player" />.
@@ -192,12 +195,13 @@ public sealed class PlayerClient(
     /// </remarks>
     public async IAsyncEnumerable<Result<Player[]>> GetAsyncEnumerable(
         string? search,
-        PaginatedRequestOptions<PlayerRequests.EPlayerSorter> requestOptions)
+        PaginatedRequestOptions<PlayerRequests.EPlayerSorter> requestOptions,
+        [EnumeratorCancellation] CancellationToken token = default)
     {
         while (requestOptions.Page <= requestOptions.MaxPage)
         {
             var url = GetPlayersUrl(search, requestOptions);
-            var response = await httpClient.GetAsync(url).ConfigureAwait(false);
+            var response = await httpClient.GetAsync(url, token).ConfigureAwait(false);
             requestOptions.Page++;
 
             Result<Player[]> result;
@@ -206,8 +210,8 @@ public sealed class PlayerClient(
                 { IsSuccessStatusCode: false } => Failure<Player[]>(
                     $"Failed to retrieve Players at page {requestOptions.Page - 1}" +
                     $": {response.StatusCode} {response.ReasonPhrase}"),
-                _ => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<Player>>(jsonOptions))
+                _ => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<PagedList<Player>>(jsonOptions, token), token)
                     .Map(Player[] (parsed) => parsed.Data)
                     .ConfigureAwait(false)
             };

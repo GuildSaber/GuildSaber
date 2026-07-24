@@ -1,8 +1,6 @@
 ﻿using System;
 using CP_SDK.UI.Components;
 using CP_SDK.XUI;
-using GuildSaber.Mod.Features.Common.UI;
-using GuildSaber.Mod.Features.Common.UI.Components;
 using UnityEngine;
 
 namespace GuildSaber.Mod.Features.PlaylistDownloader.UI.Components;
@@ -10,28 +8,26 @@ namespace GuildSaber.Mod.Features.PlaylistDownloader.UI.Components;
 public class CategoryView : XUIHLayout
 {
     private readonly Action<CategoryId> _callback;
-    private readonly UIFactory _uiFactory;
 
     private CategoryId _categoryId = new(-1);
-    private GSText _categoryNameText = null!;
-    private GSSecondaryButton _downloadButton = null!;
+    private XUIText _categoryNameText = null!;
+    private XUISecondaryButton _downloadButton = null!;
 
-    protected CategoryView(UIFactory uiFactory, Action<CategoryId> callback) : base("GuildSaberCategoryView")
+    protected CategoryView(Action<CategoryId> callback) : base("GuildSaberCategoryView")
     {
-        _uiFactory = uiFactory;
         _callback = callback;
 
         OnReady(EventReady);
     }
 
-    public static CategoryView Make(UIFactory uiFactory, Action<CategoryId> callback) => new(uiFactory, callback);
+    public static CategoryView Make(Action<CategoryId> callback) => new(callback);
 
     private void EventReady(CHOrVLayout x)
     {
         x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleLeft;
 
-        _categoryNameText = _uiFactory.Text(string.Empty);
-        _downloadButton = _uiFactory.SecondaryButton("Download");
+        _categoryNameText = XUIText.Make(string.Empty);
+        _downloadButton = XUISecondaryButton.Make("Download");
         _downloadButton
             .OnClick(DownloadClicked)
             .SetWidth(15)

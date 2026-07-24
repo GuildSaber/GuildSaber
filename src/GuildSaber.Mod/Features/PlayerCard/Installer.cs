@@ -2,11 +2,9 @@ using BeatSaberMarkupLanguage.FloatingScreen;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Features.PlayerCard.Patches;
 using GuildSaber.Mod.Features.PlayerCard.UI;
-using GuildSaber.Mod.Features.PlayerCard.UI.Components.GuildSelector;
-using GuildSaber.Mod.Features.PlayerCard.UI.Settings;
+using GuildSaber.Mod.Features.PlayerCard.UI.Components;
 using GuildSaber.Mod.Resources;
 using HMUI;
-using TMPro;
 using UnityEngine;
 using Zenject;
 
@@ -15,14 +13,13 @@ namespace GuildSaber.Mod.Features.PlayerCard;
 public class PlayerCardInstaller(GuildSaberClient client, Logger logger) : Installer
 {
     internal class PlayerCardResourcesFactory(
-        [Inject(Id = nameof(ResourceMap.DownArrow))] Texture2D downArrowTexture,
-        [Inject(Id = nameof(ResourceMap.GsWhiteLogo))] Texture2D gsWhiteLogoTexture,
-        [Inject(Id = nameof(ResourceMap.PlasticTrophy))] Texture2D plasticTrophy,
-        [Inject(Id = nameof(ResourceMap.SilverTrophy))] Texture2D silverTrophy,
-        [Inject(Id = nameof(ResourceMap.GoldTrophy))] Texture2D goldTrophy,
-        [Inject(Id = nameof(ResourceMap.DiamondTrophy))] Texture2D diamondTrophy,
-        [Inject(Id = nameof(ResourceMap.RubyTrophy))] Texture2D rubyTrophy,
-        [Inject(Id = nameof(ResourceMap.TekoMedium))] TMP_FontAsset font,
+        [Inject(Id = ResourceMap.DownArrow)] Texture2D downArrowTexture,
+        [Inject(Id = ResourceMap.GsWhiteLogo)] Texture2D gsWhiteLogoTexture,
+        [Inject(Id = ResourceMap.PlasticTrophy)] Texture2D plasticTrophy,
+        [Inject(Id = ResourceMap.SilverTrophy)] Texture2D silverTrophy,
+        [Inject(Id = ResourceMap.GoldTrophy)] Texture2D goldTrophy,
+        [Inject(Id = ResourceMap.DiamondTrophy)] Texture2D diamondTrophy,
+        [Inject(Id = ResourceMap.RubyTrophy)] Texture2D rubyTrophy,
         [Inject] StandardLevelDetailView standardLevelDetailView) : IFactory<PlayerCardResources>
     {
         public PlayerCardResources Create() => new(
@@ -32,7 +29,6 @@ public class PlayerCardInstaller(GuildSaberClient client, Logger logger) : Insta
                 .Find("BG").GetComponent<ImageView>().material,
             DownArrowTexture: downArrowTexture,
             GsWhiteLogoTexture: gsWhiteLogoTexture,
-            Font: font,
             PlasticTrophyTexture: plasticTrophy,
             SilverTrophyTexture: silverTrophy,
             GoldTrophyTexture: goldTrophy,
@@ -47,6 +43,7 @@ public class PlayerCardInstaller(GuildSaberClient client, Logger logger) : Insta
         logger.Info($"Client user agent: {client.HttpClient.DefaultRequestHeaders.UserAgent}");
 
         Container.Bind<PlayerCardResources>().FromFactory<PlayerCardResourcesFactory>().AsSingle();
+        Container.BindInterfacesAndSelfTo<PlayerCardPlayTime>().AsSingle();
         Container.Bind<FloatingScreen>()
             .WithId(Constants.CardFloatingPanelId)
             .FromMethod
@@ -56,16 +53,16 @@ public class PlayerCardInstaller(GuildSaberClient client, Logger logger) : Insta
                 position: Vector3.zero,
                 rotation: Quaternion.Euler(Vector3.zero)))
             .AsSingle();
-        Container.Bind<PlayerCardView>().FromNewComponentAsViewController().AsSingle();
-        Container.Bind<PlayerCardSettingsMainView>().FromNewComponentAsViewController().AsSingle();
-        Container.Bind<PlayerCardSettingsCoordinator>().FromNewComponentOnNewGameObject().AsSingle();
+        Container.BindInterfacesAndSelfTo<PlayerCardView>().FromNewComponentAsViewController().AsSingle();
+        Container.Bind<PlayerCardSettingsView>().FromNewComponentAsViewController().AsSingle();
+        Container.Bind<PlayerCardSettings>().FromNewComponentOnNewGameObject().AsSingle();
         Container.Bind<StandardLevelDetailView>().FromComponentInHierarchy().AsCached();
         Container.BindInterfacesAndSelfTo<PlayerCardManager>().AsSingle();
 
-        Container.Bind<GuildSelectorViewController>().FromNewComponentAsViewController().AsSingle();
-        Container.Bind<GuildSelectorFlowCoordinator>().FromNewComponentOnNewGameObject().AsSingle();
+        Container.Bind<PlayerCardGuildPickerView>().FromNewComponentAsViewController().AsSingle();
+        Container.Bind<PlayerCardGuildPicker>().FromNewComponentOnNewGameObject().AsSingle();
 
         Container.BindInterfacesAndSelfTo<GameReloadAffinityPatch>().AsSingle();
-        Container.BindInterfacesAndSelfTo<PauseHookAffinityPatch>().AsSingle();
+        Container.BindInterfacesAndSelfTo<PauseAffinityPatch>().AsSingle();
     }
 }

@@ -87,8 +87,8 @@ public class RankedScoreClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<PagedList<RankedScoreWithRankedMap>>(
                         $"Failed to retrieve ranked scores for context ID {contextId}, status code: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<RankedScoreWithRankedMap>>(jsonOptions, cancellationToken: token))
+                var response => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<PagedList<RankedScoreWithRankedMap>>(jsonOptions, token), token)
                     .ConfigureAwait(false)
             };
 
@@ -114,8 +114,8 @@ public class RankedScoreClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<PagedList<RankedScore>>(
                         $"Failed to retrieve ranked scores for context ID {contextId} and player {playerId}, status code: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<RankedScore>>(jsonOptions, cancellationToken: token))
+                var response => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<PagedList<RankedScore>>(jsonOptions, cancellationToken: token), token)
                     .ConfigureAwait(false)
             };
 
@@ -141,8 +141,8 @@ public class RankedScoreClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<PagedList<RankedScore>>(
                         $"Failed to retrieve ranked scores for context ID {contextId} (@me), status code: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<RankedScore>>(jsonOptions, cancellationToken: token))
+                var response => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<PagedList<RankedScore>>(jsonOptions, cancellationToken: token), token)
                     .ConfigureAwait(false)
             };
 
@@ -169,8 +169,8 @@ public class RankedScoreClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<PagedList<RankedScoreWithRankedMap>>(
                         $"Failed to retrieve ranked scores with ranked maps for context ID {contextId} and player {playerId}, status code: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<RankedScoreWithRankedMap>>(jsonOptions, cancellationToken: token))
+                var response => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<PagedList<RankedScoreWithRankedMap>>(jsonOptions, token), token)
                     .ConfigureAwait(false)
             };
 
@@ -196,8 +196,8 @@ public class RankedScoreClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<PagedList<RankedScoreWithRankedMap>>(
                         $"Failed to retrieve ranked scores with ranked maps for context ID {contextId} (@me), status code: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<RankedScoreWithRankedMap>>(jsonOptions, cancellationToken: token))
+                var response => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<PagedList<RankedScoreWithRankedMap>>(jsonOptions, token), token)
                     .ConfigureAwait(false)
             };
 
@@ -222,8 +222,8 @@ public class RankedScoreClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<RankedScore[]?>(
                         $"Failed to confirm ranked scores from score ID {scoreId} for context ID {contextId}, status code: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<RankedScore[]>(jsonOptions, cancellationToken: token))
+                var response => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<RankedScore[]>(jsonOptions, cancellationToken: token), token)
                     .ConfigureAwait(false)
             };
 
@@ -248,8 +248,8 @@ public class RankedScoreClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<RankedScore[]?>(
                         $"Failed to refuse ranked scores from score ID {scoreId} for context ID {contextId}, status code: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<RankedScore[]>(jsonOptions, cancellationToken: token))
+                var response => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<RankedScore[]>(jsonOptions, cancellationToken: token), token)
                     .ConfigureAwait(false)
             };
 
@@ -274,8 +274,8 @@ public class RankedScoreClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<RankedScore[]?>(
                         $"Failed to revert ranked scores from score ID {scoreId} for context ID {contextId} to pending, status code: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<RankedScore[]>(jsonOptions, cancellationToken: token))
+                var response => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<RankedScore[]>(jsonOptions, cancellationToken: token), token)
                     .ConfigureAwait(false)
             };
 
@@ -315,8 +315,8 @@ public class RankedScoreClient(
                     => Failure<RankedScoreWithRankedMap[]>(
                         $"Failed to retrieve ranked scores for context ID {contextId} at page {pageOptions.Page}" +
                         $": {(int)statusCode} ({reasonPhrase})"),
-                _ => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<RankedScoreWithRankedMap>>(jsonOptions, token))
+                _ => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<PagedList<RankedScoreWithRankedMap>>(jsonOptions, token), token)
                     .Map(RankedScoreWithRankedMap[] (parsed) => parsed.Data)
                     .ConfigureAwait(false)
             };
@@ -357,8 +357,8 @@ public class RankedScoreClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<RankedScore[]>(
                         $"Failed to retrieve ranked scores for context ID {contextId} and player {playerId} at page {pageOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
-                _ => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<RankedScore>>(jsonOptions, token))
+                _ => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<PagedList<RankedScore>>(jsonOptions, token), token)
                     .Map(RankedScore[] (parsed) => parsed.Data)
                     .ConfigureAwait(false)
             };
@@ -400,7 +400,8 @@ public class RankedScoreClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<RankedScore[]>(
                         $"Failed to retrieve ranked scores for context ID {contextId} (@me) at page {pageOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
-                _ => await Try(() => response.Content.ReadFromJsonAsync<PagedList<RankedScore>>(jsonOptions, token))
+                _ => await TryAsync(
+                        () => response.Content.ReadFromJsonAsync<PagedList<RankedScore>>(jsonOptions, token), token)
                     .Map(RankedScore[] (parsed) => parsed.Data)
                     .ConfigureAwait(false)
             };
@@ -441,8 +442,8 @@ public class RankedScoreClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<RankedScoreWithRankedMap[]>(
                         $"Failed to retrieve ranked scores with ranked maps for context ID {contextId} and player {playerId} at page {pageOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
-                _ => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<RankedScoreWithRankedMap>>(jsonOptions, token))
+                _ => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<PagedList<RankedScoreWithRankedMap>>(jsonOptions, token), token)
                     .Map(RankedScoreWithRankedMap[] (parsed) => parsed.Data)
                     .ConfigureAwait(false)
             };
@@ -484,8 +485,8 @@ public class RankedScoreClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<RankedScoreWithRankedMap[]>(
                         $"Failed to retrieve ranked scores with ranked maps for context ID {contextId} (@me) at page {pageOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
-                _ => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<RankedScoreWithRankedMap>>(jsonOptions, token))
+                _ => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<PagedList<RankedScoreWithRankedMap>>(jsonOptions, token), token)
                     .Map(RankedScoreWithRankedMap[] (parsed) => parsed.Data)
                     .ConfigureAwait(false)
             };

@@ -35,8 +35,9 @@ public sealed class CategoryClient(
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<PagedList<Category>>(
                     $"Failed to retrieve categories at page {page}: {(int)statusCode} ({reasonPhrase})"),
-            var response => await Try(() => response.Content
-                .ReadFromJsonAsync<PagedList<Category>>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+            var response => await TryAsync(() => response.Content
+                    .ReadFromJsonAsync<PagedList<Category>>(jsonOptions, cancellationToken: token), token)
+                .ConfigureAwait(false)
         };
 
     /// <summary>
@@ -52,8 +53,8 @@ public sealed class CategoryClient(
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<Category?>(
                     $"Failed to retrieve category with ID {categoryId}: {(int)statusCode} ({reasonPhrase})"),
-            var response => await Try(() => response.Content
-                .ReadFromJsonAsync<Category?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+            var response => await TryAsync(() => response.Content
+                .ReadFromJsonAsync<Category?>(jsonOptions, cancellationToken: token), token).ConfigureAwait(false)
         };
 
     /// <summary>
@@ -68,8 +69,8 @@ public sealed class CategoryClient(
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<Category[]>(
                     $"Failed to retrieve categories for guild with ID {guildId}: {(int)statusCode} ({reasonPhrase})"),
-            var response => (await Try(() => response.Content
-                .ReadFromJsonAsync<Category[]>(jsonOptions, cancellationToken: token)).ConfigureAwait(false))!
+            var response => (await TryAsync(() => response.Content
+                .ReadFromJsonAsync<Category[]>(jsonOptions, cancellationToken: token), token).ConfigureAwait(false))!
         };
 
     /// <summary>
@@ -90,8 +91,8 @@ public sealed class CategoryClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<Category>(
                         $"Failed to create category for guild {guildId}: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                    .ReadFromJsonAsync<Category>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+                var response => await TryAsync(() => response.Content
+                    .ReadFromJsonAsync<Category>(jsonOptions, cancellationToken: token), token).ConfigureAwait(false)
             };
 
     /// <summary>
@@ -115,8 +116,8 @@ public sealed class CategoryClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<Category>(
                         $"Failed to update category {categoryId} for guild {guildId}: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                    .ReadFromJsonAsync<Category>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+                var response => await TryAsync(() => response.Content
+                    .ReadFromJsonAsync<Category>(jsonOptions, cancellationToken: token), token).ConfigureAwait(false)
             };
 
     /// <summary>
