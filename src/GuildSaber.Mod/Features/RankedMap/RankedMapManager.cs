@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
-using BeatLeader.APIV2;
 using BeatLeader.Models;
 using BeatLeader.WebRequests;
 using GuildSaber.Api.Features.RankedMaps.Http;

@@ -163,7 +163,7 @@ internal sealed class PlayerCardCategories : XUIVLayout
                     })
                     .SetWidth(24)
                     .SetPadding(0)
-                    .SetSpacing(0f),
+                    .SetSpacing(-1f),
                 MakeCategoryColumn())
             .OnReady(x =>
             {

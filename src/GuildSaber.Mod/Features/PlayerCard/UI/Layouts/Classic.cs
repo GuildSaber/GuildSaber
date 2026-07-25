@@ -81,8 +81,7 @@ internal sealed class ClassicPlayerCardLayout(
                 _border = x.gameObject.GetComponent<ImageView>();
                 _border.material = resources.BorderMaterial;
                 _border.sprite = resources.BorderSprite;
-                x.CSizeFitter.verticalFit = x.CSizeFitter.horizontalFit =
-                    ContentSizeFitter.FitMode.Unconstrained;
+                x.CSizeFitter.verticalFit = x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             })
             .BuildUI(parent);
     }
@@ -126,17 +125,27 @@ internal sealed class ClassicPlayerCardLayout(
         => XUIHLayout.Make(
                 XUIVLayout.Make(
                         XUIIconButton.Make(() => send(new PlayerCardActionMessage.OpenActions()))
-                            .SetWidth(18)
-                            .SetHeight(18)
-                            .Bind(ref _playerImage))
+                            .SetWidth(16)
+                            .SetHeight(16)
+                            .Bind(ref _playerImage),
+                        XUIText.Make("00:00:00")
+                            .Bind(ref _time)
+                            .SetFontSize(3.2f)
+                            .SetAlign(TextAlignmentOptions.Center)
+                            .SetWrapping(false)
+                            .OnReady(x =>
+                            {
+                                x.LElement.preferredWidth = 16;
+                                x.LElement.preferredHeight = 5.5f;
+                            }))
+                    .SetSpacing(-0.5f)
                     .OnReady(x =>
                     {
                         x.LElement.flexibleHeight = 0;
-                        x.HOrVLayoutGroup.childAlignment = TextAnchor.UpperLeft;
+                        x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleLeft;
                     })
-                    .SetWidth(20)
-                    .SetHeight(23)
-                    .SetPadding(2, 0, 0, 2),
+                    .SetPadding(2, 0, 0, 1)
+                    .SetWidth(21),
                 XUIVLayout.Make(
                         XUIHLayout.Make(
                                 XUIText.Make(string.Empty)
@@ -214,38 +223,16 @@ internal sealed class ClassicPlayerCardLayout(
                                         XUIText.Make(string.Empty)
                                             .Bind(ref _level)
                                             .SetStyle(FontStyles.Bold | FontStyles.Italic)
-                                            .SetFontSize(5.8f)
-                                            .SetAlign(TextAlignmentOptions.MidlineRight)
-                                            .SetWrapping(false)
-                                            .OnReady(x =>
-                                            {
-                                                x.LElement.preferredWidth = 16;
-                                                x.LElement.preferredHeight = 6.5f;
-                                                x.LElement.flexibleWidth = 0;
-                                                x.LElement.flexibleHeight = 0;
-                                            }),
-                                        XUIText.Make("00:00:00")
-                                            .Bind(ref _time)
-                                            .SetFontSize(3.5f)
-                                            .SetAlign(TextAlignmentOptions.MidlineRight)
-                                            .SetWrapping(false)
-                                            .OnReady(x =>
-                                            {
-                                                x.LElement.preferredWidth = 16;
-                                                x.LElement.preferredHeight = 5.5f;
-                                                x.LElement.flexibleWidth = 0;
-                                                x.LElement.flexibleHeight = 0;
-                                            }))
+                                            .SetFontSize(7.4f)
+                                            .SetAlign(TextAlignmentOptions.Center)
+                                            .SetMargins(0, 3, 0, 0)
+                                            .SetWrapping(false))
                                     .OnReady(x =>
                                     {
                                         x.LElement.flexibleHeight = 0;
                                         x.HOrVLayoutGroup.childForceExpandHeight = false;
                                         x.HOrVLayoutGroup.childAlignment = TextAnchor.UpperRight;
-                                    })
-                                    .SetWidth(16)
-                                    .SetHeight(10.9f)
-                                    .SetPadding(0)
-                                    .SetSpacing(-1.1f))
+                                    }))
                             .OnReady(x =>
                             {
                                 x.LElement.flexibleHeight = 0;
