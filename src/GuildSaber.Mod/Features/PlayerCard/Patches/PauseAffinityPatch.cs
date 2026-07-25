@@ -1,18 +1,17 @@
-﻿using SiraUtil.Affinity;
+using SiraUtil.Affinity;
 
 namespace GuildSaber.Mod.Features.PlayerCard.Patches;
 
 /// <summary>
-/// Patches that causes the player card to only be visible when the game is paused.
+/// Shows the in-song player card only while the game is paused.
 /// </summary>
-public class PauseHookAffinityPatch(PlayerCardManager manager) : IAffinity
+public sealed class PauseAffinityPatch(PlayerCardManager manager) : IAffinity
 {
     [AffinityPrefix]
     [AffinityPatch(typeof(GamePause), nameof(GamePause.Pause))]
-    private void PausePrefix() => manager.SetFloatingScreenActive(true);
-
+    private void PausePrefix() => manager.SetPaused(true);
 
     [AffinityPrefix]
     [AffinityPatch(typeof(GamePause), nameof(GamePause.WillResume))]
-    private void WillResumePrefix() => manager.SetFloatingScreenActive(false);
+    private void WillResumePrefix() => manager.SetPaused(false);
 }

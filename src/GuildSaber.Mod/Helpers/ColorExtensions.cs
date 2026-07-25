@@ -1,4 +1,3 @@
-﻿using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using UnityEngine;
 
 namespace GuildSaber.Mod.Helpers;
@@ -18,7 +17,7 @@ public static class ColorExtensions
             var r = (byte)(argb >> 16 & 0xFF);
             var g = (byte)(argb >> 8 & 0xFF);
             var b = (byte)(argb & 0xFF);
-            return new Color(r, g, b);
+            return new Color32(r, g, b, byte.MaxValue);
         }
 
         public static Color FromDifficulty(EDifficulty difficulty) => difficulty switch

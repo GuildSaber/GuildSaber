@@ -1,5 +1,4 @@
-﻿using GuildSaber.Mod.Features.Common.Timer;
-using GuildSaber.Mod.Features.Common.UI;
+﻿using GuildSaber.Mod.Features.Common.UI;
 using GuildSaber.Mod.Features.GuildSaber;
 using GuildSaber.Mod.Features.GuildSaber.Settings;
 using GuildSaber.Mod.Features.MenuTweaks.PlayButtonRequirements;
@@ -12,6 +11,7 @@ using HarmonyLib;
 using IPA;
 using IPA.Config.Stores;
 using SiraUtil.Zenject;
+using Zenject;
 using IPALogger = IPA.Logging.Logger;
 using IPAConfig = IPA.Config.Config;
 
@@ -28,16 +28,15 @@ public class Plugin
         zenjector.UseLogger(logger);
         var config = ipaConfig.Generated<GuildSaberConfig>();
 
+        // Resources (Textures, Fonts, etc.) are installed in the static context so they can be used in static factories.
+        StaticContext.Container.Install<ResourcesInstaller>([logger]);
+        StaticContext.Container.Install<UIInstaller>();
+
         zenjector.Install<GuildSaberInstaller>(Location.App, config);
         zenjector.Install<GuildSaberSettingsInstaller>(Location.Menu);
 
-        zenjector.Install<ResourcesInstaller>(Location.App, logger);
-        zenjector.Install<UIInstaller>(Location.App);
-
         zenjector.Install<PlayerCardInstaller>(Location.Menu);
         zenjector.Install<PlaylistDownloaderInstaller>(Location.Menu);
-        zenjector.Install<TimerInstaller>(Location.Menu);
-
         zenjector.Install<RankedMapInstaller>(Location.Menu);
         zenjector.Install<MapRankedStatsInstaller>(Location.Menu);
         zenjector.Install<PlayButtonRequirementsInstaller>(Location.Menu);

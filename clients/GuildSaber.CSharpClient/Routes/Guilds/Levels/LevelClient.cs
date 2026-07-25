@@ -28,8 +28,9 @@ public sealed class LevelClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<Level?>(
                         $"Failed to retrieve level with ID {levelId}, status code: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<Level?>(jsonOptions, cancellationToken: cancellationToken))
+                var response => await TryAsync(() => response.Content
+                            .ReadFromJsonAsync<Level?>(jsonOptions, cancellationToken: cancellationToken),
+                        cancellationToken)
                     .ConfigureAwait(false)
             };
 
@@ -54,8 +55,9 @@ public sealed class LevelClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<Level[]>(
                         $"Failed to retrieve levels for context {contextId}: {(int)statusCode} ({reasonPhrase})"),
-                var response => (await Try(() => response.Content
-                        .ReadFromJsonAsync<Level[]>(jsonOptions, cancellationToken: cancellationToken))
+                var response => (await TryAsync(() => response.Content
+                            .ReadFromJsonAsync<Level[]>(jsonOptions, cancellationToken: cancellationToken),
+                        cancellationToken)
                     .ConfigureAwait(false))!
             };
     }

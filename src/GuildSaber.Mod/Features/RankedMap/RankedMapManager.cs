@@ -2,16 +2,11 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
-using BeatLeader.API;
 using BeatLeader.Models;
 using BeatLeader.WebRequests;
-using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Api.Features.RankedMaps.Http;
 using GuildSaber.Api.Shared;
-using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
-using GuildSaber.Mod.Features.GuildSaber;
 using GuildSaber.Mod.Features.GuildSaber.Caching;
 using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using GuildSaber.Mod.Helpers;
@@ -25,14 +20,15 @@ namespace GuildSaber.Mod.Features.RankedMap;
 public sealed class RankedMapManager(
     GuildSaberManager guildSaberManager,
     GuildSaberCacheStore cacheStore,
-    GuildSaberSession session,
-    GuildSaberConfig config,
     GuildSaberClient client,
     StandardLevelDetailViewController levelDetailViewController,
     Logger logger) : IInitializable, IDisposable
 {
     private static readonly TimeSpan _rankedMapsCacheDuration = TimeSpan.FromMinutes(15);
     private RankedMapEventData? _currentMapSelection;
+
+    private int _selectionVersion;
+    private GuildSaberSnapshot? _snapshot;
 
     [field: MaybeNull, AllowNull]
     private Func<BeatmapLevel, string> GetCustomHashMethodVersionAgnostic => field ??= typeof(Hashing).GetMethods()
@@ -42,9 +38,28 @@ public sealed class RankedMapManager(
         .First(m => m.ReturnType == typeof(string))
         .ToDelegate<Func<BeatmapLevel, string>>();
 
+    /// <summary>Fired when a new map selection is available (including changes in difficulty/content).</summary>
+    /// <remarks>If the map cannot be resolved to a ranked map, the underlying RankedMapWithScores will be null.</remarks>
+    public event Action<RankedMapEventData>? OnMapSelected;
+
+    public void Initialize()
+    {
+        guildSaberManager.StateChanged += OnRuntimeStateChanged;
+        OnRuntimeStateChanged(guildSaberManager.State);
+        levelDetailViewController.didChangeDifficultyBeatmapEvent -= OnDifficultyChanged;
+        levelDetailViewController.didChangeDifficultyBeatmapEvent += OnDifficultyChanged;
+        levelDetailViewController.didChangeContentEvent -= OnContentChanged;
+        levelDetailViewController.didChangeContentEvent += OnContentChanged;
+
+#pragma warning disable CS0618
+        UploadReplayRequest.StateChangedEvent += OnUploadReplayStateChanged;
+#pragma warning restore CS0618
+    }
+
     public void Dispose()
     {
-        session.CurrentGuildContextChanged -= OnCurrentGuildContextChanged;
+        _selectionVersion++;
+        guildSaberManager.StateChanged -= OnRuntimeStateChanged;
         levelDetailViewController.didChangeDifficultyBeatmapEvent -= OnDifficultyChanged;
         levelDetailViewController.didChangeContentEvent -= OnContentChanged;
 
@@ -58,19 +73,6 @@ public sealed class RankedMapManager(
         {
             // ignored because beatleader might dispose it before we do (false warning in logs if not ignored).
         }
-    }
-
-    public void Initialize()
-    {
-        session.CurrentGuildContextChanged += OnCurrentGuildContextChanged;
-        levelDetailViewController.didChangeDifficultyBeatmapEvent -= OnDifficultyChanged;
-        levelDetailViewController.didChangeDifficultyBeatmapEvent += OnDifficultyChanged;
-        levelDetailViewController.didChangeContentEvent -= OnContentChanged;
-        levelDetailViewController.didChangeContentEvent += OnContentChanged;
-
-#pragma warning disable CS0618
-        UploadReplayRequest.StateChangedEvent += OnUploadReplayStateChanged;
-#pragma warning restore CS0618
     }
 
     private async void OnUploadReplayStateChanged(
@@ -92,10 +94,6 @@ public sealed class RankedMapManager(
         }
     }
 
-    /// <summary>Fired when a new map selection is available (including changes in difficulty/content).</summary>
-    /// <remarks>If the map cannot be resolved to a ranked map, the underlying RankedMapWithScores will be null.</remarks>
-    public event Action<RankedMapEventData>? OnMapSelected;
-
     public void RemoveCachedRankedMaps(ContextId contextId, SongHash hash)
         => cacheStore.Remove(GetRankedMapsCacheKey(contextId, hash));
 
@@ -109,16 +107,37 @@ public sealed class RankedMapManager(
         _ = UpdateSelection(controller.beatmapKey, controller.beatmapLevel);
     }
 
-    private void OnCurrentGuildContextChanged(GuildResponses.GuildExtended guild, ContextId contextId)
-        => _ = UpdateSelection(levelDetailViewController.beatmapKey, levelDetailViewController.beatmapLevel);
-
-    private async Task UpdateSelection(BeatmapKey beatmapKey, BeatmapLevel? beatmap)
+    private void OnRuntimeStateChanged(GuildSaberRuntimeState state)
     {
-        if (!guildSaberManager.Initialized || beatmap == null || !SongHash
+        var previousSnapshot = _snapshot;
+        _snapshot = state is GuildSaberRuntimeState.Ready(var snapshot) ? snapshot : null;
+
+        if (previousSnapshot is not null
+            && _snapshot is not null
+            && previousSnapshot.PlayerId == _snapshot.PlayerId
+            && previousSnapshot.CurrentGuildExtended.Guild.Id == _snapshot.CurrentGuildExtended.Guild.Id
+            && previousSnapshot.CurrentContextId == _snapshot.CurrentContextId)
+            return;
+
+        _ = UpdateSelection(levelDetailViewController.beatmapKey, levelDetailViewController.beatmapLevel);
+    }
+
+    private Task UpdateSelection(BeatmapKey beatmapKey, BeatmapLevel? beatmap)
+        => UpdateSelection(beatmapKey, beatmap, ++_selectionVersion);
+
+    private async Task UpdateSelection(BeatmapKey beatmapKey, BeatmapLevel? beatmap, int version)
+    {
+        var snapshot = _snapshot;
+        if (snapshot is null || beatmap == null || !SongHash
                 .TryCreate(GetCustomHashMethodVersionAgnostic.Invoke(beatmap))
                 .TryGetValue(out var songHash))
         {
-            PublishMapSelected(new RankedMapEventData(beatmapKey, SongHash: null, RankedMapWithScores: null));
+            if (version == _selectionVersion)
+                PublishMapSelected(new RankedMapEventData(
+                    beatmapKey,
+                    SongHash: null,
+                    RankedMapWithScores: null,
+                    snapshot));
             return;
         }
 
@@ -126,8 +145,8 @@ public sealed class RankedMapManager(
         try
         {
             rankedMapWithScores = await FetchRankedMapWithScoresOfPlayer(
-                config.ContextId,
-                session.PlayerId,
+                snapshot.CurrentContextId,
+                snapshot.PlayerId,
                 songHash,
                 beatmapKey.beatmapCharacteristic.serializedName,
                 beatmapKey.difficulty.ToEDifficulty()
@@ -139,7 +158,8 @@ public sealed class RankedMapManager(
             rankedMapWithScores = null;
         }
 
-        PublishMapSelected(new RankedMapEventData(beatmapKey, songHash, rankedMapWithScores));
+        if (version != _selectionVersion || !ReferenceEquals(snapshot, _snapshot)) return;
+        PublishMapSelected(new RankedMapEventData(beatmapKey, songHash, rankedMapWithScores, snapshot));
     }
 
     /// <summary>Refreshes the cached map score data and member stats after the current map may have changed them.</summary>
@@ -160,9 +180,10 @@ public sealed class RankedMapManager(
         if (!IsCurrentSelectedRankedMap(beatmapKey, songHash))
             return;
 
-        RemoveCachedRankedMaps(config.ContextId, songHash);
-        await guildSaberManager.RefreshCurrentMemberStatsAsync();
+        if (_snapshot is not { } snapshot) return;
+        RemoveCachedRankedMaps(snapshot.CurrentContextId, songHash);
 
+        await guildSaberManager.RefreshCurrentMemberStatsAsync();
         await UpdateSelection(beatmapKey, beatmap);
     }
 

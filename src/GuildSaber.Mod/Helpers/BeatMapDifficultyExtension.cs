@@ -1,5 +1,4 @@
 using System;
-using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 
 namespace GuildSaber.Mod.Helpers;
 

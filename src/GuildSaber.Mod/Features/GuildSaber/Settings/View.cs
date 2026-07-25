@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using CP_SDK_BS.UI;
 using CP_SDK.XUI;
-using GuildSaber.Mod.Features.Common.UI;
-using GuildSaber.Mod.Features.Common.UI.Components;
 using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using GuildSaber.Mod.Features.MenuTweaks.RankedMapStats;
+using GuildSaber.Mod.Features.PlayerCard.UI;
 using Zenject;
 
 namespace GuildSaber.Mod.Features.GuildSaber.Settings;
@@ -19,45 +17,28 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
 
     [Inject] private readonly GuildSaberConfig _config = null!;
     [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
+    [Inject] private readonly PlayerCardSettings _playerCardSettings = null!;
     [Inject] private readonly RankedMapStats _rankedMapStats = null!;
-    [Inject] private readonly UIFactory _uiFactory = null!;
 
-    private GSDropdown _apiDropdown = null!;
+    private XUIDropdown _apiDropdown = null!;
     private XUIToggle _displayMapRankedStatsToggle = null!;
-    private XUIVLayout _mainLayout = null!;
 
-    public event Action OnResetCardMenuPosition = () => { };
-    public event Action OnResetCardInSongPosition = () => { };
-
-    private void CreateUI() => _mainLayout = Templates.FullRectLayoutMainView(
-        _uiFactory.Text("Api environment:"),
-        _uiFactory.Dropdown()
-            .Bind(ref _apiDropdown)
-            .SetOptions(_apiEnvironments)
-            .OnValueChanged(OnApiEnvChanged),
-        _uiFactory.Text("Display RankedMap Stats:"),
-        XUIToggle.Make()
-            .OnValueChanged(OnDisplayMapRankedStatsChanged)
-            .Bind(ref _displayMapRankedStatsToggle),
-        XUIVLayout.Make(
-            _uiFactory.SecondaryButton("Reset card menu position")
+    protected override void OnViewCreation() => Templates.FullRectLayoutMainView(
+            XUIText.Make("Api environment:"),
+            XUIDropdown.Make()
+                .Bind(ref _apiDropdown)
+                .SetOptions(_apiEnvironments)
+                .OnValueChanged(OnApiEnvChanged),
+            XUIText.Make("Display RankedMap Stats:"),
+            XUIToggle.Make()
+                .OnValueChanged(OnDisplayMapRankedStatsChanged)
+                .Bind(ref _displayMapRankedStatsToggle),
+            XUISecondaryButton.Make("Player card settings")
                 .SetWidth(40)
                 .SetHeight(5)
-                .OnClick(OnResetCardMenuPosition),
-            _uiFactory.SecondaryButton("Reset card in-song position")
-                .SetWidth(40)
-                .SetHeight(5)
-                .OnClick(OnResetCardInSongPosition)
-        )
-    ).OnReady(_ => UpdateValues());
-
-    protected override void OnViewCreation()
-    {
-        CreateUI();
-        _mainLayout.BuildUI(transform);
-
-        UpdateValues();
-    }
+                .OnClick(_playerCardSettings.Present))
+        .OnReady(_ => UpdateValues())
+        .BuildUI(transform);
 
     public void UpdateValues()
     {
@@ -68,7 +49,7 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
     private void OnApiEnvChanged(int index, string value)
     {
         _config.ApiEnv = (ApiEnv)index;
-        _guildSaberManager.SelectGuild(_config.GuildId, _config.ContextId);
+        _ = _guildSaberManager.SelectGuildAsync(_config.GuildId, _config.ContextId);
     }
 
     private void OnDisplayMapRankedStatsChanged(bool value)

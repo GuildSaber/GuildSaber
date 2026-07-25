@@ -81,8 +81,9 @@ public sealed class LeaderboardClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<PagedList<RankedScoreWithPlayer>>(
                         $"Failed to retrieve ranked map leaderboard for map {rankedMapId} at page {requestOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<RankedScoreWithPlayer>>(jsonOptions, cancellationToken: token))
+                var response => await TryAsync(() => response.Content
+                            .ReadFromJsonAsync<PagedList<RankedScoreWithPlayer>>(jsonOptions, cancellationToken: token),
+                        token)
                     .ConfigureAwait(false)
             };
 
@@ -108,8 +109,8 @@ public sealed class LeaderboardClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<PagedList<MemberPointStat>>(
                         $"Failed to retrieve member point stat leaderboard at page {requestOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<MemberPointStat>>(jsonOptions, cancellationToken: token))
+                var response => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<PagedList<MemberPointStat>>(jsonOptions, cancellationToken: token), token)
                     .ConfigureAwait(false)
             };
 
@@ -138,8 +139,8 @@ public sealed class LeaderboardClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<PagedList<MemberPointStat>>(
                         $"Failed to retrieve member category point stat leaderboard for category {categoryId} at page {requestOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<MemberPointStat>>(jsonOptions, cancellationToken: token))
+                var response => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<PagedList<MemberPointStat>>(jsonOptions, cancellationToken: token), token)
                     .ConfigureAwait(false)
             };
 
@@ -182,9 +183,9 @@ public sealed class LeaderboardClient(
                 { IsSuccessStatusCode: false } => Failure<RankedScoreWithPlayer[]>(
                     $"Failed to retrieve ranked map leaderboard at page {requestOptions.Page - 1}" +
                     $": {response.StatusCode} {response.ReasonPhrase}"),
-                _ => await Try(() => response.Content
+                _ => await TryAsync(() => response.Content
                         .ReadFromJsonAsync<PagedList<RankedScoreWithPlayer>>(
-                            jsonOptions, cancellationToken: token))
+                            jsonOptions, cancellationToken: token), token)
                     .Map(RankedScoreWithPlayer[] (parsed) => parsed.Data)
                     .ConfigureAwait(false)
             };
@@ -231,8 +232,8 @@ public sealed class LeaderboardClient(
                 { IsSuccessStatusCode: false } => Failure<MemberPointStat[]>(
                     $"Failed to retrieve member point stat leaderboard at page {requestOptions.Page - 1}" +
                     $": {response.StatusCode} {response.ReasonPhrase}"),
-                _ => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<MemberPointStat>>(jsonOptions, cancellationToken: token))
+                _ => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<PagedList<MemberPointStat>>(jsonOptions, cancellationToken: token), token)
                     .Map(MemberPointStat[] (parsed) => parsed.Data)
                     .ConfigureAwait(false)
             };
@@ -282,8 +283,8 @@ public sealed class LeaderboardClient(
                 { IsSuccessStatusCode: false } => Failure<MemberPointStat[]>(
                     $"Failed to retrieve member category point stat leaderboard at page {requestOptions.Page - 1}" +
                     $": {response.StatusCode} {response.ReasonPhrase}"),
-                _ => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<MemberPointStat>>(jsonOptions, cancellationToken: token))
+                _ => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<PagedList<MemberPointStat>>(jsonOptions, cancellationToken: token), token)
                     .Map(MemberPointStat[] (parsed) => parsed.Data)
                     .ConfigureAwait(false)
             };

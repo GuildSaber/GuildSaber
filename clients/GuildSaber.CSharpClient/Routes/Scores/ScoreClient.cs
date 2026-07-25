@@ -29,8 +29,8 @@ public sealed class ScoreClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<ScoreStatistics?>(
                         $"Failed to retrieve score statistics for score {scoreId}: {(int)statusCode} ({reasonPhrase})"),
-                var response => await Try(() => response.Content
-                        .ReadFromJsonAsync<ScoreStatistics>(jsonOptions, cancellationToken: token))
+                var response => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<ScoreStatistics>(jsonOptions, cancellationToken: token), token)
                     .ConfigureAwait(false)
             };
 }

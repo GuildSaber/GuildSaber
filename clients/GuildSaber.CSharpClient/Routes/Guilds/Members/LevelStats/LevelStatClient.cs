@@ -30,8 +30,8 @@ public sealed class LevelStatClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<MemberLevelStat[]>(
                         $"Failed to retrieve level stats for player {playerId} in context {contextId}: {(int)statusCode} ({reasonPhrase})"),
-                var response => (await Try(() => response.Content
-                        .ReadFromJsonAsync<MemberLevelStat[]>(jsonOptions, cancellationToken: token))
+                var response => (await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<MemberLevelStat[]>(jsonOptions, cancellationToken: token), token)
                     .ConfigureAwait(false))!
             };
 
@@ -54,8 +54,8 @@ public sealed class LevelStatClient(
                 { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                     => Failure<MemberLevelStat[]>(
                         $"Failed to retrieve level stats for current player in context {contextId}: {(int)statusCode} ({reasonPhrase})"),
-                var response => (await Try(() => response.Content
-                        .ReadFromJsonAsync<MemberLevelStat[]>(jsonOptions, cancellationToken: token))
+                var response => (await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<MemberLevelStat[]>(jsonOptions, cancellationToken: token), token)
                     .ConfigureAwait(false))!
             };
 }

@@ -12,55 +12,55 @@ public class ResourcesInstaller(IPALogger logger) : Installer
 {
     public override void InstallBindings()
     {
-        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.DownArrow))
+        Container.Bind<Texture2D>().WithId(ResourceMap.DownArrow)
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.DownArrow, logger))
             .AsCached();
 
-        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.GsWhiteLogo))
+        Container.Bind<Texture2D>().WithId(ResourceMap.GsWhiteLogo)
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.GsWhiteLogo, logger))
             .AsCached();
 
-        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.PlasticTrophy))
+        Container.Bind<Texture2D>().WithId(ResourceMap.PlasticTrophy)
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.PlasticTrophy, logger))
             .AsCached();
 
-        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.SilverTrophy))
+        Container.Bind<Texture2D>().WithId(ResourceMap.SilverTrophy)
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.SilverTrophy, logger))
             .AsCached();
 
-        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.GoldTrophy))
+        Container.Bind<Texture2D>().WithId(ResourceMap.GoldTrophy)
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.GoldTrophy, logger))
             .AsCached();
 
-        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.DiamondTrophy))
+        Container.Bind<Texture2D>().WithId(ResourceMap.DiamondTrophy)
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.DiamondTrophy, logger))
             .AsCached();
 
-        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.RubyTrophy))
+        Container.Bind<Texture2D>().WithId(ResourceMap.RubyTrophy)
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.RubyTrophy, logger))
             .AsCached();
 
-        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.CheckMark))
+        Container.Bind<Texture2D>().WithId(ResourceMap.CheckMark)
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.CheckMark, logger))
             .AsCached();
 
-        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.DenyMark))
+        Container.Bind<Texture2D>().WithId(ResourceMap.DenyMark)
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.DenyMark, logger))
             .AsCached();
 
-        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.QuestionMark))
+        Container.Bind<Texture2D>().WithId(ResourceMap.QuestionMark)
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.QuestionMark, logger))
             .AsCached();
 
-        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.CheckShield))
+        Container.Bind<Texture2D>().WithId(ResourceMap.CheckShield)
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.CheckShield, logger))
             .AsCached();
 
-        Container.Bind<Texture2D>().WithId(nameof(ResourceMap.DenyShield))
+        Container.Bind<Texture2D>().WithId(ResourceMap.DenyShield)
             .FromMethod(() => LoadTexture2DFromResource(ResourceMap.DenyShield, logger))
             .AsCached();
 
-        Container.Bind<TMP_FontAsset>().WithId(nameof(ResourceMap.TekoMedium))
+        Container.Bind<TMP_FontAsset>().WithId(ResourceMap.TekoMedium)
             .FromMethod(() =>
             {
                 var font = UnityEngine.Resources

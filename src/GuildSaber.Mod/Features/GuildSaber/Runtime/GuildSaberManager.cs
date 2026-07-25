@@ -1,208 +1,284 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Guilds.Http;
-using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
-using GuildSaber.Common.StrongTypes;
+using GuildSaber.Common.Helpers;
+using GuildSaber.Common.Result;
 using GuildSaber.CSharpClient;
 using Zenject;
+using static GuildSaber.Api.Features.Guilds.Members.ContextStats.Http.ContextStatResponses;
+using static GuildSaber.Api.Features.Guilds.Members.LevelStats.Http.LevelStatResponses;
+using static GuildSaber.Api.Features.Players.Http.PlayerResponses;
+using static GuildSaber.Mod.Features.GuildSaber.Runtime.GuildSaberRuntimeState;
 
 namespace GuildSaber.Mod.Features.GuildSaber.Runtime;
 
-[SuppressMessage("ReSharper", "AsyncVoidMethod")]
-public class GuildSaberManager(
+public sealed class GuildSaberManager(
     GuildSaberClient client,
-    GuildSaberSession session,
     GuildSaberConfig config,
-    IPlatformUserModel platformLeaderboardsModel,
+    IPlatformUserModel platformUserModel,
     Logger logger
-) : IInitializable
+) : IInitializable, IDisposable
 {
-    public bool Initialized;
-    public bool Errored;
+    private readonly CancellationTokenSource _lifetime = new();
+    private CancellationTokenSource? _activeTransition;
+    private ImmutableArray<GuildResponses.GuildExtended> _availableGuilds = [];
+    private PlayerExtended? _playerExtended;
 
-    public async void Initialize()
+    public GuildSaberRuntimeState State { get; private set; } = new Loading();
+    public event Action<GuildSaberRuntimeState>? StateChanged;
+
+    private readonly record struct MemberStats(
+        ImmutableArray<MemberLevelStat> LevelStats,
+        MemberContextStat ContextStats
+    );
+
+    void IInitializable.Initialize() => _ = ReInitializeAsync();
+
+    public void Dispose()
     {
-        logger.Info("Initializing GuildSaberManager...");
+        _activeTransition?.Cancel();
+        _activeTransition = null;
 
-        var userInfo = await platformLeaderboardsModel.GetUserInfo(CancellationToken.None);
-        if (!BeatLeaderId.TryParse(userInfo.platformUserId).TryGetValue(out var beatLeaderId, out var error))
-        {
-            logger.Warn($"Failed to parse BeatLeaderId: {error}. " +
-                        "Invoking OnPlayerIdFetched with null and terminating Initialize.");
-            Errored = true;
-            OnInitializationError("Failed to parse BeatLeaderId from user information.");
-            return;
-        }
-
-        logger.Info($"Fetched BeatLeaderId: {beatLeaderId} of kind {beatLeaderId.Kind}.");
-
-        if (!(await client.Players.LookupPlayerIdByBeatLeaderIdAsync(beatLeaderId))
-            .TryGetValue(out var playerId, out error))
-        {
-            logger.Error($"Failed to fetch PlayerId: {error}. " +
-                         "Invoking OnPlayerIdFetched with null and terminating Initialize.");
-            Errored = true;
-            OnInitializationError("Failed to fetch PlayerId from GuildSaber.");
-            return;
-        }
-
-        if (playerId == null)
-        {
-            logger.Error("PlayerId is null, user does not have an account on GuildSaber. " +
-                         "Invoking OnPlayerIdFetched with null and terminating Initialize.");
-            Errored = true;
-            OnInitializationError("User does not have an account on GuildSaber.");
-            return;
-        }
-
-        var extendedPlayerIdResult = await client.Players.GetExtendedByIdAsync(playerId.Value);
-        if (!extendedPlayerIdResult.TryGetValue(out var extendedPlayer, out error))
-        {
-            logger.Error($"Failed to fetch extended player: {error}");
-            logger.Error("Terminating");
-            Errored = true;
-            OnInitializationError.Invoke(error);
-            return;
-        }
-
-        if (extendedPlayer == null)
-        {
-            logger.Error("Extended player response is null.");
-            Errored = true;
-            OnInitializationError.Invoke("Failed to fetch extended player from GuildSaber.");
-            return;
-        }
-
-        session.SetPlayer(extendedPlayer);
-
-        var guildExtendeds = await Task.WhenAll(extendedPlayer.Members.Select(async member =>
-        {
-            var guildResponse = await client.Guilds.GetExtendedByIdAsync(new GuildId(member.GuildId));
-            if (guildResponse.TryGetValue(out var guild, out var guildError)) return guild;
-
-            logger.Error($"Failed to fetch guild: {guildError}. ");
-            Errored = true;
-            OnInitializationError("Failed to fetch PlayerId from GuildSaber.");
-            return null;
-        }));
-
-        session.SetGuilds(guildExtendeds.OfType<GuildResponses.GuildExtended>());
-
-        if (!session.HasAvailableGuilds)
-        {
-            logger.Warn("Player is not a member of any guild. " +
-                        "Invoking OnPlayerIdFetched with null and terminating Initialize.");
-            OnNoGuildError();
-            return;
-        }
-
-        // Make sure the config selected guild and context exists, if not select the first one.
-        if (!session.TryGetGuild(config.GuildId, out var selectedGuild))
-        {
-            var firstGuildExtended = session.GetAvailableGuilds().First();
-            config.GuildId = firstGuildExtended.Guild.Id;
-            config.ContextId = firstGuildExtended.Contexts[0].Id;
-        }
-        else
-        {
-            if (selectedGuild.Contexts.All(x => x.Id != config.ContextId))
-                config.ContextId = selectedGuild.Contexts[0].Id;
-        }
-
-        SelectGuild(config.GuildId, config.ContextId);
+        _lifetime.Cancel();
+        _lifetime.Dispose();
     }
 
-    public event Action<string> OnInitializationError = _ => { };
-    public event Action OnNoGuildError = () => { };
-    public event Action OnGuildSelectionStarted = () => { };
-    public event Action<ContextId> OnMemberStatsRefreshed = _ => { };
+    public Task ReInitializeAsync() => RunTransitionAsync(LoadInitialStateAsync);
 
-    public void SetGuild(GuildResponses.GuildExtended guild)
+    private async Task LoadInitialStateAsync(CancellationToken token)
     {
-        config.GuildId = guild.Guild.Id;
-        config.ContextId = guild.Contexts[0].Id;
+        logger.Info("Initializing GuildSaber runtime...");
+        var userInfo = await platformUserModel.GetUserInfo(token);
 
-        SelectGuild(guild.Guild.Id, guild.Contexts[0].Id);
+        // Throw if cancellation requested manually because the underlying GetUserInfo API doesn't use the token.
+        token.ThrowIfCancellationRequested();
+
+        if (!BeatLeaderId.TryParse(userInfo.platformUserId)
+                .TryGetValue(out var beatLeaderId, out var parseError))
+        {
+            Publish(new Failed($"Failed to identify the local BeatLeader player: {parseError}"));
+            return;
+        }
+
+        var playerIdResult = await client.Players.LookupPlayerIdByBeatLeaderIdAsync(beatLeaderId, token);
+        if (!playerIdResult.TryGetValue(out var playerId, out var lookupError))
+        {
+            Publish(new Failed(lookupError));
+            return;
+        }
+
+        if (playerId is null)
+        {
+            Publish(new AccountRequired(beatLeaderId));
+            return;
+        }
+
+        var playerResult = await client.Players.GetExtendedByIdAsync(playerId.Value, token);
+        if (!playerResult.TryGetValue(out var player, out var playerError) || player is null)
+        {
+            Publish(new Failed(playerError ?? "GuildSaber returned no player data."));
+            return;
+        }
+
+        var guildResults = (await Task.WhenAll(player
+                .Members
+                .Select(x => new GuildId(x.GuildId)).Distinct()
+                .Select(x => client.Guilds.GetExtendedByIdAsync(x, token))))
+            .Reduce()
+            .Map(x => x.Select(guild => guild ?? throw new ArgumentNullException(nameof(guild))).ToImmutableArray());
+
+        if (!guildResults.TryGetValue(out var guilds, out var error))
+        {
+            Publish(new Failed(error));
+            return;
+        }
+
+        _playerExtended = player;
+        _availableGuilds = guilds;
+
+        if (_availableGuilds.IsEmpty)
+        {
+            Publish(new NoGuilds());
+            return;
+        }
+
+        var selectedGuild = _availableGuilds.FirstOrDefault(x => x.Guild.Id == config.GuildId && x.Contexts.Length > 0)
+                            ?? _availableGuilds.FirstOrDefault(x => x.Contexts.Length > 0);
+        if (selectedGuild is null)
+        {
+            Publish(new Failed("None of the player's guilds have a selectable context."));
+            return;
+        }
+
+        var selectedContextId = selectedGuild.Contexts.Any(x => x.Id == config.ContextId)
+            ? config.ContextId
+            : selectedGuild.Contexts[0].Id;
+
+        await LoadGuildContextSelectionAsync(selectedGuild.Guild.Id, selectedContextId, token);
     }
 
-    public async void SelectGuild(GuildId guildId, ContextId contextId)
+    private async Task LoadGuildContextSelectionAsync(GuildId guildId, ContextId contextId, CancellationToken token)
     {
-        OnGuildSelectionStarted.Invoke();
-
-        if (!session.HasLocalPlayer)
+        if (_playerExtended is null)
         {
-            logger.Info("Local player is not loaded.");
+            Publish(new Failed("The local player has not been loaded."));
             return;
         }
 
-        if (!session.TryGetGuild(guildId, out var guild))
+        var guildExtended = _availableGuilds.FirstOrDefault(x => x.Guild.Id == guildId);
+        if (guildExtended is null)
         {
-            var guildError = $"Guild {guildId.Value} is not available in the current GuildSaber session.";
-            logger.Error(guildError);
-            OnInitializationError.Invoke(guildError);
+            Publish(new Failed($"Guild {guildId.Value} is not available for this player."));
             return;
         }
+
+        if (guildExtended.Contexts.All(x => x.Id != contextId))
+        {
+            Publish(new Failed($"Context {contextId.Value} does not belong to guild {guildExtended.Guild.Info.Name}."));
+            return;
+        }
+
+        var stats = await FetchMemberStatsAsync(_playerExtended.Player.Id, contextId, token);
+        if (stats is not { } memberStats)
+        {
+            Publish(new Failed("Failed to load the player's guild statistics."));
+            return;
+        }
+
+        var snapshot = new GuildSaberSnapshot(
+            _playerExtended,
+            _availableGuilds,
+            guildExtended,
+            contextId,
+            memberStats.LevelStats,
+            memberStats.ContextStats
+        );
 
         config.GuildId = guildId;
         config.ContextId = contextId;
 
-        if (!await RefreshMemberStatsAsync(contextId, publishEvent: false, reportInitializationError: true))
-            return;
-
-        Initialized = true;
-        Errored = false;
-
-        // Things can subscribe and check for the Initialized property, so this shall be last.
-        session.SetCurrentGuildContext(guild, contextId);
+        Publish(new Ready(snapshot));
     }
 
-    public Task<bool> RefreshCurrentMemberStatsAsync()
-        => RefreshMemberStatsAsync(config.ContextId);
-
-    public Task<bool> RefreshMemberStatsAsync(ContextId contextId)
-        => RefreshMemberStatsAsync(contextId, publishEvent: true, reportInitializationError: false);
-
-    private async Task<bool> RefreshMemberStatsAsync(
-        ContextId contextId, bool publishEvent, bool reportInitializationError)
+    public Task SelectGuildAsync(GuildResponses.GuildExtended guild)
     {
-        if (!session.HasLocalPlayer)
+        if (guild.Contexts.Length != 0)
+            return SelectGuildAsync(guild.Guild.Id, guild.Contexts[0].Id);
+
+        _activeTransition?.Cancel();
+        _activeTransition = null;
+
+        Publish(new Failed($"Guild {guild.Guild.Info.Name} has no selectable context.", CanRetry: false));
+        return Task.CompletedTask;
+    }
+
+    public Task SelectGuildAsync(GuildId guildId, ContextId contextId)
+        => RunTransitionAsync(token => LoadGuildContextSelectionAsync(guildId, contextId, token));
+
+    public async Task<bool> RefreshCurrentMemberStatsAsync()
+    {
+        if (State is not Ready(var readySnapshot))
+            return false;
+
+        try
         {
-            logger.Info("Local player is not loaded.");
+            var stats = await FetchMemberStatsAsync(
+                readySnapshot.PlayerId,
+                readySnapshot.CurrentContextId,
+                _lifetime.Token);
+
+            if (stats is not { } memberStats)
+                return false;
+
+            if (State is not Ready(var currentSnapshot)
+                || currentSnapshot.PlayerId != readySnapshot.PlayerId
+                || currentSnapshot.CurrentGuildExtended.Guild.Id != readySnapshot.CurrentGuildExtended.Guild.Id
+                || currentSnapshot.CurrentContextId != readySnapshot.CurrentContextId)
+                return false;
+
+            var refreshedSnapshot = currentSnapshot with
+            {
+                LevelStats = memberStats.LevelStats,
+                ContextStats = memberStats.ContextStats
+            };
+
+            Publish(new Ready(refreshedSnapshot));
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
             return false;
         }
-
-        var levelsResponse = await client.LevelStats.GetByPlayerIdAsync(session.PlayerId, contextId);
-        if (!levelsResponse.TryGetValue(out var levels, out var error))
+        catch (Exception exception)
         {
-            logger.Error($"Failed to fetch levels: {error}.");
-            if (reportInitializationError)
-                OnInitializationError.Invoke(error);
-
+            logger.Error($"Unexpected error refreshing GuildSaber member stats: {exception}");
             return false;
         }
+    }
 
-        if (levels == null) return false;
+    private async Task<MemberStats?> FetchMemberStatsAsync(
+        PlayerId playerId,
+        ContextId contextId,
+        CancellationToken token)
+    {
+        var (levelStatsResult, contextStatsResult) = await (
+            client.LevelStats.GetByPlayerIdAsync(playerId, contextId, token),
+            client.ContextStats.GetByPlayerIdAsync(playerId, contextId, token)
+        ).WhenAll();
 
-        var pointsResponse = await client.ContextStats.GetByPlayerIdAsync(session.PlayerId, contextId);
-        if (!pointsResponse.TryGetValue(out var contextStats, out error))
+        if (!levelStatsResult.TryGetValue(out var levelStats, out var levelStatsError))
         {
-            logger.Error($"Failed to fetch context stats: {error}.");
-            if (reportInitializationError)
-                OnInitializationError.Invoke(error);
-
-            return false;
+            logger.Error($"Failed to fetch member level stats: {levelStatsError}");
+            return null;
         }
 
-        if (contextStats == null) return false;
+        // ReSharper disable once InvertIf
+        if (!contextStatsResult.TryGetValue(out var contextStats, out var contextStatsError) || contextStats is null)
+        {
+            logger.Error($"Failed to fetch member context stats: {contextStatsError}");
+            return null;
+        }
 
-        session.SetMemberStats(contextId, levels, contextStats.Value);
+        return new MemberStats([..levelStats], contextStats.Value);
+    }
 
-        if (publishEvent)
-            OnMemberStatsRefreshed.Invoke(contextId);
+    private async Task RunTransitionAsync(Func<CancellationToken, Task> transition)
+    {
+        _activeTransition?.Cancel();
 
-        return true;
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        _activeTransition = cancellation;
+
+        Publish(new Loading());
+
+        try
+        {
+            await transition(cancellation.Token);
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            // A newer transition owns the state now, or the manager is being disposed.
+        }
+        catch (Exception exception)
+        {
+            logger.Error($"Unexpected GuildSaber runtime error: {exception}");
+            if (!cancellation.IsCancellationRequested)
+                Publish(new Failed("An unexpected error occurred while loading GuildSaber."));
+        }
+        finally
+        {
+            if (ReferenceEquals(_activeTransition, cancellation)) _activeTransition = null;
+        }
+    }
+
+    private void Publish(GuildSaberRuntimeState state)
+    {
+        if (state is Failed(var message, _)) logger.Error(message);
+        State = state;
+        StateChanged?.Invoke(state);
     }
 }

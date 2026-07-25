@@ -1,54 +1,53 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Api.Features.Guilds.Levels.Playlists.Http;
-using GuildSaber.Common.StrongTypes;
 using GuildSaber.CSharpClient;
 using GuildSaber.CSharpClient.Routes.Guilds.Levels.Playlists;
 using GuildSaber.Mod.Features.GuildSaber.Runtime;
 
 namespace GuildSaber.Mod.Features.PlaylistDownloader;
 
-[SuppressMessage("ReSharper", "AsyncVoidMethod")]
-public class PlaylistDownloader(GuildSaberClient client, GuildSaberSession session, Logger logger)
+public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manager, Logger logger)
 {
     public bool IsDownloading { get; private set; }
 
     /// <summary>
     /// Event called when the whole download is completed
     /// </summary>
-    public event Action<int, int> EventPlaylistsDownloadCompleted = null!;
+    public event Action<int, int>? EventPlaylistsDownloadCompleted;
 
     /// <summary>
     /// Event called for every unique playlists
     /// </summary>
-    public event Action<string, string, bool> EventUniquePlaylistDownloadCompleted = null!;
+    public event Action<string, string, bool>? EventUniquePlaylistDownloadCompleted;
 
-    public void DownloadPlaylists() => DownloadPlaylists(rangeMin: -1, rangeMax: int.MaxValue, categoryId: null);
-    public void DownloadPlaylists(CategoryId categoryId) => DownloadPlaylists(-1, int.MaxValue, categoryId);
+    public Task DownloadPlaylistsAsync(CategoryId categoryId) => DownloadPlaylistsAsync(-1, int.MaxValue, categoryId);
 
-    public string GetGuildPlaylistsPath()
-    {
-        var guildName = session.CurrentGuild.Guild.Info.Name;
-        return Path.Combine(".", "Playlists", "GuildSaber", PlaylistUtilities.SanitizeFileName(guildName));
-    }
+    public Task DownloadPlaylistsAsync()
+        => DownloadPlaylistsAsync(rangeMin: -1, rangeMax: int.MaxValue, categoryId: null);
 
-    public async void DownloadPlaylists(int rangeMin, int rangeMax, CategoryId? categoryId)
+    public async Task DownloadPlaylistsAsync(int rangeMin, int rangeMax, CategoryId? categoryId)
     {
         if (IsDownloading) throw new InvalidOperationException("Already downloading playlists");
+        if (manager.State is not GuildSaberRuntimeState.Ready(var snapshot))
+            throw new InvalidOperationException("GuildSaber is not ready to download playlists.");
+
         IsDownloading = true;
 
         try
         {
-            var currentGuild = session.CurrentGuild;
-            var categories = currentGuild.Categories;
-            var levels = session.CurrentMemberLevelStats;
+            var currentGuildExtended = snapshot.CurrentGuildExtended;
+            var categories = currentGuildExtended.Categories;
+            var levels = snapshot.LevelStats;
+            var guildPlaylistsPath = GetGuildPlaylistsPath(currentGuildExtended.Guild);
 
             var (successfulPlaylists, failedPlaylists) = (0, 0);
             foreach (var category in categories.Where(c => !categoryId.HasValue || c.Id == categoryId.Value))
             {
-                var playlistsPath = Path.Combine(GetGuildPlaylistsPath(),
+                var playlistsPath = Path.Combine(guildPlaylistsPath,
                     PlaylistUtilities.SanitizeFileName(category.Info.Name));
 
                 if (!Directory.Exists(playlistsPath))
@@ -69,13 +68,13 @@ public class PlaylistDownloader(GuildSaberClient client, GuildSaberSession sessi
                         );
 
                         failedPlaylists += 1;
-                        EventUniquePlaylistDownloadCompleted.Invoke(category.Info.Name, level.Level.Info.Name, false);
+                        EventUniquePlaylistDownloadCompleted?.Invoke(category.Info.Name, level.Level.Info.Name, false);
                         continue;
                     }
 
                     var playlistFilename = PlaylistUtilities.GetPlaylistFileName(
                         level.Level,
-                        currentGuild
+                        currentGuildExtended
                     );
 
                     var path = Path.Combine(playlistsPath, playlistFilename);
@@ -85,16 +84,19 @@ public class PlaylistDownloader(GuildSaberClient client, GuildSaberSession sessi
                     await client.Playlists.WriteToStream(stream, resultPlaylist.Value);
 
                     successfulPlaylists += 1;
-                    EventUniquePlaylistDownloadCompleted.Invoke(category.Info.Name, level.Level.Info.Name, true);
+                    EventUniquePlaylistDownloadCompleted?.Invoke(category.Info.Name, level.Level.Info.Name, true);
                 }
             }
 
             IsDownloading = false;
-            EventPlaylistsDownloadCompleted.Invoke(successfulPlaylists, failedPlaylists);
+            EventPlaylistsDownloadCompleted?.Invoke(successfulPlaylists, failedPlaylists);
         }
         finally
         {
             IsDownloading = false;
         }
     }
+
+    public string GetGuildPlaylistsPath(GuildResponses.Guild guild)
+        => Path.Combine(".", "Playlists", "GuildSaber", PlaylistUtilities.SanitizeFileName(guild.Info.Name));
 }

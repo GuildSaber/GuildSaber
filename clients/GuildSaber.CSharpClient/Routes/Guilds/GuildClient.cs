@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
@@ -39,8 +40,8 @@ public sealed class GuildClient(
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<Guild?>(
                     $"Failed to retrieve guild with ID {guildId}, status code: {(int)statusCode} ({reasonPhrase})"),
-            var response => await Try(() => response.Content
-                .ReadFromJsonAsync<Guild>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+            var response => await TryAsync(() => response.Content
+                .ReadFromJsonAsync<Guild>(jsonOptions, cancellationToken: token), token).ConfigureAwait(false)
         };
 
     /// <summary>
@@ -56,8 +57,9 @@ public sealed class GuildClient(
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<GuildExtended?>(
                     $"Failed to retrieve guild with ID {guildId}, status code: {(int)statusCode} ({reasonPhrase})"),
-            var response => await Try(() => response.Content
-                .ReadFromJsonAsync<GuildExtended>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+            var response => await TryAsync(() => response.Content
+                    .ReadFromJsonAsync<GuildExtended>(jsonOptions, cancellationToken: token), token)
+                .ConfigureAwait(false)
         };
 
     /// <summary>
@@ -74,8 +76,8 @@ public sealed class GuildClient(
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<Guild?>(
                     $"Failed to retrieve guild with Discord ID {discordGuildId}, status code: {(int)statusCode} ({reasonPhrase})"),
-            var response => await Try(() => response.Content
-                .ReadFromJsonAsync<Guild>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+            var response => await TryAsync(() => response.Content
+                .ReadFromJsonAsync<Guild>(jsonOptions, cancellationToken: token), token).ConfigureAwait(false)
         };
 
     /// <summary>
@@ -92,8 +94,8 @@ public sealed class GuildClient(
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<GuildId?>(
                     $"Failed to lookup guild by Discord ID {discordGuildId}, status code: {(int)statusCode} ({reasonPhrase})"),
-            var response => await Try(() => response.Content
-                .ReadFromJsonAsync<GuildId?>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+            var response => await TryAsync(() => response.Content
+                .ReadFromJsonAsync<GuildId?>(jsonOptions, cancellationToken: token), token).ConfigureAwait(false)
         };
 
     /// <summary>
@@ -111,8 +113,9 @@ public sealed class GuildClient(
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<PagedList<Guild>>(
                     $"Failed to retrieve guilds at page {requestOptions.Page}: {(int)statusCode} ({reasonPhrase})"),
-            var response => await Try(() => response.Content
-                .ReadFromJsonAsync<PagedList<Guild>>(jsonOptions, cancellationToken: token)).ConfigureAwait(false)
+            var response => await TryAsync(() => response.Content
+                    .ReadFromJsonAsync<PagedList<Guild>>(jsonOptions, cancellationToken: token), token)
+                .ConfigureAwait(false)
         };
 
     /// <summary>
@@ -120,6 +123,7 @@ public sealed class GuildClient(
     /// </summary>
     /// <param name="search">Optional search term to filter guilds by name.</param>
     /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
+    /// <param name="token">Cancellation token.</param>
     /// <returns>
     /// An async enumerable sequence of <see cref="Result{T}" /> containing nullable arrays of
     /// <see cref="Guild" />.
@@ -132,12 +136,13 @@ public sealed class GuildClient(
     /// </remarks>
     public async IAsyncEnumerable<Result<Guild[]>> GetAsyncEnumerable(
         string? search,
-        PaginatedRequestOptions<GuildRequests.EGuildSorter> requestOptions)
+        PaginatedRequestOptions<GuildRequests.EGuildSorter> requestOptions,
+        [EnumeratorCancellation] CancellationToken token = default)
     {
         while (requestOptions.Page <= requestOptions.MaxPage)
         {
             var url = GetGuildsUrl(search, requestOptions);
-            var response = await httpClient.GetAsync(url).ConfigureAwait(false);
+            var response = await httpClient.GetAsync(url, token).ConfigureAwait(false);
             requestOptions.Page++;
 
             Result<Guild[]> result;
@@ -146,8 +151,8 @@ public sealed class GuildClient(
                 { IsSuccessStatusCode: false } => Failure<Guild[]>(
                     $"Failed to retrieve guilds at page {requestOptions.Page - 1}" +
                     $": {response.StatusCode} {response.ReasonPhrase}"),
-                _ => await Try(() => response.Content
-                        .ReadFromJsonAsync<PagedList<Guild>>(jsonOptions))
+                _ => await TryAsync(() => response.Content
+                        .ReadFromJsonAsync<PagedList<Guild>>(jsonOptions, token), token)
                     .Map(Guild[] (parsed) => parsed.Data)
                     .ConfigureAwait(false)
             };
@@ -195,12 +200,12 @@ public sealed class GuildClient(
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<Guild>(
                     $"Failed to update guild {guildId}, status code: {(int)statusCode} ({reasonPhrase})"),
-            _ => await Try(async () =>
+            _ => await TryAsync(async () =>
             {
                 var guild = await response.Content.ReadFromJsonAsync<Guild>(jsonOptions, cancellationToken: token)
                     .ConfigureAwait(false);
                 return guild!;
-            }).ConfigureAwait(false)
+            }, token).ConfigureAwait(false)
         };
     }
 

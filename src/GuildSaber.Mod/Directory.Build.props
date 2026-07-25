@@ -7,8 +7,8 @@
         <PluginName>GuildSaber</PluginName>
         <PluginHint>GuildSaber.Mod.Plugin</PluginHint>
         <Authors>SheepVand,Kuurama</Authors>
-        <Version>0.6.65</Version>
-        <GameVersion>&gt;=1.40.2</GameVersion>
+        <Version>0.7.0</Version>
+        <GameVersion>1.40.2</GameVersion>
         <Description>The official GuildSaber mod for Beat Saber</Description>
         <ProjectHome>https://github.com/GuildSaber/GuildSaber</ProjectHome>
         <RepositoryUrl>https://github.com/GuildSaber/GuildSaber</RepositoryUrl>

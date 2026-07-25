@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using CP_SDK_BS.UI;
 using CP_SDK.XUI;
-using GuildSaber.Common.StrongTypes;
-using GuildSaber.Mod.Features.Common.UI;
-using GuildSaber.Mod.Features.Common.UI.Components;
 using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using GuildSaber.Mod.Features.PlaylistDownloader.UI.Components;
+using GuildSaber.Mod.Helpers;
 using SongCore;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,18 +18,17 @@ namespace GuildSaber.Mod.Features.PlaylistDownloader.UI;
 public class PlaylistDownloaderViewController : ViewController<PlaylistDownloaderViewController>
 {
     private readonly List<CategoryView> _categoryViews = [];
+    [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
     [Inject] private readonly PlaylistDownloader _playlistDownloader = null!;
-    [Inject] private readonly GuildSaberSession _session = null!;
-    [Inject] private readonly UIFactory _uiFactory = null!;
 
     private XUIVLayout _categoriesListLayout = null!;
-    private GSSecondaryButton _deleteAllButton = null!;
-    private GSSecondaryButton _downloadAllButton = null!;
-    private GSText _guildNameText = null!;
+    private XUISecondaryButton _deleteAllButton = null!;
+    private XUISecondaryButton _downloadAllButton = null!;
+    private XUIText _guildNameText = null!;
     private XUISlider _rangeDownloadMaxSlider = null!;
     private XUISlider _rangeDownloadMinSlider = null!;
     private XUIToggle _rangeDownloadToggle = null!;
-    private GSText _uniquePlaylistDownloadedText = null!;
+    private XUIText _uniquePlaylistDownloadedText = null!;
 
     public event Action OnResultsModalClosed = null!;
 
@@ -39,23 +37,23 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
         Templates.FullRectLayoutMainView(
                 XUIHLayout.Make(
                     XUIVLayout.Make(
-                        _uiFactory.SecondaryButton("Delete all")
+                        XUISecondaryButton.Make("Delete all")
                             .Bind(ref _deleteAllButton)
                             .SetWidth(20)
                             .SetHeight(6)
                             .OnClick(DeleteGuildsPlaylists)
-                    ).SetBackground(true, new Color(0, 0, 0, 0.80f)),
+                    ).SetBackground(true, Color.black.WithAlpha(0.80f)),
                     XUIVLayout.Make(
-                        _uiFactory.Text("Download or update [Insert guild name] playlists:")
+                        XUIText.Make("Download or update [Insert guild name] playlists:")
                             .Bind(ref _guildNameText),
                         XUIHLayout.Make(
-                            _uiFactory.Text("Range download:"),
+                            XUIText.Make("Range download:"),
                             XUIToggle.Make()
                                 .OnValueChanged(RangeDownloadToggleChanged)
                                 .Bind(ref _rangeDownloadToggle)
                         ),
                         XUIHLayout.Make(
-                            _uiFactory.Text("Minimum level:"),
+                            XUIText.Make("Minimum level:"),
                             XUISlider.Make()
                                 .OnValueChanged(RangeDownloadValueChanged)
                                 .SetInteger(true)
@@ -64,7 +62,7 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
                                 .Bind(ref _rangeDownloadMinSlider)
                         ),
                         XUIHLayout.Make(
-                            _uiFactory.Text("Maximum level:"),
+                            XUIText.Make("Maximum level:"),
                             XUISlider.Make()
                                 .OnValueChanged(RangeDownloadValueChanged)
                                 .SetInteger(true)
@@ -72,16 +70,16 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
                                 .SetInteractable(false)
                                 .Bind(ref _rangeDownloadMaxSlider)
                         ),
-                        _uiFactory.SecondaryButton("Download all")
+                        XUISecondaryButton.Make("Download all")
                             .Bind(ref _downloadAllButton)
                             .SetWidth(30)
                             .SetHeight(5)
                             .OnClick(DownloadAllClicked),
-                        _uiFactory.Text(string.Empty)
+                        XUIText.Make(string.Empty)
                             .Bind(ref _uniquePlaylistDownloadedText)
-                    ).SetBackground(true, new Color(0, 0, 0, 0.8f)),
+                    ).SetBackground(true, Color.black.WithAlpha(0.8f)),
                     XUIVLayout.Make()
-                        .SetBackground(true, new Color(0, 0, 0, 0.8f))
+                        .SetBackground(true, Color.black.WithAlpha(0.8f))
                         .Bind(ref _categoriesListLayout)
                 ))
             .SetSpacing(2)
@@ -94,9 +92,11 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
 
     protected override void OnViewActivation()
     {
-        var currentGuild = _session.CurrentGuild;
+        if (_guildSaberManager.State is not GuildSaberRuntimeState.Ready(var snapshot)) return;
+
+        var currentGuild = snapshot.CurrentGuildExtended;
         var guildName = currentGuild.Guild.Info.Name;
-        var levels = _session.CurrentMemberLevelStats;
+        var levels = snapshot.LevelStats;
         var categories = currentGuild.Categories;
 
         _guildNameText.SetText($"Download or update {guildName} playlists:");
@@ -104,8 +104,8 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
         var filteredLevels = levels.Where(x => x.Level.Order != 100)
             .ToArray();
 
-        float minLevel = filteredLevels.Min(x => x.Level.Order);
-        float maxLevel = filteredLevels.Max(x => x.Level.Order);
+        float minLevel = filteredLevels.Length == 0 ? 0 : filteredLevels.Min(x => x.Level.Order);
+        float maxLevel = filteredLevels.Length == 0 ? 0 : filteredLevels.Max(x => x.Level.Order);
 
         _rangeDownloadMinSlider
             .SetMinValue(minLevel)
@@ -123,7 +123,7 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
         {
             if (i >= _categoryViews.Count)
             {
-                var categoryView = CategoryView.Make(_uiFactory, DownloadCategoryClicked);
+                var categoryView = CategoryView.Make(DownloadCategoryClicked);
                 categoryView.BuildUI(_categoriesListLayout.Element.transform);
                 _categoryViews.Add(categoryView);
             }
@@ -136,8 +136,13 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
 
     private void DeleteGuildsPlaylists()
     {
-        var guildPlaylistsPath = _playlistDownloader.GetGuildPlaylistsPath();
+        if (_guildSaberManager.State is not GuildSaberRuntimeState.Ready(var snapshot))
+        {
+            ShowMessageModal("GuildSaber is not ready to delete playlists");
+            return;
+        }
 
+        var guildPlaylistsPath = _playlistDownloader.GetGuildPlaylistsPath(snapshot.CurrentGuildExtended.Guild);
         if (!Directory.Exists(guildPlaylistsPath))
         {
             ShowMessageModal("Nothing to delete");
@@ -199,32 +204,45 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
 
     private void DownloadAllClicked()
     {
-        _downloadAllButton.SetInteractable(false);
-        _categoryViews.ForEach(x => x.SetInteractable(false));
-        _deleteAllButton.SetInteractable(false);
-
         if (_rangeDownloadToggle.Element.GetValue())
-            _playlistDownloader.DownloadPlaylists(
+            Download(_playlistDownloader.DownloadPlaylistsAsync(
                 (int)_rangeDownloadMinSlider.Element.GetValue(),
                 (int)_rangeDownloadMaxSlider.Element.GetValue(),
-                null);
+                null));
         else
-            _playlistDownloader.DownloadPlaylists();
+            Download(_playlistDownloader.DownloadPlaylistsAsync());
     }
 
     private void DownloadCategoryClicked(CategoryId categoryId)
     {
-        _downloadAllButton.SetInteractable(false);
-        _categoryViews.ForEach(x => x.SetInteractable(false));
-        _deleteAllButton.SetInteractable(false);
-
         if (_rangeDownloadToggle.Element.GetValue())
-            _playlistDownloader.DownloadPlaylists(
+            Download(_playlistDownloader.DownloadPlaylistsAsync(
                 (int)_rangeDownloadMinSlider.Element.GetValue(),
                 (int)_rangeDownloadMaxSlider.Element.GetValue(),
-                categoryId);
+                categoryId));
         else
-            _playlistDownloader.DownloadPlaylists(categoryId);
+            Download(_playlistDownloader.DownloadPlaylistsAsync(categoryId));
+    }
+
+    private async void Download(Task task)
+    {
+        SetDownloadControls(false);
+        try
+        {
+            await task;
+        }
+        catch (Exception exception)
+        {
+            SetDownloadControls(true);
+            ShowMessageModal($"Failed to download playlists:\n{exception.Message}");
+        }
+    }
+
+    private void SetDownloadControls(bool interactable)
+    {
+        _downloadAllButton.SetInteractable(interactable);
+        _categoryViews.ForEach(x => x.SetInteractable(interactable));
+        _deleteAllButton.SetInteractable(interactable);
     }
 
     private void TaskFinished()
