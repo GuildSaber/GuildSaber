@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using CP_SDK_BS.Game;
+using GuildSaber.Common.Helpers;
 using GuildSaber.Mod.Features.GuildSaber;
 using GuildSaber.Mod.Features.GuildSaber.Caching;
 using GuildSaber.Mod.Features.GuildSaber.Runtime;
@@ -32,7 +33,7 @@ public sealed class PlayerCardManager(
 
     private enum PlayerCardPage
     {
-        Summary,
+        Ready,
         Actions
     }
 
@@ -41,20 +42,24 @@ public sealed class PlayerCardManager(
         PlayerCardPage Page,
         Texture2D? Avatar,
         Texture2D? GuildIcon,
-        ImmutableDictionary<GuildId, Texture2D> GuildIcons);
+        ImmutableDictionary<GuildId, Texture2D> GuildIcons
+    );
 
     public void Initialize()
     {
         config.PlayerCard.Migrate();
+
         guildSaberManager.StateChanged += OnRuntimeStateChanged;
-        view.MessageSent += OnMessage;
+        view.ActionRequested += OnActionRequested;
         view.TransformChanged += OnTransformChanged;
-        settings.MessageSent += OnSettingsMessage;
-        playTime.OnTimeUpdate += view.RenderPlayTime;
+        settings.SettingsChanged += OnSettingsChanged;
+        playTime.OnTimeUpdate += view.RenderTimer;
+
         Logic.OnSceneChange += OnSceneChanged;
 
         view.SetHandleVisible(config.PlayerCard.ShowHandle);
-        view.RenderPlayTime(playTime.Current);
+        view.RenderTimer(playTime.Current);
+
         OnSceneChanged(Logic.ActiveScene);
         OnRuntimeStateChanged(guildSaberManager.State);
     }
@@ -62,19 +67,14 @@ public sealed class PlayerCardManager(
     public void Dispose()
     {
         _session = null;
-        guildSaberManager.StateChanged -= OnRuntimeStateChanged;
-        view.MessageSent -= OnMessage;
-        view.TransformChanged -= OnTransformChanged;
-        settings.MessageSent -= OnSettingsMessage;
-        playTime.OnTimeUpdate -= view.RenderPlayTime;
-        Logic.OnSceneChange -= OnSceneChanged;
-    }
 
-    public void SetPaused(bool paused)
-    {
-        if (Logic.ActiveScene != Logic.ESceneType.Playing) return;
-        _placement = paused ? PlayerCardPlacement.GameplayPaused : PlayerCardPlacement.GameplayRunning;
-        ApplyVisibility();
+        guildSaberManager.StateChanged -= OnRuntimeStateChanged;
+        view.ActionRequested -= OnActionRequested;
+        view.TransformChanged -= OnTransformChanged;
+        settings.SettingsChanged -= OnSettingsChanged;
+        playTime.OnTimeUpdate -= view.RenderTimer;
+
+        Logic.OnSceneChange -= OnSceneChanged;
     }
 
     private void OnRuntimeStateChanged(GuildSaberRuntimeState state)
@@ -102,56 +102,57 @@ public sealed class PlayerCardManager(
             case GuildSaberRuntimeState.Ready(var snapshot):
                 _session = new PlayerCardSession(
                     snapshot,
-                    PlayerCardPage.Summary,
+                    PlayerCardPage.Ready,
                     Avatar: null,
                     GuildIcon: null,
                     ImmutableDictionary<GuildId, Texture2D>.Empty);
-                ShowPage(PlayerCardPage.Summary);
+                SetPageAndRender(PlayerCardPage.Ready);
                 break;
         }
 
+        // We must refresh the settings in case they are already opened but the runtime state changed.  
         RenderSettings();
     }
 
-    private void OnMessage(PlayerCardMessage message)
+    private void OnActionRequested(PlayerCardActionMessage actionMessage)
     {
-        switch (message)
+        switch (actionMessage)
         {
-            case PlayerCardMessage.OpenActions:
-                ShowPage(PlayerCardPage.Actions);
+            case PlayerCardActionMessage.OpenActions:
+                SetPageAndRender(PlayerCardPage.Actions);
                 break;
-            case PlayerCardMessage.CloseActions:
-                ShowPage(PlayerCardPage.Summary);
+            case PlayerCardActionMessage.CloseActions:
+                SetPageAndRender(PlayerCardPage.Ready);
                 break;
-            case PlayerCardMessage.SelectGuild(var guildId):
+            case PlayerCardActionMessage.SelectGuild(var guildId):
                 SelectGuild(guildId);
                 break;
-            case PlayerCardMessage.SelectContext(var contextId) when _session is { } session:
+            case PlayerCardActionMessage.SelectContext(var contextId) when _session is { } session:
                 Observe(
                     guildSaberManager.SelectGuildAsync(
                         session.Snapshot.CurrentGuildExtended.Guild.Id,
                         contextId),
                     "selecting a guild context");
                 break;
-            case PlayerCardMessage.OpenSettings:
+            case PlayerCardActionMessage.OpenSettings:
                 RenderSettings();
                 settings.Present();
-                ShowPage(PlayerCardPage.Summary);
+                SetPageAndRender(PlayerCardPage.Ready);
                 break;
-            case PlayerCardMessage.OpenPlaylists when _session is not null:
+            case PlayerCardActionMessage.OpenPlaylists when _session is not null:
                 playlistDownloader.Present();
-                ShowPage(PlayerCardPage.Summary);
+                SetPageAndRender(PlayerCardPage.Ready);
                 break;
-            case PlayerCardMessage.OpenWebsite:
+            case PlayerCardActionMessage.OpenWebsite:
                 OpenWebsite();
                 break;
-            case PlayerCardMessage.Retry:
+            case PlayerCardActionMessage.Retry:
                 Observe(guildSaberManager.ReInitializeAsync(), "retrying GuildSaber initialization");
                 break;
         }
     }
 
-    private void OnSettingsMessage(PlayerCardSettingsMessage message)
+    private void OnSettingsChanged(PlayerCardSettingsMessage message)
     {
         switch (message)
         {
@@ -168,6 +169,10 @@ public sealed class PlayerCardManager(
                 break;
             case PlayerCardSettingsMessage.SetColorMode(var value):
                 config.PlayerCard.SetColorMode(value);
+
+                /* Changing the color mode changes the settings layout, so we must rerender its layout.
+                 * Could have been at the end of this function, but not desirable since changing colors would spam rerenders. */
+                RenderSettings();
                 break;
             case PlayerCardSettingsMessage.SetMainColor(var value):
                 config.PlayerCard.ColorSettings.MainCardColor = value;
@@ -192,46 +197,65 @@ public sealed class PlayerCardManager(
                 break;
         }
 
-        RenderSettings();
-        if (_session is { Page: PlayerCardPage.Summary } session) Render(session);
+        if (_session is { } session)
+            Render(session);
     }
 
-    private void ShowPage(PlayerCardPage page)
+    private void SetPageAndRender(PlayerCardPage page)
     {
-        if (_session is not { } session) return;
+        if (_session is not { } session)
+            return;
 
         session = session with { Page = page };
         _session = session;
+
         Render(session);
 
-        if (page == PlayerCardPage.Summary && (session.Avatar is null || session.GuildIcon is null))
-            Observe(LoadSummaryAssets(session), "loading the player card images");
-        else if (page == PlayerCardPage.Actions && session.GuildIcons.IsEmpty)
-            Observe(LoadGuildIcons(session), "loading guild icons");
+        switch (page)
+        {
+            case PlayerCardPage.Ready when session.Avatar is null || session.GuildIcon is null:
+                Observe(LoadReadyAssets(session), "loading the player card images");
+                break;
+            case PlayerCardPage.Actions when session.GuildIcons.IsEmpty:
+                Observe(LoadGuildIcons(session), "loading guild icons");
+                break;
+        }
     }
 
     private void Render(PlayerCardSession session)
         => view.Render(session.Page switch
         {
-            PlayerCardPage.Summary => new PlayerCardState.Summary(PlayerCardSummary.Create(
-                session.Snapshot,
-                config.PlayerCard,
-                session.Avatar,
-                session.GuildIcon,
-                CanCustomize(session.Snapshot))),
-            PlayerCardPage.Actions => new PlayerCardState.Actions(PlayerCardActions.Create(
-                session.Snapshot,
-                session.GuildIcons)),
+            PlayerCardPage.Ready => new PlayerCardState.Ready(PlayerCardReady.Create(
+                snapshot: session.Snapshot,
+                config: config.PlayerCard,
+                avatar: session.Avatar,
+                guildIcon: session.GuildIcon,
+                canCustomize: CanCustomize(session.Snapshot))),
+            PlayerCardPage.Actions => new PlayerCardState.Actions(PlayerCardActionData.Create(
+                snapshot: session.Snapshot,
+                guildIcons: session.GuildIcons)),
             _ => throw new ArgumentOutOfRangeException()
         });
 
+    public void SetPaused(bool paused)
+    {
+        if (Logic.ActiveScene != Logic.ESceneType.Playing)
+            return;
+
+        _placement = paused ? PlayerCardPlacement.GameplayPaused : PlayerCardPlacement.GameplayRunning;
+        ApplyVisibility();
+    }
+
     private async Task LoadGuildIcons(PlayerCardSession session)
     {
-        var icons = await Task.WhenAll(session.Snapshot.AvailableGuilds.Select(async guild => (
-            guild.Guild.Id,
-            Icon: await assetCache.GetOrFetchRoundedGuildIcon(guild.Guild.Id))));
+        var icons = await Task.WhenAll(session.Snapshot.AvailableGuilds
+            .Select(async guild => (
+                guild.Guild.Id,
+                Icon: await assetCache.GetOrFetchRoundedGuildIcon(guild.Guild.Id)))
+        );
 
-        if (!ReferenceEquals(session, _session)) return;
+        if (!ReferenceEquals(session, _session))
+            return;
 
         session = session with
         {
@@ -239,35 +263,34 @@ public sealed class PlayerCardManager(
                 .Where(x => x.Icon != null)
                 .ToImmutableDictionary(x => x.Id, x => x.Icon!)
         };
+
         _session = session;
         Render(session);
     }
 
-    private async Task LoadSummaryAssets(PlayerCardSession session)
+    private async Task LoadReadyAssets(PlayerCardSession session)
     {
         var snapshot = session.Snapshot;
-        var avatarTask = assetCache.GetOrFetchPlayerAvatar(
-            snapshot.PlayerId,
-            snapshot.PlayerExtended.Player.PlayerInfo.AvatarUrl);
-        var guildIconTask = assetCache.GetOrFetchRoundedGuildIcon(
-            snapshot.CurrentGuildExtended.Guild.Id);
-        await Task.WhenAll(avatarTask, guildIconTask);
+        var (avatar, guildIcon) = await (
+                assetCache.GetOrFetchPlayerAvatar(
+                    snapshot.PlayerId,
+                    snapshot.PlayerExtended.Player.PlayerInfo.AvatarUrl),
+                assetCache.GetOrFetchRoundedGuildIcon(snapshot.CurrentGuildExtended.Guild.Id))
+            .WhenAll();
 
         if (!ReferenceEquals(session, _session)) return;
 
         session = session with
         {
-            Avatar = await avatarTask,
-            GuildIcon = await guildIconTask
+            Avatar = avatar,
+            GuildIcon = guildIcon
         };
         _session = session;
         Render(session);
     }
 
-    private void RenderSettings()
-        => settings.Render(PlayerCardSettingsState.Create(
-            config.PlayerCard,
-            _session is { } session && CanCustomize(session.Snapshot)));
+    private void RenderSettings() => settings.Render(
+        PlayerCardSettingsState.Create(config.PlayerCard, _session is { } session && CanCustomize(session.Snapshot)));
 
     private void SelectGuild(GuildId guildId)
     {
@@ -301,8 +324,7 @@ public sealed class PlayerCardManager(
     }
 
     private void ApplyVisibility() => view.SetActive(
-        config.PlayerCard.Enabled && _placement is PlayerCardPlacement.Menu
-                                                   or PlayerCardPlacement.GameplayPaused);
+        config.PlayerCard.Enabled && _placement is PlayerCardPlacement.Menu or PlayerCardPlacement.GameplayPaused);
 
     private void OnTransformChanged(CardTransform transform)
     {

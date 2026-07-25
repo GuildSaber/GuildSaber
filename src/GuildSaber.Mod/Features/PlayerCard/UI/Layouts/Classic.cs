@@ -15,10 +15,10 @@ namespace GuildSaber.Mod.Features.PlayerCard.UI.Layouts;
 
 internal sealed class ClassicPlayerCardLayout(
     PlayerCardResources resources,
-    Action<PlayerCardMessage> send) : IPlayerCardLayout
+    Action<PlayerCardActionMessage> send) : IPlayerCardLayout
 {
     private const float ContentWidth = 86;
-    private const float Height = 50;
+    private const float Height = 45;
     private const float Width = 88;
 
     private static readonly Color _botGold = new(1, 215f / 255, 0);
@@ -61,7 +61,7 @@ internal sealed class ClassicPlayerCardLayout(
                 _trophies,
                 _categories)
             .SetBackground(true)
-            .SetBackgroundColor(Color.black.WithAlpha(1f))
+            .SetBackgroundColor(Color.black.WithAlpha(0.8f))
             .OnReady(x =>
             {
                 x.CSizeFitter.horizontalFit = x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
@@ -87,18 +87,18 @@ internal sealed class ClassicPlayerCardLayout(
             .BuildUI(parent);
     }
 
-    public void Render(PlayerCardSummary summary)
+    public void Render(PlayerCardReady ready)
     {
-        SetAvatar(summary.Avatar ?? resources.GsWhiteLogoTexture);
-        SetGuildIcon(summary.GuildIcon ?? resources.GsWhiteLogoTexture);
-        _playerName.SetText(summary.PlayerName.Truncate(20)).SetColor(summary.Palette.Accent);
-        _playerPasses.SetText(summary.Passes).SetColor(_botGold);
-        _level.SetText(summary.LevelName).SetColor(summary.Palette.Accent);
-        RenderPoints(summary.Points);
-        _categories.SetActive(summary.ShowProgress);
-        _categories.Render(summary.Progress, summary.Palette.Accent);
-        _trophies.Render(summary.Trophies);
-        ApplyPalette(summary.Palette);
+        SetAvatar(ready.Avatar ?? resources.GsWhiteLogoTexture);
+        SetGuildIcon(ready.GuildIcon ?? resources.GsWhiteLogoTexture);
+        _playerName.SetText(ready.PlayerName.Truncate(20)).SetColor(ready.Palette.Accent);
+        _playerPasses.SetText(ready.Passes).SetColor(_botGold);
+        _level.SetText(ready.LevelName).SetColor(ready.Palette.Accent);
+        RenderPoints(ready.Points);
+        _categories.SetActive(ready.ShowProgress);
+        _categories.Render(ready.Progress, ready.Palette.Accent);
+        _trophies.Render(ready.Trophies);
+        ApplyPalette(ready.Palette);
     }
 
     public void RenderPlayTime(PlayerCardPlayTime.TimeOnlyLite time)
@@ -113,8 +113,8 @@ internal sealed class ClassicPlayerCardLayout(
         if (active) _playerImage.Element.IconImageC.rectTransform.localScale = Vector3.one;
     }
 
-    public Vector2 GetSize(PlayerCardSummary summary)
-        => new(Width, summary.ShowProgress ? Height : 36);
+    public Vector2 GetSize(PlayerCardReady ready)
+        => new(Width, ready.ShowProgress ? Height : 36);
 
     public void Dispose()
     {
@@ -125,7 +125,7 @@ internal sealed class ClassicPlayerCardLayout(
     private XUIHLayout BuildHeader()
         => XUIHLayout.Make(
                 XUIVLayout.Make(
-                        XUIIconButton.Make(() => send(new PlayerCardMessage.OpenActions()))
+                        XUIIconButton.Make(() => send(new PlayerCardActionMessage.OpenActions()))
                             .SetWidth(18)
                             .SetHeight(18)
                             .Bind(ref _playerImage))
@@ -141,10 +141,11 @@ internal sealed class ClassicPlayerCardLayout(
                         XUIHLayout.Make(
                                 XUIText.Make(string.Empty)
                                     .Bind(ref _playerName)
-                                    .SetStyle(FontStyles.Underline | FontStyles.Bold)
+                                    .SetStyle(FontStyles.Bold)
                                     .SetFontSize(6.5f)
                                     .SetAlign(TextAlignmentOptions.MidlineLeft)
                                     .SetWrapping(false)
+                                    .SetMargins(0, 2, 0, 0)
                                     .OnReady(x =>
                                     {
                                         x.LElement.preferredWidth = 53;

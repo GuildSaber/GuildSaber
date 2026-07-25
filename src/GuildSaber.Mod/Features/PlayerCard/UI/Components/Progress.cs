@@ -17,10 +17,8 @@ internal sealed class PlayerCardBalance : XUIVLayout
 
     private PlayerCardBalance() : base("PlayerCardBalance")
     {
-        SetWidth(24);
-        SetHeight(9.5f);
         SetPadding(0);
-        SetSpacing(-1);
+        SetSpacing(-1.5f);
         OnReady(Build);
     }
 
@@ -47,7 +45,7 @@ internal sealed class PlayerCardBalance : XUIVLayout
 
         XUIText.Make(string.Empty)
             .Bind(ref _dots)
-            .SetFontSize(4)
+            .SetFontSize(3.2f)
             .SetAlign(TextAlignmentOptions.Midline)
             .SetWrapping(false)
             .BuildUI(layout.transform);
@@ -75,8 +73,6 @@ internal sealed class PlayerCardCategories : XUIVLayout
 
     private PlayerCardCategories() : base("PlayerCardCategories")
     {
-        SetWidth(86);
-        SetHeight(19.5f);
         SetPadding(0);
         SetSpacing(0);
         OnReady(Build);
@@ -90,7 +86,6 @@ internal sealed class PlayerCardCategories : XUIVLayout
         public CategoryCell() : base("PlayerCardCategory")
         {
             SetWidth(30);
-            SetHeight(5);
             SetPadding(0);
             SetSpacing(0.6f);
             OnReady(Build);
@@ -117,13 +112,13 @@ internal sealed class PlayerCardCategories : XUIVLayout
 
             XUIText.Make(string.Empty)
                 .Bind(ref _name)
-                .SetFontSize(4.1f)
+                .SetFontSize(3.6f)
                 .SetAlign(TextAlignmentOptions.MidlineRight)
                 .SetWrapping(false)
                 .BuildUI(layout.transform);
             XUIText.Make(string.Empty)
                 .Bind(ref _level)
-                .SetFontSize(4.1f)
+                .SetFontSize(3.6f)
                 .SetStyle(FontStyles.Bold)
                 .SetAlign(TextAlignmentOptions.MidlineLeft)
                 .SetWrapping(false)
@@ -138,7 +133,7 @@ internal sealed class PlayerCardCategories : XUIVLayout
         _categories = progress.Categories;
         _categoryAccent = accent;
         _averageLevel
-            .SetText($"Lvl {progress.AverageCategoryLevel:0.##}")
+            .SetText($"Avg {progress.AverageCategoryLevel:0.##}")
             .SetColor(progress.AverageCategoryLevelColor);
         _balance.Render(progress.Equilibrium, accent);
         RenderPage();
@@ -156,7 +151,7 @@ internal sealed class PlayerCardCategories : XUIVLayout
                 XUIVLayout.Make(
                         XUIText.Make(string.Empty)
                             .Bind(ref _averageLevel)
-                            .SetFontSize(4.6f)
+                            .SetFontSize(3.8f)
                             .SetStyle(FontStyles.Bold | FontStyles.Italic)
                             .SetWrapping(false),
                         _balance)
@@ -167,9 +162,8 @@ internal sealed class PlayerCardCategories : XUIVLayout
                         x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
                     })
                     .SetWidth(24)
-                    .SetHeight(16.5f)
                     .SetPadding(0)
-                    .SetSpacing(0.5f),
+                    .SetSpacing(0f),
                 MakeCategoryColumn())
             .OnReady(x =>
             {
@@ -212,10 +206,8 @@ internal sealed class PlayerCardCategories : XUIVLayout
                     _categoryCells.Add(category);
                 }
             })
-            .SetWidth(30)
-            .SetHeight(15.5f)
             .SetPadding(0)
-            .SetSpacing(0.25f);
+            .SetSpacing(-1f);
 
     private void RenderPage()
     {

@@ -17,8 +17,6 @@ internal sealed class PlayerCardTrophies : XUIHLayout
     private PlayerCardTrophies(PlayerCardResources resources) : base("PlayerCardTrophies")
     {
         _resources = resources;
-        SetWidth(86);
-        SetHeight(7);
         SetPadding(1, 0, 0, 0);
         SetSpacing(2);
         OnReady(Build);
@@ -31,7 +29,6 @@ internal sealed class PlayerCardTrophies : XUIHLayout
         public Trophy(Texture2D texture) : base("PlayerCardTrophy")
         {
             SetWidth(15.6f);
-            SetHeight(6);
             SetPadding(0);
             OnReady(layout =>
             {
@@ -39,13 +36,13 @@ internal sealed class PlayerCardTrophies : XUIHLayout
                         texture,
                         new Rect(Vector2.zero, new Vector2(texture.width, texture.height)),
                         Vector2.zero))
-                    .SetWidth(4.5f)
-                    .SetHeight(4.5f)
+                    .SetWidth(3.6f)
+                    .SetHeight(3.6f)
                     .BuildUI(layout.transform);
 
                 XUIText.Make(string.Empty)
                     .Bind(ref _value)
-                    .SetFontSize(4.2f)
+                    .SetFontSize(3.6f)
                     .BuildUI(layout.transform);
 
                 layout.HOrVLayoutGroup.childForceExpandHeight = false;

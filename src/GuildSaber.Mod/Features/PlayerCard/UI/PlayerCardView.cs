@@ -24,8 +24,6 @@ public sealed class PlayerCardView : ViewController<PlayerCardView>, IInitializa
     private XUIText _messageText = null!;
 
     private PlayerCardState? _pendingState;
-    private PlayerCardPlayTime.TimeOnlyLite _pendingTime;
-    private bool _playTimeVisible = true;
     private bool _ready;
     private XUISecondaryButton _retry = null!;
 
@@ -39,11 +37,13 @@ public sealed class PlayerCardView : ViewController<PlayerCardView>, IInitializa
     {
         _screen.name = "PlayerCardFloatingScreen";
         _screen.SetRootViewController(this, AnimationType.In);
+
         _screen.HandleReleased += OnHandleReleased;
+
         DontDestroyOnLoad(_screen.gameObject);
     }
 
-    public event Action<PlayerCardMessage>? MessageSent;
+    public event Action<PlayerCardActionMessage>? ActionRequested;
     public event Action<CardTransform>? TransformChanged;
 
     public void Render(PlayerCardState state)
@@ -54,7 +54,7 @@ public sealed class PlayerCardView : ViewController<PlayerCardView>, IInitializa
             return;
         }
 
-        _layout.SetActive(state is PlayerCardState.Summary);
+        _layout.SetActive(state is PlayerCardState.Ready);
         _actions.SetActive(state is PlayerCardState.Actions);
         _loading.SetActive(state is PlayerCardState.Loading);
         _message.SetActive(state is PlayerCardState.Unavailable);
@@ -69,7 +69,7 @@ public sealed class PlayerCardView : ViewController<PlayerCardView>, IInitializa
                 _retry.SetActive(canRetry);
                 _screen.ScreenSize = new Vector2(55, 36);
                 break;
-            case PlayerCardState.Summary(var summary):
+            case PlayerCardState.Ready(var summary):
                 _layout.Render(summary);
                 _screen.ScreenSize = _layout.GetSize(summary);
                 break;
@@ -80,15 +80,13 @@ public sealed class PlayerCardView : ViewController<PlayerCardView>, IInitializa
         }
     }
 
-    public void RenderPlayTime(PlayerCardPlayTime.TimeOnlyLite timeOnlyLite)
+    public void RenderTimer(PlayerCardPlayTime.TimeOnlyLite timeOnlyLite)
     {
-        _pendingTime = timeOnlyLite;
         if (_ready) _layout.RenderPlayTime(timeOnlyLite);
     }
 
     public void SetPlayTimeVisible(bool visible)
     {
-        _playTimeVisible = visible;
         if (_ready) _layout.SetPlayTimeVisible(visible);
     }
 
@@ -106,37 +104,37 @@ public sealed class PlayerCardView : ViewController<PlayerCardView>, IInitializa
 
     protected override void OnViewCreation()
     {
+        // This is where the layout choice is made.
         _layout = new ClassicPlayerCardLayout(_resources, Send);
         _layout.Build(transform);
 
         _actions = PlayerCardActionsView.Make(_resources, _guildPicker, Send);
         _actions.BuildUI(transform);
 
-        BuildMessage();
-        BuildLoading();
+        BuildMessageLayout();
+        BuildLoadingLayout();
 
         ModalContainerRTransform.localScale *= 0.6f;
         _ready = true;
-        _layout.RenderPlayTime(_pendingTime);
-        _layout.SetPlayTimeVisible(_playTimeVisible);
+
         if (_pendingState is { } state) Render(state);
     }
 
-    private void BuildMessage()
+    private void BuildMessageLayout()
         => XUIVLayout.Make(
                 XUIText.Make(string.Empty).Bind(ref _messageText).SetColor(new Color(1, 0.5f, 0)),
                 XUIHLayout.Make(
                     XUISecondaryButton.Make("Open in browser")
                         .SetWidth(30).SetHeight(4)
-                        .OnClick(() => Send(new PlayerCardMessage.OpenWebsite())),
+                        .OnClick(() => Send(new PlayerCardActionMessage.OpenWebsite())),
                     XUISecondaryButton.Make("Retry")
                         .Bind(ref _retry)
                         .SetWidth(20).SetHeight(4)
-                        .OnClick(() => Send(new PlayerCardMessage.Retry()))))
+                        .OnClick(() => Send(new PlayerCardActionMessage.Retry()))))
             .Bind(ref _message)
             .BuildUI(transform);
 
-    private void BuildLoading()
+    private void BuildLoadingLayout()
         => XUIVLayout.Make(XUILoadingIndicator.Make())
             .Bind(ref _loading)
             .BuildUI(transform);
@@ -144,27 +142,27 @@ public sealed class PlayerCardView : ViewController<PlayerCardView>, IInitializa
     private void OnHandleReleased(object sender, FloatingScreenHandleEventArgs args)
         => TransformChanged?.Invoke(new CardTransform(args.Position, args.Rotation));
 
-    private void Send(PlayerCardMessage message) => MessageSent?.Invoke(message);
+    private void Send(PlayerCardActionMessage actionMessage) => ActionRequested?.Invoke(actionMessage);
 }
 
 internal interface IPlayerCardLayout : IDisposable
 {
     void Build(Transform parent);
-    void Render(PlayerCardSummary summary);
+    void Render(PlayerCardReady ready);
     void RenderPlayTime(PlayerCardPlayTime.TimeOnlyLite timeOnlyLite);
     void SetPlayTimeVisible(bool visible);
     void SetActive(bool active);
-    Vector2 GetSize(PlayerCardSummary summary);
+    Vector2 GetSize(PlayerCardReady ready);
 }
 
-public abstract record PlayerCardMessage
+public abstract record PlayerCardActionMessage
 {
-    public sealed record OpenActions : PlayerCardMessage;
-    public sealed record CloseActions : PlayerCardMessage;
-    public sealed record SelectGuild(GuildId GuildId) : PlayerCardMessage;
-    public sealed record SelectContext(ContextId ContextId) : PlayerCardMessage;
-    public sealed record OpenSettings : PlayerCardMessage;
-    public sealed record OpenPlaylists : PlayerCardMessage;
-    public sealed record OpenWebsite : PlayerCardMessage;
-    public sealed record Retry : PlayerCardMessage;
+    public sealed record OpenActions : PlayerCardActionMessage;
+    public sealed record CloseActions : PlayerCardActionMessage;
+    public sealed record SelectGuild(GuildId GuildId) : PlayerCardActionMessage;
+    public sealed record SelectContext(ContextId ContextId) : PlayerCardActionMessage;
+    public sealed record OpenSettings : PlayerCardActionMessage;
+    public sealed record OpenPlaylists : PlayerCardActionMessage;
+    public sealed record OpenWebsite : PlayerCardActionMessage;
+    public sealed record Retry : PlayerCardActionMessage;
 }

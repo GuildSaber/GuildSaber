@@ -38,6 +38,7 @@ public class PlayerCardConfig
                     _ => PlayerCardColorMode.Solid
                 });
                 SchemaVersion = 1;
+                break;
         }
     }
 

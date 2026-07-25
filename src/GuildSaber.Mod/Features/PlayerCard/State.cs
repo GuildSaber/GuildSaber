@@ -13,11 +13,11 @@ public abstract record PlayerCardState
 {
     public sealed record Loading : PlayerCardState;
     public sealed record Unavailable(string Reason, bool CanRetry) : PlayerCardState;
-    public sealed record Summary(PlayerCardSummary Data) : PlayerCardState;
-    public sealed record Actions(PlayerCardActions Data) : PlayerCardState;
+    public sealed record Ready(PlayerCardReady Data) : PlayerCardState;
+    public sealed record Actions(PlayerCardActionData Data) : PlayerCardState;
 }
 
-public sealed record PlayerCardSummary(
+public sealed record PlayerCardReady(
     string PlayerName,
     Texture2D? Avatar,
     Texture2D? GuildIcon,
@@ -29,7 +29,7 @@ public sealed record PlayerCardSummary(
     PlayerCardPalette Palette,
     bool ShowProgress)
 {
-    public static PlayerCardSummary Create(
+    public static PlayerCardReady Create(
         GuildSaberSnapshot snapshot,
         PlayerCardConfig config,
         Texture2D? avatar,
@@ -71,7 +71,7 @@ public sealed record PlayerCardSummary(
         if (double.IsNaN(equilibrium) || double.IsInfinity(equilibrium))
             equilibrium = 100;
 
-        return new PlayerCardSummary(
+        return new PlayerCardReady(
             PlayerName: snapshot.PlayerExtended.Player.PlayerInfo.Username,
             Avatar: avatar,
             GuildIcon: guildIcon,
@@ -115,12 +115,12 @@ public sealed record PlayerCardSummary(
     }
 }
 
-public sealed record PlayerCardActions(
+public sealed record PlayerCardActionData(
     ImmutableArray<PlayerCardGuild> Guilds,
     ImmutableArray<PlayerCardContext> Contexts,
     ContextId CurrentContextId)
 {
-    public static PlayerCardActions Create(
+    public static PlayerCardActionData Create(
         GuildSaberSnapshot snapshot,
         ImmutableDictionary<GuildId, Texture2D> guildIcons)
         => new(

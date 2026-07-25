@@ -16,7 +16,7 @@ public sealed class PlayerCardSettings : SimpleFlowCoordinator
     protected override string Title => "Player card settings";
     protected override ViewController GetMainViewController() => _view;
 
-    public event Action<PlayerCardSettingsMessage>? MessageSent
+    public event Action<PlayerCardSettingsMessage>? SettingsChanged
     {
         add => _view.MessageSent += value;
         remove => _view.MessageSent -= value;

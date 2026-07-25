@@ -41,8 +41,10 @@ internal sealed class PlayerCardGuildPicker : SimpleFlowCoordinator
 internal sealed class PlayerCardGuildPickerView : ViewController<PlayerCardGuildPickerView>
 {
     private readonly List<PlayerCardGuildButton> _buttons = [];
+
     [Inject(Id = ResourceMap.TekoMedium)] private readonly TMP_FontAsset _font = null!;
     [Inject(Id = ResourceMap.GsWhiteLogo)] private readonly Texture2D _placeholder = null!;
+
     private XUIVScrollView _guildList = null!;
     private ImmutableArray<PlayerCardGuild> _guilds = [];
     private bool _isReady;
@@ -57,12 +59,13 @@ internal sealed class PlayerCardGuildPickerView : ViewController<PlayerCardGuild
 
     protected override void OnViewCreation()
         => XUIVLayout.Make(
-                XUIHLayout.Make(XUIVScrollView.Make().Bind(ref _guildList))
+                XUIHLayout.Make(
+                        XUIVScrollView.Make().Bind(ref _guildList))
                     .SetHeight(80)
                     .OnReady(x =>
                     {
-                        x.CSizeFitter.verticalFit = x.CSizeFitter.horizontalFit =
-                            ContentSizeFitter.FitMode.Unconstrained;
+                        x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+                        x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
                         x.HOrVLayoutGroup.childForceExpandHeight = x.HOrVLayoutGroup.childForceExpandWidth = true;
                     }))
             .SetWidth(100)
@@ -80,11 +83,13 @@ internal sealed class PlayerCardGuildPickerView : ViewController<PlayerCardGuild
     {
         while (_buttons.Count < _guilds.Length)
         {
-            var button = PlayerCardGuildButton.Make(_font);
-            button.SetWidth(70).SetHeight(10);
-            button.Clicked += id => GuildSelected?.Invoke(id);
+            var button = PlayerCardGuildButton.Make(_font)
+                .OnClick(id => GuildSelected?.Invoke(id))
+                .SetWidth(70)
+                .SetHeight(10);
+
+            _buttons.Add((PlayerCardGuildButton)button);
             button.BuildUI(_guildList.Element.Container);
-            _buttons.Add(button);
         }
 
         for (var i = 0; i < _buttons.Count; i++)
@@ -129,10 +134,7 @@ internal sealed class PlayerCardGuildButton : XUISecondaryButton
     }
 
     public event Action<GuildId>? Clicked;
-
     public static PlayerCardGuildButton Make(TMP_FontAsset font) => new(font);
-
-    public override Color GetColor() => Color.black.WithAlpha(0.7f);
 
     public void Render(PlayerCardGuild guild, Texture2D placeholder)
     {
@@ -140,5 +142,13 @@ internal sealed class PlayerCardGuildButton : XUISecondaryButton
         _guildIcon.Render(guild, placeholder);
         _guildName.SetText(guild.Name is { Length: > 32 } ? guild.Name[..30] + "..." : guild.Name);
         SetActive(true);
+    }
+
+    public override Color GetColor() => Color.black.WithAlpha(0.7f);
+
+    public PlayerCardGuildButton OnClick(Action<GuildId> functor)
+    {
+        Clicked += functor;
+        return this;
     }
 }
