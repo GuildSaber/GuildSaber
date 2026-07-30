@@ -27,6 +27,7 @@ public static class ApiDefaultsSetup
             options.AddGlobalProblemDetails()
                 .AddSessionCookieSecurityScheme()
                 .AddEndpointsHttpSecuritySchemeResolution()
+                .AddSessionCookieRequestVerification()
                 .AddTagDescriptionSupport()
                 .AddScalarTransformers()
                 .AddTypeTransformationSupport();

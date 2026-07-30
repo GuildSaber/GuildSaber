@@ -84,7 +84,14 @@ app.MapScalarApiReference("/docs", options => options
     .WithTitle("GuildSaber's Api")
     .WithTheme(ScalarTheme.Purple)
     .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch)
-    .AddPreferredSecuritySchemes(SessionCookieDefaults.AuthenticationScheme)
+    .AddPreferredSecuritySchemes(
+        SessionCookieDefaults.AuthenticationScheme,
+        SessionCookieDefaults.RequestVerificationHeaderName)
+    .AddApiKeyAuthentication(SessionCookieDefaults.RequestVerificationHeaderName, x =>
+    {
+        x.Name = SessionCookieDefaults.RequestVerificationHeaderName;
+        x.Value = SessionCookieDefaults.RequestVerificationHeaderValue;
+    })
     .EnablePersistentAuthentication());
 
 app.MapGet("/", () => Results.Redirect("/docs")).ExcludeFromDescription();
