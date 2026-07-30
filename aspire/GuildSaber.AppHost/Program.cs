@@ -100,6 +100,8 @@ if (builder.ExecutionContext.IsPublishMode)
             builder.AddParameter("AuthSettings-Redirect-AllowedOriginUrls-0"))
         .WithEnvironment("AuthSettings:Redirect:AllowedOriginUrls:1",
             builder.AddParameter("AuthSettings-Redirect-AllowedOriginUrls-1"))
+        .WithEnvironment("AuthSettings:Redirect:AllowedOriginUrls:2",
+            builder.AddParameter("AuthSettings-Redirect-AllowedOriginUrls-2"))
         .WithEnvironment("AuthSettings:TickerQ:ApiKey",
             builder.AddParameter("AuthSettings-TickerQ-ApiKey", secret: true))
         .WithEnvironment("GuildSettings:Creation:RequiredSubscriptionTier",
