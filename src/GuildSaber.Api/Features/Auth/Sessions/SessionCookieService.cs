@@ -9,13 +9,13 @@ public sealed class SessionCookieService(IHostEnvironment environment)
     public void Append(HttpResponse response, string token, DateTimeOffset expiresAt)
     {
         DisableResponseCaching(response);
-        response.Cookies.Append(CookieName, token, CreateCookieOptions(expiresAt));
+        response.Cookies.Append(CookieName, token, CreateCookieOptions(response, expiresAt));
     }
 
     public void Delete(HttpResponse response)
     {
         DisableResponseCaching(response);
-        response.Cookies.Delete(CookieName, CreateCookieOptions(expiresAt: null));
+        response.Cookies.Delete(CookieName, CreateCookieOptions(response, expiresAt: null));
     }
 
     private static void DisableResponseCaching(HttpResponse response)
@@ -24,14 +24,18 @@ public sealed class SessionCookieService(IHostEnvironment environment)
         response.Headers.Pragma = "no-cache";
     }
 
-    private CookieOptions CreateCookieOptions(DateTimeOffset? expiresAt)
-        => new()
+    private CookieOptions CreateCookieOptions(HttpResponse response, DateTimeOffset? expiresAt)
+    {
+        var secure = !environment.IsDevelopment() || response.HttpContext.Request.IsHttps;
+
+        return new CookieOptions
         {
             HttpOnly = true,
-            Secure = !environment.IsDevelopment(),
-            SameSite = SameSiteMode.Lax,
+            Secure = secure,
+            SameSite = secure ? SameSiteMode.None : SameSiteMode.Lax,
             Path = "/",
             Expires = expiresAt,
             IsEssential = true
         };
+    }
 }
