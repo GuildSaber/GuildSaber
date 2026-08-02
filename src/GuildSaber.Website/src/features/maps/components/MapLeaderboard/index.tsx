@@ -1,5 +1,4 @@
 import Pagination from "@/components/Pagination"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import MapLeaderboardFilters from "@/features/maps/components/MapLeaderboard/MapLeaderboardFilters"
 import { MapLeaderboardRow } from "@/features/maps/components/MapLeaderboard/MapLeaderboardRow"
 import { MapLeaderboardSkeleton } from "@/features/maps/components/MapLeaderboard/MapLeaderboardSkeleton"
@@ -14,48 +13,46 @@ const MapLeaderboard = () => {
   const hasScores = isReady && (leaderboard?.data?.length ?? 0) > 0
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row flex-wrap justify-between gap-2">
+    <div>
+      <div className="mb-3 flex flex-row flex-wrap justify-between gap-2">
         <div>
-          <CardTitle>Leaderboard</CardTitle>
+          <div className="leading-none font-semibold">Leaderboard</div>
           {leaderboard?.totalCount !== undefined && (
-            <CardDescription>{String(leaderboard.totalCount)} scores</CardDescription>
+            <div className="text-muted-foreground text-sm">{String(leaderboard.totalCount)} scores</div>
           )}
         </div>
 
         <MapLeaderboardFilters contextPoints={contextPoints} />
-      </CardHeader>
+      </div>
 
-      <CardContent>
-        {!isReady && <MapLeaderboardSkeleton />}
+      {!isReady && <MapLeaderboardSkeleton />}
 
-        {isReady && hasNoPoints && (
-          <div className="text-muted-foreground flex flex-col items-center gap-2 py-10">
-            <AlertCircle className="size-8 opacity-40" />
-            <p className="text-sm font-medium">No ranking available</p>
-            <p className="text-xs opacity-60">This map hasn't been assigned to any point category yet.</p>
-          </div>
-        )}
+      {isReady && hasNoPoints && (
+        <div className="text-muted-foreground flex flex-col items-center gap-2 py-10">
+          <AlertCircle className="size-8 opacity-40" />
+          <p className="text-sm font-medium">No ranking available</p>
+          <p className="text-xs opacity-60">This map hasn't been assigned to any point category yet.</p>
+        </div>
+      )}
 
-        {isReady && !hasScores && (
-          <div className="text-muted-foreground flex flex-col items-center gap-2 py-10">
-            <Logs className="size-8 opacity-40" />
-            <p className="text-sm font-medium">No scores recorded</p>
-            <p className="text-xs opacity-60">Be the first to set a score on this map!</p>
-          </div>
-        )}
+      {isReady && !hasScores && (
+        <div className="text-muted-foreground flex flex-col items-center gap-2 py-10">
+          <Logs className="size-8 opacity-40" />
+          <p className="text-sm font-medium">No scores recorded</p>
+          <p className="text-xs opacity-60">Be the first to set a score on this map!</p>
+        </div>
+      )}
 
-        {hasScores && (
-          <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 divide-y md:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto_auto]">
-            {leaderboard?.data?.map((score) => (
-              <MapLeaderboardRow key={score.rankedScore.id} score={score} pointName={effectivePointName} />
-            ))}
-          </div>
-        )}
-      </CardContent>
+      {hasScores && (
+        <div className="flex flex-col gap-3">
+          {leaderboard?.data?.map((score) => (
+            <MapLeaderboardRow key={score.rankedScore.id} score={score} pointName={effectivePointName} />
+          ))}
+        </div>
+      )}
 
       <Pagination totalPages={Number(leaderboard?.totalPages ?? 1)} isLoading={isFetching} />
-    </Card>
+    </div>
   )
 }
 

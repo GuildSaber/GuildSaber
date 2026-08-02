@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import AuthSetupStepper from "@/features/auth/components/AuthSetupStepper"
 import SigninOptions from "@/features/auth/components/SigninOptions"
 import { useSession } from "@/features/auth/hooks/useSession"
+import { useGuildsStore } from "@/features/guilds/stores/guildsStore"
 import { useQueryClient } from "@tanstack/react-query"
 import { CircleX, LogOut } from "lucide-react"
 import { useQueryState } from "nuqs"
@@ -14,11 +15,13 @@ import { Link } from "react-router"
 const Auth = () => {
   const queryClient = useQueryClient()
   const [error] = useQueryState("error")
+  const clearGuildsStore = useGuildsStore((state) => state.clear)
 
   const handleLogout = async () => {
     await logout()
 
     queryClient.setQueryData(getPlayerExtendedAtMeQueryKey(), null)
+    clearGuildsStore()
   }
 
   const { data: session } = useSession()

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { SidebarPortal } from "@/components/SideBar"
 import GuildMapsFilters from "@/features/guilds/components/GuildMaps/GuildMapsFilters"
 import GuildMapsList from "@/features/guilds/components/GuildMaps/GuildMapsList"
 import { useGuildContext } from "@/features/guilds/contexts/guildContext"
@@ -9,18 +9,13 @@ const GuildMaps = () => {
   const isDesktop = useMediaQuery("(min-width: 64rem)")
 
   return (
-    <section className="relative items-start gap-3 lg:grid lg:grid-cols-[2fr_1fr]">
+    <section className="relative">
       <GuildMapsList />
 
       {isDesktop && (
-        <Card className="gap-3!">
-          <CardHeader>
-            <CardTitle>Search Filters</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <GuildMapsFilters categories={guild?.categories} />
-          </CardContent>
-        </Card>
+        <SidebarPortal>
+          <GuildMapsFilters categories={guild?.categories} />
+        </SidebarPortal>
       )}
     </section>
   )

@@ -1,5 +1,6 @@
 import { getGuildExtendedOptions } from "@/client/@tanstack/react-query.gen"
 import ErrorState from "@/components/ErrorState"
+import { Separator } from "@/components/ui/separator"
 import GuildHeader from "@/features/guilds/components/GuildHeader"
 import GuildMaps from "@/features/guilds/components/GuildMaps"
 import { GuildContextProvider } from "@/features/guilds/contexts/guildContext"
@@ -29,6 +30,7 @@ const HomeGuild = () => {
     <main className="space-y-3">
       <GuildContextProvider guild={guild}>
         <GuildHeader />
+        <Separator className="my-6 h-0.5!" />
         <GuildMaps />
       </GuildContextProvider>
     </main>

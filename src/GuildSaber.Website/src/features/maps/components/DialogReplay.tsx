@@ -23,7 +23,7 @@ const DialogReplay = () => {
     <AlertDialog open={open}>
       <AlertDialogContent ref={ref} className="aspect-video min-w-2/3 overflow-hidden p-0">
         {replayUrl ? (
-          <iframe width="100%" height="100%" src={replayUrl} />
+          <iframe allow="fullscreen" width="100%" height="100%" src={replayUrl} />
         ) : (
           <p className="text-muted-foreground flex h-full items-center justify-center text-sm">
             No replay available for this score.
