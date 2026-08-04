@@ -44,7 +44,7 @@ const MapLeaderboard = () => {
       )}
 
       {hasScores && (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto_auto] md:items-start md:gap-x-3 md:gap-y-3">
           {leaderboard?.data?.map((score) => (
             <MapLeaderboardRow key={score.rankedScore.id} score={score} pointName={effectivePointName} />
           ))}
