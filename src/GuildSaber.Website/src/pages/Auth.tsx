@@ -71,9 +71,9 @@ const Auth = () => {
               <SigninOptions />
 
               {error && (
-                <p className="mt-4 mb-2 flex items-center text-red-700">
-                  <CircleX className="mr-1 inline h-5 w-5" />
-                  {decodeURI(error)}
+                <p className="mt-4 mb-2 flex items-center gap-2 break-all text-red-700">
+                  <CircleX className="mr-1 inline h-5 w-5 shrink-0" />
+                  {decodeURIComponent(error.replace(/\+/g, " "))}
                 </p>
               )}
             </>
