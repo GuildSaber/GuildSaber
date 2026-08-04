@@ -42,7 +42,7 @@ const GuildMapRowCategoryBadge = ({ category }: { category: Category }) => {
             <img
               src={getCdnUrl(`categories/${category.id}/logo.png`)}
               onError={() => setHasLogo(false)}
-              className="size-5 rounded-xs"
+              className="size-7 rounded-xs"
             />
           ) : (
             <Badge className="px-1 py-0 text-[10px]">{category.info?.name}</Badge>
