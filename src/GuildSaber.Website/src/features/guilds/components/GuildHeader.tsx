@@ -63,7 +63,9 @@ const GuildHeader = () => {
           />
 
           <div>
-            <h1 className="line-clamp-2 text-xl font-bold md:text-3xl">{guild.guild.info.name}</h1>
+            <h1 className="line-clamp-2 text-center text-xl font-bold md:text-left md:text-3xl">
+              {guild.guild.info.name}
+            </h1>
             <p className="text-muted-foreground line-clamp-3 text-center md:text-left">
               {guild.guild.info.description}
             </p>
