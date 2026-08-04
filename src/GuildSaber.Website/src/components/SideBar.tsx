@@ -1,3 +1,6 @@
+import Image from "@/components/Image"
+import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer"
+import { Separator } from "@/components/ui/separator"
 import { useSession } from "@/features/auth/hooks/useSession"
 import GuildsSelector from "@/features/guilds/components/GuildSelector"
 import GuildsSelectorMobile from "@/features/guilds/components/GuildSelector/GuildsSelectorMobile"
@@ -8,9 +11,6 @@ import { Compass, LogIn, LucideIcon, Package } from "lucide-react"
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { Link } from "react-router"
-import Image from "./Image"
-import { Drawer, DrawerContent, DrawerTrigger } from "./ui/drawer"
-import { Separator } from "./ui/separator"
 
 const SidebarPortalContext = createContext<{
   container: HTMLDivElement | null
@@ -113,7 +113,7 @@ const SideBar = () => {
 
   return (
     <>
-      <div className="sticky top-0 hidden max-h-svh w-84 flex-col gap-3 p-3 lg:flex">
+      <div className="sticky top-0 hidden max-h-svh w-84 flex-col gap-3 p-3 xl:flex">
         <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
           <Link to="/" className="mb-3">
             <div className="flex items-center gap-3">
