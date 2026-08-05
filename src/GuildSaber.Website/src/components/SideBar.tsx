@@ -158,7 +158,7 @@ const SideBar = () => {
 
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
         <DrawerTrigger asChild>
-          <button className="bg-background fixed right-4 bottom-6 z-50 size-11 cursor-pointer rounded-lg border p-1 md:bottom-3 lg:hidden">
+          <button className="bg-background fixed right-4 bottom-6 z-50 size-11 cursor-pointer rounded-lg border p-1 md:bottom-3 xl:hidden">
             <Image
               src={selectedGuild ? getCdnUrl(`guilds/${selectedGuild}/logo.jpg`) : "/gsLogo.svg"}
               className={cn("size-full rounded-md", !selectedGuild && "mx-auto size-8")}
