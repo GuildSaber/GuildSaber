@@ -19,7 +19,7 @@ const GuildMapsList = () => {
   const { data: session } = useSession()
   const guild = useGuildContext()
   const [filters, setFilters] = useGuildMapFilters()
-  const isDesktop = useMediaQuery("(min-width: 64rem)")
+  const isDesktop = useMediaQuery("(min-width: 96rem)")
   const pageSize = isDesktop ? 16 : 8
 
   const previousPageSize = useRef(pageSize)
@@ -84,7 +84,7 @@ const GuildMapsList = () => {
 
         <Sheet>
           <SheetTrigger asChild>
-            <Button size="icon" variant="outline" className="xl:hidden">
+            <Button size="icon" variant="outline" className="lg:hidden">
               <Filter />
             </Button>
           </SheetTrigger>
@@ -98,7 +98,7 @@ const GuildMapsList = () => {
           </SheetContent>
         </Sheet>
       </div>
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
         {scores?.map((score) => (
           <GuildMapRow key={score.rankedMap.id} score={score} />
         ))}
@@ -110,7 +110,7 @@ const GuildMapsList = () => {
 }
 
 const LoadingSkeleton = () => {
-  const isDesktop = useMediaQuery("(min-width: 64rem)")
+  const isDesktop = useMediaQuery("(min-width: 80rem)")
 
   return (
     <div>
@@ -119,7 +119,7 @@ const LoadingSkeleton = () => {
         <Skeleton className="mt-1 h-3 w-18 rounded-sm" />
       </div>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
         {Array.from({ length: isDesktop ? 16 : 8 }).map((_, i) => (
           <div key={i}>
             <GuildMapRowSkeleton />
