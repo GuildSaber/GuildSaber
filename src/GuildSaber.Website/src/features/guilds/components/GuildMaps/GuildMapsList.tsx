@@ -1,17 +1,13 @@
 import type { RankedMapWithScores } from "@/client"
 import { getRankedMapsOptions, getRankedMapsWithScoresAtMeOptions } from "@/client/@tanstack/react-query.gen"
 import Pagination from "@/components/Pagination"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "@/features/auth/hooks/useSession"
 import GuildMapRow from "@/features/guilds/components/GuildMaps/GuildMapRow"
 import { GuildMapRowSkeleton } from "@/features/guilds/components/GuildMaps/GuildMapRow/GuildMapRowSkeleton"
-import GuildMapsFilters from "@/features/guilds/components/GuildMaps/GuildMapsFilters"
 import { useGuildContext } from "@/features/guilds/contexts/guildContext"
 import { useGuildMapFilters } from "@/features/guilds/hooks/useGuildMapFilters"
 import { useQuery } from "@tanstack/react-query"
-import { Filter } from "lucide-react"
 import { useEffect, useRef } from "react"
 import { useMediaQuery } from "usehooks-ts"
 
@@ -76,27 +72,9 @@ const GuildMapsList = () => {
 
   return (
     <div>
-      <div className="mb-3 flex items-start justify-between">
-        <div>
-          <div className="leading-none font-semibold">Ranked Maps</div>
-          <div className="text-muted-foreground text-sm">{activeQuery.data?.totalCount} maps</div>
-        </div>
-
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button size="icon" variant="outline" className="lg:hidden">
-              <Filter />
-            </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>Search Filters</SheetTitle>
-            </SheetHeader>
-            <div className="overflow-y-auto px-4 pb-4">
-              <GuildMapsFilters categories={guild?.categories} />
-            </div>
-          </SheetContent>
-        </Sheet>
+      <div className="mb-3">
+        <div className="leading-none font-semibold">Ranked Maps</div>
+        <div className="text-muted-foreground text-sm">{activeQuery.data?.totalCount} maps</div>
       </div>
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
         {scores?.map((score) => (

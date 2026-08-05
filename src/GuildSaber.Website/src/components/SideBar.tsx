@@ -1,45 +1,64 @@
 import Image from "@/components/Image"
 import { Separator } from "@/components/ui/separator"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useSession } from "@/features/auth/hooks/useSession"
 import GuildsSelector from "@/features/guilds/components/GuildSelector"
 import GuildsSelectorMobile from "@/features/guilds/components/GuildSelector/GuildsSelectorMobile"
 import { useGuildsStore } from "@/features/guilds/stores/guildsStore"
 import { cn } from "@/lib/utils"
 import { getCdnUrl } from "@/utils/url"
-import { Compass, LogIn, LucideIcon, Package } from "lucide-react"
+import { Compass, GripVertical, LogIn, LucideIcon, Package } from "lucide-react"
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { Link } from "react-router"
+import { useMediaQuery } from "usehooks-ts"
+
+interface SidebarPortalMeta {
+  title?: ReactNode
+  icon: LucideIcon
+}
 
 const SidebarPortalContext = createContext<{
   container: HTMLDivElement | null
   setContainer: (node: HTMLDivElement | null) => void
   hasContent: boolean
-  registerContent: () => () => void
+  meta: SidebarPortalMeta | null
+  registerContent: (meta: SidebarPortalMeta) => () => void
 } | null>(null)
 
 export const SidebarPortalProvider = ({ children }: { children: ReactNode }) => {
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
   const [contentCount, setContentCount] = useState(0)
+  const [meta, setMeta] = useState<SidebarPortalMeta | null>(null)
 
-  const registerContent = useCallback(() => {
+  const registerContent = useCallback((newMeta: SidebarPortalMeta) => {
     setContentCount((count) => count + 1)
+    setMeta(newMeta)
 
-    return () => setContentCount((count) => count - 1)
+    return () => {
+      setContentCount((count) => count - 1)
+      setMeta(null)
+    }
   }, [])
 
   return (
-    <SidebarPortalContext.Provider value={{ container, setContainer, hasContent: contentCount > 0, registerContent }}>
+    <SidebarPortalContext.Provider
+      value={{ container, setContainer, hasContent: contentCount > 0, meta, registerContent }}
+    >
       {children}
     </SidebarPortalContext.Provider>
   )
 }
 
-export const SidebarPortal = ({ children }: { children: ReactNode }) => {
+export const SidebarPortal = ({
+  children,
+  title,
+  icon = GripVertical,
+}: { children: ReactNode } & Partial<SidebarPortalMeta>) => {
   const ctx = useContext(SidebarPortalContext)
   const registerContent = ctx?.registerContent
 
-  useEffect(() => registerContent?.(), [registerContent])
+  useEffect(() => registerContent?.({ title, icon }), [registerContent, title, icon])
 
   if (!ctx?.container) {
     return null
@@ -103,6 +122,8 @@ const SideBar = () => {
   const ctx = useContext(SidebarPortalContext)
   const { selectedGuild } = useGuildsStore()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const isDesktop = useMediaQuery("(min-width: 64rem)")
 
   const closeMenu = () => {
     setMenuOpen(false)
@@ -146,7 +167,7 @@ const SideBar = () => {
           </div>
         </div>
 
-        {ctx?.hasContent && (
+        {isDesktop && ctx?.hasContent && (
           <>
             <Separator className="h-0.5!" />
 
@@ -174,6 +195,25 @@ const SideBar = () => {
           className={cn("size-full rounded-md", !selectedGuild && "mx-auto size-8")}
         />
       </button>
+
+      {!isDesktop && ctx?.hasContent && ctx.meta && (
+        <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <SheetTrigger asChild>
+            <button
+              aria-label={ctx.meta.title ? `Open ${ctx.meta.title}` : "Open panel"}
+              className="bg-background/80 fixed top-1/2 right-0 z-40 -translate-y-1/2 rounded-l-lg border border-r-0 p-2 py-6 pr-3 shadow-lg lg:hidden"
+            >
+              <ctx.meta.icon className="size-5" />
+            </button>
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>{ctx.meta.title}</SheetTitle>
+            </SheetHeader>
+            <div ref={ctx?.setContainer} className="overflow-y-auto px-4 pb-4" />
+          </SheetContent>
+        </Sheet>
+      )}
 
       <div
         className={cn(
