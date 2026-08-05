@@ -147,12 +147,10 @@ const GuildMapRow = ({ score: { rankedMap, rankedScores } }: Props) => {
             STATUS_COLORS[rankedScore.type],
           )}
         >
-          <>
-            <span className="text-xs opacity-80">{rankedScore.type}</span>
-            <span className="text-xs font-semibold md:text-base">
-              {`${getAccuracy(rankedMap, rankedScore).toFixed(2)}%`}
-            </span>
-          </>
+          <span className="text-xs opacity-80">{rankedScore.type}</span>
+          <span className="text-xs font-semibold md:text-base">
+            {`${getAccuracy(rankedMap, rankedScore).toFixed(2)}%`}
+          </span>
 
           <span className="text-xs opacity-80">{formatDate(rankedScore.score.setAt, "long")}</span>
         </div>

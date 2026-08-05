@@ -42,6 +42,7 @@ export const MapHeaderActions = ({ map, className }: Props) => {
         variant="outline"
         className="hover:border-pink-500!"
       >
+        <span className="font-mono">{song.key}</span>
         <BeatSaver className="size-4" />
       </Button>
       <Button
