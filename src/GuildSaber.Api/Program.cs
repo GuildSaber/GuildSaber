@@ -36,16 +36,14 @@ builder.Services
     .AddHttpUserAgentParser()
     .AddHttpUserAgentParserAccessor();
 
-var allowedWebsiteOrigins = builder.Configuration
+var configuredWebsiteOrigins = builder.Configuration
     .GetSection($"{AuthSettings.AuthSettingsSectionKey}:{nameof(AuthSettings.Redirect)}")
     .Get<RedirectSettings>()?.AllowedOriginUrls
-    .Select(url => new Uri(url).GetLeftPart(UriPartial.Authority))
-    .Distinct(StringComparer.OrdinalIgnoreCase)
-    .ToArray() ?? [];
+    ?? [];
 
 builder.Services.AddCors(options => options
     .AddDefaultPolicy(policy => policy
-        .WithOrigins(allowedWebsiteOrigins)
+        .SetIsOriginAllowed(origin => OriginPolicy.IsAllowed(origin, configuredWebsiteOrigins))
         .AllowAnyMethod()
         .AllowAnyHeader()
         .AllowCredentials()));

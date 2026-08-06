@@ -371,17 +371,7 @@ public class AuthEndpoints : IEndpoints
         };
 
     private static bool IsValidRedirectUrl(string returnUrl, RedirectSettings redirectSettings)
-    {
-        if (string.IsNullOrWhiteSpace(returnUrl) || !Uri.TryCreate(returnUrl, UriKind.Absolute, out var uri))
-            return false;
-
-        var returnOrigin = uri.GetLeftPart(UriPartial.Authority);
-
-        return redirectSettings.AllowedOriginUrls
-            .Any(origin => Uri.TryCreate(origin, UriKind.Absolute, out var allowedUri) &&
-                           string.Equals(allowedUri.GetLeftPart(UriPartial.Authority), returnOrigin,
-                               StringComparison.OrdinalIgnoreCase));
-    }
+        => OriginPolicy.IsAllowed(returnUrl, redirectSettings.AllowedOriginUrls);
 
     private static async Task<NoContent> HandleLogoutAsync(
         HttpContext httpContext, ClaimsPrincipal claimsPrincipal, AuthService authService)

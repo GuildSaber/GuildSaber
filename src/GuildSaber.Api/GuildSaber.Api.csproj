@@ -54,6 +54,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="GuildSaber.Api.Tests" />
+        <InternalsVisibleTo Include="GuildSaber.Common.UnitTests" />
     </ItemGroup>
 
     <ItemGroup>

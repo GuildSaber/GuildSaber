@@ -89,6 +89,7 @@ services:
       AuthSettings:Redirect:AllowedOriginUrls:0: "${AUTHSETTINGS_REDIRECT_ALLOWEDORIGINURLS_0}"
       AuthSettings:Redirect:AllowedOriginUrls:1: "${AUTHSETTINGS_REDIRECT_ALLOWEDORIGINURLS_1}"
       AuthSettings:Redirect:AllowedOriginUrls:2: "${AUTHSETTINGS_REDIRECT_ALLOWEDORIGINURLS_2}"
+      AuthSettings:Redirect:AllowedOriginUrls:3: "${AUTHSETTINGS_REDIRECT_ALLOWEDORIGINURLS_3}"
       AuthSettings:TickerQ:ApiKey: "${AUTHSETTINGS_TICKERQ_APIKEY}"
       GuildSettings:Creation:RequiredSubscriptionTier: "${GUILDSETTINGS_CREATION_REQUIREDSUBSCRIPTIONTIER}"
       GuildSettings:Creation:MaxGuildCountPerUser: "${GUILDSETTINGS_CREATION_MAXGUILDCOUNTPERUSER}"
