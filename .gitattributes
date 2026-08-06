@@ -1,0 +1,3 @@
+# Keep generated OpenAPI artifacts stable across operating systems.
+/src/GuildSaber.Api/GuildSaber.Api.json text eol=lf
+/src/GuildSaber.Website/openapi/GuildSaber.Api.json text eol=lf

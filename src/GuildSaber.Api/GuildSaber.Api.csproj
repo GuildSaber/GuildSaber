@@ -16,14 +16,44 @@
 
     <PropertyGroup>
         <OpenApiDocumentsDirectory>.</OpenApiDocumentsDirectory>
+        <GuildSaberOpenApiDocument>$(MSBuildProjectDirectory)\GuildSaber.Api.json</GuildSaberOpenApiDocument>
     </PropertyGroup>
 
-    <Target Name="CopyOpenApiToWebsite" AfterTargets="GenerateOpenApiDocuments">
+    <UsingTask TaskName="GuildSaberNormalizeJsonLineEndings"
+               TaskFactory="RoslynCodeTaskFactory"
+               AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <FilePath ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Using Namespace="System.Text" />
+            <Code Type="Fragment" Language="cs"><![CDATA[
+                var contents = File.ReadAllText(FilePath);
+                var normalizedContents = contents
+                    .Replace("\\r\\n", "\\n")
+                    .Replace("\r\n", "\n")
+                    .Replace("\r", "\n");
+
+                if (!string.Equals(contents, normalizedContents, StringComparison.Ordinal))
+                    File.WriteAllText(FilePath, normalizedContents, new UTF8Encoding(false));
+            ]]></Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="NormalizeOpenApiLineEndings">
+        <GuildSaberNormalizeJsonLineEndings FilePath="$(GuildSaberOpenApiDocument)" />
+    </Target>
+
+    <Target Name="CopyOpenApiToWebsite"
+            AfterTargets="GenerateOpenApiDocuments"
+            DependsOnTargets="NormalizeOpenApiLineEndings">
         <PropertyGroup>
             <_WebsiteOpenApiDir>..\GuildSaber.Website\openapi</_WebsiteOpenApiDir>
         </PropertyGroup>
         <MakeDir Directories="$(_WebsiteOpenApiDir)" />
-        <Copy SourceFiles="$(MSBuildProjectDirectory)\GuildSaber.Api.json"
+        <Copy SourceFiles="$(GuildSaberOpenApiDocument)"
               DestinationFiles="$(_WebsiteOpenApiDir)\GuildSaber.Api.json"
               SkipUnchangedFiles="true" />
     </Target>
