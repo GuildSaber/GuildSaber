@@ -7,29 +7,22 @@ import GuildMapRow from "@/features/guilds/components/GuildMaps/GuildMapRow"
 import { GuildMapRowSkeleton } from "@/features/guilds/components/GuildMaps/GuildMapRow/GuildMapRowSkeleton"
 import { useGuildContext } from "@/features/guilds/contexts/guildContext"
 import { useGuildMapFilters } from "@/features/guilds/hooks/useGuildMapFilters"
+import { useResponsivePageSize } from "@/hooks/useResponsivePageSize"
 import { useQuery } from "@tanstack/react-query"
-import { useEffect, useRef } from "react"
 import { useMediaQuery } from "usehooks-ts"
 
 const GuildMapsList = () => {
   const { data: session } = useSession()
   const guild = useGuildContext()
   const [filters, setFilters] = useGuildMapFilters()
-  const isDesktop = useMediaQuery("(min-width: 96rem)")
-  const pageSize = isDesktop ? 16 : 8
-
-  const previousPageSize = useRef(pageSize)
-
-  useEffect(() => {
-    if (previousPageSize.current === pageSize) {
-      return
-    }
-
-    const firstItemIndex = (filters.page - 1) * previousPageSize.current
-
-    previousPageSize.current = pageSize
-    setFilters({ page: Math.floor(firstItemIndex / pageSize) + 1 })
-  }, [pageSize, filters.page, setFilters])
+  const hasTwoColumns = useMediaQuery("(min-width: 80rem)")
+  const hasCompactRows = useMediaQuery("(max-width: 47.999rem)")
+  const { page, pageSize } = useResponsivePageSize({
+    page: filters.page,
+    setPage: (nextPage) => setFilters({ page: nextPage }),
+    isCompact: hasCompactRows,
+    columns: hasTwoColumns ? 2 : 1,
+  })
 
   const rankedMapsParams = {
     path: {
@@ -43,7 +36,7 @@ const GuildMapsList = () => {
       difficultyStarTo: filters.stars[1],
       bpmFrom: filters.bpm[0],
       bpmTo: filters.bpm[1],
-      page: filters.page,
+      page,
       pageSize,
       categoryIds: filters.categories,
       matchAnyCategory: filters.matchAnyCategory,
@@ -67,7 +60,7 @@ const GuildMapsList = () => {
     : rankedMapsQuery.data?.data?.map((rankedMap) => ({ rankedMap, rankedScores: [] }))
 
   if (activeQuery.isLoading || !guild) {
-    return <LoadingSkeleton />
+    return <LoadingSkeleton pageSize={pageSize} />
   }
 
   return (
@@ -87,25 +80,21 @@ const GuildMapsList = () => {
   )
 }
 
-const LoadingSkeleton = () => {
-  const isDesktop = useMediaQuery("(min-width: 80rem)")
-
-  return (
-    <div>
-      <div className="leading-none font-semibold">Ranked Maps</div>
-      <div className="text-muted-foreground flex items-center gap-2 text-sm">
-        <Skeleton className="mt-1 h-3 w-18 rounded-sm" />
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        {Array.from({ length: isDesktop ? 16 : 8 }).map((_, i) => (
-          <div key={i}>
-            <GuildMapRowSkeleton />
-          </div>
-        ))}
-      </div>
+const LoadingSkeleton = ({ pageSize }: { pageSize: number }) => (
+  <div>
+    <div className="leading-none font-semibold">Ranked Maps</div>
+    <div className="text-muted-foreground flex items-center gap-2 text-sm">
+      <Skeleton className="mt-1 h-3 w-18 rounded-sm" />
     </div>
-  )
-}
+
+    <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+      {Array.from({ length: pageSize }).map((_, i) => (
+        <div key={i}>
+          <GuildMapRowSkeleton />
+        </div>
+      ))}
+    </div>
+  </div>
+)
 
 export default GuildMapsList
