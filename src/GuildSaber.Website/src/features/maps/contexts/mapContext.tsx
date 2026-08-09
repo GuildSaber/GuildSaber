@@ -1,5 +1,5 @@
 import type { RankedMap } from "@/client"
-import { createContext, type FC, useContext, type ReactNode } from "react"
+import { createContext, useContext, type FC, type ReactNode } from "react"
 
 const MapContext = createContext<RankedMap | undefined>(undefined)
 

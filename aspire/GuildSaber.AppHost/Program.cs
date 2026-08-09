@@ -61,6 +61,7 @@ var discordBot = builder.AddProject<GuildSaber_DiscordBot>("discord-bot", option
     });
 
 var website = builder.AddViteApp("website", "../../src/GuildSaber.Website")
+    .WithPnpm()
     .WithEndpoint("http", endpointAnnotation => endpointAnnotation.Port = 5044)
     .WithExternalHttpEndpoints()
     .WithReference(apiService).WaitFor(apiService);

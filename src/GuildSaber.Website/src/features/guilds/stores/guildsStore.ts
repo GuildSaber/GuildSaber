@@ -4,6 +4,7 @@ import { createJSONStorage, persist } from "zustand/middleware"
 interface GuildsStore {
   selectedGuild: number | null
   setSelectedGuild: (_guildId: number | null) => void
+  clear: () => void
 }
 
 export const useGuildsStore = create<GuildsStore>()(
@@ -16,6 +17,9 @@ export const useGuildsStore = create<GuildsStore>()(
         }
 
         set({ selectedGuild: guildId })
+      },
+      clear: () => {
+        set({ selectedGuild: null })
       },
     }),
     {

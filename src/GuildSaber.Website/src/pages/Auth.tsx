@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import AuthSetupStepper from "@/features/auth/components/AuthSetupStepper"
 import SigninOptions from "@/features/auth/components/SigninOptions"
 import { useSession } from "@/features/auth/hooks/useSession"
+import { useGuildsStore } from "@/features/guilds/stores/guildsStore"
 import { useQueryClient } from "@tanstack/react-query"
 import { CircleX, LogOut } from "lucide-react"
 import { useQueryState } from "nuqs"
@@ -14,11 +15,13 @@ import { Link } from "react-router"
 const Auth = () => {
   const queryClient = useQueryClient()
   const [error] = useQueryState("error")
+  const clearGuildsStore = useGuildsStore((state) => state.clear)
 
   const handleLogout = async () => {
     await logout()
 
     queryClient.setQueryData(getPlayerExtendedAtMeQueryKey(), null)
+    clearGuildsStore()
   }
 
   const { data: session } = useSession()
@@ -68,9 +71,9 @@ const Auth = () => {
               <SigninOptions />
 
               {error && (
-                <p className="mt-4 mb-2 flex items-center text-red-700">
-                  <CircleX className="mr-1 inline h-5 w-5" />
-                  {decodeURI(error)}
+                <p className="mt-4 mb-2 flex items-center gap-2 break-all text-red-700">
+                  <CircleX className="mr-1 inline h-5 w-5 shrink-0" />
+                  {decodeURIComponent(error.replace(/\+/g, " "))}
                 </p>
               )}
             </>

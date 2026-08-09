@@ -1,8 +1,8 @@
 import type { RankedMap } from "@/client"
 import { Badge } from "@/components/Badge"
+import { CategoryBadge, useMapCategories } from "@/features/maps/components/MapHeader/MapHeaderCategories"
 import { MAP_DIFFICULTY, MAP_GAME_MODE } from "@/utils/constants"
 import { Sparkles, Star } from "lucide-react"
-import { CategoryBadge, useMapCategories } from "./MapHeaderCategories"
 
 interface Props {
   map: RankedMap

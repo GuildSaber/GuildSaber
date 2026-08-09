@@ -14,7 +14,7 @@ const DialogArcViewer = () => {
   return (
     <AlertDialog open={open}>
       <AlertDialogContent ref={ref} className="aspect-video min-w-2/3 p-0">
-        {key && <iframe width="100%" height="100%" src={generateArcViewerUrl()} />}
+        {key && <iframe allow="fullscreen" width="100%" height="100%" src={generateArcViewerUrl()} />}
       </AlertDialogContent>
     </AlertDialog>
   )

@@ -149,7 +149,6 @@ const GuildMapsFilters = ({ categories }: Props) => {
 
       <Field>
         <FieldLabel className="flex items-center justify-between">Categories</FieldLabel>
-        <FieldDescription>Only show maps from the following categories</FieldDescription>
         <div className="flex items-center gap-2">
           <Checkbox
             id="matchAnyCategory"

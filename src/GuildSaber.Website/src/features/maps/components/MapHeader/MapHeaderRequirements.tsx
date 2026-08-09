@@ -11,7 +11,7 @@ interface Props {
   map: RankedMap
 }
 
-const Separator = () => <span className="border-border h-3.5 self-center border-l" />
+const RequirementSeparator = () => <span className="border-border h-3.5 self-center border-l" />
 
 const RequirementValue = ({ value, tooltip }: { value: string | string[]; tooltip?: string }) => {
   const [open, setOpen] = useState(false)
@@ -42,7 +42,7 @@ const RequirementValue = ({ value, tooltip }: { value: string | string[]; toolti
       <div className="flex items-center px-2 py-1 sm:px-3 sm:py-1.5">
         {value.map((v, i) => (
           <span key={v} className="flex items-center">
-            {i > 0 && <Separator />}
+            {i > 0 && <RequirementSeparator />}
             <span className={i > 0 ? "pl-1" : undefined}>{v}</span>
           </span>
         ))}
@@ -100,7 +100,6 @@ export const MapHeaderRequirements = ({ map }: Props) => {
 
   return (
     <div className="flex flex-col gap-3">
-      <hr className="border-border" />
       <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">Requirements</p>
       <div className="flex flex-wrap gap-2">
         {badges.map(({ label, value, tooltip }) => (

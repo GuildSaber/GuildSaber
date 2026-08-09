@@ -18,9 +18,10 @@ interface Props {
   totalPages: number
   showEllipsis?: boolean
   isLoading?: boolean
+  className?: string
 }
 
-const Pagination = ({ totalPages, showEllipsis = true, isLoading }: Props) => {
+const Pagination = ({ totalPages, showEllipsis = true, isLoading, className }: Props) => {
   const isMobile = useMediaQuery("(max-width: 639px)")
   const maxVisiblePages = isMobile ? 1 : 5
   const [currentPage, setCurrentPage] = useQueryState("page", parseAsInteger.withDefault(1))
@@ -32,7 +33,6 @@ const Pagination = ({ totalPages, showEllipsis = true, isLoading }: Props) => {
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page)
-      window.scrollTo({ top: 0, behavior: "smooth" })
     }
   }
 
@@ -63,7 +63,7 @@ const Pagination = ({ totalPages, showEllipsis = true, isLoading }: Props) => {
   const showEndEllipsis = showEllipsis && visiblePages[visiblePages.length - 1] < totalPages
 
   return (
-    <PaginationComponent className="sticky bottom-6 md:bottom-3">
+    <PaginationComponent className={cn("sticky bottom-6 mt-6 -ml-6 sm:ml-0 md:bottom-3", className)}>
       <PaginationContent className="bg-background rounded-lg border p-[0.2rem] select-none">
         <PaginationItem>
           <PaginationPrevious
