@@ -1,17 +1,22 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Api.Features.Guilds.Levels.Playlists.Http;
 using GuildSaber.CSharpClient;
 using GuildSaber.CSharpClient.Routes.Guilds.Levels.Playlists;
 using GuildSaber.Mod.Features.GuildSaber.Runtime;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace GuildSaber.Mod.Features.PlaylistDownloader;
 
 public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manager, Logger logger)
 {
+    private const string CoverFileName = "cover.png";
+
     public bool IsDownloading { get; private set; }
 
     /// <summary>
@@ -44,14 +49,20 @@ public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manag
             var levels = snapshot.LevelStats;
             var guildPlaylistsPath = GetGuildPlaylistsPath(currentGuildExtended.Guild);
 
+            Directory.CreateDirectory(guildPlaylistsPath);
+            await DownloadCoverAsync(
+                client.Guilds.GetLogoUrl(currentGuildExtended.Guild.Id),
+                guildPlaylistsPath
+            );
+
             var (successfulPlaylists, failedPlaylists) = (0, 0);
             foreach (var category in categories.Where(c => !categoryId.HasValue || c.Id == categoryId.Value))
             {
                 var playlistsPath = Path.Combine(guildPlaylistsPath,
                     PlaylistUtilities.SanitizeFileName(category.Info.Name));
 
-                if (!Directory.Exists(playlistsPath))
-                    Directory.CreateDirectory(playlistsPath);
+                Directory.CreateDirectory(playlistsPath);
+                await DownloadCoverAsync(client.Categories.GetLogoUrl(category.Id), playlistsPath);
 
                 foreach (var level in levels.Where(x => x.Level.CategoryId == category.Id))
                 {
@@ -98,5 +109,60 @@ public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manag
     }
 
     public string GetGuildPlaylistsPath(GuildResponses.Guild guild)
-        => Path.Combine(".", "Playlists", "GuildSaber", PlaylistUtilities.SanitizeFileName(guild.Info.Name));
+        => Path.Combine(".", "Playlists", PlaylistUtilities.SanitizeFileName(guild.Info.Name));
+
+    private async Task DownloadCoverAsync(Uri coverUri, string directoryPath)
+    {
+        try
+        {
+            using var response = await client.HttpClient.GetAsync(coverUri);
+            if (response.StatusCode == HttpStatusCode.NotFound) return;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.Warn(
+                    $"[GuildSaber/PlaylistDownloader] Failed to download cover from {coverUri}: " +
+                    $"HTTP {(int)response.StatusCode} ({response.ReasonPhrase})"
+                );
+                return;
+            }
+
+            var imageBytes = await response.Content.ReadAsByteArrayAsync();
+            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+
+            try
+            {
+                if (!texture.LoadImage(imageBytes, false))
+                {
+                    logger.Warn(
+                        $"[GuildSaber/PlaylistDownloader] Failed to decode cover from {coverUri}"
+                    );
+                    return;
+                }
+
+                var pngBytes = texture.EncodeToPNG();
+                if (pngBytes is null || pngBytes.Length == 0)
+                {
+                    logger.Warn(
+                        $"[GuildSaber/PlaylistDownloader] Failed to encode cover from {coverUri} as PNG"
+                    );
+                    return;
+                }
+
+                var coverPath = Path.Combine(directoryPath, CoverFileName);
+                await using var stream = File.Create(coverPath);
+                await stream.WriteAsync(pngBytes, 0, pngBytes.Length);
+            }
+            finally
+            {
+                Object.Destroy(texture);
+            }
+        }
+        catch (Exception exception)
+        {
+            logger.Warn(
+                $"[GuildSaber/PlaylistDownloader] Failed to save cover from {coverUri}: {exception}"
+            );
+        }
+    }
 }
