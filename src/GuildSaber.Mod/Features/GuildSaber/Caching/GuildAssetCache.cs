@@ -1,12 +1,14 @@
+extern alias ImageSharp;
+
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using B83.Image.GIF;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Helpers;
 using UnityEngine;
+using ImageSharpImage = ImageSharp::SixLabors.ImageSharp.Image;
+using ImageSharpRgba32 = ImageSharp::SixLabors.ImageSharp.PixelFormats.Rgba32;
 using Object = UnityEngine.Object;
 
 namespace GuildSaber.Mod.Features.GuildSaber.Caching;
@@ -100,15 +102,24 @@ public sealed class GuildAssetCache(
 
     private static Texture2D? LoadGif(byte[] bytes)
     {
-        using var reader = new BinaryReader(new MemoryStream(bytes));
-        var gif = new GIFLoader().Load(reader);
-        if (gif.imageData.Count == 0 || gif.screen.width == 0 || gif.screen.height == 0)
-            return null;
+        using var image = ImageSharpImage.Load<ImageSharpRgba32>(bytes);
+        if (image.Width == 0 || image.Height == 0) return null;
 
-        var texture = new Texture2D(gif.screen.width, gif.screen.height, TextureFormat.RGBA32, false);
-        var pixels = new Color32[texture.width * texture.height];
-        gif.DrawImageTo(0, pixels, texture.width, texture.height);
-        texture.SetPixels32(pixels);
+        var texture = new Texture2D(image.Width, image.Height, TextureFormat.RGBA32, false);
+        var texturePixels = new Color32[image.Width * image.Height];
+
+        for (var sourceY = 0; sourceY < image.Height; sourceY++)
+        {
+            var destinationOffset = (image.Height - sourceY - 1) * image.Width;
+
+            for (var x = 0; x < image.Width; x++)
+            {
+                var pixel = image[x, sourceY];
+                texturePixels[destinationOffset + x] = new Color32(pixel.R, pixel.G, pixel.B, pixel.A);
+            }
+        }
+
+        texture.SetPixels32(texturePixels);
         texture.Apply();
         return texture;
     }

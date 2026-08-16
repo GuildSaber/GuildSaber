@@ -2,8 +2,6 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
-using BeatLeader.Models;
-using BeatLeader.WebRequests;
 using GuildSaber.Api.Features.RankedMaps.Http;
 using GuildSaber.Api.Shared;
 using GuildSaber.CSharpClient;
@@ -13,7 +11,6 @@ using GuildSaber.Mod.Helpers;
 using SongCore.Utilities;
 using Zenject;
 using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapResponses;
-using RequestState = BeatLeader.WebRequests.RequestState;
 
 namespace GuildSaber.Mod.Features.RankedMap;
 
@@ -22,6 +19,7 @@ public sealed class RankedMapManager(
     GuildSaberCacheStore cacheStore,
     GuildSaberClient client,
     StandardLevelDetailViewController levelDetailViewController,
+    StandardLevelScenesTransitionSetupDataSO standardLevelScenesTransitionSetupData,
     Logger logger) : IInitializable, IDisposable
 {
     private static readonly TimeSpan _rankedMapsCacheDuration = TimeSpan.FromMinutes(15);
@@ -50,10 +48,8 @@ public sealed class RankedMapManager(
         levelDetailViewController.didChangeDifficultyBeatmapEvent += OnDifficultyChanged;
         levelDetailViewController.didChangeContentEvent -= OnContentChanged;
         levelDetailViewController.didChangeContentEvent += OnContentChanged;
-
-#pragma warning disable CS0618
-        UploadReplayRequest.StateChangedEvent += OnUploadReplayStateChanged;
-#pragma warning restore CS0618
+        standardLevelScenesTransitionSetupData.didFinishEvent -= OnLevelDidFinish;
+        standardLevelScenesTransitionSetupData.didFinishEvent += OnLevelDidFinish;
     }
 
     public void Dispose()
@@ -62,35 +58,25 @@ public sealed class RankedMapManager(
         guildSaberManager.StateChanged -= OnRuntimeStateChanged;
         levelDetailViewController.didChangeDifficultyBeatmapEvent -= OnDifficultyChanged;
         levelDetailViewController.didChangeContentEvent -= OnContentChanged;
-
-        try
-        {
-#pragma warning disable CS0618
-            UploadReplayRequest.StateChangedEvent -= OnUploadReplayStateChanged;
-#pragma warning restore CS0618
-        }
-        catch
-        {
-            // ignored because beatleader might dispose it before we do (false warning in logs if not ignored).
-        }
+        standardLevelScenesTransitionSetupData.didFinishEvent -= OnLevelDidFinish;
     }
 
-    private async void OnUploadReplayStateChanged(
-        IWebRequest<ScoreUploadResponse> instance, RequestState state, string? failReason)
+    private async void OnLevelDidFinish(
+        StandardLevelScenesTransitionSetupDataSO _, LevelCompletionResults levelCompletionResults)
     {
         try
         {
-            if (state != RequestState.Finished)
+            if (levelCompletionResults.levelEndStateType != LevelCompletionResults.LevelEndStateType.Cleared)
                 return;
 
-            logger.Debug("Refreshing ranked map data after BeatLeader replay upload...");
+            logger.Debug("Refreshing ranked map data after level completion...");
 
             await Task.Delay(5000);
             await RefreshAfterCurrentRankedMapPassAsync();
         }
         catch (Exception exception)
         {
-            logger.Error($"Error refreshing ranked map after BeatLeader replay upload: {exception}");
+            logger.Error($"Error refreshing ranked map after level completion: {exception}");
         }
     }
 
