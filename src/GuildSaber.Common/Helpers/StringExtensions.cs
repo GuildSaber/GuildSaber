@@ -23,7 +23,7 @@ public static class StringExtensions
 
             var tmp = value[..length];
             if (tmp.LastIndexOf(' ') > 0)
-                returnValue = tmp[..tmp.LastIndexOf(' ')] + " ...";
+                returnValue = tmp[..tmp.LastIndexOf(' ')] + " …";
             return returnValue;
         }
 
@@ -37,7 +37,11 @@ public static class StringExtensions
             if (string.IsNullOrEmpty(value) || value.Length <= length)
                 return value;
 
-            return value[..(length - 2)] + "..";
+#if NET10_0_OR_GREATER
+            return string.Concat(value.AsSpan(0, length - 1), "…");
+#else
+            return value[..(length - 2)] + "…";
+#endif
         }
     }
 }

@@ -10,6 +10,7 @@ using GuildSaber.Api.Features.Players;
 using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Api.Features.RankedScores;
 using GuildSaber.Api.Features.Scores;
+using GuildSaber.Api.Features.Website;
 using GuildSaber.Api.Setup;
 using MyCSharp.HttpUserAgentParser.AspNetCore.DependencyInjection;
 using MyCSharp.HttpUserAgentParser.DependencyInjection;
@@ -55,7 +56,8 @@ builder.Services
     .AddGuildMembersFeature()
     .AddLegacyGuildSaberFeature()
     .AddRankedScoresFeature()
-    .AddRankedMapsFeature();
+    .AddRankedMapsFeature()
+    .AddWebsiteFeature();
 
 var app = builder.Build();
 
@@ -72,7 +74,8 @@ app.UseCors()
 if (Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider")
     app.UseTickerQ();
 
-app.UseFileServer("/website");
+app.UseWebsiteFeature()
+    .UseFileServer("/website");
 
 app.MapOpenApi().CacheOutput();
 app.MapDefaultEndpoints()
