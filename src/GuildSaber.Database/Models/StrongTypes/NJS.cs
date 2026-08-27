@@ -1,8 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Database.Models.StrongTypes;
 
+[JsonConverter(typeof(NJSJsonConverter))]
 public readonly record struct NJS
 {
     private readonly float _value;
@@ -29,4 +32,15 @@ public readonly record struct NJS
 
     public override string ToString()
         => _value.ToString();
+}
+
+public sealed class NJSJsonConverter : JsonConverter<NJS>
+{
+    public override NJS Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        => NJS.TryCreate(reader.GetSingle()).TryGetValue(out var value)
+            ? value
+            : throw new JsonException("Cannot convert to NJS.");
+
+    public override void Write(Utf8JsonWriter writer, NJS value, JsonSerializerOptions options)
+        => writer.WriteNumberValue(value);
 }

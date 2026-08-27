@@ -1,8 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Database.Models.StrongTypes;
 
+[JsonConverter(typeof(Name_2_50JsonConverter))]
 public readonly record struct Name_2_50
 {
     public const int MaxLength = 50;
@@ -32,4 +35,15 @@ public readonly record struct Name_2_50
 
     public override string ToString()
         => _value;
+}
+
+public sealed class Name_2_50JsonConverter : JsonConverter<Name_2_50>
+{
+    public override Name_2_50 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        => Name_2_50.TryCreate(reader.GetString()).TryGetValue(out var value)
+            ? value
+            : throw new JsonException("Cannot convert to Name_2_50.");
+
+    public override void Write(Utf8JsonWriter writer, Name_2_50 value, JsonSerializerOptions options)
+        => writer.WriteStringValue(value.ToString());
 }

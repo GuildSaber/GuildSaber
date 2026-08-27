@@ -1,9 +1,12 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using CSharpFunctionalExtensions;
 
 namespace GuildSaber.Database.Models.StrongTypes;
 
+[JsonConverter(typeof(AccuracyJsonConverter))]
 public readonly record struct Accuracy
 {
     private readonly float _value;
@@ -47,4 +50,15 @@ public readonly record struct Accuracy
 
     public override string ToString()
         => _value.ToString(CultureInfo.InvariantCulture);
+}
+
+public sealed class AccuracyJsonConverter : JsonConverter<Accuracy>
+{
+    public override Accuracy Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        => Accuracy.TryCreate(reader.GetSingle()).TryGetValue(out var value)
+            ? value
+            : throw new JsonException("Cannot convert to Accuracy.");
+
+    public override void Write(Utf8JsonWriter writer, Accuracy value, JsonSerializerOptions options)
+        => writer.WriteNumberValue(value);
 }

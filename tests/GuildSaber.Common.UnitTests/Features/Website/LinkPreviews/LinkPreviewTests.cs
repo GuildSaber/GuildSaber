@@ -193,6 +193,11 @@ public class LinkPreviewTests
 
         var result = await service.GetAsync(preview.Id, CancellationToken.None);
         result.Should().BeEquivalentTo(preview);
+        ((float)result.DifficultyStats.NoteJumpSpeed).Should().Be(18f);
+        ((int)result.DifficultyStats.MaxScore).Should().Be(100_000);
+        ((float)result.Requirements.MinAccuracy!.Value).Should().Be(95.5f);
+        result.Categories.Select(category => category.ToString())
+            .Should().Equal("Challenge", "Tech & Flow");
     }
 
     [Test]

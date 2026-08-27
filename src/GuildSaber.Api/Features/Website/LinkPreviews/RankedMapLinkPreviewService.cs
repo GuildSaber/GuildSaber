@@ -29,8 +29,8 @@ internal sealed class RankedMapLinkPreviewService(
 
     private static Task<RankedMapLinkPreview?> GetFromDatabaseAsync(
         ServerDbContext dbContext, RankedMapId rankedMapId, CancellationToken cancellationToken) => (
-            from version in dbContext.MapVersions.AsNoTracking()
-            join map in dbContext.RankedMaps.AsNoTracking() on version.RankedMapId equals map.Id
+            from version in dbContext.MapVersions
+            join map in dbContext.RankedMaps on version.RankedMapId equals map.Id
             where version.RankedMapId == rankedMapId
             orderby version.Order, version.AddedAt
             select new RankedMapLinkPreview(
