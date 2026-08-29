@@ -1,3 +1,4 @@
+using Aspire.Hosting.Docker.Resources.ComposeNodes;
 using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -7,14 +8,26 @@ var environment = builder.ExecutionContext.IsRunMode
     : builder.AddParameter("ASPNETCORE-ENVIRONMENT");
 
 builder.AddDockerComposeEnvironment("guildsaber-env")
-    .WithDashboard(enabled: false);
+    .WithDashboard(enabled: false)
+    .ConfigureComposeFile(composeFile => composeFile
+        // Hosted using dokploy, we must add it to the dokploy-network for traefik routing.
+        .AddNetwork(new Network
+        {
+            Name = "dokploy-network",
+            Driver = "overlay",
+            External = true
+        }));
 
-var postgres = builder.AddPostgres("postgres", port: 5432)
-    //TODO: Update to 18.x when migration is figured out.
-    .WithImageTag("17.6")
+var postgres = builder.AddPostgres("postgres")
+    .WithImageTag("18.3")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume(isReadOnly: false)
-    .PublishAsDockerComposeService((_, service) => service.Restart = "unless-stopped");
+    .PublishAsDockerComposeService((_, service) =>
+    {
+        service.Restart = "unless-stopped";
+        service.Ports = ["5432:{DB_HOST_PORT}"];
+        service.Expose = [];
+    });
 
 postgres.WithPgWeb(option => option
         .WithParentRelationship(postgres)
@@ -46,6 +59,9 @@ var apiService = builder.AddProject<GuildSaber_Api>("api", options => options.Ex
     {
         service.PullPolicy = "always";
         service.Restart = "unless-stopped";
+
+        // Add to dokploy-network for traefik routing
+        service.Networks.Add("dokploy-network");
     });
 
 var discordBot = builder.AddProject<GuildSaber_DiscordBot>("discord-bot", option => option.ExcludeLaunchProfile = true)

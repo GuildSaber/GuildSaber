@@ -8,6 +8,7 @@ using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Result;
 using GuildSaber.CSharpClient;
+using OculusStudios.Platform.Core;
 using Zenject;
 using static GuildSaber.Api.Features.Guilds.Members.ContextStats.Http.ContextStatResponses;
 using static GuildSaber.Api.Features.Guilds.Members.LevelStats.Http.LevelStatResponses;
@@ -19,7 +20,7 @@ namespace GuildSaber.Mod.Features.GuildSaber.Runtime;
 public sealed class GuildSaberManager(
     GuildSaberClient client,
     GuildSaberConfig config,
-    IPlatformUserModel platformUserModel,
+    IPlatform platform,
     Logger logger
 ) : IInitializable, IDisposable
 {
@@ -52,12 +53,11 @@ public sealed class GuildSaberManager(
     private async Task LoadInitialStateAsync(CancellationToken token)
     {
         logger.Info("Initializing GuildSaber runtime...");
-        var userInfo = await platformUserModel.GetUserInfo(token);
 
         // Throw if cancellation requested manually because the underlying GetUserInfo API doesn't use the token.
         token.ThrowIfCancellationRequested();
 
-        if (!BeatLeaderId.TryParse(userInfo.platformUserId)
+        if (!BeatLeaderId.TryCreate(platform.user.userId)
                 .TryGetValue(out var beatLeaderId, out var parseError))
         {
             Publish(new Failed($"Failed to identify the local BeatLeader player: {parseError}"));
