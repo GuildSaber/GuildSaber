@@ -9,9 +9,9 @@ namespace GuildSaber.Common.StrongTypes;
 public readonly record struct SteamId
 {
     /// <summary>
-    /// A steamId is a 17-digit number, so the minimum value is 10^16.
+    /// A steamId is a 17-digit number starting at 7xx.
     /// </summary>
-    public const ulong MinValue = 10_000_000_000_000_000;
+    public const ulong MinValue = 70_000_000_000_000_000;
 
     /// <summary>
     /// A steamId is a 17-digit number, so the maximum value is 10^17 - 1.
