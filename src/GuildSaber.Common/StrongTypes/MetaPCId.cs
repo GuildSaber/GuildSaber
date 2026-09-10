@@ -14,9 +14,9 @@ public readonly record struct MetaPCId
     public const ulong MinValue = 100_000_000_000_000;
 
     /// <summary>
-    /// A metaPCId is at most a 16-digit number, so the maximum value is 10^16 - 1.
+    /// A metaPCId is at most a 17-digit number under 7xx.
     /// </summary>
-    public const ulong MaxValue = 9_999_999_999_999_999;
+    public const ulong MaxValue = 69_999_999_999_999_999;
 
     private readonly ulong _value;
     private MetaPCId(ulong value) => _value = value;
