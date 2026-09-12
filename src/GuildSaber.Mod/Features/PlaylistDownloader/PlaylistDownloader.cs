@@ -3,13 +3,14 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using GuildSaber.Api.Features.Guilds.Achievements.Playlists.Http;
 using GuildSaber.Api.Features.Guilds.Http;
-using GuildSaber.Api.Features.Guilds.Levels.Playlists.Http;
 using GuildSaber.CSharpClient;
-using GuildSaber.CSharpClient.Routes.Guilds.Levels.Playlists;
+using GuildSaber.CSharpClient.Routes.Guilds.Achievements.Playlists;
 using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using UnityEngine;
 using Object = UnityEngine.Object;
+using static GuildSaber.Api.Features.Guilds.Achievements.Http.AchievementResponses;
 
 namespace GuildSaber.Mod.Features.PlaylistDownloader;
 
@@ -29,12 +30,17 @@ public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manag
     /// </summary>
     public event Action<string, string, bool>? EventUniquePlaylistDownloadCompleted;
 
-    public Task DownloadPlaylistsAsync(CategoryId categoryId) => DownloadPlaylistsAsync(-1, int.MaxValue, categoryId);
+    public Task DownloadPlaylistsAsync(CategoryId categoryId)
+        => DownloadPlaylistsAsync(-1, int.MaxValue, categoryId, includeUnordered: true);
 
     public Task DownloadPlaylistsAsync()
-        => DownloadPlaylistsAsync(rangeMin: -1, rangeMax: int.MaxValue, categoryId: null);
+        => DownloadPlaylistsAsync(rangeMin: -1, rangeMax: int.MaxValue, categoryId: null, includeUnordered: true);
 
     public async Task DownloadPlaylistsAsync(int rangeMin, int rangeMax, CategoryId? categoryId)
+        => await DownloadPlaylistsAsync(rangeMin, rangeMax, categoryId, includeUnordered: false);
+
+    private async Task DownloadPlaylistsAsync(
+        int rangeMin, int rangeMax, CategoryId? categoryId, bool includeUnordered)
     {
         if (IsDownloading) throw new InvalidOperationException("Already downloading playlists");
         if (manager.State is not GuildSaberRuntimeState.Ready(var snapshot))
@@ -46,7 +52,7 @@ public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manag
         {
             var currentGuildExtended = snapshot.CurrentGuildExtended;
             var categories = currentGuildExtended.Categories;
-            var levels = snapshot.LevelStats;
+            var achievements = snapshot.AchievementStats;
             var guildPlaylistsPath = GetGuildPlaylistsPath(currentGuildExtended.Guild);
 
             Directory.CreateDirectory(guildPlaylistsPath);
@@ -64,27 +70,37 @@ public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manag
                 Directory.CreateDirectory(playlistsPath);
                 await DownloadCoverAsync(client.Categories.GetLogoUrl(category.Id), playlistsPath);
 
-                foreach (var level in levels.Where(x => x.Level.CategoryId == category.Id))
+                foreach (var achievementStat in achievements.Where(x => x.Achievement.CategoryId == category.Id))
                 {
-                    if (level.Level.Order < rangeMin || level.Level.Order > rangeMax) continue;
-                    if (categoryId.HasValue && level.Level.CategoryId != categoryId) continue;
+                    if (achievementStat.Achievement.Progression is AchievementProgression.Ordered progression)
+                    {
+                        if (progression.Order < rangeMin || progression.Order > rangeMax) continue;
+                    }
+                    else if (!includeUnordered)
+                    {
+                        continue;
+                    }
+
+                    if (categoryId.HasValue && achievementStat.Achievement.CategoryId != categoryId) continue;
 
                     var response = await client.Playlists
-                        .GetByLevelIdAsync(level.Level.Id, PlaylistRequests.PlaylistFilter.None, null);
+                        .GetByAchievementIdAsync(
+                            achievementStat.Achievement.Id, PlaylistRequests.PlaylistFilter.None, null);
 
                     if (!response.TryGetValue(out var resultPlaylist, out var error) || resultPlaylist is null)
                     {
                         logger.Error(
-                            $"[GuildSaber/PlaylistDownloader] Failed to download playlist for {level.Level.Info.Name}: {error}"
+                            $"[GuildSaber/PlaylistDownloader] Failed to download playlist for {achievementStat.Achievement.Info.Name}: {error}"
                         );
 
                         failedPlaylists += 1;
-                        EventUniquePlaylistDownloadCompleted?.Invoke(category.Info.Name, level.Level.Info.Name, false);
+                        EventUniquePlaylistDownloadCompleted?.Invoke(
+                            category.Info.Name, achievementStat.Achievement.Info.Name, false);
                         continue;
                     }
 
                     var playlistFilename = PlaylistUtilities.GetPlaylistFileName(
-                        level.Level,
+                        achievementStat.Achievement,
                         currentGuildExtended
                     );
 
@@ -95,7 +111,8 @@ public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manag
                     await client.Playlists.WriteToStream(stream, resultPlaylist.Value);
 
                     successfulPlaylists += 1;
-                    EventUniquePlaylistDownloadCompleted?.Invoke(category.Info.Name, level.Level.Info.Name, true);
+                    EventUniquePlaylistDownloadCompleted?.Invoke(
+                        category.Info.Name, achievementStat.Achievement.Info.Name, true);
                 }
             }
 

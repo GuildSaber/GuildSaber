@@ -53,11 +53,12 @@ public class BeatLeaderScoreSyncWorker(
 
         var cache = scope.ServiceProvider.GetRequiredService<HybridCache>();
         var pointStatsLogger = scope.ServiceProvider.GetRequiredService<ILogger<MemberPointStatsPipeline>>();
-        var levelStatsLogger = scope.ServiceProvider.GetRequiredService<ILogger<MemberLevelStatsPipeline>>();
+        var achievementStatsLogger = scope.ServiceProvider
+            .GetRequiredService<ILogger<MemberAchievementStatsPipeline>>();
 
         var scoreAddOrUpdatePipeline = new ScoreAddOrUpdatePipeline(dbContext, serviceScopeFactory, cache);
         var memberPointStatsPipeline = new MemberPointStatsPipeline(dbContext, pointStatsLogger);
-        var memberLevelStatsPipeline = new MemberLevelStatsPipeline(dbContext, levelStatsLogger);
+        var memberAchievementStatsPipeline = new MemberAchievementStatsPipeline(dbContext, achievementStatsLogger);
 
         do
         {
@@ -93,7 +94,7 @@ public class BeatLeaderScoreSyncWorker(
                 foreach (var context in pipelineResult.ImpactedContextsWithPoints)
                 {
                     await memberPointStatsPipeline.ExecuteAsync(playerId, context);
-                    await memberLevelStatsPipeline.ExecuteAsync(playerId, context.GuildId, context.Id,
+                    await memberAchievementStatsPipeline.ExecuteAsync(playerId, context.GuildId, context.Id,
                         context.Points.FirstOrDefault()?.Id ?? default);
                 }
             }

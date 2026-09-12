@@ -10,8 +10,9 @@ using GuildSaber.Common.Services.LegacyGuildSaber;
 using GuildSaber.Common.Services.LegacyGuildSaber.Models;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Mappers;
+using GuildSaber.Database.Models.Server.Guilds.Achievements;
+using GuildSaber.Database.Models.Server.Guilds.Achievements.Types;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
-using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore;
@@ -26,13 +27,15 @@ public class LegacyGuildSaberMapImportPipeline(
     LegacyGuildSaberApi legacyGuildSaberApi,
     RankedMapService rankedMapService,
     MemberPointStatsPipeline memberPointStatsPipeline,
-    MemberLevelStatsPipeline memberLevelStatsPipeline,
+    MemberAchievementStatsPipeline memberAchievementStatsPipeline,
     ILogger<LegacyGuildSaberMapImportPipeline> logger)
 {
-    private readonly record struct LegacyLevelKey(LegacyLevelId LevelId, LegacyCategoryId CategoryId);
+    private readonly record struct LegacyAchievementKey(
+        LegacyLevelId LegacyLevelId,
+        LegacyCategoryId LegacyCategoryId);
 
     /// <remarks>
-    /// Importing guild with levels being floating points is currently unsupported.
+    /// Importing legacy achievements with fractional orders is currently unsupported.
     /// (Solution: write a fallback to the default ordering SQL logic if such import is needed.)
     /// </remarks>
     public async Task ExecuteAsync(
@@ -51,7 +54,7 @@ public class LegacyGuildSaberMapImportPipeline(
         };
 
         var categoryDict = await SyncCategoriesWithLegacyAsync(guildId, token);
-        var levelDict = await SyncLevelsWithLegacyAsync(guildId, contextId, categoryDict, token);
+        var achievementDict = await SyncAchievementsWithLegacyAsync(guildId, contextId, categoryDict, token);
 
         var rankedMapIdsToRemove = await dbContext.RankedMaps.Where(x => x.GuildId == guildId)
             .Select(x => x.Id)
@@ -68,14 +71,14 @@ public class LegacyGuildSaberMapImportPipeline(
             {
                 var existingRankedMaps = await dbContext.RankedMaps
                     .Include(x => x.Categories)
-                    .Include(x => x.Levels)
+                    .Include(x => x.Achievements)
                     .Where(MapDifficultyIsAlreadyRankedOnGuild(
                         guildId, difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId!.Value,
                         difficulty.GameModeName!, dbContext))
                     .ToArrayAsync(token);
 
-                var levelKey = new LegacyLevelKey(difficulty.LevelId, new LegacyCategoryId(0));
-                var level = levelDict[levelKey];
+                var achievementKey = new LegacyAchievementKey(difficulty.LevelId, new LegacyCategoryId(0));
+                var achievement = achievementDict[achievementKey];
 
                 var requirements = new RankedMapRequests.RankedMapRequirements(
                     NeedConfirmation: difficulty.Requirements.HasFlag(ERequirements.NeedAdminConfirmation),
@@ -89,27 +92,24 @@ public class LegacyGuildSaberMapImportPipeline(
                         ? (int)((float)difficulty.MinScoreRequirement / difficulty.MaxScore * 100f)
                         : null);
                 var manualRating = new RankedMapRequests.ManualRating(
-                    DifficultyStar: level.Order,
+                    DifficultyStar: achievement.MinStar,
                     AccuracyStar: null);
                 int[] categoryIds = difficulty.GuildCategoryId.HasValue && difficulty.GuildCategoryId != 0
                     ? [categoryDict[difficulty.GuildCategoryId.Value].Id]
                     : [];
-                int[] levelIds = difficulty.GuildCategoryId.HasValue && difficulty.GuildCategoryId != 0
-                    ? [level.Id, levelDict[new LegacyLevelKey(difficulty.LevelId, difficulty.GuildCategoryId.Value)].Id]
-                    : [level.Id];
 
                 if (existingRankedMaps.Length > 0)
                 {
                     var currentMap = existingRankedMaps[0];
                     rankedMapIdsToRemove.Remove(currentMap.Id);
 
-                    if (MapShouldBeUpdated(currentMap, requirements, manualRating, categoryIds, levelIds))
+                    if (MapShouldBeUpdated(currentMap, requirements, manualRating, categoryIds))
                         _ = await UpdateMapAsync(currentMap.Id, contextId,
                             new RankedMapRequests.UpdateRankedMap(
                                 Requirements: requirements,
                                 ManualRating: manualRating,
                                 CategoryIds: categoryIds,
-                                LevelIds: levelIds), token);
+                                AchievementIds: []), token);
 
                     continue;
                 }
@@ -136,7 +136,7 @@ public class LegacyGuildSaberMapImportPipeline(
                     ManualRating: manualRating,
                     Requirements: requirements,
                     CategoryIds: categoryIds,
-                    LevelIds: levelIds
+                    AchievementIds: []
                 ), retryCount: 3, token);
             }
         }
@@ -179,7 +179,7 @@ public class LegacyGuildSaberMapImportPipeline(
         {
             await memberPointStatsPipeline.ExecuteAsync(playerId, context);
             foreach (var point in context.Points)
-                await memberLevelStatsPipeline.ExecuteAsync(playerId, context.GuildId, context.Id, point.Id);
+                await memberAchievementStatsPipeline.ExecuteAsync(playerId, context.GuildId, context.Id, point.Id);
         }
 
         logger.LogInformation("Completed recalculating member stats for affected players in guild {GuildId}", guildId);
@@ -188,12 +188,13 @@ public class LegacyGuildSaberMapImportPipeline(
 
     private bool MapShouldBeUpdated(
         RankedMap currentMap, RankedMapRequests.RankedMapRequirements requirements,
-        RankedMapRequests.ManualRating manualRating, int[] categoryIds, int[] levelIds)
+        RankedMapRequests.ManualRating manualRating, int[] categoryIds)
     {
         if (!currentMap.Categories.All(x => categoryIds.Contains(x.Id)))
             return true;
 
-        if (!currentMap.Levels.All(x => levelIds.Contains(x.Id)))
+        // Legacy star achievements are dynamic; any direct association is stale.
+        if (currentMap.Achievements.Count != 0)
             return true;
 
         // Requirements being a record, we can just compare them directly for equality.
@@ -314,95 +315,121 @@ public class LegacyGuildSaberMapImportPipeline(
             .ToDictionary(x => x.Old.Id, x => x.New);
     }
 
-    private async Task<Dictionary<LegacyLevelKey, RankedMapListLevel>> SyncLevelsWithLegacyAsync(
+    private async Task<Dictionary<LegacyAchievementKey, DiffStarAchievement>> SyncAchievementsWithLegacyAsync(
         GuildId guildId, ContextId contextId, Dictionary<LegacyCategoryId, Category> categories,
         CancellationToken token)
     {
-        var levels = await dbContext.Levels
+        var achievements = await dbContext.Achievements
             .AsTracking()
-            .OfType<RankedMapListLevel>()
             .Where(x => x.GuildId == guildId && x.ContextId == contextId)
+            .OfType<DiffStarAchievement>()
             .ToListAsync(token);
         if (!(await legacyGuildSaberApi.GetRankingLevelsAsync(guildId)).TryGetValue(out var legacyLevels))
             return [];
 
-        var result = new Dictionary<LegacyLevelKey, RankedMapListLevel>();
+        var result = new Dictionary<LegacyAchievementKey, DiffStarAchievement>();
         foreach (var legacyLevel in legacyLevels)
         {
-            var levelName = $"Lvl {legacyLevel.LevelNumber:G}";
-            var level = levels.FirstOrDefault(x =>
+            var minStar = new RankedMapRating.DifficultyStar(legacyLevel.LevelNumber);
+            var maxStar = GetLegacyExclusiveMaxStar(legacyLevel.LevelNumber);
+            var progressionOrder = GetLegacyProgressionOrder(legacyLevel.LevelNumber);
+            var achievementName = $"Lvl {legacyLevel.LevelNumber:G}";
+            var achievement = achievements.FirstOrDefault(x =>
                 x.GuildId == guildId &&
                 x.ContextId == contextId &&
                 x.CategoryId == null &&
-                x.Info.Name == levelName);
-            if (level is null)
+                x.Info.Name == achievementName);
+            if (achievement is null)
             {
-                level = new RankedMapListLevel
-                {
-                    GuildId = guildId,
-                    ContextId = contextId,
-                    CategoryId = null,
-                    Info = new LevelInfo
+                achievement = new DiffStarAchievement
+                (
+                    id: default,
+                    guildId: guildId,
+                    contextId: contextId,
+                    categoryId: null,
+                    info: new AchievementInfo
                     {
-                        Name = Name_2_50.CreateUnsafe(levelName).Value,
+                        Name = Name_2_50.CreateUnsafe(achievementName).Value,
                         Color = Color.FromArgb(legacyLevel.Color)
                     },
-                    DiscordInfo = new LevelDiscordInfo(DiscordRoleId.TryCreate(legacyLevel.DiscordRoleId)
+                    discordBindings: new AchievementDiscordBindings(DiscordRoleId.TryCreate(legacyLevel.DiscordRoleId)
                         .Match(roleId => (DiscordRoleId?)roleId, _ => null)),
-                    Order = (uint)Math.Round(legacyLevel.LevelNumber),
-                    IsLocking = true,
-                    RequiredPassCount = 1
-                };
+                    progressionOrder: progressionOrder,
+                    isLocking: progressionOrder is not null,
+                    unlockXp: Xp.TryCreate(0).GetValueOrDefault(),
+                    requiredPassCount: 1,
+                    minStar: minStar,
+                    maxStar: maxStar
+                );
 
-                dbContext.Levels.Add(level);
+                dbContext.Achievements.Add(achievement);
             }
             else
             {
-                level.Info = level.Info with { Color = Color.FromArgb(legacyLevel.Color) };
-                level.DiscordInfo = new LevelDiscordInfo(DiscordRoleId.TryCreate(legacyLevel.DiscordRoleId)
+                achievement.Info = achievement.Info with { Color = Color.FromArgb(legacyLevel.Color) };
+                achievement.DiscordBindings = new AchievementDiscordBindings(DiscordRoleId
+                    .TryCreate(legacyLevel.DiscordRoleId)
                     .Match(roleId => (DiscordRoleId?)roleId, _ => null));
             }
 
-            result[new LegacyLevelKey(legacyLevel.Id, new LegacyCategoryId(0))] = level;
+            achievement.MinStar = minStar;
+            achievement.MaxStar = maxStar;
+            achievement.ProgressionOrder = progressionOrder;
+            achievement.IsLocking = progressionOrder is not null;
+
+            result[new LegacyAchievementKey(legacyLevel.Id, new LegacyCategoryId(0))] = achievement;
 
             foreach (var (legacyCategoryId, category) in categories)
             {
-                var categoryLevelName = $"Lvl {legacyLevel.LevelNumber:G}";
-                var categoryLevel = levels.FirstOrDefault(x =>
+                var categoryAchievementName = $"Lvl {legacyLevel.LevelNumber:G}";
+                var categoryAchievement = achievements.FirstOrDefault(x =>
                     x.GuildId == guildId &&
                     x.ContextId == contextId &&
                     x.CategoryId == category.Id &&
-                    x.Info.Name == categoryLevelName);
-                if (categoryLevel is null)
+                    x.Info.Name == categoryAchievementName);
+                if (categoryAchievement is null)
                 {
-                    categoryLevel = new RankedMapListLevel
-                    {
-                        GuildId = guildId,
-                        ContextId = contextId,
-                        CategoryId = category.Id,
-                        Info = new LevelInfo
+                    categoryAchievement = new DiffStarAchievement(
+                        id: default,
+                        guildId: guildId,
+                        contextId: contextId,
+                        categoryId: category.Id,
+                        info: new AchievementInfo
                         {
-                            Name = Name_2_50.CreateUnsafe(categoryLevelName)
+                            Name = Name_2_50.CreateUnsafe(categoryAchievementName)
                                 .Value,
                             Color = Color.FromArgb(legacyLevel.Color)
                         },
-                        DiscordInfo = new LevelDiscordInfo(DiscordRoleId.TryCreate(legacyLevel.DiscordRoleId)
+                        discordBindings: new AchievementDiscordBindings(DiscordRoleId
+                            .TryCreate(legacyLevel.DiscordRoleId)
                             .GetValueOrDefault()),
-                        Order = (uint)Math.Round(legacyLevel.LevelNumber),
-                        IsLocking = true,
-                        RequiredPassCount = 1
-                    };
+                        progressionOrder: progressionOrder,
+                        isLocking: progressionOrder is not null,
+                        unlockXp: Xp.CreateUnsafe(0).Value,
+                        minStar: minStar,
+                        requiredPassCount: 1,
+                        maxStar: maxStar
+                    );
 
-                    dbContext.Levels.Add(categoryLevel);
+                    dbContext.Achievements.Add(categoryAchievement);
                 }
                 else
                 {
-                    categoryLevel.Info = categoryLevel.Info with { Color = Color.FromArgb(legacyLevel.Color) };
-                    categoryLevel.DiscordInfo = new LevelDiscordInfo(DiscordRoleId.TryCreate(legacyLevel.DiscordRoleId)
+                    categoryAchievement.Info = categoryAchievement.Info with
+                    {
+                        Color = Color.FromArgb(legacyLevel.Color)
+                    };
+                    categoryAchievement.DiscordBindings = new AchievementDiscordBindings(DiscordRoleId
+                        .TryCreate(legacyLevel.DiscordRoleId)
                         .GetValueOrDefault());
                 }
 
-                result[new LegacyLevelKey(legacyLevel.Id, legacyCategoryId)] = categoryLevel;
+                categoryAchievement.MinStar = minStar;
+                categoryAchievement.MaxStar = maxStar;
+                categoryAchievement.ProgressionOrder = progressionOrder;
+                categoryAchievement.IsLocking = progressionOrder is not null;
+
+                result[new LegacyAchievementKey(legacyLevel.Id, legacyCategoryId)] = categoryAchievement;
             }
         }
 
@@ -411,6 +438,12 @@ public class LegacyGuildSaberMapImportPipeline(
 
         return result;
     }
+
+    internal static RankedMapRating.DifficultyStar GetLegacyExclusiveMaxStar(float minStar)
+        => new(MathF.Floor(minStar) + 1);
+
+    internal static uint? GetLegacyProgressionOrder(float legacyLevelNumber)
+        => legacyLevelNumber == 100 ? null : (uint)Math.Round(legacyLevelNumber);
 
     private static Expression<Func<RankedMap, bool>> MapDifficultyIsAlreadyRankedOnGuild(
         GuildId guildId, EDifficulty difficulty, BeatSaverKey beatSaverKey, string gameMode,

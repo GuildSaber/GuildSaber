@@ -18,8 +18,6 @@ internal sealed class PlayerCardActionsView : XUIVLayout
     private GuildSelector _guildSelector = null!;
     private bool _rendering;
 
-    public static Vector2 Size => new(55, 42);
-
     private PlayerCardActionsView(
         PlayerCardResources resources,
         PlayerCardGuildPicker guildPicker,
@@ -50,6 +48,8 @@ internal sealed class PlayerCardActionsView : XUIVLayout
                 .BuildUI(layout.transform);
         });
     }
+
+    public static Vector2 Size => new(55, 42);
 
     public static PlayerCardActionsView Make(
         PlayerCardResources resources, PlayerCardGuildPicker guildPicker, Action<PlayerCardActionMessage> send)
@@ -98,9 +98,6 @@ internal sealed class GuildSelector : XUIHLayout
     private readonly GuildIconButton[] _guildButtons;
     private readonly Texture2D _placeholder;
 
-    public event Action<GuildId>? GuildSelected;
-    public event Action? PickerRequested;
-
     private GuildSelector(Texture2D downArrow, Texture2D placeholder) : base("GuildSelector")
     {
         _placeholder = placeholder;
@@ -112,7 +109,7 @@ internal sealed class GuildSelector : XUIHLayout
         OnReady(element =>
         {
             Make([
-                .._guildButtons,
+                .. _guildButtons,
                 XUIIconButton.Make(() => PickerRequested?.Invoke())
                     .SetSprite(Sprite.Create(
                         texture: downArrow,
@@ -126,6 +123,9 @@ internal sealed class GuildSelector : XUIHLayout
             SetBackgroundColor(Color.black.WithAlpha(1f));
         });
     }
+
+    public event Action<GuildId>? GuildSelected;
+    public event Action? PickerRequested;
 
     public void Render(ImmutableArray<PlayerCardGuild> guilds)
     {

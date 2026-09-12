@@ -2,6 +2,27 @@ namespace GuildSaber.Common.Helpers;
 
 public static class TaskExtensions
 {
+    /// <remarks>Used because sometime you need to do non-returning async work in parallel (like discord deferred responses)</remarks>
+    public static async Task<T> WhenAll<T>(this (Task, Task<T>) tasks)
+    {
+        await Task.WhenAll(tasks.Item1, tasks.Item2);
+        return tasks.Item2.Result;
+    }
+
+    /// <remarks>Used because sometime you need to do non-returning async work in parallel (like discord deferred responses)</remarks>
+    public static async Task<(T, U)> WhenAll<T, U>(this (Task, Task<T>, Task<U>) tasks)
+    {
+        await Task.WhenAll(tasks.Item1, tasks.Item2, tasks.Item3);
+        return (tasks.Item2.Result, tasks.Item3.Result);
+    }
+
+    /// <remarks>Used because sometime you need to do non-returning async work in parallel (like discord deferred responses)</remarks>
+    public static async Task<(T, U, K)> WhenAll<T, U, K>(this (Task, Task<T>, Task<U>, Task<K>) tasks)
+    {
+        await Task.WhenAll(tasks.Item1, tasks.Item2, tasks.Item3, tasks.Item4);
+        return (tasks.Item2.Result, tasks.Item3.Result, tasks.Item4.Result);
+    }
+
     public static async Task<(T, U)> WhenAll<T, U>(this (Task<T>, Task<U>) tasks)
     {
         await Task.WhenAll(tasks.Item1, tasks.Item2);

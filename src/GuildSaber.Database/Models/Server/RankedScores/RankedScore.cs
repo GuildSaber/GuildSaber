@@ -38,6 +38,8 @@ public abstract class RankedScore : IComparable<RankedScore>
 
     public ERankedScoreType Type { get; private init; }
 
+    public enum ERankedScoreType : byte { Valid = 0, Invalid = 1, Pending = 2, Accepted = 3, Refused = 4 }
+
     public int CompareTo(RankedScore? other) => other switch
     {
         // Surely this score is better than a non-existing one.
@@ -80,8 +82,6 @@ public abstract class RankedScore : IComparable<RankedScore>
             }
         }
     };
-
-    public enum ERankedScoreType : byte { Valid = 0, Invalid = 1, Pending = 2, Accepted = 3, Refused = 4 }
 
     /// <summary>
     /// Compares this score with another score by preferring BeatLeader as an underlying score preference.

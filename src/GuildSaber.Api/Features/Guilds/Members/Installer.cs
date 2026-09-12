@@ -7,6 +7,6 @@ public static class GuildMembersInstaller
     public static IServiceCollection AddGuildMembersFeature(this IServiceCollection services) => services
         .AddScoped<MemberService>()
         .AddTransient<MemberPointStatsPipeline>()
-        .AddTransient<MemberLevelStatsPipeline>()
+        .AddTransient<MemberAchievementStatsPipeline>()
         .AddTransient<MemberJoinPipeline>();
 }

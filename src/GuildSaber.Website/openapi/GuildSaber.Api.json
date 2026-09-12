@@ -1,5 +1,5 @@
 {
-  "openapi": "3.1.1",
+  "openapi": "3.2.0",
   "info": {
     "title": "GuildSaber.Api | v1",
     "version": "1.0.0"
@@ -252,23 +252,6 @@
               }
             }
           },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-                  "title": "Not Found",
-                  "status": 404,
-                  "instance": "POST contexts/{contextId}/ranked-scores/scores/{scoreId}/set-confirmed",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
           "400": {
             "description": "Bad Request",
             "content": {
@@ -281,6 +264,23 @@
                   "title": "Bad Request",
                   "status": 400,
                   "detail": null,
+                  "instance": "POST contexts/{contextId}/ranked-scores/scores/{scoreId}/set-confirmed",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
                   "instance": "POST contexts/{contextId}/ranked-scores/scores/{scoreId}/set-confirmed",
                   "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
                 }
@@ -336,23 +336,6 @@
               }
             }
           },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-                  "title": "Not Found",
-                  "status": 404,
-                  "instance": "POST contexts/{contextId}/ranked-scores/scores/{scoreId}/set-refused",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
           "400": {
             "description": "Bad Request",
             "content": {
@@ -365,6 +348,23 @@
                   "title": "Bad Request",
                   "status": 400,
                   "detail": null,
+                  "instance": "POST contexts/{contextId}/ranked-scores/scores/{scoreId}/set-refused",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
                   "instance": "POST contexts/{contextId}/ranked-scores/scores/{scoreId}/set-refused",
                   "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
                 }
@@ -420,24 +420,6 @@
               }
             }
           },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-                  "title": "Not Found",
-                  "status": 404,
-                  "detail": null,
-                  "instance": "POST contexts/{contextId}/ranked-scores/scores/{scoreId}/revert-to-pending",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
           "400": {
             "description": "Bad Request",
             "content": {
@@ -449,6 +431,24 @@
                   "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
                   "title": "Bad Request",
                   "status": 400,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/ranked-scores/scores/{scoreId}/revert-to-pending",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
                   "detail": null,
                   "instance": "POST contexts/{contextId}/ranked-scores/scores/{scoreId}/revert-to-pending",
                   "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
@@ -1502,7 +1502,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PagedListOfRankedMap"
+                  "$ref": "#/components/schemas/PagedListOfRankedMapSimple"
                 }
               }
             }
@@ -1542,7 +1542,25 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RankedMap"
+                  "$ref": "#/components/schemas/RankedMapSimple"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/ranked-maps/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
                 }
               }
             }
@@ -1596,29 +1614,6 @@
                   "detail": null,
                   "instance": "POST contexts/{contextId}/ranked-maps/",
                   "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-                  "title": "One or more validation errors occurred.",
-                  "status": 400,
-                  "detail": null,
-                  "instance": "POST contexts/{contextId}/ranked-maps/",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
-                  "errors": {
-                    "propertyName": [
-                      "Error message"
-                    ]
-                  }
                 }
               }
             }
@@ -2141,7 +2136,25 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RankedMap"
+                  "$ref": "#/components/schemas/RankedMapSimple"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "PUT contexts/{contextId}/ranked-maps/{rankedMapId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
                 }
               }
             }
@@ -2160,29 +2173,6 @@
                   "detail": null,
                   "instance": "PUT contexts/{contextId}/ranked-maps/{rankedMapId}",
                   "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-                  "title": "One or more validation errors occurred.",
-                  "status": 400,
-                  "detail": null,
-                  "instance": "PUT contexts/{contextId}/ranked-maps/{rankedMapId}",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
-                  "errors": {
-                    "propertyName": [
-                      "Error message"
-                    ]
-                  }
                 }
               }
             }
@@ -2898,89 +2888,6 @@
         }
       }
     },
-    "/contexts/{contextId}/members/{playerId}/level-stats": {
-      "get": {
-        "tags": [
-          "Context.Members.LevelStats"
-        ],
-        "summary": "Get level stats for a guild member.",
-        "description": "Get level statistics for a specific player within a context.",
-        "operationId": "GetMemberLevelStats",
-        "parameters": [
-          {
-            "name": "contextId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "playerId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MemberLevelStat"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/contexts/{contextId}/members/@me/level-stats": {
-      "get": {
-        "tags": [
-          "Context.Members.LevelStats"
-        ],
-        "summary": "Get level stats for the current authenticated member.",
-        "description": "Get level statistics for the current authenticated player within a context.",
-        "operationId": "GetCurrentMemberLevelStats",
-        "parameters": [
-          {
-            "name": "contextId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MemberLevelStat"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "SessionCookie": [ ]
-          }
-        ]
-      }
-    },
     "/guilds/{guildId}/members": {
       "get": {
         "tags": [
@@ -3096,12 +3003,25 @@
               }
             }
           },
-          "409": {
-            "description": "Conflict",
+          "400": {
+            "description": "Bad Request",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Member"
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST guilds/{guildId}/members/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
                 }
               }
             }
@@ -3124,25 +3044,12 @@
               }
             }
           },
-          "400": {
-            "description": "Bad Request",
+          "409": {
+            "description": "Conflict",
             "content": {
-              "application/problem+json": {
+              "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-                  "title": "One or more validation errors occurred.",
-                  "status": 400,
-                  "detail": null,
-                  "instance": "POST guilds/{guildId}/members/",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
-                  "errors": {
-                    "propertyName": [
-                      "Error message"
-                    ]
-                  }
+                  "$ref": "#/components/schemas/Member"
                 }
               }
             }
@@ -3258,12 +3165,25 @@
               }
             }
           },
-          "409": {
-            "description": "Conflict",
+          "400": {
+            "description": "Bad Request",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Member"
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST guilds/{guildId}/members/{playerId}/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
                 }
               }
             }
@@ -3286,25 +3206,12 @@
               }
             }
           },
-          "400": {
-            "description": "Bad Request",
+          "409": {
+            "description": "Conflict",
             "content": {
-              "application/problem+json": {
+              "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-                  "title": "One or more validation errors occurred.",
-                  "status": 400,
-                  "detail": null,
-                  "instance": "POST guilds/{guildId}/members/{playerId}/",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
-                  "errors": {
-                    "propertyName": [
-                      "Error message"
-                    ]
-                  }
+                  "$ref": "#/components/schemas/Member"
                 }
               }
             }
@@ -3429,83 +3336,14 @@
         ]
       }
     },
-    "/levels/{levelId}/playlist": {
+    "/contexts/{contextId}/members/{playerId}/achievement-stats": {
       "get": {
         "tags": [
-          "Levels.Playlists"
+          "Context.Members.AchievementStats"
         ],
-        "summary": "Get the playlist for a ranked map list level.",
-        "description": "Get the playlist associated with a ranked map list level by its Id.",
-        "operationId": "GetLevelPlaylist",
-        "parameters": [
-          {
-            "name": "levelId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
-            }
-          },
-          {
-            "name": "filter",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/PlaylistFilter"
-            }
-          },
-          {
-            "name": "playerId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Playlist"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-                  "title": "Not Found",
-                  "status": 404,
-                  "instance": "GET levels/{levelId}/playlist/",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/context/{contextId}/levels": {
-      "get": {
-        "tags": [
-          "Context.Levels"
-        ],
-        "summary": "Get all levels in a context, optionally filtered by category.",
-        "description": "- No parameters: Returns all levels.\n- hasCategory=false: Only return levels with no category.\n- category=5: Returns levels with category 5.",
-        "operationId": "GetLevels",
+        "summary": "Get achievement stats for a guild member.",
+        "description": "Get achievement statistics for a specific player within a context.",
+        "operationId": "GetMemberAchievementStats",
         "parameters": [
           {
             "name": "contextId",
@@ -3516,18 +3354,11 @@
             }
           },
           {
-            "name": "categoryId",
-            "in": "query",
+            "name": "playerId",
+            "in": "path",
+            "required": true,
             "schema": {
               "type": "string"
-            }
-          },
-          {
-            "name": "hasCategory",
-            "in": "query",
-            "schema": {
-              "type": "boolean",
-              "default": true
             }
           }
         ],
@@ -3539,13 +3370,53 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Level"
+                    "$ref": "#/components/schemas/MemberAchievementStat"
                   }
                 }
               }
             }
           }
         }
+      }
+    },
+    "/contexts/{contextId}/members/@me/achievement-stats": {
+      "get": {
+        "tags": [
+          "Context.Members.AchievementStats"
+        ],
+        "summary": "Get achievement stats for the current authenticated member.",
+        "description": "Get achievement statistics for the current authenticated player within a context.",
+        "operationId": "GetCurrentMemberAchievementStats",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemberAchievementStat"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ]
+          }
+        ]
       }
     },
     "/guilds": {
@@ -3652,24 +3523,6 @@
               }
             }
           },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.2",
-                  "title": "Unauthorized",
-                  "status": 401,
-                  "detail": null,
-                  "instance": "POST guilds/",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
           "400": {
             "description": "Bad Request",
             "content": {
@@ -3689,6 +3542,24 @@
                       "Error message"
                     ]
                   }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.2",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": null,
+                  "instance": "POST guilds/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
                 }
               }
             }
@@ -3807,6 +3678,11 @@
                       "Error message"
                     ]
                   }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -4311,23 +4187,6 @@
               }
             }
           },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-                  "title": "Not Found",
-                  "status": 404,
-                  "instance": "PUT guilds/{guildId}/categories/{categoryId}",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
           "400": {
             "description": "Bad Request",
             "content": {
@@ -4340,6 +4199,23 @@
                   "title": "Bad Request",
                   "status": 400,
                   "detail": null,
+                  "instance": "PUT guilds/{guildId}/categories/{categoryId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
                   "instance": "PUT guilds/{guildId}/categories/{categoryId}",
                   "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
                 }
@@ -4409,6 +4285,179 @@
         ]
       }
     },
+    "/achievements/{achievementId}/playlist": {
+      "get": {
+        "tags": [
+          "Achievements.Playlists"
+        ],
+        "summary": "Get the playlist for an achievement.",
+        "description": "Get the playlist associated with an achievement by its Id.",
+        "operationId": "GetAchievementPlaylist",
+        "parameters": [
+          {
+            "name": "achievementId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PlaylistFilter"
+            }
+          },
+          {
+            "name": "playerId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Playlist"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET achievements/{achievementId}/playlist/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/achievements/{achievementId}": {
+      "get": {
+        "tags": [
+          "Achievements"
+        ],
+        "summary": "Get an achievement.",
+        "description": "Get an achievement by its ID.",
+        "operationId": "GetAchievement",
+        "parameters": [
+          {
+            "name": "achievementId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Achievement"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET achievements/{achievementId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contexts/{contextId}/achievements": {
+      "get": {
+        "tags": [
+          "Context.Achievements"
+        ],
+        "summary": "Get all achievements in a context, optionally filtered by category.",
+        "description": "- No parameters: Returns all achievements.\n- hasCategory=false: Only return achievements with no category.\n- categoryId=5: Returns achievements with category 5.",
+        "operationId": "GetAchievements",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasCategory",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Achievement"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/debug/import-old-gs-maps/{guildId}": {
       "post": {
         "tags": [
@@ -4452,6 +4501,11 @@
                   "detail": null,
                   "instance": "POST debug/import-old-gs-maps/{guildId}",
                   "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -4645,13 +4699,13 @@
         ]
       }
     },
-    "/debug/recalculate-member-levels/{playerId}": {
+    "/debug/recalculate-member-achievements/{playerId}": {
       "post": {
         "tags": [
           "Debug"
         ],
-        "summary": "Recalculate member levels for a player.",
-        "description": "Recalculates member levels for all contexts the player is a member of.",
+        "summary": "Recalculate member achievements for a player.",
+        "description": "Recalculates member achievements for all contexts the player is a member of.",
         "parameters": [
           {
             "name": "playerId",
@@ -5092,23 +5146,6 @@
               }
             }
           },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "title": "Too Many Requests",
-                  "status": 429,
-                  "detail": null,
-                  "instance": "GET auth/callback/beatleader",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
           "423": {
             "description": "Locked",
             "content": {
@@ -5119,6 +5156,23 @@
                 "example": {
                   "title": "Locked",
                   "status": 423,
+                  "detail": null,
+                  "instance": "GET auth/callback/beatleader",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
                   "detail": null,
                   "instance": "GET auth/callback/beatleader",
                   "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
@@ -5176,23 +5230,6 @@
               }
             }
           },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "title": "Too Many Requests",
-                  "status": 429,
-                  "detail": null,
-                  "instance": "GET auth/callback/discord",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
           "423": {
             "description": "Locked",
             "content": {
@@ -5203,6 +5240,23 @@
                 "example": {
                   "title": "Locked",
                   "status": 423,
+                  "detail": null,
+                  "instance": "GET auth/callback/discord",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
                   "detail": null,
                   "instance": "GET auth/callback/discord",
                   "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
@@ -5277,23 +5331,6 @@
               }
             }
           },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "title": "Too Many Requests",
-                  "status": 429,
-                  "detail": null,
-                  "instance": "GET auth/callback/discord/redirect",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
           "423": {
             "description": "Locked",
             "content": {
@@ -5304,6 +5341,23 @@
                 "example": {
                   "title": "Locked",
                   "status": 423,
+                  "detail": null,
+                  "instance": "GET auth/callback/discord/redirect",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
                   "detail": null,
                   "instance": "GET auth/callback/discord/redirect",
                   "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
@@ -5378,23 +5432,6 @@
               }
             }
           },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "title": "Too Many Requests",
-                  "status": 429,
-                  "detail": null,
-                  "instance": "GET auth/callback/beatleader/redirect",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
           "423": {
             "description": "Locked",
             "content": {
@@ -5405,6 +5442,23 @@
                 "example": {
                   "title": "Locked",
                   "status": 423,
+                  "detail": null,
+                  "instance": "GET auth/callback/beatleader/redirect",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
                   "detail": null,
                   "instance": "GET auth/callback/beatleader/redirect",
                   "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
@@ -5633,6 +5687,388 @@
           }
         }
       },
+      "Achievement": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/AchievementRankedMapListAchievement"
+          },
+          {
+            "$ref": "#/components/schemas/AchievementDiffStarAchievement"
+          },
+          {
+            "$ref": "#/components/schemas/AchievementAccStarAchievement"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "RankedMapList": "#/components/schemas/AchievementRankedMapListAchievement",
+            "DiffStar": "#/components/schemas/AchievementDiffStarAchievement",
+            "AccStar": "#/components/schemas/AchievementAccStarAchievement"
+          }
+        }
+      },
+      "AchievementAccStarAchievement": {
+        "required": [
+          "minStar",
+          "requiredPassCount",
+          "totalCount",
+          "id",
+          "guildId",
+          "contextId",
+          "categoryId",
+          "info",
+          "discordBindings",
+          "progression",
+          "unlockXp"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "AccStar"
+            ],
+            "type": "string"
+          },
+          "minStar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "requiredPassCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxStar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "guildId": {
+            "$ref": "#/components/schemas/GuildId"
+          },
+          "contextId": {
+            "$ref": "#/components/schemas/ContextId"
+          },
+          "categoryId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CategoryId"
+              }
+            ]
+          },
+          "info": {
+            "$ref": "#/components/schemas/AchievementInfo"
+          },
+          "discordBindings": {
+            "$ref": "#/components/schemas/AchievementDiscordBindings"
+          },
+          "progression": {
+            "$ref": "#/components/schemas/AchievementProgression"
+          },
+          "unlockXp": {
+            "$ref": "#/components/schemas/Xp"
+          }
+        }
+      },
+      "AchievementDiffStarAchievement": {
+        "required": [
+          "minStar",
+          "requiredPassCount",
+          "totalCount",
+          "id",
+          "guildId",
+          "contextId",
+          "categoryId",
+          "info",
+          "discordBindings",
+          "progression",
+          "unlockXp"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "DiffStar"
+            ],
+            "type": "string"
+          },
+          "minStar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "requiredPassCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxStar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "float"
+          },
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "guildId": {
+            "$ref": "#/components/schemas/GuildId"
+          },
+          "contextId": {
+            "$ref": "#/components/schemas/ContextId"
+          },
+          "categoryId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CategoryId"
+              }
+            ]
+          },
+          "info": {
+            "$ref": "#/components/schemas/AchievementInfo"
+          },
+          "discordBindings": {
+            "$ref": "#/components/schemas/AchievementDiscordBindings"
+          },
+          "progression": {
+            "$ref": "#/components/schemas/AchievementProgression"
+          },
+          "unlockXp": {
+            "$ref": "#/components/schemas/Xp"
+          }
+        }
+      },
+      "AchievementDiscordBindings": {
+        "required": [
+          "roleId"
+        ],
+        "type": "object",
+        "properties": {
+          "roleId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DiscordRoleId"
+              }
+            ]
+          }
+        }
+      },
+      "AchievementInfo": {
+        "required": [
+          "name",
+          "color"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "color": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "AchievementProgression": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/AchievementProgressionOrdered"
+          },
+          {
+            "$ref": "#/components/schemas/AchievementProgressionUnordered"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Ordered": "#/components/schemas/AchievementProgressionOrdered",
+            "Unordered": "#/components/schemas/AchievementProgressionUnordered"
+          }
+        }
+      },
+      "AchievementProgressionOrdered": {
+        "required": [
+          "order",
+          "isLocking"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Ordered"
+            ],
+            "type": "string"
+          },
+          "order": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
+          },
+          "isLocking": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AchievementProgressionUnordered": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Unordered"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "AchievementRankedMapListAchievement": {
+        "required": [
+          "requiredPassCount",
+          "totalCount",
+          "id",
+          "guildId",
+          "contextId",
+          "categoryId",
+          "info",
+          "discordBindings",
+          "progression",
+          "unlockXp"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "RankedMapList"
+            ],
+            "type": "string"
+          },
+          "requiredPassCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "guildId": {
+            "$ref": "#/components/schemas/GuildId"
+          },
+          "contextId": {
+            "$ref": "#/components/schemas/ContextId"
+          },
+          "categoryId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CategoryId"
+              }
+            ]
+          },
+          "info": {
+            "$ref": "#/components/schemas/AchievementInfo"
+          },
+          "discordBindings": {
+            "$ref": "#/components/schemas/AchievementDiscordBindings"
+          },
+          "progression": {
+            "$ref": "#/components/schemas/AchievementProgression"
+          },
+          "unlockXp": {
+            "$ref": "#/components/schemas/Xp"
+          }
+        }
+      },
       "AddMapVersion": {
         "required": [
           "beatSaverKey"
@@ -5772,7 +6208,7 @@
           "requirements",
           "manualRating",
           "categoryIds",
-          "levelIds"
+          "achievementIds"
         ],
         "type": "object",
         "properties": {
@@ -5799,7 +6235,7 @@
             },
             "description": "The categories to assign the ranked map to."
           },
-          "levelIds": {
+          "achievementIds": {
             "type": "array",
             "items": {
               "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -5809,7 +6245,7 @@
               ],
               "format": "int32"
             },
-            "description": "The levels to assign the ranked map to (in case of RankedMapList levels)."
+            "description": "The ranked-map-list achievements to assign the ranked map to."
           }
         }
       },
@@ -6429,7 +6865,6 @@
       "JsonPatchDocument": {
         "type": "array",
         "items": {
-          "type": "object",
           "oneOf": [
             {
               "required": [
@@ -6498,306 +6933,6 @@
               "additionalProperties": false
             }
           ]
-        }
-      },
-      "Level": {
-        "required": [
-          "type"
-        ],
-        "type": "object",
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/LevelRankedMapListLevel"
-          },
-          {
-            "$ref": "#/components/schemas/LevelDiffStarLevel"
-          },
-          {
-            "$ref": "#/components/schemas/LevelAccStarLevel"
-          }
-        ],
-        "discriminator": {
-          "propertyName": "type",
-          "mapping": {
-            "RankedMapList": "#/components/schemas/LevelRankedMapListLevel",
-            "DiffStar": "#/components/schemas/LevelDiffStarLevel",
-            "AccStar": "#/components/schemas/LevelAccStarLevel"
-          }
-        }
-      },
-      "LevelAccStarLevel": {
-        "required": [
-          "minStar",
-          "requiredPassCount",
-          "id",
-          "guildId",
-          "contextId",
-          "categoryId",
-          "info",
-          "discordInfo",
-          "order",
-          "isLocking"
-        ],
-        "properties": {
-          "type": {
-            "enum": [
-              "AccStar"
-            ],
-            "type": "string"
-          },
-          "minStar": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-            "type": [
-              "number",
-              "string"
-            ],
-            "format": "float"
-          },
-          "requiredPassCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "uint32"
-          },
-          "id": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "guildId": {
-            "$ref": "#/components/schemas/GuildId"
-          },
-          "contextId": {
-            "$ref": "#/components/schemas/ContextId"
-          },
-          "categoryId": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/CategoryId"
-              }
-            ]
-          },
-          "info": {
-            "$ref": "#/components/schemas/LevelInfo"
-          },
-          "discordInfo": {
-            "$ref": "#/components/schemas/LevelDiscordInfo"
-          },
-          "order": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "uint32"
-          },
-          "isLocking": {
-            "type": "boolean"
-          }
-        }
-      },
-      "LevelDiffStarLevel": {
-        "required": [
-          "minStar",
-          "requiredPassCount",
-          "id",
-          "guildId",
-          "contextId",
-          "categoryId",
-          "info",
-          "discordInfo",
-          "order",
-          "isLocking"
-        ],
-        "properties": {
-          "type": {
-            "enum": [
-              "DiffStar"
-            ],
-            "type": "string"
-          },
-          "minStar": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-            "type": [
-              "number",
-              "string"
-            ],
-            "format": "float"
-          },
-          "requiredPassCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "uint32"
-          },
-          "id": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "guildId": {
-            "$ref": "#/components/schemas/GuildId"
-          },
-          "contextId": {
-            "$ref": "#/components/schemas/ContextId"
-          },
-          "categoryId": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/CategoryId"
-              }
-            ]
-          },
-          "info": {
-            "$ref": "#/components/schemas/LevelInfo"
-          },
-          "discordInfo": {
-            "$ref": "#/components/schemas/LevelDiscordInfo"
-          },
-          "order": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "uint32"
-          },
-          "isLocking": {
-            "type": "boolean"
-          }
-        }
-      },
-      "LevelDiscordInfo": {
-        "required": [
-          "roleId"
-        ],
-        "type": "object",
-        "properties": {
-          "roleId": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/DiscordRoleId"
-              }
-            ]
-          }
-        }
-      },
-      "LevelInfo": {
-        "required": [
-          "name",
-          "color"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "color": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          }
-        }
-      },
-      "LevelRankedMapListLevel": {
-        "required": [
-          "requiredPassCount",
-          "totalCount",
-          "id",
-          "guildId",
-          "contextId",
-          "categoryId",
-          "info",
-          "discordInfo",
-          "order",
-          "isLocking"
-        ],
-        "properties": {
-          "type": {
-            "enum": [
-              "RankedMapList"
-            ],
-            "type": "string"
-          },
-          "requiredPassCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "uint32"
-          },
-          "totalCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "id": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "guildId": {
-            "$ref": "#/components/schemas/GuildId"
-          },
-          "contextId": {
-            "$ref": "#/components/schemas/ContextId"
-          },
-          "categoryId": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/CategoryId"
-              }
-            ]
-          },
-          "info": {
-            "$ref": "#/components/schemas/LevelInfo"
-          },
-          "discordInfo": {
-            "$ref": "#/components/schemas/LevelDiscordInfo"
-          },
-          "order": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "uint32"
-          },
-          "isLocking": {
-            "type": "boolean"
-          }
         }
       },
       "ManualRating": {
@@ -6896,34 +7031,17 @@
           }
         }
       },
-      "MemberContextStat": {
-        "type": "object",
-        "properties": {
-          "simplePointsWithRank": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SimplePointWithRank"
-            }
-          },
-          "passCountsWithRank": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PassCountWithRank"
-            }
-          }
-        }
-      },
-      "MemberLevelStat": {
+      "MemberAchievementStat": {
         "required": [
-          "level",
+          "achievement",
           "isCompleted",
           "isLocked",
           "passCount"
         ],
         "type": "object",
         "properties": {
-          "level": {
-            "$ref": "#/components/schemas/Level"
+          "achievement": {
+            "$ref": "#/components/schemas/Achievement"
           },
           "isCompleted": {
             "type": "boolean"
@@ -6939,6 +7057,23 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "MemberContextStat": {
+        "type": "object",
+        "properties": {
+          "simplePointsWithRank": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimplePointWithRank"
+            }
+          },
+          "passCountsWithRank": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PassCountWithRank"
+            }
           }
         }
       },
@@ -7216,13 +7351,13 @@
           }
         }
       },
-      "PagedListOfRankedMap": {
+      "PagedListOfRankedMapSimple": {
         "type": "object",
         "properties": {
           "data": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/RankedMap"
+              "$ref": "#/components/schemas/RankedMapSimple"
             }
           },
           "page": {
@@ -7791,7 +7926,7 @@
           "rating",
           "versions",
           "categoryIds",
-          "levelIds"
+          "achievements"
         ],
         "type": "object",
         "properties": {
@@ -7835,15 +7970,10 @@
               "format": "int32"
             }
           },
-          "levelIds": {
+          "achievements": {
             "type": "array",
             "items": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "$ref": "#/components/schemas/Achievement"
             }
           }
         }
@@ -7931,6 +8061,61 @@
           }
         }
       },
+      "RankedMapSimple": {
+        "required": [
+          "id",
+          "guildId",
+          "contextId",
+          "info",
+          "requirements",
+          "rating",
+          "versions",
+          "categoryIds"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/RankedMapId"
+          },
+          "guildId": {
+            "$ref": "#/components/schemas/GuildId"
+          },
+          "contextId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "info": {
+            "$ref": "#/components/schemas/RankedMapInfo"
+          },
+          "requirements": {
+            "$ref": "#/components/schemas/RankedMapRequirements"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/RankedMapRating"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MapVersion"
+            }
+          },
+          "categoryIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        }
+      },
       "RankedMapWithScores": {
         "required": [
           "rankedMap",
@@ -7996,6 +8181,7 @@
           "isSelected",
           "effectiveScore"
         ],
+        "type": "object",
         "properties": {
           "type": {
             "enum": [
@@ -8083,6 +8269,7 @@
           "isSelected",
           "effectiveScore"
         ],
+        "type": "object",
         "properties": {
           "type": {
             "enum": [
@@ -8153,6 +8340,7 @@
           "isSelected",
           "effectiveScore"
         ],
+        "type": "object",
         "properties": {
           "type": {
             "enum": [
@@ -8228,6 +8416,7 @@
           "isSelected",
           "effectiveScore"
         ],
+        "type": "object",
         "properties": {
           "type": {
             "enum": [
@@ -8304,6 +8493,7 @@
           "isSelected",
           "effectiveScore"
         ],
+        "type": "object",
         "properties": {
           "type": {
             "enum": [
@@ -8462,6 +8652,7 @@
           "badCuts",
           "hmd"
         ],
+        "type": "object",
         "properties": {
           "type": {
             "enum": [
@@ -8605,6 +8796,7 @@
           "badCuts",
           "hmd"
         ],
+        "type": "object",
         "properties": {
           "type": {
             "enum": [
@@ -9006,7 +9198,7 @@
           "requirements",
           "manualRating",
           "categoryIds",
-          "levelIds"
+          "achievementIds"
         ],
         "type": "object",
         "properties": {
@@ -9027,7 +9219,7 @@
               "format": "int32"
             }
           },
-          "levelIds": {
+          "achievementIds": {
             "type": "array",
             "items": {
               "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -9124,6 +9316,12 @@
             ]
           }
         }
+      },
+      "Xp": {
+        "maximum": 3.4028235E+38,
+        "minimum": 0,
+        "type": "number",
+        "format": "float"
       }
     },
     "securitySchemes": {
@@ -9143,12 +9341,68 @@
   },
   "tags": [
     {
-      "name": "Scores",
-      "description": "Endpoints for accessing scores in the server."
+      "name": "Achievements",
+      "description": "Endpoints for accessing achievements."
+    },
+    {
+      "name": "Achievements.Playlists",
+      "description": "Endpoints for accessing playlists associated with Achievements."
+    },
+    {
+      "name": "Auth",
+      "description": "Authentication endpoints"
+    },
+    {
+      "name": "Categories",
+      "description": "Endpoints for accessing categories in the server."
+    },
+    {
+      "name": "Context.Achievements",
+      "description": "Endpoints for managing achievements within a context."
+    },
+    {
+      "name": "Context.Members.AchievementStats",
+      "description": "Endpoints for accessing context member achievement statistics"
+    },
+    {
+      "name": "Context.Members.ContextStats",
+      "description": "Endpoints for accessing context member statistics"
+    },
+    {
+      "name": "Context.RankedMaps",
+      "description": "Endpoints for managing ranked maps within a context."
     },
     {
       "name": "Context.RankedScores",
       "description": "Endpoints for managing ranked scores from their underlying scoreIds."
+    },
+    {
+      "name": "Debug",
+      "description": "Endpoints for debugging and testing purposes"
+    },
+    {
+      "name": "Guilds",
+      "description": "Endpoints for managing guilds in the server."
+    },
+    {
+      "name": "Guilds.Categories",
+      "description": "Endpoints for managing guild categories by guild id."
+    },
+    {
+      "name": "Guilds.Members",
+      "description": "Endpoints for managing guild members by guild id."
+    },
+    {
+      "name": "Guilds.Stats",
+      "description": "Endpoints for exploring guild statistics by guild id."
+    },
+    {
+      "name": "Leaderboards",
+      "description": "Endpoints for accessing leaderboards in the server."
+    },
+    {
+      "name": "Players",
+      "description": "Endpoints for managing players' ranked scores."
     },
     {
       "name": "Players.RankedScores",
@@ -9159,60 +9413,8 @@
       "description": "Endpoints for accessing ranked maps in the server."
     },
     {
-      "name": "Context.RankedMaps",
-      "description": "Endpoints for managing ranked maps within a context."
-    },
-    {
-      "name": "Players",
-      "description": "Endpoints for managing players' ranked scores."
-    },
-    {
-      "name": "Leaderboards",
-      "description": "Endpoints for accessing leaderboards in the server."
-    },
-    {
-      "name": "Context.Members.LevelStats",
-      "description": "Endpoints for accessing context member level statistics"
-    },
-    {
-      "name": "Guilds.Members",
-      "description": "Endpoints for managing guild members by guild id."
-    },
-    {
-      "name": "Context.Members.ContextStats",
-      "description": "Endpoints for accessing context member statistics"
-    },
-    {
-      "name": "Levels.Playlists",
-      "description": "Endpoints for accessing playlists associated with RankingLevelList levels."
-    },
-    {
-      "name": "Context.Levels",
-      "description": "Endpoints for managing levels within a context."
-    },
-    {
-      "name": "Guilds",
-      "description": "Endpoints for managing guilds in the server."
-    },
-    {
-      "name": "Guilds.Stats",
-      "description": "Endpoints for exploring guild statistics by guild id."
-    },
-    {
-      "name": "Categories",
-      "description": "Endpoints for accessing categories in the server."
-    },
-    {
-      "name": "Guilds.Categories",
-      "description": "Endpoints for managing guild categories by guild id."
-    },
-    {
-      "name": "Debug",
-      "description": "Endpoints for debugging and testing purposes"
-    },
-    {
-      "name": "Auth",
-      "description": "Authentication endpoints"
+      "name": "Scores",
+      "description": "Endpoints for accessing scores in the server."
     }
   ]
 }

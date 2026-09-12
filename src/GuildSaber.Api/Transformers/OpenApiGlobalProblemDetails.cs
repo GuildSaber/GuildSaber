@@ -54,9 +54,13 @@ public static class OpenApiGlobalProblemDetails
                     continue;
 
                 var payloads = response.Value.Content;
-                var problemDetailsContent = null as OpenApiMediaType;
+                var problemDetailsContentValue = null as IOpenApiMediaType;
                 var containsProblemDetails = payloads
-                    ?.TryGetValue("application/problem+json", out problemDetailsContent) ?? false;
+                    ?.TryGetValue("application/problem+json", out problemDetailsContentValue) ?? false;
+
+                var problemDetailsContent = null as OpenApiMediaType;
+                if (problemDetailsContentValue is OpenApiMediaType type)
+                    problemDetailsContent = type;
 
                 if (payloads is null || payloads.Count != 0 && !containsProblemDetails)
                     continue;
@@ -114,9 +118,9 @@ public static class OpenApiGlobalProblemDetails
                 operation.Responses[response.Key] = new OpenApiResponse
                 {
                     Description = problemDetails.Title,
-                    Content = new Dictionary<string, OpenApiMediaType>
+                    Content = new Dictionary<string, IOpenApiMediaType>
                     {
-                        ["application/problem+json"] = new()
+                        ["application/problem+json"] = new OpenApiMediaType
                         {
                             Schema = new OpenApiSchemaReference("ProblemDetails", context.Document),
                             Example = example

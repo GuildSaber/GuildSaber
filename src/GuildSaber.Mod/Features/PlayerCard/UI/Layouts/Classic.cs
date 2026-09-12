@@ -23,6 +23,7 @@ internal sealed class ClassicPlayerCardLayout(
 
     private static readonly Color _botGold = new(1, 215f / 255, 0);
     private readonly List<XUIText> _pointTexts = [];
+    private XUIText _achievement = null!;
     private Texture2D? _avatar;
     private Sprite? _avatarSprite;
     private ImageView _border = null!;
@@ -32,7 +33,6 @@ internal sealed class ClassicPlayerCardLayout(
     private Texture2D? _guildIcon;
     private XUIImage _guildImage = null!;
     private Sprite? _guildSprite;
-    private XUIText _level = null!;
     private XUIIconButton _playerImage = null!;
     private XUIText _playerName = null!;
     private XUIText _playerPasses = null!;
@@ -92,9 +92,9 @@ internal sealed class ClassicPlayerCardLayout(
         SetGuildIcon(ready.GuildIcon ?? resources.GsWhiteLogoTexture);
         _playerName.SetText(ready.PlayerName.Truncate(20)).SetColor(ready.Palette.Accent);
         _playerPasses.SetText(ready.Passes).SetColor(_botGold);
-        _level.SetText(ready.LevelName).SetColor(ready.Palette.Accent);
+        _achievement.SetText(ready.AchievementName).SetColor(ready.Palette.Accent);
         RenderPoints(ready.Points);
-        _categories.SetActive(ready.ShowProgress);
+        _categories.SetActive(ready.ShowOrderedAchievements);
         _categories.Render(ready.Progress, ready.Palette.Accent);
         _trophies.Render(ready.Trophies);
         ApplyPalette(ready.Palette);
@@ -113,7 +113,7 @@ internal sealed class ClassicPlayerCardLayout(
     }
 
     public Vector2 GetSize(PlayerCardReady ready)
-        => new(Width, ready.ShowProgress ? Height : 36);
+        => new(Width, ready.ShowOrderedAchievements ? Height : 36);
 
     public void Dispose()
     {
@@ -221,7 +221,7 @@ internal sealed class ClassicPlayerCardLayout(
                                     .SetSpacing(-1.1f),
                                 XUIVLayout.Make(
                                         XUIText.Make(string.Empty)
-                                            .Bind(ref _level)
+                                            .Bind(ref _achievement)
                                             .SetStyle(FontStyles.Bold | FontStyles.Italic)
                                             .SetFontSize(7.4f)
                                             .SetAlign(TextAlignmentOptions.Center)

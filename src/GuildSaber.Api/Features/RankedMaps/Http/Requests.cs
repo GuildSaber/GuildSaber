@@ -124,8 +124,8 @@ public static class RankedMapRequests
     /// <param name="CategoryIds">
     /// The categories to assign the ranked map to.
     /// </param>
-    /// <param name="LevelIds">
-    /// The levels to assign the ranked map to (in case of RankedMapList levels).
+    /// <param name="AchievementIds">
+    /// The ranked-map-list achievements to assign the ranked map to.
     /// </param>
     /// <remarks>
     /// If you want to create a ranked map with multiple map versions, create the ranked map with one map version first,
@@ -136,14 +136,14 @@ public static class RankedMapRequests
         RankedMapRequirements Requirements,
         ManualRating ManualRating,
         int[] CategoryIds,
-        int[] LevelIds
+        int[] AchievementIds
     );
 
     public record UpdateRankedMap(
         RankedMapRequirements Requirements,
         ManualRating ManualRating,
         int[] CategoryIds,
-        int[] LevelIds
+        int[] AchievementIds
     );
 
     public static string ToModifiersString(this EModifiers modifiers) => modifiers

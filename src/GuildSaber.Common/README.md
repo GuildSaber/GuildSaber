@@ -1,7 +1,7 @@
 # GuildSaber.Common
 
-This project contains shared code and utilities used across the different GuildSaber projects.
-It contains the following (non-exhaustive):
+This project contains shared code and utilities used across the different GuildSaber projects. It contains the following
+(non-exhaustive):
 
 Client for the following Services:
 

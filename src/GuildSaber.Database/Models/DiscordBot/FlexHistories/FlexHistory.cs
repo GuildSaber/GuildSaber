@@ -1,4 +1,4 @@
-using GuildSaber.Database.Models.Server.Guilds.Levels;
+using GuildSaber.Database.Models.Server.Guilds.Achievements;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,8 +16,8 @@ public class FlexHistory
 
     public required DateTimeOffset Timestamp { get; set; }
 
-    public Level.LevelId? GlobalLevelId { get; set; }
-    public IList<FlexHistoryLevelStat> LevelStats { get; set; } = [];
+    public Achievement.AchievementId? GlobalAchievementId { get; set; }
+    public IList<FlexHistoryAchievementStat> AchievementStats { get; set; } = [];
     public IList<FlexHistoryPointStat> PointStats { get; set; } = [];
 
     public readonly record struct FlexHistoryId(long Value)
@@ -39,11 +39,11 @@ public class FlexHistoryConfiguration : IEntityTypeConfiguration<FlexHistory>
         builder.Property(x => x.PlayerId).HasConversion(id => id.Value, value => new PlayerId(value));
         builder.Property(x => x.GuildId).HasConversion(id => id.Value, value => new GuildId(value));
         builder.Property(x => x.ContextId).HasConversion(id => id.Value, value => new ContextId(value));
-        builder.Property(x => x.GlobalLevelId).HasConversion(
+        builder.Property(x => x.GlobalAchievementId).HasConversion(
             id => id.HasValue ? id.Value.Value : (int?)null,
-            value => value.HasValue ? new Level.LevelId(value.Value) : null);
+            value => value.HasValue ? new Achievement.AchievementId(value.Value) : null);
 
-        builder.HasMany(x => x.LevelStats)
+        builder.HasMany(x => x.AchievementStats)
             .WithOne()
             .HasForeignKey(x => x.FlexHistoryId);
 

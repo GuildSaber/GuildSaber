@@ -10,9 +10,9 @@ using GuildSaber.Common.Services.BeatSaver.Models;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
+using GuildSaber.Database.Models.Server.Guilds.Achievements.Types;
 using GuildSaber.Database.Models.Server.Guilds.Boosts;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
-using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
@@ -90,7 +90,7 @@ public class RankedMapService(
         RankedMapRequirements Requirements,
         CustomCurve AccuracyCurve,
         Category[] Categories,
-        RankedMapListLevel[] Levels
+        RankedMapListAchievement[] Achievements
     );
 
     public async Task<CreateResponse> CreateRankedMapAsync(
@@ -189,7 +189,7 @@ public class RankedMapService(
         var rankedMap = await dbContext.RankedMaps
             .AsTracking()
             .Include(x => x.Categories)
-            .Include(x => x.Levels)
+            .Include(x => x.Achievements)
             .Include(x => x.MapVersions).ThenInclude(x => x.SongDifficulty).ThenInclude(x => x.GameMode)
             .Include(x => x.MapVersions).ThenInclude(x => x.Song)
             .FirstOrDefaultAsync(x => x.Id == rankedMapId && x.GuildId == guildId && x.ContextId == contextId);
@@ -197,7 +197,8 @@ public class RankedMapService(
         if (rankedMap is null)
             return new UpdateResponse.NotFound();
 
-        var validationResult = await Validate(guildId, request.Requirements, request.CategoryIds, request.LevelIds);
+        var validationResult = await Validate(
+            guildId, request.Requirements, request.CategoryIds, request.AchievementIds);
         if (!validationResult.TryGetValue(out var validatedData, out var errors))
             return new UpdateResponse.ValidationFailure(errors);
 
@@ -206,9 +207,9 @@ public class RankedMapService(
         foreach (var category in validatedData.Categories)
             rankedMap.Categories.Add(category);
 
-        rankedMap.Levels.Clear();
-        foreach (var level in validatedData.Levels)
-            rankedMap.Levels.Add(level);
+        rankedMap.Achievements.Clear();
+        foreach (var achievement in validatedData.Achievements)
+            rankedMap.Achievements.Add(achievement);
 
         if (request.ManualRating.AccuracyStar is not null)
             rankedMap.Rating.AccStar = new RankedMapRating.AccuracyStar(request.ManualRating.AccuracyStar.Value);
@@ -344,7 +345,8 @@ public class RankedMapService(
         PlayMode.PlayModeId playmodeId,
         RankedMapRequests.CreateRankedMap request)
     {
-        var validationResult = await Validate(guildId, request.Requirements, request.CategoryIds, request.LevelIds);
+        var validationResult = await Validate(
+            guildId, request.Requirements, request.CategoryIds, request.AchievementIds);
         if (!validationResult.TryGetValue(out var validatedData, out var errors))
             return Failure<RankedMap, List<KeyValuePair<string, string[]>>>(errors);
 
@@ -413,13 +415,13 @@ public class RankedMapService(
                 }
             ],
             Categories = validatedData.Categories,
-            Levels = validatedData.Levels
+            Achievements = validatedData.Achievements
         };
     }
 
     private async Task<Result<ValidatedData, List<KeyValuePair<string, string[]>>>> Validate(
         GuildId guildId,
-        RankedMapRequests.RankedMapRequirements requestRequirements, int[] categoryIds, int[] levelIds)
+        RankedMapRequests.RankedMapRequirements requestRequirements, int[] categoryIds, int[] achievementIds)
     {
         var errors = new List<KeyValuePair<string, string[]>>();
 
@@ -447,21 +449,22 @@ public class RankedMapService(
             errors.Add(new KeyValuePair<string, string[]>("CategoryIds", categoryErrors));
         }
 
-        var levels = await dbContext.Levels
+        var achievements = await dbContext.Achievements
             .AsTracking()
-            .OfType<RankedMapListLevel>()
-            .Where(x => ((IEnumerable<int>)levelIds).Contains(x.Id) && x.GuildId == guildId)
+            .Where(x => ((IEnumerable<int>)achievementIds).Contains(x.Id)
+                        && x.GuildId == guildId)
+            .OfType<RankedMapListAchievement>()
             .ToArrayAsync();
 
-        if (levels.Length != levelIds.Length)
+        if (achievements.Length != achievementIds.Length)
         {
-            var levelErrors = levelIds
-                .Where(levelId => levels.All(x => x.Id != levelId))
-                .Select(levelId =>
-                    $"Level with ID '{levelId}' does not exist in the guild or is not of type RankedMapListLevel.")
+            var achievementErrors = achievementIds
+                .Where(achievementId => achievements.All(x => x.Id != achievementId))
+                .Select(achievementId =>
+                    $"Achievement with ID '{achievementId}' does not exist in the guild or is not a ranked-map-list achievement.")
                 .ToArray();
 
-            errors.Add(new KeyValuePair<string, string[]>("LevelIds", levelErrors));
+            errors.Add(new KeyValuePair<string, string[]>("AchievementIds", achievementErrors));
         }
 
         if (errors.Count > 0)
@@ -471,7 +474,7 @@ public class RankedMapService(
             Requirements: requirements!,
             AccuracyCurve: accCurve.Value,
             Categories: categories,
-            Levels: levels
+            Achievements: achievements
         );
     }
 

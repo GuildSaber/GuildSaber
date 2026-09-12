@@ -1,3 +1,4 @@
+using System.Globalization;
 using GuildSaber.Api.Features.RankedMaps.Http;
 using Microsoft.OpenApi;
 
@@ -49,5 +50,12 @@ public static class OpenApiTypeMappings
             { Type = JsonSchemaType.String, Example = "a3c391" });
         OpenApiTypeTransformer.MapType<RankedMapRequests.EModifiers>(new OpenApiSchema
             { Example = nameof(RankedMapRequests.EModifiers.None) });
+        OpenApiTypeTransformer.MapType<Xp>(new OpenApiSchema
+        {
+            Type = JsonSchemaType.Number,
+            Format = "float",
+            Minimum = Xp.MinValue.ToString(CultureInfo.InvariantCulture),
+            Maximum = Xp.MaxValue.ToString("R", CultureInfo.InvariantCulture)
+        });
     }
 }

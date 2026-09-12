@@ -58,6 +58,12 @@ public static class OpenApiTypeTransformer
             if (transformedSchema.Description is not null)
                 schema.Description = transformedSchema.Description;
 
+            if (transformedSchema.Minimum is not null)
+                schema.Minimum = transformedSchema.Minimum;
+
+            if (transformedSchema.Maximum is not null)
+                schema.Maximum = transformedSchema.Maximum;
+
             if (transformedSchema.Default is not null)
                 schema.Default = transformedSchema.Default;
 

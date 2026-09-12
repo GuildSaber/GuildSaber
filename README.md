@@ -26,8 +26,8 @@ contributions are valued and recognized. See [LICENSE-NOTICE.md](LICENSE-NOTICE.
 
 # PC Mod
 
-The GuildSaber Mod can be found in the [Releases](https://github.com/GuildSaber/GuildSaber/releases) section.
-It currently features the following:
+The GuildSaber Mod can be found in the [Releases](https://github.com/GuildSaber/GuildSaber/releases) section. It
+currently features the following:
 
 - An in-game player card that shows your levels, ranks, and have a session play time timer.
 - A way to if maps are ranked on your favorite guild, displaying it's level, categories and show if you got a pass on it
@@ -35,8 +35,8 @@ It currently features the following:
 - A playlist downloader (accessible from the player card menu by clicking on your avatar), allowing you to download your
   favorite guild playlists without having to leave the game.
 
-Much more is planned, but this list is going to be updated as new features are added and released.
-Let's dive into images showcasing these features one by one ^^
+Much more is planned, but this list is going to be updated as new features are added and released. Let's dive into
+images showcasing these features one by one ^^
 
 ## Player Card
 
@@ -70,8 +70,8 @@ And as you can see, there is a playlist button hiding in there :eyes:
 Clicking that playlist button on the player card settings brings this menu up:
 ![Playlist downloader](src/GuildSaber.Mod/docs/images/playlist-downloader.png)
 
-With it, you can manage your selected guild's playlists. I will let you use it and discover it by yourself.
-However, a feature you must use is the **Folder view** of Playlist manager.
+With it, you can manage your selected guild's playlists. I will let you use it and discover it by yourself. However, a
+feature you must use is the **Folder view** of Playlist manager.
 
 If you look above the player-card, at your feet, there is a menu from playlist manager, clicking the last button on the
 right will open the folder view. In you head into "GuildSaber" and then the Guild of your choice, you will find all the
@@ -84,8 +84,8 @@ filtering them to whatever folder you selected. Which is a must, given the 180+ 
 
 ## RankedMap Stats
 
-Even dreamed of knowing if a map was ranked on your favorite guild without having to open discord or the website?
-We've got you covered.
+Even dreamed of knowing if a map was ranked on your favorite guild without having to open discord or the website? We've
+got you covered.
 
 ![RankedMap Stats](src/GuildSaber.Mod/docs/images/ranked-map-stats.png)
 
@@ -99,12 +99,12 @@ It now also shows wether you got a pass on it or not with a little green checkma
 In case the map you are about to play is ranked, the play button will change color based on the modifier requirements of
 the ranked map. (It doesn't prevent you from playing the map, and only act as a visual indicator)
 
-Put more simply, if a pass can't be considered valid when you play the map on slower song or with no obstacles,
-and one of those is selected, the play button will turn red.
+Put more simply, if a pass can't be considered valid when you play the map on slower song or with no obstacles, and one
+of those is selected, the play button will turn red.
 
-Similarly, if you are required to play the map with one or more specific modifiers, and they aren't all selected,
-the play button will also turn red. (Even though this feature isn't used on Challenge Saber,
-it exists and can be used by other guilds)
+Similarly, if you are required to play the map with one or more specific modifiers, and they aren't all selected, the
+play button will also turn red. (Even though this feature isn't used on Challenge Saber, it exists and can be used by
+other guilds)
 
 ![Play button requirements](src/GuildSaber.Mod/docs/images/play-button-requirements.png)
 
@@ -124,8 +124,8 @@ Currently, it offers the following features:
 - A small dashboard where you can link your Discord account to use the bot, but also join the Challenge Saber guild.
   ![Signed in page](src/GuildSaber.Website/docs/images/signed-in.png)
 
-- A page to view the guilds in detail with map searching and filtering capabilities.
-  (Still a WIP, but things are getting there)
+- A page to view the guilds in detail with map searching and filtering capabilities. (Still a WIP, but things are
+  getting there)
   ![Guild view](src/GuildSaber.Website/docs/images/guild-view.png)
 
 # Discord Bot

@@ -25,6 +25,18 @@ namespace GuildSaber.Common.UnitTests.Features.Website.LinkPreviews;
 
 public class LinkPreviewTests
 {
+    private sealed class StopBeforeOpeningConnectionInterceptor : DbConnectionInterceptor
+    {
+        public override ValueTask<InterceptionResult> ConnectionOpeningAsync(
+            DbConnection connection,
+            ConnectionEventData eventData,
+            InterceptionResult result,
+            CancellationToken cancellationToken = default)
+            => throw new QueryTranslationSucceededException();
+    }
+
+    private sealed class QueryTranslationSucceededException : Exception;
+
     [Test]
     [Arguments("/maps/8872", 8872)]
     [Arguments("/maps/8872/", 8872)]
@@ -265,16 +277,4 @@ public class LinkPreviewTests
             ProhibitedModifiers: AbstractScore.EModifiers.NoBombs,
             MandatoryModifiers: AbstractScore.EModifiers.FasterSong,
             MinAccuracy: Accuracy.CreateUnsafe(95.5f)));
-
-    private sealed class StopBeforeOpeningConnectionInterceptor : DbConnectionInterceptor
-    {
-        public override ValueTask<InterceptionResult> ConnectionOpeningAsync(
-            DbConnection connection,
-            ConnectionEventData eventData,
-            InterceptionResult result,
-            CancellationToken cancellationToken = default)
-            => throw new QueryTranslationSucceededException();
-    }
-
-    private sealed class QueryTranslationSucceededException : Exception;
 }

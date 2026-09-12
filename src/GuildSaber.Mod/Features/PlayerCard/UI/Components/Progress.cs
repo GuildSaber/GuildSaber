@@ -62,14 +62,14 @@ internal sealed class PlayerCardCategories : XUIVLayout
 {
     private const int CategoriesPerPage = 6;
     private readonly List<CategoryCell> _categoryCells = [];
-    private XUIText _averageLevel = null!;
+    private XUIText _averageAchievement = null!;
     private PlayerCardBalance _balance = null!;
-    private ImmutableArray<PlayerCardCategoryLevel> _categories = [];
+    private ImmutableArray<PlayerCardCategoryAchievement> _categories = [];
     private Color _categoryAccent;
     private int _page;
     private XUISecondaryButton _pageLeft = null!;
-    private XUIHLayout _pager = null!;
     private XUISecondaryButton _pageRight = null!;
+    private XUIHLayout _pager = null!;
 
     private PlayerCardCategories() : base("PlayerCardCategories")
     {
@@ -80,7 +80,7 @@ internal sealed class PlayerCardCategories : XUIVLayout
 
     private sealed class CategoryCell : XUIHLayout
     {
-        private XUIText _level = null!;
+        private XUIText _achievement = null!;
         private XUIText _name = null!;
 
         public CategoryCell() : base("PlayerCardCategory")
@@ -91,17 +91,17 @@ internal sealed class PlayerCardCategories : XUIVLayout
             OnReady(Build);
         }
 
-        public void Render(PlayerCardCategoryLevel? category)
+        public void Render(PlayerCardCategoryAchievement? category)
         {
             if (category is not { } value)
             {
                 _name.SetText(string.Empty);
-                _level.SetText(string.Empty);
+                _achievement.SetText(string.Empty);
                 return;
             }
 
             _name.SetText($"{value.CategoryName}:");
-            _level.SetText(value.LevelName).SetColor(value.Color);
+            _achievement.SetText(value.AchievementName).SetColor(value.Color);
         }
 
         private void Build(CHOrVLayout layout)
@@ -117,7 +117,7 @@ internal sealed class PlayerCardCategories : XUIVLayout
                 .SetWrapping(false)
                 .BuildUI(layout.transform);
             XUIText.Make(string.Empty)
-                .Bind(ref _level)
+                .Bind(ref _achievement)
                 .SetFontSize(3.6f)
                 .SetStyle(FontStyles.Bold)
                 .SetAlign(TextAlignmentOptions.MidlineLeft)
@@ -132,9 +132,9 @@ internal sealed class PlayerCardCategories : XUIVLayout
     {
         _categories = progress.Categories;
         _categoryAccent = accent;
-        _averageLevel
-            .SetText($"Avg {progress.AverageCategoryLevel:0.##}")
-            .SetColor(progress.AverageCategoryLevelColor);
+        _averageAchievement
+            .SetText($"Avg {progress.AverageCategoryAchievement:0.##}")
+            .SetColor(progress.AverageCategoryAchievementColor);
         _balance.Render(progress.Equilibrium, accent);
         RenderPage();
     }
@@ -150,7 +150,7 @@ internal sealed class PlayerCardCategories : XUIVLayout
                 MakeCategoryColumn(),
                 XUIVLayout.Make(
                         XUIText.Make(string.Empty)
-                            .Bind(ref _averageLevel)
+                            .Bind(ref _averageAchievement)
                             .SetFontSize(3.8f)
                             .SetStyle(FontStyles.Bold | FontStyles.Italic)
                             .SetWrapping(false),

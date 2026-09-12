@@ -11,6 +11,14 @@ public class SessionCookieServiceTests
 {
     private readonly SessionCookieService _service = new(new TestHostEnvironment());
 
+    private sealed class TestHostEnvironment : IHostEnvironment
+    {
+        public string EnvironmentName { get; set; } = Environments.Development;
+        public string ApplicationName { get; set; } = nameof(SessionCookieServiceTests);
+        public string ContentRootPath { get; set; } = "/";
+        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
+    }
+
     [Test]
     public void Append_HttpResponse_CreatesLaxCookie()
     {
@@ -68,13 +76,5 @@ public class SessionCookieServiceTests
     {
         var context = new DefaultHttpContext { Request = { Scheme = scheme } };
         return context.Response;
-    }
-
-    private sealed class TestHostEnvironment : IHostEnvironment
-    {
-        public string EnvironmentName { get; set; } = Environments.Development;
-        public string ApplicationName { get; set; } = nameof(SessionCookieServiceTests);
-        public string ContentRootPath { get; set; } = "/";
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 }

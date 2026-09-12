@@ -30,6 +30,8 @@ public class GuildPermissionClaimTransformer(IServiceScopeFactory scopeFactory, 
                 .Select(x => x.IsManager)
                 .FirstOrDefault());
 
+    private readonly record struct PlayerGuildPermissions(GuildId GuildId, EPermission Permissions);
+
     public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
         if ((!principal.Identity?.IsAuthenticated ?? true) || principal.Identity is not ClaimsIdentity claimsIdentity)
@@ -53,8 +55,6 @@ public class GuildPermissionClaimTransformer(IServiceScopeFactory scopeFactory, 
 
         return principal;
     }
-
-    private readonly record struct PlayerGuildPermissions(GuildId GuildId, EPermission Permissions);
 
     private ValueTask<PlayerGuildPermissions[]> GetMemberPermissionsByPlayerId(PlayerId playerId)
         => cache.GetOrCreateAsync($"PlayerGuildPermissions_{playerId}", (scopeFactory, playerId),

@@ -1,11 +1,11 @@
 using System.Collections.Immutable;
 using System.Linq;
 using GuildSaber.Common.Extra;
-using GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
+using GuildSaber.CSharpClient.Routes.Guilds.Members.AchievementStats;
 using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using GuildSaber.Mod.Helpers;
 using UnityEngine;
-using static GuildSaber.Api.Features.Guilds.Levels.Http.LevelResponses;
+using static GuildSaber.Api.Features.Guilds.Achievements.Http.AchievementResponses;
 
 namespace GuildSaber.Mod.Features.PlayerCard;
 
@@ -21,13 +21,13 @@ public sealed record PlayerCardReady(
     string PlayerName,
     Texture2D? Avatar,
     Texture2D? GuildIcon,
-    string LevelName,
+    string AchievementName,
     string Passes,
     ImmutableArray<PlayerCardPoint> Points,
     TrophiesData Trophies,
     PlayerCardProgress Progress,
     PlayerCardPalette Palette,
-    bool ShowProgress)
+    bool ShowOrderedAchievements)
 {
     public static PlayerCardReady Create(
         GuildSaberSnapshot snapshot,
@@ -36,8 +36,8 @@ public sealed record PlayerCardReady(
         Texture2D? guildIcon,
         bool canCustomize)
     {
-        var level = snapshot.LevelStats.GetGlobalLevel();
-        var automaticColor = level is null ? Color.white : Color.FromArgb(level.Info.Color);
+        var achievement = snapshot.AchievementStats.GetGlobalAchievement();
+        var automaticColor = achievement is null ? Color.white : Color.FromArgb(achievement.Info.Color);
         var colors = config.ColorSettings;
         PlayerCardPalette palette = (canCustomize, config.ColorMode) switch
         {
@@ -53,19 +53,24 @@ public sealed record PlayerCardReady(
         var pointColor = canCustomize && config.ColorMode is not PlayerCardColorMode.Automatic
             ? palette.Accent
             : Color.white;
-        var categoryLevels = snapshot.CurrentGuildExtended.Categories
-            .Select(category => (category, level: snapshot.LevelStats.GetCategoryLevel(category.Id)))
-            .Select(x => new PlayerCardCategoryLevel(
+        var categoryAchievements = snapshot.CurrentGuildExtended.Categories
+            .Select(category => (category,
+                achievement: snapshot.AchievementStats.GetCategoryAchievement(category.Id)))
+            .Select(x => new PlayerCardCategoryAchievement(
                 x.category.Info.Name,
-                x.level?.Info.Name ?? "None",
-                x.level?.Order ?? 0,
-                Color.FromArgb(x.level?.Info.Color ?? 0xFFFFFF)))
+                x.achievement?.Info.Name ?? "None",
+                x.achievement?.Progression is AchievementProgression.Ordered progression
+                    ? progression.Order
+                    : 0,
+                Color.FromArgb(x.achievement?.Info.Color ?? 0xFFFFFF)))
             .ToImmutableArray();
-        var averageCategoryLevel = categoryLevels.IsEmpty ? 0 : categoryLevels.Average(x => x.LevelOrder);
-        var averageCategoryLevelColor = GetAverageLevelColor(snapshot, averageCategoryLevel);
+        var averageCategoryAchievement = categoryAchievements.IsEmpty
+            ? 0
+            : categoryAchievements.Average(x => x.AchievementOrder);
+        var averageCategoryAchievementColor = GetAverageAchievementColor(snapshot, averageCategoryAchievement);
 
         var equilibrium = snapshot
-            .LevelStats
+            .AchievementStats
             .CalculateSkillEquilibrium(snapshot.CurrentGuildExtended.Categories.Select(x => x.Id)) ?? 100;
 
         if (double.IsNaN(equilibrium) || double.IsInfinity(equilibrium))
@@ -75,42 +80,45 @@ public sealed record PlayerCardReady(
             PlayerName: snapshot.PlayerExtended.Player.PlayerInfo.Username,
             Avatar: avatar,
             GuildIcon: guildIcon,
-            LevelName: level?.Info.Name ?? "Level none",
+            AchievementName: achievement?.Info.Name ?? "Achievement none",
             Passes: $"{globalPasses.PassCount} passes (#{globalPasses.Rank})",
             Points:
             [
-                ..snapshot.ContextStats.SimplePointsWithRank
+                .. snapshot.ContextStats.SimplePointsWithRank
                     .Where(x => x.CategoryId is null)
                     .Select(x => new PlayerCardPoint($"{x.Points:0.##} {x.Name} (#{x.Rank})", pointColor))
             ],
-            Trophies: snapshot.LevelStats.CalculateTrophiesData(),
+            Trophies: snapshot.AchievementStats.CalculateTrophiesData(),
             Progress: new PlayerCardProgress(
-                averageCategoryLevel,
-                averageCategoryLevelColor,
+                averageCategoryAchievement,
+                averageCategoryAchievementColor,
                 equilibrium,
-                categoryLevels),
+                categoryAchievements),
             Palette: palette,
-            ShowProgress: config.CategoryLevelViewEnabled && !categoryLevels.IsEmpty);
+            ShowOrderedAchievements: config.ShowOrderedAchievements && !categoryAchievements.IsEmpty);
     }
 
-    private static Color GetAverageLevelColor(GuildSaberSnapshot snapshot, double average)
+    private static Color GetAverageAchievementColor(GuildSaberSnapshot snapshot, double average)
     {
-        var levels = snapshot.LevelStats
-            .Select(x => x.Level)
-            .OfType<Level.RankedMapListLevel>()
-            .Where(x => x.CategoryId is null)
-            .OrderBy(x => x.Order)
+        var achievements = snapshot.AchievementStats
+            .Select(x => x.Achievement)
+            .Where(x => x.CategoryId is null && x.Progression is AchievementProgression.Ordered)
+            .OrderBy(x => ((AchievementProgression.Ordered)x.Progression).Order)
             .ToArray();
 
         var (lower, upper) = (
-            levels.LastOrDefault(x => x.Order <= average),
-            levels.FirstOrDefault(x => x.Order >= average)
+            achievements.LastOrDefault(x => ((AchievementProgression.Ordered)x.Progression).Order <= average),
+            achievements.FirstOrDefault(x => ((AchievementProgression.Ordered)x.Progression).Order >= average)
         );
 
         if (lower is null) return Color.FromArgb(upper?.Info.Color ?? 0xFFFFFF);
-        if (upper is null || lower.Order == upper.Order) return Color.FromArgb(lower.Info.Color);
+        var lowerOrder = ((AchievementProgression.Ordered)lower.Progression).Order;
+        if (upper is null) return Color.FromArgb(lower.Info.Color);
 
-        var blend = (float)((average - lower.Order) / (upper.Order - lower.Order));
+        var upperOrder = ((AchievementProgression.Ordered)upper.Progression).Order;
+        if (lowerOrder == upperOrder) return Color.FromArgb(lower.Info.Color);
+
+        var blend = (float)((average - lowerOrder) / (upperOrder - lowerOrder));
         return Color.Lerp(Color.FromArgb(lower.Info.Color), Color.FromArgb(upper.Info.Color), blend);
     }
 }
@@ -125,13 +133,13 @@ public sealed record PlayerCardActionData(
         ImmutableDictionary<GuildId, Texture2D> guildIcons)
         => new(
             [
-                ..snapshot.AvailableGuilds.Select(guild => new PlayerCardGuild(
+                .. snapshot.AvailableGuilds.Select(guild => new PlayerCardGuild(
                     guild.Guild.Id,
                     guild.Guild.Info.Name,
                     guildIcons.GetValueOrDefault(guild.Guild.Id)))
             ],
             [
-                ..snapshot.CurrentGuildExtended.Contexts
+                .. snapshot.CurrentGuildExtended.Contexts
                     .Select(context => new PlayerCardContext(context.Id, context.Info.Name))
             ],
             snapshot.CurrentContextId);
@@ -142,16 +150,16 @@ public readonly record struct PlayerCardContext(ContextId Id, string Name);
 public readonly record struct PlayerCardPoint(string Text, Color Color);
 
 public readonly record struct PlayerCardProgress(
-    double AverageCategoryLevel,
-    Color AverageCategoryLevelColor,
+    double AverageCategoryAchievement,
+    Color AverageCategoryAchievementColor,
     double Equilibrium,
-    ImmutableArray<PlayerCardCategoryLevel> Categories
+    ImmutableArray<PlayerCardCategoryAchievement> Categories
 );
 
-public readonly record struct PlayerCardCategoryLevel(
+public readonly record struct PlayerCardCategoryAchievement(
     string CategoryName,
-    string LevelName,
-    uint LevelOrder,
+    string AchievementName,
+    uint AchievementOrder,
     Color Color
 );
 
@@ -163,7 +171,7 @@ public abstract record PlayerCardPalette(Color Accent)
 
 public readonly record struct PlayerCardSettingsState(
     bool Enabled,
-    bool ShowProgress,
+    bool ShowOrderedAchievements,
     bool ShowHandle,
     bool CanCustomize,
     PlayerCardColorMode ColorMode,
@@ -173,7 +181,7 @@ public readonly record struct PlayerCardSettingsState(
 {
     public static PlayerCardSettingsState Create(PlayerCardConfig config, bool canCustomize) => new(
         Enabled: config.Enabled,
-        ShowProgress: config.CategoryLevelViewEnabled,
+        ShowOrderedAchievements: config.ShowOrderedAchievements,
         ShowHandle: config.ShowHandle,
         CanCustomize: canCustomize,
         ColorMode: config.ColorMode,

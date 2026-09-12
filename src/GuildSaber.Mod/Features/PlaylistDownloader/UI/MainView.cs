@@ -12,6 +12,7 @@ using SongCore;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
+using static GuildSaber.Api.Features.Guilds.Achievements.Http.AchievementResponses;
 
 namespace GuildSaber.Mod.Features.PlaylistDownloader.UI;
 
@@ -53,7 +54,7 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
                                 .Bind(ref _rangeDownloadToggle)
                         ),
                         XUIHLayout.Make(
-                            XUIText.Make("Minimum level:"),
+                            XUIText.Make("Minimum achievement order:"),
                             XUISlider.Make()
                                 .OnValueChanged(RangeDownloadValueChanged)
                                 .SetInteger(true)
@@ -62,7 +63,7 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
                                 .Bind(ref _rangeDownloadMinSlider)
                         ),
                         XUIHLayout.Make(
-                            XUIText.Make("Maximum level:"),
+                            XUIText.Make("Maximum achievement order:"),
                             XUISlider.Make()
                                 .OnValueChanged(RangeDownloadValueChanged)
                                 .SetInteger(true)
@@ -96,26 +97,32 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
 
         var currentGuild = snapshot.CurrentGuildExtended;
         var guildName = currentGuild.Guild.Info.Name;
-        var levels = snapshot.LevelStats;
+        var achievements = snapshot.AchievementStats;
         var categories = currentGuild.Categories;
 
         _guildNameText.SetText($"Download or update {guildName} playlists:");
 
-        var filteredLevels = levels.Where(x => x.Level.Order != 100)
+        var orderedProgressions = achievements
+            .Select(x => x.Achievement.Progression)
+            .OfType<AchievementProgression.Ordered>()
             .ToArray();
 
-        float minLevel = filteredLevels.Length == 0 ? 0 : filteredLevels.Min(x => x.Level.Order);
-        float maxLevel = filteredLevels.Length == 0 ? 0 : filteredLevels.Max(x => x.Level.Order);
+        float minAchievementOrder = orderedProgressions.Length == 0
+            ? 0
+            : orderedProgressions.Min(x => x.Order);
+        float maxAchievementOrder = orderedProgressions.Length == 0
+            ? 0
+            : orderedProgressions.Max(x => x.Order);
 
         _rangeDownloadMinSlider
-            .SetMinValue(minLevel)
-            .SetMaxValue(maxLevel)
-            .SetValue(minLevel);
+            .SetMinValue(minAchievementOrder)
+            .SetMaxValue(maxAchievementOrder)
+            .SetValue(minAchievementOrder);
 
         _rangeDownloadMaxSlider
-            .SetMinValue(minLevel)
-            .SetMaxValue(maxLevel)
-            .SetValue(maxLevel);
+            .SetMinValue(minAchievementOrder)
+            .SetMaxValue(maxAchievementOrder)
+            .SetValue(maxAchievementOrder);
 
         _categoryViews.ForEach(x => x.SetActive(false));
 
@@ -179,10 +186,10 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
         _rangeDownloadMaxSlider.SetValue(minValue, false);
     }
 
-    private void UniquePlaylistsDownloadFinished(string category, string levelName, bool success)
+    private void UniquePlaylistsDownloadFinished(string category, string achievementName, bool success)
         => _uniquePlaylistDownloadedText.SetText(success
-            ? $"{category}: {levelName} successfully downloaded"
-            : $"{category}: {levelName} failed");
+            ? $"{category}: {achievementName} successfully downloaded"
+            : $"{category}: {achievementName} failed");
 
     private void DownloadFinished(int successCount, int failCount)
     {

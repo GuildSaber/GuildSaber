@@ -4,8 +4,8 @@ Database project containing EF Core models and contexts.
 
 ## Database Migrations (EFCore)
 
-GuildSaber uses Entity Framework Core (EFCore) for database schema management.
-Each DBContext migrations are organized in their respective `Migrations` folder.
+GuildSaber uses Entity Framework Core (EFCore) for database schema management. Each DBContext migrations are organized
+in their respective `Migrations` folder.
 
 ### Prerequisites
 

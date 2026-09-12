@@ -3,17 +3,17 @@ using System.Text;
 using Discord;
 using Discord.Interactions;
 using Discord.Net;
+using GuildSaber.Api.Features.Guilds.Achievements.Http;
 using GuildSaber.Api.Features.Guilds.Categories.Http;
-using GuildSaber.Api.Features.Guilds.Levels.Http;
+using GuildSaber.Api.Features.Guilds.Members.AchievementStats.Http;
 using GuildSaber.Api.Features.Guilds.Members.ContextStats.Http;
-using GuildSaber.Api.Features.Guilds.Members.LevelStats.Http;
 using GuildSaber.Api.Features.Players.Http;
 using GuildSaber.Api.Features.RankedMaps.Http;
 using GuildSaber.Api.Shared;
 using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Result;
 using GuildSaber.Database.Models.DiscordBot.FlexHistories;
-using GuildSaber.Database.Models.Server.Guilds.Levels;
+using GuildSaber.Database.Models.Server.Guilds.Achievements;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.StrongTypes;
 using GuildSaber.DiscordBot.Core.AutocompleteHandlers;
@@ -33,21 +33,23 @@ public partial class UserModuleSlash
     [SlashCommand("flex", "Show off your progress and claim roles!")]
     public async Task Flex([Autocomplete<ContextAutocompleteHandler>] ContextId contextId)
     {
-        await DeferAsync();
         var client = Client.Value;
 
-        var (player, guildId) = await (GetPlayerAsync().AsTask(), GetGuildIdAsync().AsTask())
+        var (player, guildId) = await (
+                DeferAsync(),
+                GetPlayerAsync().AsTask(),
+                GetGuildIdAsync().AsTask())
             .WhenAll();
 
-        var (levelStats, categories, contextStats) = await (
-                client.LevelStats.GetByPlayerIdAsync(player.Id, contextId).Unwrap(),
+        var (achievementStats, categories, contextStats) = await (
+                client.AchievementStats.GetByPlayerIdAsync(player.Id, contextId).Unwrap(),
                 client.Categories.GetAllByGuildIdAsync(guildId).Unwrap(),
                 client.ContextStats.GetByPlayerIdAsync(player.Id, contextId).Unwrap())
             .WhenAll();
 
         var previousFlexHistory = await DbContext.FlexHistories
             .Include(x => x.PointStats)
-            .Include(x => x.LevelStats)
+            .Include(x => x.AchievementStats)
             .Where(x => x.PlayerId == player.Id && x.GuildId == guildId && x.ContextId == contextId)
             .OrderByDescending(x => x.Timestamp)
             .FirstOrDefaultAsync();
@@ -55,7 +57,7 @@ public partial class UserModuleSlash
         var flexHistory = FlexCommand.MakeNewFlexHistory(
             player.Id, guildId, contextId,
             DateTimeOffset.UtcNow,
-            levelStats,
+            achievementStats,
             contextStats ?? throw new InteractionHandler.CurrentPlayerDidNotJoinGuildContextException()
         );
 
@@ -91,12 +93,12 @@ public partial class UserModuleSlash
 
         var flexComponent = FlexCommand.BuildFlexComponents(player, flexHistory, previousFlexHistory,
             rankedMapsWithScores,
-            levelStats.Select(x => x.Level).ToDictionary(x => x.Id),
+            achievementStats.Select(x => x.Achievement).ToDictionary(x => x.Id),
             categories,
             contextStats.Value.SimplePointsWithRank
                 .Where(x => x.CategoryId == null)
                 .ToDictionary(x => x.PointId, x => x.Name), EmojiSettings.Value,
-            levelId => Client.Value.Levels.GetCoverUrl(levelId)
+            achievementId => Client.Value.Achievements.GetCoverUrl(achievementId)
         );
 
         try
@@ -111,16 +113,24 @@ public partial class UserModuleSlash
                 await FollowupAsync(components: new ComponentBuilderV2([component]).Build());
         }
 
-        var (levelRoleIdsToAssign, levelRoleIdsToRemove) = (
-            levelStats
-                .Where(x => x.Level.CategoryId is null
-                            && x is { IsLocked: false, IsCompleted: true, Level.DiscordInfo.RoleId: not null })
-                .Select(x => (ulong)x.Level.DiscordInfo.RoleId!.Value)
+        var (achievementRoleIdsToAssign, achievementRoleIdsToRemove) = (
+            achievementStats
+                .Where(x => x.Achievement.CategoryId is null
+                            && x is
+                            {
+                                IsLocked: false, IsCompleted: true,
+                                Achievement.DiscordBindings.RoleId: not null
+                            })
+                .Select(x => (ulong)x.Achievement.DiscordBindings.RoleId!.Value)
                 .Distinct()
                 .ToArray(),
-            levelStats.Where(x => x.Level.CategoryId is null
-                                  && x is { IsCompleted: false, Level.DiscordInfo.RoleId: not null })
-                .Select(x => (ulong)x.Level.DiscordInfo.RoleId!.Value)
+            achievementStats.Where(x => x.Achievement.CategoryId is null
+                                        && x is
+                                        {
+                                            IsCompleted: false,
+                                            Achievement.DiscordBindings.RoleId: not null
+                                        })
+                .Select(x => (ulong)x.Achievement.DiscordBindings.RoleId!.Value)
                 .Distinct()
                 .ToArray()
         );
@@ -128,8 +138,8 @@ public partial class UserModuleSlash
         var user = await ((IGuild)Context.Guild).GetUserAsync(Context.User.Id);
         var currentRoleIds = user.RoleIds.ToHashSet();
         var expectedRoleIds = currentRoleIds
-            .Except(levelRoleIdsToRemove)
-            .Union(levelRoleIdsToAssign)
+            .Except(achievementRoleIdsToRemove)
+            .Union(achievementRoleIdsToAssign)
             .ToHashSet();
 
         if (currentRoleIds.SetEquals(expectedRoleIds))
@@ -137,14 +147,14 @@ public partial class UserModuleSlash
 
         try
         {
-            await user.AddRolesAsync(levelRoleIdsToAssign);
-            await user.RemoveRolesAsync(levelRoleIdsToRemove);
+            await user.AddRolesAsync(achievementRoleIdsToAssign);
+            await user.RemoveRolesAsync(achievementRoleIdsToRemove);
         }
         catch (Exception exception)
         {
             await FollowupAsync(
                 $"Failed to update your roles.. {EmojiSettings.Value.Sad}\n" +
-                $"Maybe they did delete a role without updating the level role ids? Ask the Ranking Team I guess.\n" +
+                $"Maybe they deleted a role without updating the level role bindings? Ask the Ranking Team.\n" +
                 $":x: {exception.Message}");
             return;
         }
@@ -159,24 +169,25 @@ file static class FlexCommand
         PlayerResponses.Player player, FlexHistory flexHistory,
         FlexHistory? previousFlexHistory,
         List<RankedMapWithScores> rankedMapsWithScores,
-        Dictionary<int, LevelResponses.Level> levelsById,
+        Dictionary<int, AchievementResponses.Achievement> achievementsById,
         CategoryResponses.Category[] categories,
         Dictionary<int, string> pointNamesById,
         EmojiSettings emojiSettings,
-        Func<Level.LevelId, Uri> getLevelThumbnailUri)
+        Func<Achievement.AchievementId, Uri> getAchievementThumbnailUri)
     {
         var builder = new ComponentBuilderV2();
         var prevColor = previousFlexHistory is not null
-            ? Color.FromArgb(levelsById[previousFlexHistory.GlobalLevelId?.Value ?? 0].Info.Color)
+            ? Color.FromArgb(
+                achievementsById[previousFlexHistory.GlobalAchievementId?.Value ?? 0].Info.Color)
             : Color.Default;
-        var newColor = flexHistory.GlobalLevelId is { } globalLevelId
-            ? Color.FromArgb(levelsById[globalLevelId.Value].Info.Color)
+        var newColor = flexHistory.GlobalAchievementId is { } globalAchievementId
+            ? Color.FromArgb(achievementsById[globalAchievementId.Value].Info.Color)
             : Color.Default;
 
-        var passedMapContainers = ToRankedScoreContainer(rankedMapsWithScores, levelsById, categories, pointNamesById,
-            emojiSettings);
+        var passedMapContainers = ToRankedScoreContainer(
+            rankedMapsWithScores, categories, pointNamesById, emojiSettings);
         foreach (var container in passedMapContainers)
-            // Prev color is used to emphasize the level change during the flex.
+            // Prev color is used to emphasize the achievement change during the flex.
             builder.WithContainer(container.WithAccentColor(prevColor));
 
         var stringBuilder = new StringBuilder();
@@ -226,39 +237,49 @@ file static class FlexCommand
                 .WithAccessory(new ThumbnailBuilder().WithMedia(player.PlayerInfo.AvatarUrl)))
             .WithAccentColor(prevColor));
 
-        if (flexHistory.GlobalLevelId == previousFlexHistory?.GlobalLevelId)
+        if (flexHistory.GlobalAchievementId == previousFlexHistory?.GlobalAchievementId)
             return builder.Build();
 
-        var oldLevel = previousFlexHistory?.GlobalLevelId is { } oldLevelId ? levelsById[oldLevelId.Value] : null;
-        var newLevel = flexHistory.GlobalLevelId is { } newLevelId ? levelsById[newLevelId.Value] : null;
+        var oldAchievement = previousFlexHistory?.GlobalAchievementId is { } oldAchievementId
+            ? achievementsById[oldAchievementId.Value]
+            : null;
+        var newAchievement = flexHistory.GlobalAchievementId is { } newAchievementId
+            ? achievementsById[newAchievementId.Value]
+            : null;
 
         builder.WithContainer(content => content
             .WithSection(section =>
             {
-                if (newLevel is not null)
+                if (newAchievement is not null)
                     section.WithAccessory(new ThumbnailBuilder()
-                        .WithMedia(getLevelThumbnailUri(new Level.LevelId(newLevel.Id)).ToString()));
+                        .WithMedia(getAchievementThumbnailUri(
+                            new Achievement.AchievementId(newAchievement.Id)).ToString()));
 
-                section.WithTextDisplay((oldLevel, newLevel) switch
+                section.WithTextDisplay((oldAchievement, newAchievement) switch
                 {
                     (null, null) =>
                         $"## No levels yet!\n\u200B\nIt seems like you don't have any levels yet. Time to grind! {emojiSettings.KeepItUp}",
-                    ({ } prevLevel, null) =>
+                    ({ } previousAchievement, null) =>
                         $"## How unfortunate..\n\u200B\nIt seems like you lost **all your levels** since your last flex," +
-                        $" from **{prevLevel.Info.Name}** to nothing. Don't be sad {emojiSettings.Sad}," +
+                        $" from **{previousAchievement.Info.Name}** to nothing. Don't be sad {emojiSettings.Sad}," +
                         $" it's just time to grind back up! {emojiSettings.KeepItUp}\n" +
-                        "(To avoid level loss, try to play more maps in each level.)",
-                    (null, { } level) =>
-                        $"## Your got your first level!\n\u200B\nGG on reaching **{level.Info.Name}**!",
-                    ({ } prevLevel, { } level) when prevLevel.Order < level.Order =>
-                        $"## Level up!\n\u200B\nYou moved from **{prevLevel.Info.Name}** to **{level.Info.Name}**!",
-                    ({ } prevLevel, { } level) when prevLevel.Order > level.Order =>
+                        "(To avoid level loss, try to play more maps for each level.)",
+                    (null, { } achievement) =>
+                        $"## Your first level!\n\u200B\nGG on reaching **{achievement.Info.Name}**!",
+                    ({ Progression: AchievementResponses.AchievementProgression.Ordered previousProgression } previousAchievement,
+                        { Progression: AchievementResponses.AchievementProgression.Ordered progression } achievement)
+                        when previousProgression.Order < progression.Order =>
+                        $"## Level up!\n\u200B\nYou moved from **{previousAchievement.Info.Name}** to **{achievement.Info.Name}**!",
+                    ({ Progression: AchievementResponses.AchievementProgression.Ordered previousProgression } previousAchievement,
+                        { Progression: AchievementResponses.AchievementProgression.Ordered progression } achievement)
+                        when previousProgression.Order > progression.Order =>
                         $"## Level down..\n\u200B\nIt seems like you lost some levels since your last flex," +
-                        $" from **{prevLevel.Info.Name}** to **{level.Info.Name}**.\n" +
-                        $"Don't be sad {emojiSettings.Sad}, you can do it!\n(To avoid level loss, try to play more maps in each level.)",
-                    ({ } prevLevel, { } level) =>
-                        $"## New level!\n\u200B\nIt seems like your level changed from **{prevLevel.Info.Name}**" +
-                        $" to **{level.Info.Name}** since your last flex."
+                        $" from **{previousAchievement.Info.Name}** to **{achievement.Info.Name}**.\n" +
+                        $"Don't be sad {emojiSettings.Sad}, you can do it!\n" +
+                        "(To avoid level loss, try to play more maps for each level.)",
+                    ({ } previousAchievement, { } achievement) =>
+                        $"## New level!\n\u200B\nIt seems like your level changed from **{previousAchievement.Info.Name}**" +
+                        $" to **{achievement.Info.Name}** since your last flex."
                 });
             }).WithAccentColor(newColor));
 
@@ -267,7 +288,6 @@ file static class FlexCommand
 
     private static List<ContainerBuilder> ToRankedScoreContainer(
         List<RankedMapWithScores> rankedMapWithScores,
-        Dictionary<int, LevelResponses.Level> levelsById,
         CategoryResponses.Category[] categories,
         Dictionary<int, string> pointNamesById,
         EmojiSettings emojiSettings)
@@ -294,20 +314,20 @@ file static class FlexCommand
 
         if (passedMaps.Length > 0)
             containers.Add(RankedScoreContainerBuilder(
-                title: "### You passed the following maps:\n", passedMaps, levelsById, categories, pointNamesById,
+                title: "### You passed the following maps:\n", passedMaps, categories, pointNamesById,
                 emojiSettings,
                 take: 15));
 
         if (prohibitedMaps.Length > 0)
             containers.Add(RankedScoreContainerBuilder(
-                title: "### You got scores on invalid states:\n", prohibitedMaps, levelsById, categories,
+                title: "### You got scores on invalid states:\n", prohibitedMaps, categories,
                 pointNamesById,
                 emojiSettings,
                 take: 15));
 
         if (pendingMaps.Length > 0)
             containers.Add(RankedScoreContainerBuilder(
-                title: "### You got scores that are pending review:\n", pendingMaps, levelsById, categories,
+                title: "### You got scores that are pending review:\n", pendingMaps, categories,
                 pointNamesById,
                 emojiSettings,
                 take: 15));
@@ -315,7 +335,7 @@ file static class FlexCommand
         if (adminConfirmedMaps.Length > 0)
             containers.Add(RankedScoreContainerBuilder(
                 title: "### Scores got admin confirmed:\n",
-                adminConfirmedMaps, levelsById, categories,
+                adminConfirmedMaps, categories,
                 pointNamesById,
                 emojiSettings,
                 take: 15));
@@ -323,7 +343,7 @@ file static class FlexCommand
         if (adminRefusedMaps.Length > 0)
             containers.Add(RankedScoreContainerBuilder(
                 title: "### Scores got admin refused:\n",
-                adminRefusedMaps, levelsById, categories,
+                adminRefusedMaps, categories,
                 pointNamesById,
                 emojiSettings,
                 take: 15));
@@ -333,7 +353,6 @@ file static class FlexCommand
 
     private static ContainerBuilder RankedScoreContainerBuilder(
         string title, RankedMapWithScores[] rankedMapWithScores,
-        Dictionary<int, LevelResponses.Level> levelsById,
         CategoryResponses.Category[] categories,
         Dictionary<int, string> pointNamesById,
         EmojiSettings emojiSettings,
@@ -343,7 +362,7 @@ file static class FlexCommand
 
         foreach (var rankedMap in rankedMapWithScores.Take(take))
         foreach (var rankedScore in rankedMap.RankedScores)
-            stringBuilder.WriteRankedScores(rankedScore, rankedMap.RankedMap, levelsById, categories, pointNamesById,
+            stringBuilder.WriteRankedScores(rankedScore, rankedMap.RankedMap, categories, pointNamesById,
                 emojiSettings);
 
         if (rankedMapWithScores.Length > take)
@@ -355,7 +374,6 @@ file static class FlexCommand
     private static void WriteRankedScores(
         this StringBuilder stringBuilder, RankedScore rankedScore,
         RankedMap rankedMap,
-        Dictionary<int, LevelResponses.Level> levelsById,
         CategoryResponses.Category[] categories,
         Dictionary<int, string> pointNamesById,
         EmojiSettings emojiSettings)
@@ -395,16 +413,11 @@ file static class FlexCommand
         stringBuilder.Append(" - ")
             .Append(version.Song.Info.Name.Replace("`", @"\`").Replace('*', ' ')).Append("`*** ");
 
-        if (rankedMap.LevelIds.Length != 0)
+        var globalAchievements = rankedMap.Achievements.Where(x => x.CategoryId is null).ToArray();
+        if (globalAchievements.Length != 0)
         {
             stringBuilder.Append(" in **");
-            foreach (var levelId in rankedMap.LevelIds)
-            {
-                var level = levelsById[levelId];
-                if (level.CategoryId is not null) continue;
-
-                stringBuilder.Append(level.Info.Name).Append(", ");
-            }
+            foreach (var achievement in globalAchievements) stringBuilder.Append(achievement.Info.Name).Append(", ");
 
             stringBuilder.Remove(stringBuilder.Length - 2, 2).Append("** ");
         }
@@ -442,26 +455,30 @@ file static class FlexCommand
 
     public static FlexHistory MakeNewFlexHistory(
         PlayerId playerId, GuildId guildId, ContextId contextId, DateTimeOffset dateTimeOffset,
-        LevelStatResponses.MemberLevelStat[] levelStats,
+        AchievementStatResponses.MemberAchievementStat[] achievementStats,
         ContextStatResponses.MemberContextStat contextStats) => new()
     {
         GuildId = guildId,
         PlayerId = playerId,
         ContextId = contextId,
         Timestamp = dateTimeOffset,
-        GlobalLevelId = levelStats
-            .Where(x => x.Level.CategoryId is null && !x.IsLocked)
-            .LastOrDefault(x => x.IsCompleted)?.Level.Id is { } globalLevelId
-            ? new Level.LevelId(globalLevelId)
+        GlobalAchievementId = achievementStats
+            .Where(x => x.Achievement.CategoryId is null &&
+                        x.Achievement.Progression is AchievementResponses.AchievementProgression.Ordered &&
+                        !x.IsLocked)
+            .LastOrDefault(x => x.IsCompleted)?.Achievement.Id is { } globalAchievementId
+            ? new Achievement.AchievementId(globalAchievementId)
             : null,
-        LevelStats = levelStats
-            .Where(x => x.Level.CategoryId is not null && !x.IsLocked)
-            .GroupBy(x => x.Level.CategoryId!.Value)
-            .Select(x => new FlexHistoryLevelStat
+        AchievementStats = achievementStats
+            .Where(x => x.Achievement.CategoryId is not null &&
+                        x.Achievement.Progression is AchievementResponses.AchievementProgression.Ordered &&
+                        !x.IsLocked)
+            .GroupBy(x => x.Achievement.CategoryId!.Value)
+            .Select(x => new FlexHistoryAchievementStat
             {
                 CategoryId = new CategoryId(x.Key),
-                LevelId = x.LastOrDefault(level => level.IsCompleted)?.Level.Id is { } levelId
-                    ? new Level.LevelId(levelId)
+                AchievementId = x.LastOrDefault(stat => stat.IsCompleted)?.Achievement.Id is { } achievementId
+                    ? new Achievement.AchievementId(achievementId)
                     : null
             }).ToArray(),
         PointStats = contextStats.SimplePointsWithRank.Where(x => x.CategoryId is null)

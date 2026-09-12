@@ -11,7 +11,7 @@ using GuildSaber.CSharpClient;
 using OculusStudios.Platform.Core;
 using Zenject;
 using static GuildSaber.Api.Features.Guilds.Members.ContextStats.Http.ContextStatResponses;
-using static GuildSaber.Api.Features.Guilds.Members.LevelStats.Http.LevelStatResponses;
+using static GuildSaber.Api.Features.Guilds.Members.AchievementStats.Http.AchievementStatResponses;
 using static GuildSaber.Api.Features.Players.Http.PlayerResponses;
 using static GuildSaber.Mod.Features.GuildSaber.Runtime.GuildSaberRuntimeState;
 
@@ -33,7 +33,7 @@ public sealed class GuildSaberManager(
     public event Action<GuildSaberRuntimeState>? StateChanged;
 
     private readonly record struct MemberStats(
-        ImmutableArray<MemberLevelStat> LevelStats,
+        ImmutableArray<MemberAchievementStat> AchievementStats,
         MemberContextStat ContextStats
     );
 
@@ -154,7 +154,7 @@ public sealed class GuildSaberManager(
             _availableGuilds,
             guildExtended,
             contextId,
-            memberStats.LevelStats,
+            memberStats.AchievementStats,
             memberStats.ContextStats
         );
 
@@ -202,7 +202,7 @@ public sealed class GuildSaberManager(
 
             var refreshedSnapshot = currentSnapshot with
             {
-                LevelStats = memberStats.LevelStats,
+                AchievementStats = memberStats.AchievementStats,
                 ContextStats = memberStats.ContextStats
             };
 
@@ -225,14 +225,14 @@ public sealed class GuildSaberManager(
         ContextId contextId,
         CancellationToken token)
     {
-        var (levelStatsResult, contextStatsResult) = await (
-            client.LevelStats.GetByPlayerIdAsync(playerId, contextId, token),
+        var (achievementStatsResult, contextStatsResult) = await (
+            client.AchievementStats.GetByPlayerIdAsync(playerId, contextId, token),
             client.ContextStats.GetByPlayerIdAsync(playerId, contextId, token)
         ).WhenAll();
 
-        if (!levelStatsResult.TryGetValue(out var levelStats, out var levelStatsError))
+        if (!achievementStatsResult.TryGetValue(out var achievementStats, out var achievementStatsError))
         {
-            logger.Error($"Failed to fetch member level stats: {levelStatsError}");
+            logger.Error($"Failed to fetch member achievement stats: {achievementStatsError}");
             return null;
         }
 
@@ -243,7 +243,7 @@ public sealed class GuildSaberManager(
             return null;
         }
 
-        return new MemberStats([..levelStats], contextStats.Value);
+        return new MemberStats([.. achievementStats], contextStats.Value);
     }
 
     private async Task RunTransitionAsync(Func<CancellationToken, Task> transition)

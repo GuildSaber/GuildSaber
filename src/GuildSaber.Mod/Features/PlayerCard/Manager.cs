@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using CP_SDK_BS.Game;
+using GuildSaber.Api.Features.Guilds.Achievements.Http;
 using GuildSaber.Common.Helpers;
+using GuildSaber.CSharpClient.Routes.Guilds.Members.AchievementStats;
 using GuildSaber.Mod.Features.GuildSaber;
 using GuildSaber.Mod.Features.GuildSaber.Caching;
 using GuildSaber.Mod.Features.GuildSaber.Runtime;
@@ -160,8 +162,8 @@ public sealed class PlayerCardManager(
                 config.PlayerCard.Enabled = value;
                 ApplyVisibility();
                 break;
-            case PlayerCardSettingsMessage.SetShowProgress(var value):
-                config.PlayerCard.CategoryLevelViewEnabled = value;
+            case PlayerCardSettingsMessage.SetShowOrderedAchievements(var value):
+                config.PlayerCard.ShowOrderedAchievements = value;
                 break;
             case PlayerCardSettingsMessage.SetShowHandle(var value):
                 config.PlayerCard.ShowHandle = value;
@@ -353,15 +355,17 @@ public sealed class PlayerCardManager(
 
     private static bool CanCustomize(GuildSaberSnapshot snapshot)
     {
-        const int requiredLevel = 30;
-        return snapshot.LevelStats.Where(x => x.Level.CategoryId is null && !x.IsLocked)
-                .LastOrDefault(x => x.IsCompleted)?.Level.Order switch
+        const int requiredAchievementOrder = 30;
+        return snapshot.AchievementStats.GetGlobalAchievement()?.Progression switch
+        {
+            _ when (ulong)snapshot.PlayerExtended.Player.PlayerLinkedAccounts.BeatLeaderId
+                is 76561198846350061 or 76561198126131670 => true,
+            AchievementResponses.AchievementProgression.Ordered
             {
-                _ when (ulong)snapshot.PlayerExtended.Player.PlayerLinkedAccounts.BeatLeaderId
-                    is 76561198846350061 or 76561198126131670 => true,
-                >= requiredLevel => true,
-                _ => false
-            };
+                Order: >= requiredAchievementOrder
+            } => true,
+            _ => false
+        };
     }
 
     private void Observe(Task task, string operation) => _ = ObserveAsync(task, operation);

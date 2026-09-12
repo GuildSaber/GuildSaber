@@ -16,7 +16,7 @@ using static GuildSaber.Api.Features.RankedScores.Http.RankedScoreResponses.Rank
 namespace GuildSaber.Mod.Features.MenuTweaks.RankedMapStats;
 
 /// <summary>
-/// Displays a map's ranked stats if ranked (map categories, map level, and if the player has passed the map).
+/// Displays a map's ranked stats if ranked (categories, difficulty star, and whether the player passed it).
 /// </summary>
 public class RankedMapStats(
     [Inject(Id = ResourceMap.GsWhiteLogo)] Texture2D placeHolderIcon,
@@ -33,9 +33,9 @@ public class RankedMapStats(
 ) : XUIVLayout("MapRankedStats"), IInitializable, IDisposable
 {
     private XUIImage _categoryIcon = null!;
+    private XUIText _difficultyStar = null!;
     private XUIImage _guildIcon = null!;
     private XUIText _mapCategories = null!;
-    private XUIText _mapLevel = null!;
     private int _renderVersion;
     private XUIImage _whiteMarkImage = null!;
 
@@ -53,7 +53,7 @@ public class RankedMapStats(
                         .SetHeight(6)
                         .SetWidth(6),
                     XUIText.Make(string.Empty)
-                        .Bind(ref _mapLevel)
+                        .Bind(ref _difficultyStar)
                         .SetFontSize(5)
                         .SetAlpha(0.55f))
                 .SetSpacing(2)
@@ -167,7 +167,7 @@ public class RankedMapStats(
             }
         }
 
-        _mapLevel.SetText($"{(int)rankedMap.Rating.DiffStar}");
+        _difficultyStar.SetText($"{(int)rankedMap.Rating.DiffStar}");
         _guildIcon.SetSprite(Sprite.Create(guildIcon, new Rect(0, 0, guildIcon.width, guildIcon.height), Vector2.zero));
         _guildIcon.SetActive(true);
 

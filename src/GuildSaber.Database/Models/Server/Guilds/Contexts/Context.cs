@@ -1,5 +1,5 @@
 ﻿using GuildSaber.Database.Extensions;
-using GuildSaber.Database.Models.Server.Guilds.Levels;
+using GuildSaber.Database.Models.Server.Guilds.Achievements;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.RankedMaps;
@@ -19,7 +19,7 @@ public class Context
     //TODO: Add settings for context, like if it only takes up new scores, etc.
 
     public IList<Point> Points { get; set; } = null!;
-    public IList<Level> Levels { get; set; } = null!;
+    public IList<Achievement> Achievements { get; set; } = null!;
     public IList<RankedMap> RankedMaps { get; init; } = null!;
     public IList<Member> Members { get; set; } = null!;
     public IList<ContextMember> ContextMembers { get; init; } = null!;
@@ -51,10 +51,10 @@ public class ContextConfiguration : IEntityTypeConfiguration<Context>
 
         builder.HasMany(x => x.Points)
             .WithMany();
-        builder.HasMany(x => x.Levels)
+        builder.HasMany(x => x.Achievements)
             .WithOne(x => x.Context).HasForeignKey(x => x.ContextId);
         builder.HasMany(x => x.RankedMaps)
-            .WithOne().HasForeignKey(x => x.ContextId);
+            .WithOne(x => x.Context).HasForeignKey(x => x.ContextId);
         builder.HasMany(x => x.Members)
             .WithMany(x => x.Contexts)
             .UsingEntity<ContextMember>();

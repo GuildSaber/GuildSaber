@@ -8,8 +8,8 @@ using GuildSaber.DiscordBot.Core.AutocompleteHandlers;
 using GuildSaber.DiscordBot.Core.Extensions;
 using GuildSaber.DiscordBot.Core.Handlers;
 using GuildSaber.DiscordBot.Settings;
-using static GuildSaber.Api.Features.Guilds.Levels.Http.LevelResponses;
-using static GuildSaber.Api.Features.Guilds.Members.LevelStats.Http.LevelStatResponses;
+using static GuildSaber.Api.Features.Guilds.Achievements.Http.AchievementResponses;
+using static GuildSaber.Api.Features.Guilds.Members.AchievementStats.Http.AchievementStatResponses;
 using static GuildSaber.Api.Features.Guilds.Categories.Http.CategoryResponses;
 using static GuildSaber.Api.Features.Players.Http.PlayerResponses;
 
@@ -24,9 +24,8 @@ public partial class UserModuleSlash
         [Summary("User", "The user to show progress for (you if empty)")] IUser? user = null,
         [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Visible)
     {
-        await DeferAsync(ephemeral: displayChoice.ToEphemeral());
-
         var (guild, player, category) = await (
+                DeferAsync(ephemeral: displayChoice.ToEphemeral()),
                 GetGuildAsync().AsTask(),
                 user is null
                     ? GetPlayerAtMeAsync().AsTask()
@@ -37,8 +36,8 @@ public partial class UserModuleSlash
             .WhenAll();
 
         var stats = user is null
-            ? (await Client.Value.LevelStats.GetAtMeAsync(contextId)).Unwrap()
-            : (await Client.Value.LevelStats.GetByPlayerIdAsync(player.Id, contextId)).Unwrap();
+            ? (await Client.Value.AchievementStats.GetAtMeAsync(contextId)).Unwrap()
+            : (await Client.Value.AchievementStats.GetByPlayerIdAsync(player.Id, contextId)).Unwrap();
 
         if (stats.Length == 0)
             throw user is null
@@ -63,7 +62,7 @@ file static class ProgressCommand
     public readonly record struct ProgressData(
         GuildResponses.Guild Guild,
         Player Player,
-        MemberLevelStat[] Stats,
+        MemberAchievementStat[] Stats,
         int? CategoryId,
         string PoolName,
         TrophyEmojis TrophyEmojis
@@ -74,11 +73,11 @@ file static class ProgressCommand
         var builder = new ComponentBuilderV2();
         var (categoryId, trophyEmojis) = (data.CategoryId, data.TrophyEmojis);
         var progressLines = data.Stats
-            .Where(x => x.Level.CategoryId == categoryId)
-            .Aggregate(new StringBuilder(), (sb, memberLevelStat) =>
+            .Where(x => x.Achievement.CategoryId == categoryId)
+            .Aggregate(new StringBuilder(), (sb, achievementStat) => achievementStat.ToProgress(trophyEmojis) switch
             {
-                var line = memberLevelStat.ToProgress(trophyEmojis);
-                return line is null ? sb : sb.Append(memberLevelStat.Level.Info.Name).Append(' ').AppendLine(line);
+                null => sb,
+                var line => sb.Append(achievementStat.Achievement.Info.Name).Append(' ').AppendLine(line)
             });
 
         var (userName, categoryName, color, avatarUrl) = (
@@ -103,21 +102,36 @@ file static class ProgressCommand
         return builder.Build();
     }
 
-    private static string? ToProgress(this MemberLevelStat memberLevelStat, TrophyEmojis trophyEmojis)
-        => memberLevelStat.Level switch
+    private static string? ToProgress(this MemberAchievementStat memberAchievementStat, TrophyEmojis trophyEmojis)
+    {
+        if (memberAchievementStat.Achievement.Progression is not AchievementProgression.Ordered ||
+            memberAchievementStat.PassCount is not { } passCount)
+            return null;
+
+        var totalCount = memberAchievementStat.Achievement switch
         {
-            Level.RankedMapListLevel listLevel => GenerateProgressText(listLevel, memberLevelStat, trophyEmojis),
-            _ => null
+            Achievement.RankedMapListAchievement achievement => achievement.TotalCount,
+            Achievement.DiffStarAchievement achievement => achievement.TotalCount,
+            Achievement.AccStarAchievement achievement => achievement.TotalCount,
+            _ => (int?)null
         };
 
-    private static string GenerateProgressText(
-        in Level.RankedMapListLevel level, in MemberLevelStat stat, TrophyEmojis trophyEmojis)
-        => MakeProgressBar(stat.PassCount!.Value, level.TotalCount, 10) +
-           trophyEmojis.GetFromPercentage(stat.PassCount!.Value / (double)level.TotalCount) switch
-           {
-               null => string.Empty,
-               var (_, emoji) => $" {emoji}"
-           } + $" ({stat.PassCount}/{level.TotalCount})";
+        return totalCount is { } count
+            ? GenerateProgressText(passCount, count, trophyEmojis)
+            : null;
+    }
+
+    private static string GenerateProgressText(int passCount, int totalCount, TrophyEmojis trophyEmojis)
+    {
+        var completion = totalCount == 0 ? 0d : passCount / (double)totalCount;
+
+        return MakeProgressBar(passCount, totalCount, 10) +
+               trophyEmojis.GetFromPercentage(completion) switch
+               {
+                   null => string.Empty,
+                   var (_, emoji) => $" {emoji}"
+               } + $" ({passCount}/{totalCount})";
+    }
 
     private static string MakeProgressBar(int value, int maxValue, int size)
     {

@@ -64,6 +64,20 @@ public class CategoryEndpoints : IEndpoints
             .RequireGuildPermission(EPermission.RankingTeam);
     }
 
+    /* For later cover and banner image upload. Perhaps FileUploadCollection could also be investigated..
+
+     const long MaxFileBytes = 200;
+
+    app.MapPost("/", IResult (IFormFile file) =>
+    {
+        if (file.Length is 0 or > MaxFileBytes)
+            return Results.BadRequest("Invalid file size.");
+
+        return Results.Ok(file.FileName);
+    })
+    .WithFormOptions(multipartBodyLengthLimit: MaxFileBytes)
+        .DisableAntiforgery();*/
+
     private static async Task<Results<Ok<Category>, NotFound>> GetCategoryAsync(
         CategoryId categoryId, ServerDbContext dbContext)
         => await dbContext.Categories.Where(x => x.Id == categoryId)

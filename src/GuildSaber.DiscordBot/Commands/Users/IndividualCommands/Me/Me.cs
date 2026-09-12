@@ -18,13 +18,15 @@ public partial class UserModuleSlash
         [Summary("User", "The user to get the player card for (you if empty)")] IUser? user = null,
         [Summary("Visibility")] EDisplayChoice displayChoice = EDisplayChoice.Visible)
     {
-        await DeferAsync(ephemeral: displayChoice.ToEphemeral());
-        var (guildExtended, player) = await (GetGuildExtendedAsync().AsTask(), GetPlayerAsync(user).AsTask())
+        var (guildExtended, player) = await (
+                DeferAsync(ephemeral: displayChoice.ToEphemeral()),
+                GetGuildExtendedAsync().AsTask(),
+                GetPlayerAsync(user).AsTask())
             .WhenAll();
 
         var client = Client.Value;
-        var (levelStats, contextStats, avatarBytes, guildLogoBytes) = await (
-                client.LevelStats.GetByPlayerIdAsync(player.Id, contextId),
+        var (achievementStats, contextStats, avatarBytes, guildLogoBytes) = await (
+                client.AchievementStats.GetByPlayerIdAsync(player.Id, contextId),
                 client.ContextStats.GetByPlayerIdAsync(player.Id, contextId),
                 client.HttpClient.GetByteArrayAsync(player.PlayerInfo.AvatarUrl),
                 client.HttpClient.GetByteArrayAsync(client.Guilds.GetLogoUrl(guildExtended.Guild.Id)))
@@ -33,7 +35,7 @@ public partial class UserModuleSlash
         var playerCardImageByte = new PlayerCardView(
                 player,
                 guildExtended,
-                levelStats.Unwrap(),
+                achievementStats.Unwrap(),
                 contextStats.Unwrap() ?? (user is null
                     ? throw new InteractionHandler.CurrentPlayerDidNotJoinGuildContextException()
                     : throw new InteractionHandler.PlayerIsNotInGuildContextException()),

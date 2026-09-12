@@ -39,7 +39,7 @@ internal sealed class PlayerCardSettingsView : ViewController<PlayerCardSettings
     private XUIHLayout _mainColorLayout = null!;
     private PlayerCardSettingsState? _pendingState;
     private XUIToggle _showHandle = null!;
-    private XUIToggle _showProgress = null!;
+    private XUIToggle _showOrderedAchievements = null!;
 
     public event Action<PlayerCardSettingsMessage>? MessageSent;
 
@@ -52,7 +52,7 @@ internal sealed class PlayerCardSettingsView : ViewController<PlayerCardSettings
         }
 
         _enabled.SetValue(state.Enabled, false);
-        _showProgress.SetValue(state.ShowProgress, false);
+        _showOrderedAchievements.SetValue(state.ShowOrderedAchievements, false);
         _showHandle.SetValue(state.ShowHandle, false);
         _colorMode.SetValue(_colorModes[(int)state.ColorMode], false);
         _mainColor.SetValue(state.MainColor, false);
@@ -70,9 +70,9 @@ internal sealed class PlayerCardSettingsView : ViewController<PlayerCardSettings
                     Toggle("Enable player card: ", ref _enabled,
                         value => new PlayerCardSettingsMessage.SetEnabled(value)),
                     Toggle(
-                        "Display skill profile: ",
-                        ref _showProgress,
-                        value => new PlayerCardSettingsMessage.SetShowProgress(value))),
+                        "Show category levels: ",
+                        ref _showOrderedAchievements,
+                        value => new PlayerCardSettingsMessage.SetShowOrderedAchievements(value))),
                 Toggle("Show handle: ", ref _showHandle,
                     value => new PlayerCardSettingsMessage.SetShowHandle(value)),
                 XUIHLayout.Make(
@@ -129,7 +129,7 @@ internal sealed class PlayerCardSettingsView : ViewController<PlayerCardSettings
 public abstract record PlayerCardSettingsMessage
 {
     public sealed record SetEnabled(bool Value) : PlayerCardSettingsMessage;
-    public sealed record SetShowProgress(bool Value) : PlayerCardSettingsMessage;
+    public sealed record SetShowOrderedAchievements(bool Value) : PlayerCardSettingsMessage;
     public sealed record SetShowHandle(bool Value) : PlayerCardSettingsMessage;
     public sealed record SetColorMode(PlayerCardColorMode Value) : PlayerCardSettingsMessage;
     public sealed record SetMainColor(Color Value) : PlayerCardSettingsMessage;

@@ -14,6 +14,8 @@ namespace GuildSaber.Api.Features.Debug.Http;
 
 public class DebugEndpoints : IEndpoints
 {
+    private readonly record struct PlayerIdWithGuildIds(PlayerId PlayerId, GuildId[] GuildIds);
+
     public static void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/debug")
@@ -69,9 +71,9 @@ public class DebugEndpoints : IEndpoints
             .WithDescription("Recalculates member points for all contexts the player is a member of.")
             .RequireManager();
 
-        group.MapPost("/recalculate-member-levels/{playerId}", RecalculateMemberLevelStats)
-            .WithSummary("Recalculate member levels for a player.")
-            .WithDescription("Recalculates member levels for all contexts the player is a member of.")
+        group.MapPost("/recalculate-member-achievements/{playerId}", RecalculateMemberAchievementStats)
+            .WithSummary("Recalculate member achievements for a player.")
+            .WithDescription("Recalculates member achievements for all contexts the player is a member of.")
             .RequireManager();
 
         group.MapPost("/recalculate-player-scores/{playerId}", RecalculatePlayerScores)
@@ -111,9 +113,6 @@ public class DebugEndpoints : IEndpoints
             .WithDescription("Triggers the EditRankedMapPipeline for the specified ranked map")
             .RequireManager();
     }
-
-
-    private readonly record struct PlayerIdWithGuildIds(PlayerId PlayerId, GuildId[] GuildIds);
 
     private static async Task<Ok> RecalculatePlayerScores(
         PlayerId playerId, ServerDbContext dbContext,
@@ -245,7 +244,7 @@ public class DebugEndpoints : IEndpoints
         return TypedResults.Ok();
     }
 
-    private static async Task<Ok> RecalculateMemberLevelStats(
+    private static async Task<Ok> RecalculateMemberAchievementStats(
         PlayerId playerId, ServerDbContext dbContext,
         IBackgroundTaskQueue taskQueue,
         IServiceScopeFactory serviceScopeFactory)
@@ -260,10 +259,11 @@ public class DebugEndpoints : IEndpoints
         await taskQueue.QueueBackgroundWorkItemAsync(async _ =>
         {
             await using var scope = serviceScopeFactory.CreateAsyncScope();
-            var memberLevelStatsPipeline = scope.ServiceProvider.GetRequiredService<MemberLevelStatsPipeline>();
+            var memberAchievementStatsPipeline = scope.ServiceProvider
+                .GetRequiredService<MemberAchievementStatsPipeline>();
 
             foreach (var context in contextsWithPoints)
-                await memberLevelStatsPipeline.ExecuteAsync(playerId, context.GuildId, context.Id,
+                await memberAchievementStatsPipeline.ExecuteAsync(playerId, context.GuildId, context.Id,
                     context.Points.FirstOrDefault()?.Id ?? default);
         });
 

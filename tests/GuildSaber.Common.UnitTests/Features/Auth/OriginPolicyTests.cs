@@ -19,17 +19,13 @@ public class OriginPolicyTests
     [Arguments("https://192.168.42.123:5044/auth?from=lan")]
     [Arguments("http://192.168.255.255:65535")]
     public void IsAllowed_ShouldAllowLocalOriginsOnAnyPort(string url)
-    {
-        OriginPolicy.IsAllowed(url, ConfiguredOrigins).Should().BeTrue();
-    }
+        => OriginPolicy.IsAllowed(url, ConfiguredOrigins).Should().BeTrue();
 
     [Test]
     [Arguments("https://guildsaber.com/auth")]
     [Arguments("https://dev.guildsaber.com:8443/auth")]
     public void IsAllowed_ShouldAllowConfiguredOrigins(string url)
-    {
-        OriginPolicy.IsAllowed(url, ConfiguredOrigins).Should().BeTrue();
-    }
+        => OriginPolicy.IsAllowed(url, ConfiguredOrigins).Should().BeTrue();
 
     [Test]
     [Arguments("http://192.167.255.255")]
@@ -40,7 +36,5 @@ public class OriginPolicyTests
     [Arguments("http://guildsaber.com")]
     [Arguments("not-a-url")]
     public void IsAllowed_ShouldRejectOriginsOutsideTheLocalAndConfiguredRanges(string url)
-    {
-        OriginPolicy.IsAllowed(url, ConfiguredOrigins).Should().BeFalse();
-    }
+        => OriginPolicy.IsAllowed(url, ConfiguredOrigins).Should().BeFalse();
 }

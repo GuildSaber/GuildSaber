@@ -1,9 +1,9 @@
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Auth;
 using GuildSaber.Database.Models.Server.Guilds;
+using GuildSaber.Database.Models.Server.Guilds.Achievements;
 using GuildSaber.Database.Models.Server.Guilds.Boosts;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
-using GuildSaber.Database.Models.Server.Guilds.Levels;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.Players;
@@ -31,12 +31,12 @@ public class ServerDbContext : DbContext
 
     public DbSet<Guild> Guilds { get; set; }
     public DbSet<Context> Contexts { get; set; }
-    public DbSet<Level> Levels { get; set; }
+    public DbSet<Achievement> Achievements { get; set; }
     public DbSet<ContextMember> ContextMembers { get; set; }
 
     public DbSet<Member> Members { get; set; }
     public DbSet<MemberPointStat> MemberPointStats { get; set; }
-    public DbSet<MemberLevelStat> MemberLevelStats { get; set; }
+    public DbSet<MemberAchievementStat> MemberAchievementStats { get; set; }
 
     public DbSet<Boost> Boosts { get; set; }
     public DbSet<Point> Points { get; set; }
@@ -75,44 +75,12 @@ public class ServerDbContext : DbContext
         );
     }
 
-    /// <remarks>
-    /// Sadly, can't use ApplyConfigurationsFromAssembly because there isn't only one DbContext registering
-    /// configurations in this assembly.
-    /// </remarks>
     protected override void OnModelCreating(ModelBuilder builder)
     {
-        builder.ApplyConfiguration(new GuildConfiguration());
-        builder.ApplyConfiguration(new ContextConfiguration());
-        builder.ApplyConfiguration(new LevelConfiguration());
-        builder.ApplyConfiguration(new RankedMapListLevelConfiguration());
-        builder.ApplyConfiguration(new DiffStarLevelConfiguration());
-        builder.ApplyConfiguration(new AccStarLevelConfiguration());
-        builder.ApplyConfiguration(new MemberConfiguration());
-        builder.ApplyConfiguration(new MemberPointStatConfiguration());
-        builder.ApplyConfiguration(new MemberLevelStatConfiguration());
-        builder.ApplyConfiguration(new ContextMemberConfiguration());
-        builder.ApplyConfiguration(new BoostConfiguration());
-        builder.ApplyConfiguration(new PointConfiguration());
-        builder.ApplyConfiguration(new CategoryConfiguration());
-        builder.ApplyConfiguration(new PlayerConfiguration());
-        builder.ApplyConfiguration(new SessionConfiguration());
-        builder.ApplyConfiguration(new AbstractScoreConfiguration());
-        builder.ApplyConfiguration(new ScoreSaberScoreConfiguration());
-        builder.ApplyConfiguration(new BeatLeaderScoreConfiguration());
-        builder.ApplyConfiguration(new RankedMapConfiguration());
-        builder.ApplyConfiguration(new MapVersionConfiguration());
-        builder.ApplyConfiguration(new RankedScoreConfiguration());
-        builder.ApplyConfiguration(new ScoredRankedScoreConfiguration());
-        builder.ApplyConfiguration(new PointGivingRankedScoreConfiguration());
-        builder.ApplyConfiguration(new ValidRankedScoreConfiguration());
-        builder.ApplyConfiguration(new InvalidRankedScoreConfiguration());
-        builder.ApplyConfiguration(new PendingRankedScoreConfiguration());
-        builder.ApplyConfiguration(new AcceptedRankedScoreConfiguration());
-        builder.ApplyConfiguration(new RefusedRankedScoreConfiguration());
-        builder.ApplyConfiguration(new SongConfiguration());
-        builder.ApplyConfiguration(new SongDifficultyConfiguration());
-        builder.ApplyConfiguration(new PlayModeConfiguration());
-        builder.ApplyConfiguration(new GameModeConfiguration());
+        const string serverModelsNamespace = "GuildSaber.Database.Models.Server";
+        builder.ApplyConfigurationsFromAssembly(typeof(ServerDbContext).Assembly, x =>
+            x.Namespace is { } ns
+            && (ns == serverModelsNamespace || ns.StartsWith(serverModelsNamespace + ".", StringComparison.Ordinal)));
 
         // TickerQ Configurations
         builder.ApplyConfiguration(new TimeTickerConfigurations<TimeTickerEntity>());

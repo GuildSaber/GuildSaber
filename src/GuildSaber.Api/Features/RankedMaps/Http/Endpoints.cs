@@ -68,7 +68,7 @@ public class RankedMapEndpoints : IEndpoints
             .WithName("CreateRankedMap")
             .WithSummary("Create a ranked map for a context.")
             .WithDescription("Create a ranked map for a context by its Id.")
-            .Produces<RankedMap>()
+            .Produces<RankedMapSimple>()
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
@@ -80,7 +80,7 @@ public class RankedMapEndpoints : IEndpoints
             .WithName("UpdateRankedMap")
             .WithSummary("Update a ranked map.")
             .WithDescription("Update a ranked map by its Id.")
-            .Produces<RankedMap>()
+            .Produces<RankedMapSimple>()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesValidationProblem()
@@ -120,7 +120,7 @@ public class RankedMapEndpoints : IEndpoints
         ContextId contextId, CreateRankedMap create, RankedMapService rankedMapService)
         => await rankedMapService.CreateRankedMapAsync(contextId, create) switch
         {
-            CreateResponse.Success(var rankedMap) => TypedResults.Ok(rankedMap.Map()),
+            CreateResponse.Success(var rankedMap) => TypedResults.Ok(rankedMap.MapSimple()),
             CreateResponse.TooManyRankedMaps(var current, var max) => TypedResults.Problem(
                 $"Guild has reached its maximum number of ranked maps ({current}/{max}), consider getting more boosts.",
                 statusCode: StatusCodes.Status401Unauthorized,
@@ -145,7 +145,7 @@ public class RankedMapEndpoints : IEndpoints
         ContextId contextId, RankedMapId rankedMapId, UpdateRankedMap update, RankedMapService rankedMapService)
         => await rankedMapService.UpdateRankedMapAsync(rankedMapId, contextId, update) switch
         {
-            UpdateResponse.Success(var rankedMap) => TypedResults.Ok(rankedMap.Map()),
+            UpdateResponse.Success(var rankedMap) => TypedResults.Ok(rankedMap.MapSimple()),
             UpdateResponse.NotFound => TypedResults.NotFound(),
             UpdateResponse.ValidationFailure(var errors) => TypedResults
                 .ValidationProblem(errors: errors,
@@ -157,7 +157,7 @@ public class RankedMapEndpoints : IEndpoints
         };
 
     private static async Task<Results<Ok<RankedMap>, NotFound>> GetRankedMapAsync(
-        RankedMapId rankedMapId, ServerDbContext dbContext) => await dbContext.RankedMaps
+        RankedMapId rankedMapId, ServerDbContext dbContext) => await dbContext.RankedMaps.AsExpandable()
             .Where(x => x.Id == rankedMapId)
             .Select(RankedMapMappers.MapRankedMapExpression())
             .FirstOrDefaultAsync() switch
@@ -166,7 +166,7 @@ public class RankedMapEndpoints : IEndpoints
             var rankedMap => TypedResults.Ok(rankedMap)
         };
 
-    private static async Task<Ok<PagedList<RankedMap>>> GetRankedMapsAsync(
+    private static async Task<Ok<PagedList<RankedMapSimple>>> GetRankedMapsAsync(
         [FromRoute] ContextId contextId,
         ServerDbContext dbContext,
         [AsParameters] Filters filters,
@@ -177,7 +177,7 @@ public class RankedMapEndpoints : IEndpoints
         => TypedResults.Ok(await dbContext.RankedMaps.AsSplitQuery().Where(x => x.ContextId == contextId)
             .ApplyFilters(filters, null)
             .ApplySortOrder(sortBy, order, null)
-            .Select(RankedMapMappers.MapRankedMapExpression())
+            .Select(RankedMapMappers.MapRankedMapSimpleExpression())
             .ToPagedListAsync(page, pageSize));
 
     private static async Task<Ok<PagedList<RankedMapWithScores>>> GetRankedMapsWithScoresAtMeAsync(

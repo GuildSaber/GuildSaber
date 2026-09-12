@@ -19,11 +19,11 @@ namespace GuildSaber.DiscordBot.Commands.Users;
 
 public partial class UserModuleSlash
 {
-    [SlashCommand("ggp", "Displays ranked maps on a level alongside a player's ranked scores")]
+    [SlashCommand("ggp", "Displays ranked maps at a difficulty star alongside a player's ranked scores")]
     public async Task GetGrindPool(
         [Autocomplete<ContextAutocompleteHandler>] ContextId contextId,
-        [Summary("Level")] int level,
-        [Summary("Category", "The category to filter levels by"), Autocomplete<CategoryAutocompleteHandler>]
+        [Summary("Difficulty_Star")] int difficultyStar,
+        [Summary("Category", "The category to filter ranked maps by"), Autocomplete<CategoryAutocompleteHandler>]
         int? categoryId = null,
         [Summary("Search", "The search term to find ranked maps")] string? search = null,
         [Summary("Need_Confirmation",
@@ -34,8 +34,8 @@ public partial class UserModuleSlash
     ) => await RespondAsync(ephemeral: displayChoice.ToEphemeral(), components: await SearchCommand
         .GetGgpComponentAsync(await GetGuildIdAsync(), contextId,
             await GetPlayerId(user?.DiscordId ?? Context.User.DiscordId),
-            page: 1, level, Client.Value, Cache, EmojiSettings,
-            new Filters(Search: search?.Trim(), DifficultyStarFrom: level, DifficultyStarTo: level,
+            page: 1, difficultyStar, Client.Value, Cache, EmojiSettings,
+            new Filters(Search: search?.Trim(), DifficultyStarFrom: difficultyStar, DifficultyStarTo: difficultyStar,
                 RankedScoreTypes: ERankedScoreType.PointGiving,
                 CategoryIds: categoryId is null ? null : [categoryId.Value],
                 NeedConfirmation: needConfirmation,
@@ -43,15 +43,15 @@ public partial class UserModuleSlash
 
     [ComponentInteraction("ggp_*_*_*_*_*_*_*_*_*")]
     public async Task Ggp(
-        ContextId contextId, PlayerId playerId, CategoryId categoryId, int level, int page,
+        ContextId contextId, PlayerId playerId, CategoryId categoryId, int difficultyStar, int page,
         ERankedScoreType rankedScoreTypes,
         int includeMapsWithoutScore,
         int needConfirmation,
         string search)
     {
         var component = await SearchCommand.GetGgpComponentAsync
-        (await GetGuildIdAsync(), contextId, playerId, page: page, level, Client.Value, Cache, EmojiSettings,
-            new Filters(Search: search.Trim(), DifficultyStarFrom: level, DifficultyStarTo: level,
+        (await GetGuildIdAsync(), contextId, playerId, page: page, difficultyStar, Client.Value, Cache, EmojiSettings,
+            new Filters(Search: search.Trim(), DifficultyStarFrom: difficultyStar, DifficultyStarTo: difficultyStar,
                 RankedScoreTypes: rankedScoreTypes,
                 IncludeMapsWithoutScore: includeMapsWithoutScore == 1,
                 CategoryIds: categoryId is { Value: 0 } ? null : [categoryId],
@@ -68,14 +68,14 @@ public partial class UserModuleSlash
 
     [ComponentInteraction("ggp_*_*_*_*_*_*_*_*_")]
     public async Task Ggp(
-        ContextId contextId, PlayerId playerId, CategoryId categoryId, int level, int page,
+        ContextId contextId, PlayerId playerId, CategoryId categoryId, int difficultyStar, int page,
         ERankedScoreType rankedScoreTypes,
         int includeMapsWithoutScore,
         int needConfirmation)
     {
         var component = await SearchCommand.GetGgpComponentAsync
-        (await GetGuildIdAsync(), contextId, playerId, page: page, level, Client.Value, Cache, EmojiSettings,
-            new Filters(Search: null, DifficultyStarFrom: level, DifficultyStarTo: level,
+        (await GetGuildIdAsync(), contextId, playerId, page: page, difficultyStar, Client.Value, Cache, EmojiSettings,
+            new Filters(Search: null, DifficultyStarFrom: difficultyStar, DifficultyStarTo: difficultyStar,
                 RankedScoreTypes: rankedScoreTypes,
                 IncludeMapsWithoutScore: includeMapsWithoutScore == 1,
                 CategoryIds: categoryId is { Value: 0 } ? null : [categoryId],
@@ -95,7 +95,7 @@ public partial class UserModuleSlash
 file static class SearchCommand
 {
     public static async Task<MessageComponent> GetGgpComponentAsync(
-        GuildId guildId, ContextId contextId, PlayerId playerId, int page, int levelOrder, GuildSaberClient client,
+        GuildId guildId, ContextId contextId, PlayerId playerId, int page, int difficultyStar, GuildSaberClient client,
         HybridCache cache,
         IOptions<EmojiSettings> emojiSettings, Filters requestFilters)
     {
@@ -120,13 +120,13 @@ file static class SearchCommand
 
         return !rankedMaps.TryGetValue(out var pagedRankedMaps, out var error)
             ? new ComponentBuilderV2().WithTextDisplay($"Error fetching ranked maps: {error}").Build()
-            : BuildGgpComponent(pagedRankedMaps, player, categories, contextId, levelOrder, emojiSettings,
+            : BuildGgpComponent(pagedRankedMaps, player, categories, contextId, difficultyStar, emojiSettings,
                 requestFilters);
     }
 
     private static MessageComponent BuildGgpComponent(
         in PagedList<RankedMapResponses.RankedMapWithScores> pagedRankedMaps, PlayerResponses.Player player,
-        Category[] categories, int contextId, int levelOrder, IOptions<EmojiSettings> emojiSettings,
+        Category[] categories, int contextId, int difficultyStar, IOptions<EmojiSettings> emojiSettings,
         Filters requestFilters)
     {
         var builder = new ComponentBuilderV2();
@@ -134,7 +134,7 @@ file static class SearchCommand
             .WithSection(section => section
                 .WithTextDisplay(
                     $"### [{player.PlayerInfo.Username}'s ggp](https://beatleader.com/u/{player.PlayerLinkedAccounts.BeatLeaderId})\n" +
-                    $"For level **{levelOrder}**{(requestFilters.CategoryIds?.FirstOrDefault() is not (null or 0)
+                    $"At difficulty star **{difficultyStar}**{(requestFilters.CategoryIds?.FirstOrDefault() is not (null or 0)
                         ? " in **" + categories.First(c => c.Id == requestFilters.CategoryIds[0]).Info.Name + "**"
                         : string.Empty)}" + requestFilters.NeedConfirmation switch
                     {
@@ -164,11 +164,11 @@ file static class SearchCommand
             (pagedRankedMaps.Page, pagedRankedMaps.HasPreviousPage, pagedRankedMaps.HasNextPage, player.Id);
         var includeMapsWithoutScoreValue = requestFilters.IncludeMapsWithoutScore ? 1 : 0;
         var (prevCustomId, nextCustomId, unpassedCustomId, passedCustomId, pendingCustomId) = (
-            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_{page - 1}_{(int)requestFilters.RankedScoreTypes}_{includeMapsWithoutScoreValue}_{needConfirmationValue}_{requestFilters.Search}",
-            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_{page + 1}_{(int)requestFilters.RankedScoreTypes}_{includeMapsWithoutScoreValue}_{needConfirmationValue}_{requestFilters.Search}",
-            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-2_{(int)ERankedScoreType.NonPointGivingNoPending}_1_{needConfirmationValue}_{requestFilters.Search}",
-            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-3_{(int)ERankedScoreType.PointGiving}_0_{needConfirmationValue}_{requestFilters.Search}",
-            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{levelOrder}_-4_{(int)ERankedScoreType.Pending}_0_{needConfirmationValue}_{requestFilters.Search}"
+            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{difficultyStar}_{page - 1}_{(int)requestFilters.RankedScoreTypes}_{includeMapsWithoutScoreValue}_{needConfirmationValue}_{requestFilters.Search}",
+            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{difficultyStar}_{page + 1}_{(int)requestFilters.RankedScoreTypes}_{includeMapsWithoutScoreValue}_{needConfirmationValue}_{requestFilters.Search}",
+            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{difficultyStar}_-2_{(int)ERankedScoreType.NonPointGivingNoPending}_1_{needConfirmationValue}_{requestFilters.Search}",
+            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{difficultyStar}_-3_{(int)ERankedScoreType.PointGiving}_0_{needConfirmationValue}_{requestFilters.Search}",
+            $"ggp_{contextId}_{playerId}_{requestFilters.CategoryIds?.FirstOrDefault() ?? 0}_{difficultyStar}_-4_{(int)ERankedScoreType.Pending}_0_{needConfirmationValue}_{requestFilters.Search}"
         );
         var searchTermTooLong = prevCustomId.Length > 100 || nextCustomId.Length > 100 ||
                                 unpassedCustomId.Length > 100

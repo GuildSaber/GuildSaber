@@ -9,7 +9,7 @@ public sealed class RankedScoreConfirmationPipeline(
     ServerDbContext dbContext,
     ScoreAddOrUpdatePipeline scoreAddOrUpdatePipeline,
     MemberPointStatsPipeline memberPointStatsPipeline,
-    MemberLevelStatsPipeline memberLevelStatsPipeline,
+    MemberAchievementStatsPipeline memberAchievementStatsPipeline,
     ILogger<RankedScoreConfirmationPipeline> logger)
 {
     public async Task ExecuteAsync(ContextId contextId, RankedScoreId rankedScoreId, CancellationToken token)
@@ -36,7 +36,8 @@ public sealed class RankedScoreConfirmationPipeline(
         {
             await memberPointStatsPipeline.ExecuteAsync(rankedScore.PlayerId, context);
             foreach (var pointId in context.Points.Select(x => x.Id))
-                await memberLevelStatsPipeline.ExecuteAsync(rankedScore.PlayerId, context.GuildId, context.Id, pointId);
+                await memberAchievementStatsPipeline.ExecuteAsync(rankedScore.PlayerId, context.GuildId, context.Id,
+                    pointId);
         }
 
         logger.LogInformation(

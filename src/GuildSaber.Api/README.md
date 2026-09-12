@@ -18,16 +18,16 @@ and design decisions. But for now, you can find the API documentation in the nex
 
 ### Why Aspire?
 
-I've opted for **Aspire** because it makes it easy to manage and orchestrate the whole stack of services.
-You need a database? Here is one. You need to make sure the Bot only starts when the Api is ready? Sure.
+I've opted for **Aspire** because it makes it easy to manage and orchestrate the whole stack of services. You need a
+database? Here is one. You need to make sure the Bot only starts when the Api is ready? Sure.
 
 Integrating it into the pipeline wasn't that easy, but it was worth it in the end. I hope you guys will like how easy it
 is to get started developing on GuildSaber thanks to Aspire.
 
 ### Make the Configuration
 
-Before starting the application, you need to make sure you have your configuration file ready.
-One way to do it is copy the [`appsettings.json`](appsettings.json) file into an `appsettings.Development.json`
+Before starting the application, you need to make sure you have your configuration file ready. One way to do it is copy
+the [`appsettings.json`](appsettings.json) file into an `appsettings.Development.json`
 and fill it in your own values. This file will be ignored by git. As your whole environment will be running locally,
 just make sure nothing in here is used in production in case you leak anything, or get compromised.
 

@@ -1,9 +1,9 @@
 using GuildSaber.Api.Features.Guilds.Http;
+using GuildSaber.Api.Features.Guilds.Members.AchievementStats.Http;
 using GuildSaber.Api.Features.Guilds.Members.ContextStats.Http;
-using GuildSaber.Api.Features.Guilds.Members.LevelStats.Http;
 using GuildSaber.Api.Features.Players.Http;
 using GuildSaber.Common.Helpers;
-using GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
+using GuildSaber.CSharpClient.Routes.Guilds.Members.AchievementStats;
 using GuildSaber.DiscordBot.Commands.Users.Me.Components;
 using GuildSaber.DiscordBot.Core.Extensions;
 using QuestPDF.Drawing;
@@ -16,7 +16,7 @@ namespace GuildSaber.DiscordBot.Commands.Users.Me;
 public class PlayerCardView(
     PlayerResponses.Player player,
     GuildResponses.GuildExtended guildExtended,
-    LevelStatResponses.MemberLevelStat[] levelStats,
+    AchievementStatResponses.MemberAchievementStat[] achievementStats,
     ContextStatResponses.MemberContextStat contextStat,
     byte[] avatarBytes,
     byte[] guildLogoBytes) : IDocument
@@ -34,10 +34,10 @@ public class PlayerCardView(
 
     public void Compose(IDocumentContainer document)
     {
-        var currentLevel = levelStats.GetGlobalLevel();
+        var currentAchievement = achievementStats.GetGlobalAchievement();
         var primaryColor = Color.FromRGB(26, 28, 30);
-        var secondaryColor = currentLevel is not null
-            ? Color.FromArgb(currentLevel.Info.Color)
+        var secondaryColor = currentAchievement is not null
+            ? Color.FromArgb(currentAchievement.Info.Color)
             : Color.FromRGB(0, 0, 0);
 
         document.Page(page =>
@@ -141,7 +141,7 @@ public class PlayerCardView(
                                                     .FontSize(24)
                                                     .Bold();
 
-                                                var equilibriumPercentage = levelStats.CalculateSkillEquilibrium(
+                                                var equilibriumPercentage = achievementStats.CalculateSkillEquilibrium(
                                                     guildExtended.Categories.Select(x => x.Id)) ?? 0f;
 
                                                 eqRow.AutoItem()
@@ -172,7 +172,7 @@ public class PlayerCardView(
                                             .AlignMiddle()
                                             .AlignCenter()
                                             .PaddingTop(5)
-                                            .Text(currentLevel?.Info.Name ?? "No Level")
+                                            .Text(currentAchievement?.Info.Name ?? "No Level")
                                             .FontColor(secondaryColor)
                                             .FontSize(48)
                                             .Bold()
@@ -193,11 +193,11 @@ public class PlayerCardView(
                         // Trophies
                         bottomCol.Item()
                             .PaddingVertical(20)
-                            .Component(new TrophyRow(levelStats.CalculateTrophiesData()));
+                            .Component(new TrophyRow(achievementStats.CalculateTrophiesData()));
 
                         // Categories
                         bottomCol.Item()
-                            .Component(new CategoryGrid(guildExtended.Categories, levelStats));
+                            .Component(new CategoryGrid(guildExtended.Categories, achievementStats));
                     });
             });
         });

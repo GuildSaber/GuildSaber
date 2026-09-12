@@ -20,7 +20,7 @@ public sealed class PlayerScoresPipeline(
     ScoreSaberApi scoreSaberApi,
     ScoreAddOrUpdatePipeline addOrUpdatePipeline,
     MemberPointStatsPipeline memberPointStatsPipeline,
-    MemberLevelStatsPipeline memberLevelStatsPipeline,
+    MemberAchievementStatsPipeline memberAchievementStatsPipeline,
     ILogger<PlayerScoresPipeline> logger)
 {
     public async Task RecalculatePlayerScoresAsync(PlayerId playerId, CancellationToken token)
@@ -48,7 +48,7 @@ public sealed class PlayerScoresPipeline(
         {
             await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value);
             foreach (var point in tuple.Value.Points)
-                await memberLevelStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key, point.Id);
+                await memberAchievementStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key, point.Id);
         }
 
         logger.LogInformation("Completed recalculating {count} scores for player {PlayerId}", count, playerId);
@@ -112,7 +112,7 @@ public sealed class PlayerScoresPipeline(
         {
             await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value);
             foreach (var point in tuple.Value.Points)
-                await memberLevelStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key, point.Id);
+                await memberAchievementStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key, point.Id);
         }
 
         logger.LogInformation("Completed importing {count} BeatLeader scores for player {PlayerId}", count, playerId);
@@ -156,7 +156,7 @@ public sealed class PlayerScoresPipeline(
         {
             await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value);
             foreach (var point in tuple.Value.Points)
-                await memberLevelStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key, point.Id);
+                await memberAchievementStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key, point.Id);
         }
 
         logger.LogInformation("Completed importing {count} ScoreSaber scores for player {PlayerId}", count, playerId);

@@ -11,18 +11,18 @@ namespace GuildSaber.Database.Extensions;
 /// names.
 /// This convention will rename the columns of complex types to a shorter version composed like so:
 /// "ComplexEntityTypeName_PropertyName".
-/// If the new naming short is still too long, it wont do anything for those properties. (EF Core's default truncated
+/// If the new naming short is still too long, it won't do anything for those properties. (EF Core's default truncated
 /// naming should take over).
 /// </summary>
 /// <remarks>
-/// In your DbContext, override the ConfigureConventions method:
+/// To use it, now in your DbContext, override the ConfigureConventions method:
 /// <code>
 /// protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
 /// {
 ///     base.ConfigureConventions(configurationBuilder);
 ///     configurationBuilder.Conventions.Remove&lt;ComplexTypeAttributeConvention&gt;();
 ///     configurationBuilder.Conventions.Add(services => new EFCoreComplexTypeConventionColumnNameShortener(
-///         services.GetRequiredService{ProviderConventionSetBuilderDependencies}())
+///         services.GetRequiredService&lt;ProviderConventionSetBuilderDependencies&gt;())
 ///     );
 /// }
 /// </code>

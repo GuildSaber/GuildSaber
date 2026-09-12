@@ -1,6 +1,6 @@
 using GuildSaber.Api.Features.Guilds.Categories.Http;
-using GuildSaber.Api.Features.Guilds.Members.LevelStats.Http;
-using GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
+using GuildSaber.Api.Features.Guilds.Members.AchievementStats.Http;
+using GuildSaber.CSharpClient.Routes.Guilds.Members.AchievementStats;
 using GuildSaber.DiscordBot.Core.Extensions;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -10,21 +10,24 @@ namespace GuildSaber.DiscordBot.Commands.Users.Me.Components;
 
 public sealed class CategoryGrid(
     CategoryResponses.Category[] categories,
-    LevelStatResponses.MemberLevelStat[] levelStats) : IComponent
+    AchievementStatResponses.MemberAchievementStat[] achievementStats) : IComponent
 {
+    public record struct CategoryAchievementData(string CategoryName, string AchievementName, Color Color);
+
     public void Compose(IContainer container)
     {
-        var categoryLevels = categories
-            .Select(category => (category, level: levelStats.GetCategoryLevel(category.Id)))
-            .Select(tuple => new CategoryLevelData(
+        var categoryAchievements = categories
+            .Select(category => (category,
+                achievement: achievementStats.GetCategoryAchievement(category.Id)))
+            .Select(tuple => new CategoryAchievementData(
                 tuple.category.Info.Name,
-                tuple.level?.Info.Name ?? "None",
-                Color.FromArgb(tuple.level?.Info.Color ?? 0xFFFFFF)))
+                tuple.achievement?.Info.Name ?? "None",
+                Color.FromArgb(tuple.achievement?.Info.Color ?? 0xFFFFFF)))
             .ToArray();
 
         container.Column(categoriesCol =>
         {
-            foreach (var pair in categoryLevels.Chunk(2))
+            foreach (var pair in categoryAchievements.Chunk(2))
                 categoriesCol.Item()
                     .PaddingVertical(3)
                     .ScaleToFit()
@@ -39,9 +42,7 @@ public sealed class CategoryGrid(
         });
     }
 
-    public record struct CategoryLevelData(string CategoryName, string LevelName, Color Color);
-
-    private static void CategoryCell(IContainer container, CategoryLevelData category) =>
+    private static void CategoryCell(IContainer container, CategoryAchievementData category) =>
         container.Row(catRow =>
         {
             catRow.RelativeItem()
@@ -52,7 +53,7 @@ public sealed class CategoryGrid(
                 .Bold();
             catRow.RelativeItem()
                 .AlignLeft()
-                .Text(category.LevelName)
+                .Text(category.AchievementName)
                 .FontColor(category.Color)
                 .FontSize(26)
                 .Bold();

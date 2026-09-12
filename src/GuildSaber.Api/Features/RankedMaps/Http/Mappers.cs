@@ -1,6 +1,8 @@
 using System.Linq.Expressions;
 using CSharpFunctionalExtensions;
+using GuildSaber.Api.Features.Guilds.Achievements.Http;
 using GuildSaber.Api.Features.RankedScores.Http;
+using GuildSaber.Database.Models.Server.Guilds.Achievements.Types;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
 using GuildSaber.Database.Models.Server.Scores;
@@ -13,12 +15,63 @@ namespace GuildSaber.Api.Features.RankedMaps.Http;
 
 public static class RankedMapMappers
 {
+    private static Func<RankedMap, RankedMapResponses.RankedMapSimple>? _mapRankedMapSimpleImpl;
     private static Func<RankedMap, RankedMapResponses.RankedMap>? _mapRankedMapImpl;
+
+    [Expandable(nameof(MapRankedMapSimpleExpression))]
+    public static RankedMapResponses.RankedMapSimple MapSimple(this RankedMap self)
+        => (_mapRankedMapSimpleImpl ??= MapRankedMapSimpleExpression().Compile())(self);
 
     [Expandable(nameof(MapRankedMapExpression))]
     public static RankedMapResponses.RankedMap Map(this RankedMap self)
         => (_mapRankedMapImpl ??= MapRankedMapExpression().Compile())(self);
 
+    public static Expression<Func<RankedMap, RankedMapResponses.RankedMapSimple>> MapRankedMapSimpleExpression()
+        => self => new RankedMapResponses.RankedMapSimple(
+            self.Id,
+            self.GuildId,
+            self.ContextId,
+            self.Info.Map(),
+            self.Requirements.Map(),
+            self.Rating.Map(),
+            self.MapVersions.Select(x => new RankedMapResponses.MapVersion(
+                x.AddedAt,
+                x.Order,
+                new RankedMapResponses.Song(
+                    x.Song.Id,
+                    x.Song.Hash,
+                    x.Song.BeatSaverKey,
+                    x.Song.UploadedAt,
+                    new RankedMapResponses.SongInfo(
+                        x.Song.Info.BeatSaverName,
+                        x.Song.Info.SongName,
+                        x.Song.Info.SongSubName,
+                        x.Song.Info.SongAuthorName,
+                        x.Song.Info.MapperName
+                    ),
+                    new RankedMapResponses.SongStats(
+                        x.Song.Stats.BPM,
+                        x.Song.Stats.DurationSec,
+                        x.Song.Stats.IsAutoMapped
+                    )),
+                new RankedMapResponses.SongDifficulty(
+                    x.SongDifficultyId,
+                    x.SongDifficulty.BLLeaderboardId,
+                    x.SongDifficulty.SSLeaderboardId,
+                    x.SongDifficulty.Difficulty,
+                    x.SongDifficulty.GameMode.Name,
+                    new RankedMapResponses.SongDifficultyStats(
+                        x.SongDifficulty.Stats.MaxScore,
+                        x.SongDifficulty.Stats.NoteJumpSpeed,
+                        x.SongDifficulty.Stats.NoteCount,
+                        x.SongDifficulty.Stats.BombCount,
+                        x.SongDifficulty.Stats.ObstacleCount,
+                        x.SongDifficulty.Stats.NotesPerSecond,
+                        x.SongDifficulty.Stats.Duration
+                    )))).ToArray(),
+            self.Categories.Select(x => (int)x.Id).ToArray());
+
+    /// <warning>.AsExpandable() must be called with this expression</warning>
     public static Expression<Func<RankedMap, RankedMapResponses.RankedMap>> MapRankedMapExpression()
         => self => new RankedMapResponses.RankedMap(
             self.Id,
@@ -63,7 +116,25 @@ public static class RankedMapMappers
                         x.SongDifficulty.Stats.Duration
                     )))).ToArray(),
             self.Categories.Select(x => (int)x.Id).ToArray(),
-            self.Levels.Select(x => (int)x.Id).ToArray());
+            self.Context.Achievements
+                .Where(achievement =>
+                    achievement is RankedMapListAchievement &&
+                    self.Achievements.Any(candidate => candidate.Id == achievement.Id) ||
+                    (achievement.CategoryId == null ||
+                     self.Categories.Any(category => category.Id == achievement.CategoryId.Value)) &&
+                    (achievement is DiffStarAchievement &&
+                     self.Rating.DiffStar >= ((DiffStarAchievement)achievement).MinStar &&
+                     (((DiffStarAchievement)achievement).MaxStar == null ||
+                      self.Rating.DiffStar < ((DiffStarAchievement)achievement).MaxStar!.Value) ||
+                     achievement is AccStarAchievement &&
+                     self.Rating.AccStar >= ((AccStarAchievement)achievement).MinStar &&
+                     (((AccStarAchievement)achievement).MaxStar == null ||
+                      self.Rating.AccStar < ((AccStarAchievement)achievement).MaxStar!.Value)))
+                .OrderBy(achievement => achievement.ProgressionOrder == null)
+                .ThenBy(achievement => achievement.ProgressionOrder)
+                .ThenBy(achievement => achievement.Id)
+                .Select(achievement => AchievementMappers.MapAchievementExpression.Invoke(achievement))
+                .ToArray());
 
     /// <warning>.AsExpandable() must be called with this expression</warning>
     public static Expression<Func<RankedMap, RankedMapResponses.RankedMapWithScores>> MapRankedMapWithScoresExpression(

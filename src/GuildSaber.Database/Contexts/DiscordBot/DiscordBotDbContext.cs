@@ -13,13 +13,13 @@ public sealed class DiscordBotDbContext : DbContext
     public DiscordBotDbContext() { }
 
     public DbSet<FlexHistory> FlexHistories { get; set; } = null!;
-    public DbSet<FlexHistoryLevelStat> FlexHistoryLevelStats { get; set; } = null!;
+    public DbSet<FlexHistoryAchievementStat> FlexHistoryAchievementStats { get; set; } = null!;
     public DbSet<FlexHistoryPointStat> FlexHistoryPointStats { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new FlexHistoryConfiguration());
-        modelBuilder.ApplyConfiguration(new FlexHistoryLevelStatConfiguration());
+        modelBuilder.ApplyConfiguration(new FlexHistoryAchievementStatConfiguration());
         modelBuilder.ApplyConfiguration(new FlexHistoryPointStatConfiguration());
     }
 

@@ -29,6 +29,8 @@ public class CustomApiKeyAuthenticationService(
                     .Select(x => new PlayerIdWithManagerFlag(x.Id, x.IsManager))
                     .FirstOrDefault());
 
+    private readonly record struct PlayerIdWithManagerFlag(PlayerId PlayerId, bool IsManager);
+
     public async Task<AuthenticateResult> AuthenticateAsync(BasicCredential credential, IPAddress? clientIp)
     {
         if (!settings.Value.Key.Equals(credential.Password, StringComparison.Ordinal))
@@ -50,8 +52,6 @@ public class CustomApiKeyAuthenticationService(
             new AuthenticationTicket(new ClaimsPrincipal(identity), BasicAuthenticationDefaults.AuthenticationScheme)
         );
     }
-
-    private readonly record struct PlayerIdWithManagerFlag(PlayerId PlayerId, bool IsManager);
 
     private ValueTask<PlayerIdWithManagerFlag> GetPlayerIdWithManagerFlagByDiscordId(DiscordId discordId)
         => cache.GetOrCreateAsync($"PlayerIdByDiscordId_{discordId}", (scopeFactory, discordId),

@@ -1,4 +1,5 @@
-﻿using GuildSaber.Api.Features.RankedScores.Http;
+﻿using GuildSaber.Api.Features.Guilds.Achievements.Http;
+using GuildSaber.Api.Features.RankedScores.Http;
 
 namespace GuildSaber.Api.Features.RankedMaps.Http;
 
@@ -57,6 +58,17 @@ public static class RankedMapResponses
         SongDifficulty Difficulty
     );
 
+    public record RankedMapSimple(
+        RankedMapId Id,
+        GuildId GuildId,
+        int ContextId,
+        RankedMapInfo Info,
+        RankedMapRequests.RankedMapRequirements Requirements,
+        RankedMapRating Rating,
+        MapVersion[] Versions,
+        int[] CategoryIds
+    );
+
     public record RankedMap(
         RankedMapId Id,
         GuildId GuildId,
@@ -66,7 +78,7 @@ public static class RankedMapResponses
         RankedMapRating Rating,
         MapVersion[] Versions,
         int[] CategoryIds,
-        int[] LevelIds
+        AchievementResponses.Achievement[] Achievements
     );
 
     public record RankedMapWithScores(

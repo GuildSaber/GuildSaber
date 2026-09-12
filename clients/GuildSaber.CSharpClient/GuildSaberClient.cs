@@ -4,11 +4,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using GuildSaber.CSharpClient.Auth;
 using GuildSaber.CSharpClient.Routes.Guilds;
+using GuildSaber.CSharpClient.Routes.Guilds.Achievements;
+using GuildSaber.CSharpClient.Routes.Guilds.Achievements.Playlists;
 using GuildSaber.CSharpClient.Routes.Guilds.Categories;
-using GuildSaber.CSharpClient.Routes.Guilds.Levels;
-using GuildSaber.CSharpClient.Routes.Guilds.Levels.Playlists;
+using GuildSaber.CSharpClient.Routes.Guilds.Members.AchievementStats;
 using GuildSaber.CSharpClient.Routes.Guilds.Members.ContextStats;
-using GuildSaber.CSharpClient.Routes.Guilds.Members.LevelStats;
 using GuildSaber.CSharpClient.Routes.Leaderboards;
 using GuildSaber.CSharpClient.Routes.Players;
 using GuildSaber.CSharpClient.Routes.RankedMaps;
@@ -33,15 +33,15 @@ public class GuildSaberClient : IDisposable
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
     };
 
-    private readonly AuthenticationHeaderValue? _authenticationHeader;
-    private readonly Uri _cdnBaseUri;
-
-    private readonly bool _disposeHttpClient;
-
     /// <summary>
     /// The underlying HTTP client used for all API requests.
     /// </summary>
     public readonly HttpClient HttpClient;
+
+    private readonly AuthenticationHeaderValue? _authenticationHeader;
+    private readonly Uri _cdnBaseUri;
+
+    private readonly bool _disposeHttpClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GuildSaberClient" /> class using an existing HTTP client.
@@ -110,10 +110,10 @@ public class GuildSaberClient : IDisposable
         => field ??= new CategoryClient(HttpClient, _cdnBaseUri, _authenticationHeader, _jsonOptions);
 
     /// <summary>
-    /// Gets the level stat client for interacting with member level stat endpoints.
+    /// Gets the achievement stat client for interacting with member achievement stat endpoints.
     /// </summary>
-    public LevelStatClient LevelStats
-        => field ??= new LevelStatClient(HttpClient, _authenticationHeader, _jsonOptions);
+    public AchievementStatClient AchievementStats
+        => field ??= new AchievementStatClient(HttpClient, _authenticationHeader, _jsonOptions);
 
     /// <summary>
     /// Gets the context stat client for interacting with member context stat endpoints.
@@ -152,9 +152,10 @@ public class GuildSaberClient : IDisposable
         => field ??= new PlaylistClient(HttpClient, _jsonOptions);
 
     /// <summary>
-    /// Gets the level client for interacting with level endpoints.
+    /// Gets the achievement client for interacting with achievement endpoints.
     /// </summary>
-    public LevelClient Levels => field ??= new LevelClient(HttpClient, _cdnBaseUri, _jsonOptions);
+    public AchievementClient Achievements
+        => field ??= new AchievementClient(HttpClient, _cdnBaseUri, _jsonOptions);
 
     /// <inheritdoc />
     public void Dispose()

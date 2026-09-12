@@ -38,9 +38,9 @@ builder.Services
     .AddHttpUserAgentParserAccessor();
 
 var configuredWebsiteOrigins = builder.Configuration
-    .GetSection($"{AuthSettings.AuthSettingsSectionKey}:{nameof(AuthSettings.Redirect)}")
-    .Get<RedirectSettings>()?.AllowedOriginUrls
-    ?? [];
+                                   .GetSection($"{AuthSettings.AuthSettingsSectionKey}:{nameof(AuthSettings.Redirect)}")
+                                   .Get<RedirectSettings>()?.AllowedOriginUrls
+                               ?? [];
 
 builder.Services.AddCors(options => options
     .AddDefaultPolicy(policy => policy

@@ -1,12 +1,10 @@
 # GuildSaber.DiscordBot
 
-This is the Discord bot integration for GuildSaber.
-Similarly to the Website, this service relies on an authentication to access the API, however, it got a more privileged
-access.
+This is the Discord bot integration for GuildSaber. Similarly to the Website, this service relies on an authentication
+to access the API, however, it got a more privileged access.
 
 This bot uses an API key authentication method which allows the bot to perform actions on behalf of the user using the
-bot.
-To make this more bearable, the Client authentication logic is abstracted away in a Lazy client that automatically
+bot. To make this more bearable, the Client authentication logic is abstracted away in a Lazy client that automatically
 grabs the command context user and uses their ID to act on behalf of them.
 
 Hence why the bot code primarily consists of compile time constructs and switch expression to reduce the likelihood of
