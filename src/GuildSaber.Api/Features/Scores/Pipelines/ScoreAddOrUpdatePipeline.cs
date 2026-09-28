@@ -104,8 +104,10 @@ public sealed class ScoreAddOrUpdatePipeline(
                         await PrepareScoreRankingContextAsync(
                             score.PlayerId, score.SongDifficultyId, state.dbContext, state.scopeFactory, state.cache),
                     (dbContext, scopeFactory, cache))
+#pragma warning disable ASP0034 // .NET 11 RC1 mistakes this CSharpFunctionalExtensions.Map for an HTTP endpoint.
                 .Map(rankingContext => (rankingContext,
                     IterateRankedScoresWithTransform(rankingContext, RecalculateRankedScore)))
+#pragma warning restore ASP0034
                 .Map(tuple => (tuple.rankingContext, rankedScores: SetStateForBestRankedScorePerGroup(tuple.Item2))))
             .Map(static async (tuple, state) =>
             {

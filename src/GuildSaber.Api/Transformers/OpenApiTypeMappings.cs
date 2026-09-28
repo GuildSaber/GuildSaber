@@ -17,39 +17,39 @@ public static class OpenApiTypeMappings
         OpenApiTypeTransformer.MapType<CategoryId>(new OpenApiSchema
             { Type = JsonSchemaType.Integer, Format = "int32" });
         OpenApiTypeTransformer.MapType<DiscordId>(new OpenApiSchema
-            { Type = JsonSchemaType.String, Example = "123456789012345678", Format = "int64" });
+            { Type = JsonSchemaType.String, Examples = ["123456789012345678"], Format = "int64" });
         OpenApiTypeTransformer.MapType<SteamId>(new OpenApiSchema
-            { Type = JsonSchemaType.String, Example = "12345678901234567", Format = "int64" });
+            { Type = JsonSchemaType.String, Examples = ["12345678901234567"], Format = "int64" });
         OpenApiTypeTransformer.MapType<MetaPCId>(new OpenApiSchema
-            { Type = JsonSchemaType.String, Example = "1234567890123456", Format = "int64" });
+            { Type = JsonSchemaType.String, Examples = ["1234567890123456"], Format = "int64" });
         OpenApiTypeTransformer.MapType<BLNativeId>(new OpenApiSchema
-            { Type = JsonSchemaType.String, Example = "123456789", Format = "int64" });
+            { Type = JsonSchemaType.String, Examples = ["123456789"], Format = "int64" });
         OpenApiTypeTransformer.MapType<ScoreSaberId>(new OpenApiSchema
-            { Type = JsonSchemaType.String, Example = "12345678901234567", Format = "int64" });
+            { Type = JsonSchemaType.String, Examples = ["12345678901234567"], Format = "int64" });
         OpenApiTypeTransformer.MapType<DiscordGuildId>(new OpenApiSchema
-            { Type = JsonSchemaType.String, Example = "987654321098765432" });
+            { Type = JsonSchemaType.String, Examples = ["987654321098765432"] });
         OpenApiTypeTransformer.MapType<DiscordChannelId>(new OpenApiSchema
-            { Type = JsonSchemaType.String, Example = "987654321098765432" });
+            { Type = JsonSchemaType.String, Examples = ["987654321098765432"] });
         OpenApiTypeTransformer.MapType<DiscordRoleId>(new OpenApiSchema
-            { Type = JsonSchemaType.String, Example = "987654321098765432" });
+            { Type = JsonSchemaType.String, Examples = ["987654321098765432"] });
 
         OpenApiTypeTransformer.MapType<ScoreId>(new OpenApiSchema
             { Type = JsonSchemaType.Integer, Format = "int32" });
         OpenApiTypeTransformer.MapType<RankedScoreId>(new OpenApiSchema
-            { Type = JsonSchemaType.String, Example = "123456789" });
+            { Type = JsonSchemaType.String, Examples = ["123456789"] });
         OpenApiTypeTransformer.MapType<RankedMapId>(new OpenApiSchema
-            { Type = JsonSchemaType.String, Example = "123456789" });
+            { Type = JsonSchemaType.String, Examples = ["123456789"] });
 
         OpenApiTypeTransformer.MapType<BeatSaverKey>(new OpenApiSchema
-            { Type = JsonSchemaType.String, Example = "a3c3" });
+            { Type = JsonSchemaType.String, Examples = ["a3c3"] });
         OpenApiTypeTransformer.MapType<SongHash>(new OpenApiSchema
-            { Type = JsonSchemaType.String, Example = "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890" });
+            { Type = JsonSchemaType.String, Examples = ["ABCD1234EFGH5678IJKL9012MNOP3456QRST7890"] });
         OpenApiTypeTransformer.MapType<SSLeaderboardId>(new OpenApiSchema
             { Type = JsonSchemaType.Integer, Format = "int32" });
         OpenApiTypeTransformer.MapType<BLLeaderboardId>(new OpenApiSchema
-            { Type = JsonSchemaType.String, Example = "a3c391" });
+            { Type = JsonSchemaType.String, Examples = ["a3c391"] });
         OpenApiTypeTransformer.MapType<RankedMapRequests.EModifiers>(new OpenApiSchema
-            { Example = nameof(RankedMapRequests.EModifiers.None) });
+            { Examples = [nameof(RankedMapRequests.EModifiers.None)] });
         OpenApiTypeTransformer.MapType<Xp>(new OpenApiSchema
         {
             Type = JsonSchemaType.Number,

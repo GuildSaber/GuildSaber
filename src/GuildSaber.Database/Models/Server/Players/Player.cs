@@ -31,6 +31,12 @@ public class PlayerConfiguration : IEntityTypeConfiguration<Player>
         builder.ComplexProperty(x => x.LinkedAccounts).Configure(new PlayerLinkedAccountsConfiguration());
         builder.ComplexProperty(x => x.SubscriptionInfo);
 
+        builder.HasIndex(x => x.LinkedAccounts.SteamId);
+        builder.HasIndex(x => x.LinkedAccounts.MetaPCId);
+        builder.HasIndex(x => x.LinkedAccounts.BLNativeId);
+        builder.HasIndex(x => x.LinkedAccounts.ScoreSaberId);
+        builder.HasIndex(x => x.LinkedAccounts.DiscordId);
+
         builder.HasMany(x => x.Members)
             .WithOne(x => x.Player)
             .HasForeignKey(x => x.PlayerId)

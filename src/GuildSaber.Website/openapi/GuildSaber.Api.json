@@ -6131,17 +6131,23 @@
       },
       "BeatLeaderScoreId": { },
       "BeatSaverKey": {
-        "type": "string",
-        "example": "a3c3"
+        "examples": [
+          "a3c3"
+        ],
+        "type": "string"
       },
       "BLLeaderboardId": {
-        "type": "string",
-        "example": "a3c391"
+        "examples": [
+          "a3c391"
+        ],
+        "type": "string"
       },
       "BLNativeId": {
+        "examples": [
+          "123456789"
+        ],
         "type": "string",
-        "format": "int64",
-        "example": "123456789"
+        "format": "int64"
       },
       "Category": {
         "type": "object",
@@ -6250,21 +6256,29 @@
         }
       },
       "DiscordChannelId": {
-        "type": "string",
-        "example": "987654321098765432"
+        "examples": [
+          "987654321098765432"
+        ],
+        "type": "string"
       },
       "DiscordGuildId": {
-        "type": "string",
-        "example": "987654321098765432"
+        "examples": [
+          "987654321098765432"
+        ],
+        "type": "string"
       },
       "DiscordId": {
+        "examples": [
+          "123456789012345678"
+        ],
         "type": "string",
-        "format": "int64",
-        "example": "123456789012345678"
+        "format": "int64"
       },
       "DiscordRoleId": {
-        "type": "string",
-        "example": "987654321098765432"
+        "examples": [
+          "987654321098765432"
+        ],
+        "type": "string"
       },
       "EContextType": {
         "enum": [
@@ -6384,8 +6398,10 @@
         ]
       },
       "EModifiers": {
-        "type": "string",
-        "example": "None"
+        "examples": [
+          "None"
+        ],
+        "type": "string"
       },
       "EOrder": {
         "enum": [
@@ -7102,9 +7118,11 @@
         }
       },
       "MetaPCId": {
+        "examples": [
+          "1234567890123456"
+        ],
         "type": "string",
-        "format": "int64",
-        "example": "1234567890123456"
+        "format": "int64"
       },
       "PagedListOfCategory": {
         "type": "object",
@@ -7979,8 +7997,10 @@
         }
       },
       "RankedMapId": {
-        "type": "string",
-        "example": "123456789"
+        "examples": [
+          "123456789"
+        ],
+        "type": "string"
       },
       "RankedMapInfo": {
         "required": [
@@ -8253,8 +8273,10 @@
         }
       },
       "RankedScoreId": {
-        "type": "string",
-        "example": "123456789"
+        "examples": [
+          "123456789"
+        ],
+        "type": "string"
       },
       "RankedScoreInvalidRankedScore": {
         "required": [
@@ -8604,10 +8626,7 @@
             "type": "boolean"
           },
           "url": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": "string"
           },
           "acceptLocalUrlOnly": {
             "type": "boolean"
@@ -8774,9 +8793,11 @@
         "format": "int32"
       },
       "ScoreSaberId": {
+        "examples": [
+          "12345678901234567"
+        ],
         "type": "string",
-        "format": "int64",
-        "example": "12345678901234567"
+        "format": "int64"
       },
       "ScoreSaberScoreId": { },
       "ScoreScoreSaberScore": {
@@ -9114,8 +9135,10 @@
         }
       },
       "SongHash": {
-        "type": "string",
-        "example": "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890"
+        "examples": [
+          "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890"
+        ],
+        "type": "string"
       },
       "SongInfo": {
         "required": [
@@ -9178,9 +9201,11 @@
         "format": "int32"
       },
       "SteamId": {
+        "examples": [
+          "12345678901234567"
+        ],
         "type": "string",
-        "format": "int64",
-        "example": "12345678901234567"
+        "format": "int64"
       },
       "UpdateCategory": {
         "type": "object",

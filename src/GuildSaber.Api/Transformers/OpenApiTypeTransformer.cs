@@ -76,8 +76,8 @@ public static class OpenApiTypeTransformer
             if (transformedSchema.Items is not null)
                 schema.Items = transformedSchema.Items;
 
-            if (transformedSchema.Example is not null)
-                schema.Example = transformedSchema.Example;
+            if (transformedSchema.Examples is { Count: > 0 })
+                schema.Examples = transformedSchema.Examples;
 
             return Task.CompletedTask;
         }

@@ -104,7 +104,7 @@ public static class OpenApiGlobalProblemDetails
                 {
                     /* Prevent overwriting the schema example if it already exists,
                      * maybe from a lib or if the user has already defined it. */
-                    if (problemDetailsContent!.Schema?.Example is not null)
+                    if (problemDetailsContent!.Schema?.Examples is { Count: > 0 })
                         continue;
 
                     problemDetailsContent.Schema = new OpenApiSchemaReference(

@@ -24,17 +24,11 @@ public class PlayerLinkedAccountsConfiguration : IComplexPropertyConfiguration<P
 {
     public ComplexPropertyBuilder<PlayerLinkedAccounts> Configure(ComplexPropertyBuilder<PlayerLinkedAccounts> builder)
     {
-        // Can't setup indexes on complex type yet: https://github.com/dotnet/efcore/issues/31246, work seems in progress though.
-        // builder.HasIndex(x => x.SteamId); builder.HasIndex(x => x.MetaPCId); builder.HasIndex(x => x.BLNativeId); builder.HasIndex(x => x.DiscordId);
-
-        // The BeatLeaderId is an expression that will be translated to SQL, we should't have EFCore map it to a column.
-        //builder.Ignore(x => x.BeatLeaderId);
         builder.Property(x => x.SteamId).HasConversion<ulong?>(from => from, to => SteamId.CreateUnsafe(to));
         builder.Property(x => x.MetaPCId).HasConversion<ulong?>(from => from, to => MetaPCId.CreateUnsafe(to));
         builder.Property(x => x.BLNativeId).HasConversion<ulong?>(from => from, to => BLNativeId.CreateUnsafe(to));
         builder.Property(x => x.ScoreSaberId).HasConversion<ulong?>(from => from, to => ScoreSaberId.CreateUnsafe(to));
         builder.Property(x => x.DiscordId).HasConversion<ulong?>(from => from, to => DiscordId.CreateUnsafe(to));
-
 
         return builder;
     }
