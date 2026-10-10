@@ -17,7 +17,7 @@ export const useGuildMapFilters = () =>
     page: parseAsInteger.withDefault(1),
     search: parseAsString.withDefault(""),
     order: parseAsStringLiteral(orderKeys).withDefault(orderKeys[0]),
-    sort: parseAsStringLiteral(sortKeys).withDefault(sortKeys[3]),
+    sort: parseAsStringLiteral(sortKeys).withDefault(sortKeys[5]),
     stars: parseAsArrayOf(parseAsInteger, ",").withDefault([MIN_STARS, MAX_STARS]),
     bpm: parseAsArrayOf(parseAsInteger, ",").withDefault([MIN_BPM, MAX_BPM]),
     categories: parseAsArrayOf(parseAsInteger, ",").withDefault([]),
