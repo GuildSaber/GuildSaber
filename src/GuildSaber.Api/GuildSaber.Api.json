@@ -6429,11 +6429,12 @@
         "enum": [
           "Id",
           "EditTime",
-          "CreationTime",
+          "RankTime",
+          "MapUploadTime",
+          "RankedScoreTime",
           "DifficultyStar",
           "AccuracyStar",
-          "Name",
-          "RankedScoreTime"
+          "Name"
         ]
       },
       "ERankedScoreSorter": {
