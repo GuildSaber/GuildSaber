@@ -308,21 +308,25 @@ public static class RankedMapExtensions
             => sortBy switch
             {
                 ERankedMapSorter.Id => query.OrderBy(order, x => x.Id),
-                ERankedMapSorter.CreationTime => query.OrderBy(order, x => x.Info.CreatedAt)
-                    .ThenBy(order, x => x.Id),
                 ERankedMapSorter.EditTime => query.OrderBy(order, x => x.Info.EditedAt)
                     .ThenBy(order, guild => guild.Id),
+                ERankedMapSorter.RankTime => query.OrderBy(order, x => x.Info.CreatedAt)
+                    .ThenBy(order, x => x.Id),
+                ERankedMapSorter.MapUploadTime => query.OrderBy(order, x => x.MapVersions
+                        .Select(v => v.Song.UploadedAt)
+                        .FirstOrDefault())
+                    .ThenBy(order, x => x.Id),
+                ERankedMapSorter.RankedScoreTime => query.OrderBy(order, x => x.RankedScores
+                        .Where(rs => rs.PlayerId == playerId && rs.IsSelected)
+                        .Select(rs => rs.EditedAt)
+                        .FirstOrDefault())
+                    .ThenBy(order, x => x.Id),
                 ERankedMapSorter.DifficultyStar => query.OrderBy(order, x => x.Rating.DiffStar)
                     .ThenBy(order, x => x.Id),
                 ERankedMapSorter.AccuracyStar => query.OrderBy(order, x => x.Rating.AccStar)
                     .ThenBy(order, x => x.Id),
                 ERankedMapSorter.Name => query.OrderBy(order, x => x.MapVersions
                         .Select(v => v.Song.Info.SongName)
-                        .FirstOrDefault())
-                    .ThenBy(order, x => x.Id),
-                ERankedMapSorter.RankedScoreTime => query.OrderBy(order, x => x.RankedScores
-                        .Where(rs => rs.PlayerId == playerId && rs.IsSelected)
-                        .Select(rs => rs.EditedAt)
                         .FirstOrDefault())
                     .ThenBy(order, x => x.Id),
                 _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)

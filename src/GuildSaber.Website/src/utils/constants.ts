@@ -52,7 +52,9 @@ export const MAP_GAME_MODE: Record<string, string> = {
 export const MAP_SORT_BY = {
   Name: "Name",
   EditTime: "Edit Time",
-  CreationTime: "Creation Time",
+    RankTime: "Rank Time",
+    MapUploadTime: "Map Upload Time",
+    RankedScoreTime: "Ranked Score Time",
   DifficultyStar: "Difficulty",
   AccuracyStar: "Accuracy",
   Id: "ID",

@@ -89,11 +89,12 @@ public static class RankedMapRequests
     {
         Id = 0,
         EditTime = 1,
-        CreationTime = 2,
-        DifficultyStar = 3,
-        AccuracyStar = 4,
-        Name = 5,
-        RankedScoreTime = 6
+        RankTime = 2,
+        MapUploadTime = 3,
+        RankedScoreTime = 4,
+        DifficultyStar = 5,
+        AccuracyStar = 6,
+        Name = 7
     }
 
     /// <param name="DifficultyStar">
