@@ -39,6 +39,10 @@ public static class OpenApiTypeMappings
             { Type = JsonSchemaType.String, Examples = ["123456789"] });
         OpenApiTypeTransformer.MapType<RankedMapId>(new OpenApiSchema
             { Type = JsonSchemaType.String, Examples = ["123456789"] });
+        OpenApiTypeTransformer.MapType<MapRequestThreadId>(new OpenApiSchema
+            { Type = JsonSchemaType.String, Examples = ["123456789"] });
+        OpenApiTypeTransformer.MapType<MapProposalId>(new OpenApiSchema
+            { Type = JsonSchemaType.String, Examples = ["123456789"] });
 
         OpenApiTypeTransformer.MapType<BeatSaverKey>(new OpenApiSchema
             { Type = JsonSchemaType.String, Examples = ["a3c3"] });

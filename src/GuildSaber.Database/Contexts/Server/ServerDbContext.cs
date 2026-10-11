@@ -6,6 +6,10 @@ using GuildSaber.Database.Models.Server.Guilds.Boosts;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
+using GuildSaber.Database.Models.Server.MapRequests;
+using GuildSaber.Database.Models.Server.MapRequests.Proposals;
+using GuildSaber.Database.Models.Server.MapRequests.Proposals.Snapshots;
+using GuildSaber.Database.Models.Server.MapRequests.Votes;
 using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
@@ -48,6 +52,15 @@ public class ServerDbContext : DbContext
     public DbSet<RankedMap> RankedMaps { get; set; }
     public DbSet<MapVersion> MapVersions { get; set; }
     public DbSet<PlayMode> PlayModes { get; set; }
+
+    public DbSet<MapRequestThread> MapRequestThreads { get; set; }
+    public DbSet<MapRequestThreadVote> MapRequestThreadVotes { get; set; }
+
+    public DbSet<MapProposal> MapProposals { get; set; }
+    public DbSet<MapProposalVersion> MapProposalVersions { get; set; }
+    public DbSet<MapProposalCategory> MapProposalCategories { get; set; }
+    public DbSet<MapProposalAchievement> MapProposalAchievements { get; set; }
+    public DbSet<MapProposalVote> MapProposalVotes { get; set; }
 
     public DbSet<AbstractScore> Scores { get; set; }
     public DbSet<ScoreSaberScore> ScoreSaberScores { get; set; }

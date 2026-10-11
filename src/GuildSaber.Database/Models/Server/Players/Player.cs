@@ -1,5 +1,8 @@
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds.Members;
+using GuildSaber.Database.Models.Server.MapRequests;
+using GuildSaber.Database.Models.Server.MapRequests.Proposals;
+using GuildSaber.Database.Models.Server.MapRequests.Votes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -15,6 +18,10 @@ public class Player
     public bool IsManager { get; set; }
 
     public IList<Member> Members { get; init; } = null!;
+    public IList<MapRequestThread> RequestThreads { get; init; } = null!;
+    public IList<MapProposal> Proposals { get; init; } = null!;
+    public IList<MapRequestThreadVote> RequestThreadVotes { get; init; } = null!;
+    public IList<MapProposalVote> ProposalVotes { get; init; } = null!;
 }
 
 public class PlayerConfiguration : IEntityTypeConfiguration<Player>
@@ -41,5 +48,15 @@ public class PlayerConfiguration : IEntityTypeConfiguration<Player>
             .WithOne(x => x.Player)
             .HasForeignKey(x => x.PlayerId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(x => x.RequestThreads)
+            .WithOne(x => x.Author)
+            .HasForeignKey(x => x.AuthorId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasMany(x => x.Proposals)
+            .WithOne(x => x.Author)
+            .HasForeignKey(x => x.AuthorId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

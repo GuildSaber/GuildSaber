@@ -2,6 +2,7 @@
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Achievements.Types;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
+using GuildSaber.Database.Models.Server.MapRequests;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
 using GuildSaber.Database.Models.Server.RankedScores;
 using Microsoft.EntityFrameworkCore;
@@ -15,12 +16,14 @@ public class RankedMap
 
     public GuildId GuildId { get; init; }
     public ContextId ContextId { get; init; }
+    public MapRequestThreadId ThreadId { get; init; }
 
     public required RankedMapInfo Info { get; set; }
     public required RankedMapRequirements Requirements { get; set; }
     public required RankedMapRating Rating { get; init; }
 
     public Context Context { get; init; } = null!;
+    public MapRequestThread Thread { get; init; } = null!;
     public IList<MapVersion> MapVersions { get; init; } = null!;
     public IList<Category> Categories { get; init; } = null!;
     public IList<RankedMapListAchievement> Achievements { get; init; } = null!;
@@ -48,6 +51,12 @@ public class RankedMapConfiguration : IEntityTypeConfiguration<RankedMap>
         builder.HasOne(x => x.Context)
             .WithMany(x => x.RankedMaps).HasForeignKey(x => x.ContextId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(x => x.Thread)
+            .WithOne(x => x.RankedMap)
+            .HasForeignKey<RankedMap>(x => x.ThreadId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasMany(x => x.Categories).WithMany();
         builder.HasMany(x => x.MapVersions).WithOne()

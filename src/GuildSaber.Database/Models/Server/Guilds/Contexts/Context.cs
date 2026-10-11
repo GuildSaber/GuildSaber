@@ -2,6 +2,7 @@
 using GuildSaber.Database.Models.Server.Guilds.Achievements;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
+using GuildSaber.Database.Models.Server.MapRequests;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -23,6 +24,7 @@ public class Context
     public IList<RankedMap> RankedMaps { get; init; } = null!;
     public IList<Member> Members { get; set; } = null!;
     public IList<ContextMember> ContextMembers { get; init; } = null!;
+    public IList<MapRequestThread> RequestThreads { get; init; } = null!;
 
     /// <summary>
     /// Maybe this will end up being a type union (from inheritance), but it will fit for now.
@@ -58,5 +60,9 @@ public class ContextConfiguration : IEntityTypeConfiguration<Context>
         builder.HasMany(x => x.Members)
             .WithMany(x => x.Contexts)
             .UsingEntity<ContextMember>();
+
+        builder.HasMany(x => x.RequestThreads)
+            .WithOne().HasForeignKey(x => x.ContextId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
