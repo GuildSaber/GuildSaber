@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
+import { useSession } from "@/features/auth/hooks/useSession"
 import { useGuildMapFilters } from "@/features/guilds/hooks/useGuildMapFilters"
 import { useSliderCommit } from "@/features/guilds/hooks/useSliderCommit"
 import { cn } from "@/lib/utils"
-import { MAP_SORT_BY, MAX_BPM, MAX_STARS, MIN_BPM, MIN_STARS, ORDER_BY } from "@/utils/constants"
+import { MAP_SCORE_STATUS, MAP_SORT_BY, MAX_BPM, MAX_STARS, MIN_BPM, MIN_STARS, ORDER_BY } from "@/utils/constants"
 import { type ChangeEvent } from "react"
 import { useDebounceCallback } from "usehooks-ts"
 
@@ -18,6 +19,7 @@ interface Props {
 }
 
 const GuildMapsFilters = ({ categories }: Props) => {
+  const { data: session } = useSession()
   const [filters, setFilters] = useGuildMapFilters()
 
   const updateFilters = (newFilters: Partial<typeof filters>) => {
@@ -45,6 +47,10 @@ const GuildMapsFilters = ({ categories }: Props) => {
 
   const handleSortChange = (v: ERankedMapSorter) => {
     updateFilters({ sort: v })
+  }
+
+  const handleScoreStatusChange = (v: keyof typeof MAP_SCORE_STATUS) => {
+    updateFilters({ scoreStatus: v })
   }
 
   const handleCategoriesSelect = (categoryId: number | undefined) => () => {
@@ -107,6 +113,24 @@ const GuildMapsFilters = ({ categories }: Props) => {
           </SelectContent>
         </Select>
       </Field>
+
+      {session && (
+        <Field>
+          <FieldLabel>Score Status</FieldLabel>
+          <Select value={filters.scoreStatus} onValueChange={handleScoreStatusChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Score status" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(MAP_SCORE_STATUS).map(([value, { label }]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+      )}
 
       <FieldSeparator />
 

@@ -8,6 +8,7 @@ import { GuildMapRowSkeleton } from "@/features/guilds/components/GuildMaps/Guil
 import { useGuildContext } from "@/features/guilds/contexts/guildContext"
 import { useGuildMapFilters } from "@/features/guilds/hooks/useGuildMapFilters"
 import { useResponsivePageSize } from "@/hooks/useResponsivePageSize"
+import { MAP_SCORE_STATUS } from "@/utils/constants"
 import { useQuery } from "@tanstack/react-query"
 import { useMediaQuery } from "usehooks-ts"
 
@@ -48,8 +49,13 @@ const GuildMapsList = () => {
     enabled: Boolean(guild) && !session,
   })
 
+  const { rankedScoreTypes, includeMapsWithoutScore } = MAP_SCORE_STATUS[filters.scoreStatus]
+
   const rankedMapsWithScoresQuery = useQuery({
-    ...getRankedMapsWithScoresAtMeOptions(rankedMapsParams),
+    ...getRankedMapsWithScoresAtMeOptions({
+      ...rankedMapsParams,
+      query: { ...rankedMapsParams.query, rankedScoreTypes, includeMapsWithoutScore },
+    }),
     enabled: Boolean(guild) && Boolean(session),
   })
 
