@@ -2,6 +2,7 @@ import { ThemeProvider } from "@/components/Theme"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import DialogArcViewer from "@/features/maps/components/DialogArcViewer"
+import DialogReplay from "@/features/maps/components/DialogReplay"
 import "@/index.css"
 import "@/lib/client"
 import queryClient from "@/lib/queryClient"
@@ -24,6 +25,7 @@ if (rootElement) {
             <QueryClientProvider client={queryClient}>
               <Router />
               <DialogArcViewer />
+              <DialogReplay />
               <Toaster />
             </QueryClientProvider>
           </NuqsAdapter>

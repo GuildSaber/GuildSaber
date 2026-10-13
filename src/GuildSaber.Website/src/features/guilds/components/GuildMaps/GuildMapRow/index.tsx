@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import GuildMapRowCategories from "@/features/guilds/components/GuildMaps/GuildMapRow/GuildMapRowCategories"
 import { useArcViewerStore } from "@/features/maps/stores/arcViewerStore"
+import { useReplayStore } from "@/features/maps/stores/replayStore"
 import { formatDate } from "@/features/maps/utils"
 import { cn } from "@/lib/utils"
 import { getMapCover } from "@/utils/beatsaver"
-import { MAP_DIFFICULTY } from "@/utils/constants"
+import { LEADERBOARD, MAP_DIFFICULTY } from "@/utils/constants"
 import { getAccuracy } from "@/utils/score"
-import { DownloadCloud, Play, Sparkles, Star } from "lucide-react"
+import { DownloadCloud, Play, Sparkles, SquarePlay, Star } from "lucide-react"
 import { Link } from "react-router"
 import { useCopyToClipboard } from "usehooks-ts"
 
@@ -38,7 +39,13 @@ const GuildMapRow = ({ score: { rankedMap, rankedScores } }: Props) => {
   const [rankedScore] = rankedScores
 
   const { openArcViewer } = useArcViewerStore()
+  const { openReplay } = useReplayStore()
   const [, copy] = useCopyToClipboard()
+
+  const hasReplay =
+    rankedScore?.type === "Valid" &&
+    rankedScore.score.type === LEADERBOARD.BeatLeader &&
+    Boolean(rankedScore.score.beatLeaderScoreId)
 
   const handleBeatSaverLink = () => {
     window.open(`https://beatsaver.com/maps/${song.key}`, "_blank", "noopener,noreferrer")
@@ -54,6 +61,10 @@ const GuildMapRow = ({ score: { rankedMap, rankedScores } }: Props) => {
 
   const handleArcViewer = () => {
     openArcViewer(song.key, diffKey.difficulty, diffKey.gameMode)
+  }
+
+  const handleReplay = () => {
+    openReplay(rankedScore.score)
   }
 
   return (
@@ -147,7 +158,19 @@ const GuildMapRow = ({ score: { rankedMap, rankedScores } }: Props) => {
             STATUS_COLORS[rankedScore.type],
           )}
         >
-          <span className="text-xs opacity-80">{rankedScore.type}</span>
+          <span className="flex items-center gap-1 text-xs opacity-80">
+            {rankedScore.type}
+            {hasReplay && (
+              <button
+                type="button"
+                title="Watch replay"
+                onClick={handleReplay}
+                className="cursor-pointer transition-opacity hover:opacity-70"
+              >
+                <SquarePlay className="size-4 md:size-5" />
+              </button>
+            )}
+          </span>
           <span className="text-xs font-semibold md:text-base">
             {`${getAccuracy(rankedMap, rankedScore).toFixed(2)}%`}
           </span>
