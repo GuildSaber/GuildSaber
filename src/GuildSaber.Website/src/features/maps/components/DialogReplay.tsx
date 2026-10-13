@@ -5,8 +5,8 @@ import ReplayViewerIcon from "@/features/maps/components/ReplayViewerIcon"
 import ReplayViewerPicker from "@/features/maps/components/ReplayViewerPicker"
 import { REPLAY_VIEWERS, useReplayStore, type ReplayViewer } from "@/features/maps/stores/replayStore"
 import { LEADERBOARD } from "@/utils/constants"
-import { useRef, useState, type RefObject } from "react"
-import { useOnClickOutside } from "usehooks-ts"
+import { useRef } from "react"
+import { useEventListener } from "usehooks-ts"
 
 const getReplayUrl = (score: Score, viewer: ReplayViewer) => {
   if (score.type === LEADERBOARD.BeatLeader && score.beatLeaderScoreId) {
@@ -25,11 +25,20 @@ const getReplayUrl = (score: Score, viewer: ReplayViewer) => {
 const DialogReplay = () => {
   const { open, score, viewer, setViewer, closeReplay } = useReplayStore()
   const ref = useRef<HTMLDivElement>(null)
-  const [isViewerSelectOpen, setIsViewerSelectOpen] = useState(false)
 
-  useOnClickOutside(ref as RefObject<HTMLDivElement>, () => {
-    if (!isViewerSelectOpen) closeReplay()
-  })
+  useEventListener(
+    "pointerdown",
+    (event) => {
+      const isOutside = ref.current && !ref.current.contains(event.target as Node)
+      const isSelectOpen = document.querySelector("[data-slot=select-content]")
+
+      if (isOutside && !isSelectOpen) {
+        closeReplay()
+      }
+    },
+    undefined,
+    { capture: true },
+  )
 
   if (!viewer) {
     return (
@@ -54,12 +63,7 @@ const DialogReplay = () => {
           </p>
         )}
 
-        <Select
-          value={viewer}
-          onValueChange={(value) => setViewer(value as ReplayViewer)}
-          open={isViewerSelectOpen}
-          onOpenChange={setIsViewerSelectOpen}
-        >
+        <Select value={viewer} onValueChange={(value) => setViewer(value as ReplayViewer)}>
           <SelectTrigger size="sm" className="bg-background! absolute bottom-3 left-3">
             <SelectValue />
           </SelectTrigger>
