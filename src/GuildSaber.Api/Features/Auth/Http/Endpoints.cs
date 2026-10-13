@@ -318,7 +318,12 @@ public class AuthEndpoints : IEndpoints
                 statusCode: StatusCodes.Status400BadRequest))
             .Bind(beatleaderId => authService
                 .GetPlayerIdAsync(beatleaderId)
-                .Tap(playerId => authService.UpdatePlayerInfoAsync(playerId, beatleaderId))
+                .Tap(async playerId => await taskQueue.QueueBackgroundWorkItemAsync(async _ =>
+                {
+                    await using var scope = scopeFactory.CreateAsyncScope();
+                    await scope.ServiceProvider.GetRequiredService<AuthService>()
+                        .UpdatePlayerInfoAsync(playerId, beatleaderId);
+                }))
                 .ToResult(() => "Treating as result")
                 .Compensate(_ => authService
                     .CreatePlayerAsync(beatleaderId)
