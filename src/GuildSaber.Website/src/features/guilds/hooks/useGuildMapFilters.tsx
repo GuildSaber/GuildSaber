@@ -1,5 +1,5 @@
 import type { EOrder, ERankedMapSorter } from "@/client"
-import { MAP_SORT_BY, MAX_BPM, MAX_STARS, MIN_BPM, MIN_STARS, ORDER_BY } from "@/utils/constants"
+import { MAP_SCORE_STATUS, MAP_SORT_BY, MAX_BPM, MAX_STARS, MIN_BPM, MIN_STARS, ORDER_BY } from "@/utils/constants"
 import {
   parseAsArrayOf,
   parseAsBoolean,
@@ -11,6 +11,7 @@ import {
 
 const orderKeys = Object.keys(ORDER_BY) as EOrder[]
 const sortKeys = Object.keys(MAP_SORT_BY) as ERankedMapSorter[]
+const scoreStatusKeys = Object.keys(MAP_SCORE_STATUS) as Array<keyof typeof MAP_SCORE_STATUS>
 
 export const useGuildMapFilters = () =>
   useQueryStates({
@@ -22,6 +23,7 @@ export const useGuildMapFilters = () =>
     bpm: parseAsArrayOf(parseAsInteger, ",").withDefault([MIN_BPM, MAX_BPM]),
     categories: parseAsArrayOf(parseAsInteger, ",").withDefault([]),
     matchAnyCategory: parseAsBoolean.withDefault(true),
+    scoreStatus: parseAsStringLiteral(scoreStatusKeys).withDefault(scoreStatusKeys[0]),
   })
 
 export type GuildMapFilters = ReturnType<typeof useGuildMapFilters>[0]

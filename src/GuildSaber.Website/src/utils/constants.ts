@@ -52,13 +52,20 @@ export const MAP_GAME_MODE: Record<string, string> = {
 export const MAP_SORT_BY = {
   Name: "Name",
   EditTime: "Edit Time",
-    RankTime: "Rank Time",
-    MapUploadTime: "Map Upload Time",
-    RankedScoreTime: "Ranked Score Time",
+  RankTime: "Rank Time",
+  MapUploadTime: "Map Upload Time",
+  RankedScoreTime: "Ranked Score Time",
   DifficultyStar: "Difficulty",
   AccuracyStar: "Accuracy",
   Id: "ID",
 }
+
+export const MAP_SCORE_STATUS = {
+  All: { label: "All", rankedScoreTypes: undefined, includeMapsWithoutScore: undefined },
+  Passed: { label: "Passed", rankedScoreTypes: "PointGiving", includeMapsWithoutScore: false },
+  Unpassed: { label: "Unpassed", rankedScoreTypes: "NonPointGivingNoPending", includeMapsWithoutScore: true },
+  Pending: { label: "Pending", rankedScoreTypes: "Pending", includeMapsWithoutScore: false },
+} as const
 
 export const LEADERBOARD_SORT_BY = {
   Points: "Points",
