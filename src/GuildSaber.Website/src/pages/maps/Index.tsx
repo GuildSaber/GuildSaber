@@ -1,7 +1,6 @@
 import { getRankedMapOptions } from "@/client/@tanstack/react-query.gen"
 import ErrorState from "@/components/ErrorState"
 import { Separator } from "@/components/ui/separator"
-import DialogReplay from "@/features/maps/components/DialogReplay"
 import MapHeader from "@/features/maps/components/MapHeader"
 import MapLeaderboard from "@/features/maps/components/MapLeaderboard"
 import { MapContextProvider } from "@/features/maps/contexts/mapContext"
@@ -34,7 +33,6 @@ const MapsPage = () => {
         <MapHeader />
         <Separator className="my-6 h-0.5!" />
         <MapLeaderboard />
-        <DialogReplay />
       </main>
     </MapContextProvider>
   )
