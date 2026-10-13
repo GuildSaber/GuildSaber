@@ -1,23 +1,47 @@
 import { AlertDialog, AlertDialogContent } from "@/components/ui/alert-dialog"
-import { useReplayStore } from "@/features/maps/stores/replayStore"
+import type { Score } from "@/client"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import ReplayViewerIcon from "@/features/maps/components/ReplayViewerIcon"
+import ReplayViewerPicker from "@/features/maps/components/ReplayViewerPicker"
+import { REPLAY_VIEWERS, useReplayStore, type ReplayViewer } from "@/features/maps/stores/replayStore"
 import { LEADERBOARD } from "@/utils/constants"
-import { useRef, type RefObject } from "react"
+import { useRef, useState, type RefObject } from "react"
 import { useOnClickOutside } from "usehooks-ts"
 
-const getReplayUrl = (score: NonNullable<ReturnType<typeof useReplayStore.getState>["score"]>) => {
+const getReplayUrl = (score: Score, viewer: ReplayViewer) => {
   if (score.type === LEADERBOARD.BeatLeader && score.beatLeaderScoreId) {
-    return `https://replay.beatleader.com/?scoreId=${score.beatLeaderScoreId}`
+    return viewer === "ChroViewer"
+      ? `https://chroviewer.com/?scoreIdBL=${score.beatLeaderScoreId}`
+      : `https://replay.beatleader.com/?scoreId=${score.beatLeaderScoreId}`
+  }
+
+  if (score.type === LEADERBOARD.ScoreSaber && viewer === "ChroViewer") {
+    return `https://chroviewer.com/?scoreId=${score.scoreSaberScoreId}`
   }
 
   return null
 }
 
 const DialogReplay = () => {
-  const { open, score, closeReplay } = useReplayStore()
+  const { open, score, viewer, setViewer, closeReplay } = useReplayStore()
   const ref = useRef<HTMLDivElement>(null)
-  useOnClickOutside(ref as RefObject<HTMLDivElement>, closeReplay)
+  const [isViewerSelectOpen, setIsViewerSelectOpen] = useState(false)
 
-  const replayUrl = score ? getReplayUrl(score) : null
+  useOnClickOutside(ref as RefObject<HTMLDivElement>, () => {
+    if (!isViewerSelectOpen) closeReplay()
+  })
+
+  if (!viewer) {
+    return (
+      <AlertDialog open={open}>
+        <AlertDialogContent ref={ref} className="overflow-hidden p-0 sm:max-w-2xl">
+          <ReplayViewerPicker />
+        </AlertDialogContent>
+      </AlertDialog>
+    )
+  }
+
+  const replayUrl = score ? getReplayUrl(score, viewer) : null
 
   return (
     <AlertDialog open={open}>
@@ -29,6 +53,25 @@ const DialogReplay = () => {
             No replay available for this score.
           </p>
         )}
+
+        <Select
+          value={viewer}
+          onValueChange={(value) => setViewer(value as ReplayViewer)}
+          open={isViewerSelectOpen}
+          onOpenChange={setIsViewerSelectOpen}
+        >
+          <SelectTrigger size="sm" className="bg-background! absolute bottom-3 left-3">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {REPLAY_VIEWERS.map((option) => (
+              <SelectItem key={option} value={option}>
+                <ReplayViewerIcon viewer={option} />
+                {option}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </AlertDialogContent>
     </AlertDialog>
   )
