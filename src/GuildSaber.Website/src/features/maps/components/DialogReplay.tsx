@@ -54,9 +54,9 @@ const DialogReplay = () => {
 
   return (
     <AlertDialog open={open}>
-      <AlertDialogContent ref={ref} className="aspect-video min-w-2/3 overflow-hidden p-0">
+      <AlertDialogContent ref={ref} className="aspect-video min-w-2/3 p-0">
         {replayUrl ? (
-          <iframe allow="fullscreen" width="100%" height="100%" src={replayUrl} />
+          <iframe allow="fullscreen" width="100%" height="100%" src={replayUrl} className="rounded-lg" />
         ) : (
           <p className="text-muted-foreground flex h-full items-center justify-center text-sm">
             No replay available for this score.
@@ -64,7 +64,7 @@ const DialogReplay = () => {
         )}
 
         <Select value={viewer} onValueChange={(value) => setViewer(value as ReplayViewer)}>
-          <SelectTrigger size="sm" className="bg-background! absolute bottom-3 left-3">
+          <SelectTrigger size="sm" className="bg-background! absolute top-full left-0 mt-2">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
