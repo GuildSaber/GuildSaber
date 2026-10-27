@@ -1,2 +1,6 @@
 minimumReleaseAge: 1440
 blockExoticSubdeps: true
+
+overrides:
+  # TODO: Remove when the parser no longer pins the vulnerable js-yaml 4.2.0.
+  '@hey-api/json-schema-ref-parser@1.4.4>js-yaml': 4.3.2
