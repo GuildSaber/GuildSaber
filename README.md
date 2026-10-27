@@ -1,7 +1,29 @@
 # GuildSaber
 
 A multi tenant ranking system for Beat Saber, designed to manage and provide player rankings across multiple guilds.
-This project is built using .NET 10 and uses .NET Aspire for its orchestration.
+This project is built using .NET 11 and uses .NET Aspire for its orchestration.
+
+## Nix development environment
+
+Run `nix develop` to use the project's .NET SDKs, Node.js, pnpm and Docker client.
+The versions are pinned by `flake.lock`, independently of the packages installed on your system.
+With direnv installed and enabled in your shell, `direnv allow` loads the environment when entering the repository.
+New flake files must be added to Git before Nix can see them in a Git checkout.
+
+Inside the shell, restore dependencies with `dotnet restore`, `dotnet tool restore`, and
+`pnpm --dir src/GuildSaber.Website install --frozen-lockfile`.
+Run Aspire with `dotnet tool run aspire`. Docker still needs a running daemon.
+The mod also needs your local Beat Saber installation and mod assemblies configured in its `.csproj.user` file.
+
+For Rider, create the `.direnv` directory with `mkdir -p .direnv`, then run
+`nix build .#dotnet --out-link .direnv/dotnet` and select
+`<repository>/.direnv/dotnet/bin/dotnet` as the .NET CLI executable in its toolset settings.
+Launching Rider from `nix develop` also makes the shell's environment available to its build processes.
+
+The flake temporarily uses the revision from [nixpkgs PR #574338](https://github.com/NixOS/nixpkgs/pull/574338)
+for .NET 11 RC2. Once it reaches unstable, change `inputs.nixpkgs.url` to
+`github:NixOS/nixpkgs/nixos-unstable` and run `nix flake update nixpkgs`.
+Keep the SDK version in `global.json` compatible with the selected nixpkgs revision.
 
 ## License Information
 

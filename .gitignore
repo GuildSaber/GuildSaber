@@ -409,3 +409,6 @@ FodyWeavers.xsd
 
 # VHS render output
 replay.mp4
+
+# Local Nix development environment
+.direnv/
