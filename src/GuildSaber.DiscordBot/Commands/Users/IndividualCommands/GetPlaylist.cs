@@ -11,10 +11,22 @@ namespace GuildSaber.DiscordBot.Commands.Users;
 
 public partial class UserModuleSlash
 {
+    public enum EPlaylistType
+    {
+        [ChoiceDisplay("All")]
+        All = PlaylistRequests.PlaylistFilter.None,
+
+        [ChoiceDisplay("Hide passed")]
+        HidePassed = PlaylistRequests.PlaylistFilter.NoneWithPassedScores,
+
+        [ChoiceDisplay("Hide passed & pending")]
+        HidePassedAndPending = PlaylistRequests.PlaylistFilter.NoneWithPassedNorPendingScores
+    }
+
     [SlashCommand("playlist", "Get a playlist of maps for a level or all levels")]
     public async Task Playlist(
         [Summary("Context")] [Autocomplete(typeof(ContextAutocompleteHandler))] ContextId contextId,
-        [Summary("Type")] PlaylistRequests.PlaylistFilter filter = PlaylistRequests.PlaylistFilter.None,
+        [Summary("Type")] EPlaylistType filter = EPlaylistType.All,
         [Summary("Category")] [Autocomplete(typeof(CategoryAutocompleteHandler))] int? categoryId = null,
         [Summary("Level", "The level number to get the playlist for")] uint? achievementOrder = null,
         [Summary("User", "The user to get the playlists for (you if empty)")] IUser? user = null,
@@ -58,7 +70,7 @@ public partial class UserModuleSlash
             }
 
             var playlistResult = await Client.Value.Playlists.GetByAchievementIdAsync(
-                achievement.Id, filter, player.Id);
+                achievement.Id, (PlaylistRequests.PlaylistFilter)filter, player.Id);
             if (!playlistResult.TryGetValue(out var playlist, out var playlistError) && playlist is null)
             {
                 await FollowupAsync(embed: GetPlaylistCommand.BuildErrorEmbed(playlistError));
@@ -70,10 +82,10 @@ public partial class UserModuleSlash
             var fileName = PlaylistUtilities.GetPlaylistFileName(achievement, guildExtended);
             await FollowupWithFileAsync(memoryStream, fileName, filter switch
             {
-                PlaylistRequests.PlaylistFilter.None => "Playlist generated.",
-                PlaylistRequests.PlaylistFilter.NoneWithPassedScores
+                EPlaylistType.All => "Playlist generated.",
+                EPlaylistType.HidePassed
                     => $"Playlist containing only unpassed songs of {user?.Username ?? Context.User.Username} generated.",
-                PlaylistRequests.PlaylistFilter.NoneWithPassedNorPendingScores
+                EPlaylistType.HidePassedAndPending
                     => $"Playlist containing only unpassed and non-pending songs of {user?.Username ?? Context.User.Username} generated.",
                 _ => throw new UnreachableException()
             });
@@ -81,7 +93,7 @@ public partial class UserModuleSlash
         }
 
         // All achievements requested
-        if (!(await Client.Value.Playlists.GetAsync(achievements, filter, player.Id))
+        if (!(await Client.Value.Playlists.GetAsync(achievements, (PlaylistRequests.PlaylistFilter)filter, player.Id))
             .TryGetValue(out var achievementsWithPlaylists, out var playlistsError))
         {
             await FollowupAsync(embed: GetPlaylistCommand.BuildErrorEmbed(playlistsError));
@@ -94,10 +106,10 @@ public partial class UserModuleSlash
         var archiveName = PlaylistUtilities.GetPlaylistArchiveName(guildExtended, contextId, categoryId);
         await FollowupWithFileAsync(memoryStream, archiveName, filter switch
         {
-            PlaylistRequests.PlaylistFilter.None => "Playlists generated.",
-            PlaylistRequests.PlaylistFilter.NoneWithPassedScores
+            EPlaylistType.All => "Playlists generated.",
+            EPlaylistType.HidePassed
                 => $"Playlists containing only unpassed songs of {user?.Username ?? Context.User.Username} generated.",
-            PlaylistRequests.PlaylistFilter.NoneWithPassedNorPendingScores
+            EPlaylistType.HidePassedAndPending
                 => $"Playlists containing only unpassed and non-pending songs of {user?.Username ?? Context.User.Username} generated.",
             _ => throw new UnreachableException()
         });

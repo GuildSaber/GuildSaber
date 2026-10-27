@@ -24,9 +24,11 @@ public class PlayerCardView(
     static PlayerCardView()
     {
         QuestPDF.Settings.License = LicenseType.Community;
-        FontManager.RegisterFont(File
+
+        // Embedded the fonts directly in the Resources directory as their license allowed it.
+        FontManager.RegisterFontFromStream(File
             .OpenRead("Resources/Fonts/JetBrainsMonoNF/JetBrainsMonoNLNerdFont-Regular.ttf"));
-        FontManager.RegisterFont(File
+        FontManager.RegisterFontFromStream(File
             .OpenRead("Resources/Fonts/JetBrainsMonoNF/JetBrainsMonoNLNerdFont-Bold.ttf"));
     }
 
@@ -34,172 +36,75 @@ public class PlayerCardView(
 
     public void Compose(IDocumentContainer document)
     {
-        var currentAchievement = achievementStats.GetGlobalAchievement();
-        var primaryColor = Color.FromRGB(26, 28, 30);
-        var secondaryColor = currentAchievement is not null
-            ? Color.FromArgb(currentAchievement.Info.Color)
-            : Color.FromRGB(0, 0, 0);
+        var achievement = achievementStats.GetGlobalAchievement();
+        var accent = Color.FromArgb(achievement?.Info.Color ?? 0xFFFFFF);
+        var extraHeight = Math.Max(0, (guildExtended.Categories.Length + 1) / 2 - 3) * 45;
 
         document.Page(page =>
         {
-            page.Size(902, 340 + (int)Math.Ceiling(guildExtended.Categories.Length / 2.0) * 43);
-            page.PageColor(primaryColor);
-            page.DefaultTextStyle(x => x.FontFamily("JetBrainsMonoNL NF"));
+            page.Size(880, guildExtended.Categories.Length == 0 ? 380 : 470 + extraHeight);
+            page.PageColor(Color.FromRGB(26, 28, 30));
+            page.DefaultTextStyle(x => x.FontFamily("JetBrainsMonoNL NF").FontColor(Colors.White));
 
-            page.Content().Column(col =>
+            page.Content().Padding(10).Column(column =>
             {
-                // Top row for Avatar + Info + Logo
-                col.Item()
-                    .PaddingTop(20)
-                    .PaddingHorizontal(20)
-                    .Row(row =>
-                    {
-                        // Avatar
-                        var avatarContainer = row.ConstantItem(216).Height(216);
-                        if (avatarBytes.Length > 0)
-                            avatarContainer.Image(avatarBytes).FitArea();
-                        else
-                            avatarContainer.Background(Colors.Grey.Darken3);
+                column.Item().Height(220).Element(container
+                    => Header(container, achievement?.Info.Name ?? "No Level", accent));
+                column.Item().LineHorizontal(3).LineColor(accent);
+                column.Item().Height(70).PaddingTop(20).AlignMiddle()
+                    .Component(new TrophyRow(achievementStats.CalculateTrophiesData()));
 
-                        // Middle Info
-                        row.RelativeItem()
-                            .PaddingLeft(20)
-                            .Column(infoCol =>
-                            {
-                                infoCol.Item()
-                                    .PaddingTop(-5)
-                                    .Row(nameRow =>
-                                    {
-                                        nameRow.RelativeItem()
-                                            .Text(player.PlayerInfo.Username.Truncate(16))
-                                            .FontColor(Colors.White)
-                                            .FontSize(56)
-                                            .LineHeight(1f);
-
-                                        var logoContainer = nameRow.ConstantItem(80)
-                                            .AlignRight()
-                                            .AlignTop()
-                                            .Width(80)
-                                            .Height(80);
-
-                                        if (guildLogoBytes.Length > 0)
-                                            logoContainer.Image(guildLogoBytes).FitArea();
-                                        else
-                                            logoContainer
-                                                .Background(Colors.Grey.Darken3)
-                                                .AlignCenter()
-                                                .AlignMiddle()
-                                                .Text("?")
-                                                .FontColor(Colors.White)
-                                                .FontSize(40)
-                                                .Bold();
-                                    });
-
-                                // Points and Passes
-                                infoCol.Item()
-                                    .PaddingTop(25)
-                                    .Row(statRow =>
-                                    {
-                                        var gold = Color.FromARGB(255, 255, 215, 0);
-                                        var globalPointsWithRank = contextStat.SimplePointsWithRank
-                                            .Where(x => x.CategoryId == null)
-                                            .ToArray();
-
-                                        foreach (var pointStat in globalPointsWithRank)
-                                            statRow.AutoItem()
-                                                .Text($" {pointStat.Points:0.##} {pointStat.Name} (#{pointStat.Rank})")
-                                                .FontColor(gold)
-                                                .FontSize(24);
-
-                                        var passStat = contextStat.PassCountsWithRank
-                                            .FirstOrDefault(x => x.CategoryId == null);
-
-                                        if (passStat.CategoryId != null)
-                                            return;
-
-                                        // Pass count wrapping to relative if it overlaps, else auto
-                                        statRow.RelativeItem()
-                                            .PaddingLeft(40)
-                                            .AlignLeft()
-                                            .Text($" {passStat.PassCount} passes (#{passStat.Rank})")
-                                            .FontColor(gold)
-                                            .FontSize(24);
-                                    });
-
-                                // Equilibrium
-                                infoCol.Item()
-                                    .Row(row =>
-                                    {
-                                        row.AutoItem()
-                                            .PaddingTop(25)
-                                            .Row(eqRow =>
-                                            {
-                                                var grayColor = Color.FromHex("#d9d9d9");
-                                                eqRow.AutoItem()
-                                                    .Text("")
-                                                    .FontColor(grayColor)
-                                                    .FontSize(24)
-                                                    .Bold();
-
-                                                var equilibriumPercentage = achievementStats.CalculateSkillEquilibrium(
-                                                    guildExtended.Categories.Select(x => x.Id)) ?? 0f;
-
-                                                eqRow.AutoItem()
-                                                    .PaddingLeft(25)
-                                                    .PaddingTop(-10)
-                                                    .Row(dotsRow =>
-                                                    {
-                                                        var filledDots = (int)Math.Round(equilibriumPercentage / 20.0);
-                                                        for (var i = 0; i < 5; i++)
-                                                        {
-                                                            var dotColor = i < filledDots ? secondaryColor : grayColor;
-                                                            dotsRow.AutoItem()
-                                                                .PaddingHorizontal(6)
-                                                                .Text("●")
-                                                                .FontColor(dotColor)
-                                                                .FontSize(40);
-                                                        }
-                                                    });
-
-                                                eqRow.AutoItem()
-                                                    .PaddingLeft(15)
-                                                    .Text($"({equilibriumPercentage:0.##}%)")
-                                                    .FontColor(grayColor)
-                                                    .FontSize(24);
-                                            });
-
-                                        row.RelativeItem()
-                                            .AlignMiddle()
-                                            .AlignCenter()
-                                            .PaddingTop(5)
-                                            .Text(currentAchievement?.Info.Name ?? "No Level")
-                                            .FontColor(secondaryColor)
-                                            .FontSize(48)
-                                            .Bold()
-                                            .Italic();
-                                    });
-                            });
-                    });
-
-                col.Item()
-                    .PaddingTop(10)
-                    .LineHorizontal(6)
-                    .LineColor(secondaryColor);
-
-                col.Item()
-                    .PaddingHorizontal(20)
-                    .Column(bottomCol =>
-                    {
-                        // Trophies
-                        bottomCol.Item()
-                            .PaddingVertical(20)
-                            .Component(new TrophyRow(achievementStats.CalculateTrophiesData()));
-
-                        // Categories
-                        bottomCol.Item()
-                            .Component(new CategoryGrid(guildExtended.Categories, achievementStats));
-                    });
+                if (guildExtended.Categories.Length > 0)
+                    column.Item().Height(150 + extraHeight)
+                        .Component(new CategoryGrid(guildExtended.Categories, achievementStats));
             });
         });
     }
+
+    private void Header(IContainer container, string achievementName, Color accent) => container.Row(row =>
+    {
+        var avatar = row.ConstantItem(210).AlignMiddle().Width(200).Height(200).CornerRadius(16);
+        if (avatarBytes.Length > 0)
+            avatar.Image(avatarBytes).FitArea();
+        else
+            avatar.Background(Colors.Grey.Darken3);
+
+        row.RelativeItem().PaddingLeft(20).Column(info =>
+        {
+            info.Item().Height(90).Row(name =>
+            {
+                name.RelativeItem().AlignMiddle().ScaleToFit()
+                    .Text(player.PlayerInfo.Username.Truncate(20)).FontSize(52).Bold().FontColor(Colors.White);
+
+                var logo = name.ConstantItem(90).PaddingLeft(10).Width(80).Height(80).CornerRadius(8);
+                if (guildLogoBytes.Length > 0)
+                    logo.Image(guildLogoBytes).FitArea();
+                else
+                    logo.Background(Colors.Grey.Darken3).AlignCenter().AlignMiddle()
+                        .Text("?").FontSize(40).Bold();
+            });
+
+            info.Item().Height(110).Row(stats =>
+            {
+                stats.RelativeItem(5).AlignMiddle().Column(points =>
+                {
+                    points.Item().Height(42).ScaleToFit().Row(values =>
+                    {
+                        values.Spacing(10);
+                        foreach (var point in contextStat.SimplePointsWithRank.Where(x => x.CategoryId is null))
+                            values.AutoItem().Text($" {point.Points:0.##} {point.Name} (#{point.Rank})")
+                                .FontSize(30).FontColor(Color.FromRGB(255, 215, 0));
+                    });
+
+                    var passes = contextStat.PassCountsWithRank.FirstOrDefault(x => x.CategoryId is null);
+                    points.Item().Height(42).ScaleToFit()
+                        .Text($" {passes.PassCount} passes (#{passes.Rank})")
+                        .FontSize(30).FontColor(Color.FromRGB(255, 215, 0));
+                });
+
+                stats.RelativeItem(4).AlignMiddle().ScaleToFit()
+                    .Text(achievementName).AlignCenter().FontSize(58).Bold().Italic().FontColor(accent);
+            });
+        });
+    });
 }

@@ -16,29 +16,15 @@ public sealed class TrophyRow(TrophiesData trophies) : IComponent
         ("Ruby", trophies.Ruby)
     ];
 
-    public void Compose(IContainer container) =>
-        container.Row(tRow => tRow
-            .RelativeItem()
-            .AlignCenter()
-            .Row(tc =>
+    public void Compose(IContainer container) => container.Row(row =>
+    {
+        foreach (var trophy in _trophies)
+            row.RelativeItem().AlignCenter().ScaleToFit().Row(item =>
             {
-                foreach (var t in _trophies)
-                    tc.AutoItem()
-                        .PaddingHorizontal(45)
-                        .Row(r =>
-                        {
-                            r.AutoItem()
-                                .Width(35)
-                                .Height(35)
-                                .Image($"Resources/Trophies/{t.Name}.webp")
-                                .FitArea();
-
-                            r.AutoItem()
-                                .PaddingLeft(5)
-                                .AlignMiddle()
-                                .Text(t.Count.ToString())
-                                .FontColor(Colors.White)
-                                .FontSize(24);
-                        });
-            }));
+                item.ConstantItem(36).Height(36)
+                    .Image($"Resources/Trophies/{trophy.Name}.webp").FitArea();
+                item.AutoItem().PaddingLeft(6).AlignMiddle()
+                    .Text(trophy.Count.ToString()).FontColor(Colors.White).FontSize(28);
+            });
+    });
 }

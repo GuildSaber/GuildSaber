@@ -49,6 +49,7 @@ public partial class UserModuleSlash
 
         await FollowupWithFileAsync(stream,
             fileName: "PlayerCard.png",
-            text: $"[Profile Link](<https://beatleader.com/u/{player.PlayerLinkedAccounts.BeatLeaderId}>)");
+            text: $"[Profile Link](<https://beatleader.com/u/{player.PlayerLinkedAccounts.BeatLeaderId}>)"
+        );
     }
 }
