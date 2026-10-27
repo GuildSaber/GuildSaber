@@ -43,8 +43,7 @@ const GuildMapRow = ({ score: { rankedMap, rankedScores } }: Props) => {
   const [, copy] = useCopyToClipboard()
 
   const hasReplay =
-    rankedScore?.type === "Valid" &&
-    rankedScore.score.type === LEADERBOARD.BeatLeader &&
+    rankedScore?.score.type === LEADERBOARD.BeatLeader &&
     Boolean(rankedScore.score.beatLeaderScoreId)
 
   const handleBeatSaverLink = () => {
