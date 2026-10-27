@@ -42,10 +42,10 @@ export const MapLeaderboardRow = ({ score, pointName }: Props) => {
   const beatLeaderScore = rankedScore.score.type === LEADERBOARD.BeatLeader ? rankedScore.score : undefined
 
   const hasReplay = Boolean(beatLeaderScore?.beatLeaderScoreId)
-  const hasStatistics = Boolean(beatLeaderScore?.hasStatistics)
-  const pauseCount = beatLeaderScore?.pauseCount ?? null
+  const hasStatistics = rankedScore.score.hasStatistics
+  const pauseCount = rankedScore.score.pauseStatistics?.pauseCount
   const hasPause = Boolean(pauseCount)
-  const totalPauseDuration = beatLeaderScore?.totalPauseDuration ?? null
+  const totalPauseDuration = rankedScore.score.pauseStatistics?.totalPauseDuration
   const { isFullCombo, missedNotes, badCuts } = rankedScore.score
   const missCount = Number(missedNotes) + Number(badCuts)
 

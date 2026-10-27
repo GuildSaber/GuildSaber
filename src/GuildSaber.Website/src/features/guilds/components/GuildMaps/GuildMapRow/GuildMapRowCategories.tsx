@@ -1,4 +1,4 @@
-import type { Category, RankedMap } from "@/client"
+import type { Category, RankedMapSimple } from "@/client"
 import { Badge } from "@/components/Badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useMapCategories } from "@/features/maps/components/MapHeader/MapHeaderCategories"
@@ -6,7 +6,7 @@ import { getCdnUrl } from "@/utils/url"
 import { useState, type TouchEvent } from "react"
 
 interface Props {
-  map: RankedMap
+  map: RankedMapSimple
 }
 
 const GuildMapRowCategories = ({ map }: Props) => {

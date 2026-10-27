@@ -5,13 +5,60 @@
     "version": "1.0.0"
   },
   "paths": {
+    "/players/@me/map-request-boosts": {
+      "get": {
+        "tags": [
+          "MapRequests"
+        ],
+        "summary": "Get your boost limit and current allocations across all guilds and contexts.",
+        "description": "The allowance is shared across all guilds and contexts and depends on the player's current subscription tier and server configuration.",
+        "operationId": "GetMyMapRequestBoosts",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoostAllowance"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET players/@me/map-request-boosts",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
     "/scores/{scoreId}/statistics": {
       "get": {
         "tags": [
           "Scores"
         ],
         "summary": "Get score statistics.",
-        "description": "Get score statistics by score Id (BeatLeader kind only).",
+        "description": "Get score statistics by score Id.",
         "operationId": "GetScoreStatistics",
         "parameters": [
           {
@@ -74,6 +121,7 @@
           {
             "name": "rankedScoreTypes",
             "in": "query",
+            "description": "If not None, only returns selected ranked scores with any of the specified ranked score types.",
             "schema": {
               "default": "None",
               "$ref": "#/components/schemas/ERankedScoreType"
@@ -82,6 +130,7 @@
           {
             "name": "difficultyStarFrom",
             "in": "query",
+            "description": "The minimum difficulty star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -94,6 +143,7 @@
           {
             "name": "difficultyStarTo",
             "in": "query",
+            "description": "The maximum difficulty star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -106,6 +156,7 @@
           {
             "name": "accuracyStarFrom",
             "in": "query",
+            "description": "The minimum accuracy star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -118,6 +169,7 @@
           {
             "name": "accuracyStarTo",
             "in": "query",
+            "description": "The maximum accuracy star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -130,6 +182,7 @@
           {
             "name": "bpmFrom",
             "in": "query",
+            "description": "The minimum BPM to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -142,6 +195,7 @@
           {
             "name": "bpmTo",
             "in": "query",
+            "description": "The maximum BPM to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -290,8 +344,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -374,8 +431,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -459,8 +519,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -493,6 +556,7 @@
           {
             "name": "rankedScoreTypes",
             "in": "query",
+            "description": "If not None, only returns selected ranked scores with any of the specified ranked score types.",
             "schema": {
               "default": "None",
               "$ref": "#/components/schemas/ERankedScoreType"
@@ -501,6 +565,7 @@
           {
             "name": "difficultyStarFrom",
             "in": "query",
+            "description": "The minimum difficulty star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -513,6 +578,7 @@
           {
             "name": "difficultyStarTo",
             "in": "query",
+            "description": "The maximum difficulty star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -525,6 +591,7 @@
           {
             "name": "accuracyStarFrom",
             "in": "query",
+            "description": "The minimum accuracy star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -537,6 +604,7 @@
           {
             "name": "accuracyStarTo",
             "in": "query",
+            "description": "The maximum accuracy star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -549,6 +617,7 @@
           {
             "name": "bpmFrom",
             "in": "query",
+            "description": "The minimum BPM to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -561,6 +630,7 @@
           {
             "name": "bpmTo",
             "in": "query",
+            "description": "The maximum BPM to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -651,6 +721,7 @@
           {
             "name": "rankedScoreTypes",
             "in": "query",
+            "description": "If not None, only returns selected ranked scores with any of the specified ranked score types.",
             "schema": {
               "default": "None",
               "$ref": "#/components/schemas/ERankedScoreType"
@@ -659,6 +730,7 @@
           {
             "name": "difficultyStarFrom",
             "in": "query",
+            "description": "The minimum difficulty star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -671,6 +743,7 @@
           {
             "name": "difficultyStarTo",
             "in": "query",
+            "description": "The maximum difficulty star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -683,6 +756,7 @@
           {
             "name": "accuracyStarFrom",
             "in": "query",
+            "description": "The minimum accuracy star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -695,6 +769,7 @@
           {
             "name": "accuracyStarTo",
             "in": "query",
+            "description": "The maximum accuracy star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -707,6 +782,7 @@
           {
             "name": "bpmFrom",
             "in": "query",
+            "description": "The minimum BPM to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -719,6 +795,7 @@
           {
             "name": "bpmTo",
             "in": "query",
+            "description": "The maximum BPM to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -789,7 +866,10 @@
         },
         "security": [
           {
-            "SessionCookie": []
+            "SessionCookie": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -822,6 +902,7 @@
           {
             "name": "rankedScoreTypes",
             "in": "query",
+            "description": "If not None, only returns selected ranked scores with any of the specified ranked score types.",
             "schema": {
               "default": "None",
               "$ref": "#/components/schemas/ERankedScoreType"
@@ -830,6 +911,7 @@
           {
             "name": "difficultyStarFrom",
             "in": "query",
+            "description": "The minimum difficulty star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -842,6 +924,7 @@
           {
             "name": "difficultyStarTo",
             "in": "query",
+            "description": "The maximum difficulty star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -854,6 +937,7 @@
           {
             "name": "accuracyStarFrom",
             "in": "query",
+            "description": "The minimum accuracy star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -866,6 +950,7 @@
           {
             "name": "accuracyStarTo",
             "in": "query",
+            "description": "The maximum accuracy star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -878,6 +963,7 @@
           {
             "name": "bpmFrom",
             "in": "query",
+            "description": "The minimum BPM to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -890,6 +976,7 @@
           {
             "name": "bpmTo",
             "in": "query",
+            "description": "The maximum BPM to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -980,6 +1067,7 @@
           {
             "name": "rankedScoreTypes",
             "in": "query",
+            "description": "If not None, only returns selected ranked scores with any of the specified ranked score types.",
             "schema": {
               "default": "None",
               "$ref": "#/components/schemas/ERankedScoreType"
@@ -988,6 +1076,7 @@
           {
             "name": "difficultyStarFrom",
             "in": "query",
+            "description": "The minimum difficulty star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1000,6 +1089,7 @@
           {
             "name": "difficultyStarTo",
             "in": "query",
+            "description": "The maximum difficulty star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1012,6 +1102,7 @@
           {
             "name": "accuracyStarFrom",
             "in": "query",
+            "description": "The minimum accuracy star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1024,6 +1115,7 @@
           {
             "name": "accuracyStarTo",
             "in": "query",
+            "description": "The maximum accuracy star rating to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1036,6 +1128,7 @@
           {
             "name": "bpmFrom",
             "in": "query",
+            "description": "The minimum BPM to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1048,6 +1141,7 @@
           {
             "name": "bpmTo",
             "in": "query",
+            "description": "The maximum BPM to filter scores.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1118,7 +1212,10 @@
         },
         "security": [
           {
-            "SessionCookie": []
+            "SessionCookie": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -1278,7 +1375,10 @@
         },
         "security": [
           {
-            "SessionCookie": []
+            "SessionCookie": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -1303,6 +1403,7 @@
           {
             "name": "search",
             "in": "query",
+            "description": "A search term to filter the returned ranked maps. The search is applied on the 'Song.Name',\n'Song.MapperName', 'Song.SongAuthorName', 'Song.BeatSaverKey', and 'Song.Hash' fields.",
             "schema": {
               "type": "string"
             }
@@ -1310,6 +1411,7 @@
           {
             "name": "categoryIds",
             "in": "query",
+            "description": "An array of category IDs to filter the returned ranked maps. Only maps with at least one of the provided categories\nwill be returned.",
             "schema": {
               "type": "array",
               "items": {
@@ -1325,6 +1427,7 @@
           {
             "name": "matchAnyCategory",
             "in": "query",
+            "description": "If true, returns maps matching any of the provided categories. If false, returns only maps matching all provided\ncategories.",
             "schema": {
               "type": "boolean",
               "default": true
@@ -1333,6 +1436,7 @@
           {
             "name": "rankedScoreTypes",
             "in": "query",
+            "description": "If not None, only returns maps where the player has at least one selected ranked score with any of the specified\nranked score types.",
             "schema": {
               "default": "None",
               "$ref": "#/components/schemas/ERankedScoreType"
@@ -1341,6 +1445,7 @@
           {
             "name": "includeMapsWithoutScore",
             "in": "query",
+            "description": "When RankedScoreTypes is specified, if true, the maps without scores will be included, and for\nthose with scores the RankedScoreTypes filter will be applied.\nWhen false, the filter only applies when RankedScoreTypes is specified (and not None).",
             "schema": {
               "type": "boolean",
               "default": false
@@ -1349,6 +1454,7 @@
           {
             "name": "difficultyStarFrom",
             "in": "query",
+            "description": "The minimum difficulty star rating to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1361,6 +1467,7 @@
           {
             "name": "difficultyStarTo",
             "in": "query",
+            "description": "The maximum difficulty star rating to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1373,6 +1480,7 @@
           {
             "name": "accuracyStarFrom",
             "in": "query",
+            "description": "The minimum accuracy star rating to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1385,6 +1493,7 @@
           {
             "name": "accuracyStarTo",
             "in": "query",
+            "description": "The maximum accuracy star rating to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1397,6 +1506,7 @@
           {
             "name": "durationSecFrom",
             "in": "query",
+            "description": "The minimum duration (in seconds) to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1409,6 +1519,7 @@
           {
             "name": "durationSecTo",
             "in": "query",
+            "description": "The maximum duration (in seconds) to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1421,6 +1532,7 @@
           {
             "name": "bpmFrom",
             "in": "query",
+            "description": "The minimum BPM to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1433,6 +1545,7 @@
           {
             "name": "bpmTo",
             "in": "query",
+            "description": "The maximum BPM to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1445,6 +1558,7 @@
           {
             "name": "needConfirmation",
             "in": "query",
+            "description": "If specified, filters maps based on whether they require confirmation for ranked scores.",
             "schema": {
               "type": "boolean"
             }
@@ -1508,123 +1622,6 @@
             }
           }
         }
-      },
-      "post": {
-        "tags": [
-          "Context.RankedMaps"
-        ],
-        "summary": "Create a ranked map for a context.",
-        "description": "    This endpoint:\n    * Returns 200 OK with ranked map details when created successfully.\n* Returns 401 Unauthorized when the guild has reached its maximum number of ranked maps.\n* Returns 400 Bad Request with validation details when validation fails.\n* Returns 404 Not Found when the map is not found on BeatSaver.\n* Returns 429 Too Many Requests when rate limited by BeatSaver API.\n* Returns 500 Internal Server Error when BeatSaver API fails.",
-        "operationId": "CreateRankedMap",
-        "parameters": [
-          {
-            "name": "contextId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateRankedMap"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RankedMapSimple"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": null,
-                  "instance": "POST contexts/{contextId}/ranked-maps/",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.2",
-                  "title": "Unauthorized",
-                  "status": 401,
-                  "detail": null,
-                  "instance": "POST contexts/{contextId}/ranked-maps/",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-                  "title": "Not Found",
-                  "status": 404,
-                  "detail": null,
-                  "instance": "POST contexts/{contextId}/ranked-maps/",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "title": "Too Many Requests",
-                  "status": 429,
-                  "detail": null,
-                  "instance": "POST contexts/{contextId}/ranked-maps/",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
-          }
-        ]
       }
     },
     "/contexts/{contextId}/ranked-maps/with-scores/{playerId}": {
@@ -1655,6 +1652,7 @@
           {
             "name": "search",
             "in": "query",
+            "description": "A search term to filter the returned ranked maps. The search is applied on the 'Song.Name',\n'Song.MapperName', 'Song.SongAuthorName', 'Song.BeatSaverKey', and 'Song.Hash' fields.",
             "schema": {
               "type": "string"
             }
@@ -1662,6 +1660,7 @@
           {
             "name": "categoryIds",
             "in": "query",
+            "description": "An array of category IDs to filter the returned ranked maps. Only maps with at least one of the provided categories\nwill be returned.",
             "schema": {
               "type": "array",
               "items": {
@@ -1677,6 +1676,7 @@
           {
             "name": "matchAnyCategory",
             "in": "query",
+            "description": "If true, returns maps matching any of the provided categories. If false, returns only maps matching all provided\ncategories.",
             "schema": {
               "type": "boolean",
               "default": true
@@ -1685,6 +1685,7 @@
           {
             "name": "rankedScoreTypes",
             "in": "query",
+            "description": "If not None, only returns maps where the player has at least one selected ranked score with any of the specified\nranked score types.",
             "schema": {
               "default": "None",
               "$ref": "#/components/schemas/ERankedScoreType"
@@ -1693,6 +1694,7 @@
           {
             "name": "includeMapsWithoutScore",
             "in": "query",
+            "description": "When RankedScoreTypes is specified, if true, the maps without scores will be included, and for\nthose with scores the RankedScoreTypes filter will be applied.\nWhen false, the filter only applies when RankedScoreTypes is specified (and not None).",
             "schema": {
               "type": "boolean",
               "default": false
@@ -1701,6 +1703,7 @@
           {
             "name": "difficultyStarFrom",
             "in": "query",
+            "description": "The minimum difficulty star rating to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1713,6 +1716,7 @@
           {
             "name": "difficultyStarTo",
             "in": "query",
+            "description": "The maximum difficulty star rating to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1725,6 +1729,7 @@
           {
             "name": "accuracyStarFrom",
             "in": "query",
+            "description": "The minimum accuracy star rating to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1737,6 +1742,7 @@
           {
             "name": "accuracyStarTo",
             "in": "query",
+            "description": "The maximum accuracy star rating to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1749,6 +1755,7 @@
           {
             "name": "durationSecFrom",
             "in": "query",
+            "description": "The minimum duration (in seconds) to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1761,6 +1768,7 @@
           {
             "name": "durationSecTo",
             "in": "query",
+            "description": "The maximum duration (in seconds) to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1773,6 +1781,7 @@
           {
             "name": "bpmFrom",
             "in": "query",
+            "description": "The minimum BPM to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1785,6 +1794,7 @@
           {
             "name": "bpmTo",
             "in": "query",
+            "description": "The maximum BPM to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1797,6 +1807,7 @@
           {
             "name": "needConfirmation",
             "in": "query",
+            "description": "If specified, filters maps based on whether they require confirmation for ranked scores.",
             "schema": {
               "type": "boolean"
             }
@@ -1882,6 +1893,7 @@
           {
             "name": "search",
             "in": "query",
+            "description": "A search term to filter the returned ranked maps. The search is applied on the 'Song.Name',\n'Song.MapperName', 'Song.SongAuthorName', 'Song.BeatSaverKey', and 'Song.Hash' fields.",
             "schema": {
               "type": "string"
             }
@@ -1889,6 +1901,7 @@
           {
             "name": "categoryIds",
             "in": "query",
+            "description": "An array of category IDs to filter the returned ranked maps. Only maps with at least one of the provided categories\nwill be returned.",
             "schema": {
               "type": "array",
               "items": {
@@ -1904,6 +1917,7 @@
           {
             "name": "matchAnyCategory",
             "in": "query",
+            "description": "If true, returns maps matching any of the provided categories. If false, returns only maps matching all provided\ncategories.",
             "schema": {
               "type": "boolean",
               "default": true
@@ -1912,6 +1926,7 @@
           {
             "name": "rankedScoreTypes",
             "in": "query",
+            "description": "If not None, only returns maps where the player has at least one selected ranked score with any of the specified\nranked score types.",
             "schema": {
               "default": "None",
               "$ref": "#/components/schemas/ERankedScoreType"
@@ -1920,6 +1935,7 @@
           {
             "name": "includeMapsWithoutScore",
             "in": "query",
+            "description": "When RankedScoreTypes is specified, if true, the maps without scores will be included, and for\nthose with scores the RankedScoreTypes filter will be applied.\nWhen false, the filter only applies when RankedScoreTypes is specified (and not None).",
             "schema": {
               "type": "boolean",
               "default": false
@@ -1928,6 +1944,7 @@
           {
             "name": "difficultyStarFrom",
             "in": "query",
+            "description": "The minimum difficulty star rating to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1940,6 +1957,7 @@
           {
             "name": "difficultyStarTo",
             "in": "query",
+            "description": "The maximum difficulty star rating to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1952,6 +1970,7 @@
           {
             "name": "accuracyStarFrom",
             "in": "query",
+            "description": "The minimum accuracy star rating to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1964,6 +1983,7 @@
           {
             "name": "accuracyStarTo",
             "in": "query",
+            "description": "The maximum accuracy star rating to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1976,6 +1996,7 @@
           {
             "name": "durationSecFrom",
             "in": "query",
+            "description": "The minimum duration (in seconds) to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -1988,6 +2009,7 @@
           {
             "name": "durationSecTo",
             "in": "query",
+            "description": "The maximum duration (in seconds) to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -2000,6 +2022,7 @@
           {
             "name": "bpmFrom",
             "in": "query",
+            "description": "The minimum BPM to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -2012,6 +2035,7 @@
           {
             "name": "bpmTo",
             "in": "query",
+            "description": "The maximum BPM to filter maps.",
             "schema": {
               "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
               "type": [
@@ -2024,6 +2048,7 @@
           {
             "name": "needConfirmation",
             "in": "query",
+            "description": "If specified, filters maps based on whether they require confirmation for ranked scores.",
             "schema": {
               "type": "boolean"
             }
@@ -2089,99 +2114,10 @@
         },
         "security": [
           {
-            "SessionCookie": []
-          }
-        ]
-      }
-    },
-    "/contexts/{contextId}/ranked-maps/{rankedMapId}": {
-      "put": {
-        "tags": [
-          "Context.RankedMaps"
-        ],
-        "summary": "Update a ranked map.",
-        "description": "Update a ranked map by its Id.",
-        "operationId": "UpdateRankedMap",
-        "parameters": [
-          {
-            "name": "contextId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "SessionCookie": [ ]
           },
           {
-            "name": "rankedMapId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateRankedMap"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RankedMapSimple"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": null,
-                  "instance": "PUT contexts/{contextId}/ranked-maps/{rankedMapId}",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                },
-                "example": {
-                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-                  "title": "Not Found",
-                  "status": 404,
-                  "detail": null,
-                  "instance": "PUT contexts/{contextId}/ranked-maps/{rankedMapId}",
-                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "Basic": [ ]
           }
         ]
       }
@@ -2352,8 +2288,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -2397,7 +2336,10 @@
         },
         "security": [
           {
-            "SessionCookie": []
+            "SessionCookie": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -2490,7 +2432,10 @@
         },
         "security": [
           {
-            "SessionCookie": []
+            "SessionCookie": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -2593,6 +2538,1948 @@
         }
       }
     },
+    "/contexts/{contextId}/map-requests": {
+      "get": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Gets a paginated ranking queue of threads containing submitted proposals.",
+        "description": "Get threads containing submitted proposals only. Ordering is calculated for each request, so positions may change between pages. Use sortBy and order to select the sort field and direction. Priority defaults to descending. WaitingSince ascending shows the oldest requests first. BoostCount and CommunityVotes ties use oldest waiting time. Final ties use thread ID ascending. Ranking-team votes do not affect ordering. Use the thread endpoint to read proposal history.",
+        "operationId": "GetMapRequestQueue",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "description": "The context identifier.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term applied to the proposed songs' names, authors, mappers and BeatSaver keys.\nA song hash or !bsr key searches that exact identity. Queue searches only consider submitted proposals.\nMatching threads still include all their submitted proposals.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isRevision",
+            "in": "query",
+            "description": "If true, only returns requests for threads with a current ranked map. If false, only returns new-ranking\nrequests. If omitted, returns both. This reflects the thread's current state, not its state at proposal creation.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "The page number to retrieve.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "The number of threads per page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "Priority: waiting seconds * (1 + boost count * configured bonus).\nWaitingSince: earliest currently submitted proposal's submission time.\nBoostCount: active thread boosts. CommunityVotes: positive minus negative community votes on submitted proposals.\nBoostCount and CommunityVotes ties show oldest waiting requests first. All sorts break final ties by thread ID\nascending. Ranking-team votes do not affect queue ordering.",
+            "schema": {
+              "default": "Priority",
+              "$ref": "#/components/schemas/EMapRequestSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "Sort direction. Descending Priority shows highest priority first. Ascending WaitingSince shows\noldest first.",
+            "schema": {
+              "default": "Desc",
+              "$ref": "#/components/schemas/EOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfThread"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          { },
+          {
+            "SessionCookie": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Create a ranking-request thread and its first private draft.",
+        "description": "Create a thread in this context without publishing it or ranking a map. Song versions and leaderboard IDs are resolved now and missing ratings are calculated on submission. The draft will need to be submitted and explicitly accepted before a ranked map can be created. Exceeding the maximum allowed draft count returns 429 with code 'draft_limit' and limit. BeatSaver rate limits return 'upstream_rate_limit' and retryAfterSeconds.",
+        "operationId": "CreateMapRequest",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+                  "title": "Conflict",
+                  "status": 409,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.6.3",
+                  "title": "Bad Gateway",
+                  "status": 502,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/map-requests/{threadId}": {
+      "get": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Get a thread's visible proposal history.",
+        "description": "Get published proposals in creation order, including the current player's private drafts. Other players' drafts are hidden, including from reviewers.",
+        "operationId": "GetMapRequestThread",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Thread"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET contexts/{contextId}/map-requests/{threadId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          { },
+          {
+            "SessionCookie": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/map-requests/proposals/@me": {
+      "get": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Gets your proposals in a context, including drafts and published history.",
+        "description": "Use sortBy and order to select the sort field and direction. Defaults to CreatedAt descending, with proposal ID in the same direction to break ties.",
+        "operationId": "GetMyMapProposals",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "description": "The context identifier.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term applied to the proposed songs' names, authors, mappers and BeatSaver keys.\nA song hash or !bsr key searches that exact identity. Queue searches only consider submitted proposals.\nMatching threads still include all their submitted proposals.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isRevision",
+            "in": "query",
+            "description": "If true, only returns requests for threads with a current ranked map. If false, only returns new-ranking\nrequests. If omitted, returns both. This reflects the thread's current state, not its state at proposal creation.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "The page number to retrieve.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "The number of proposals per page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "Sort by proposal creation time or ID. Creation-time ties use ID in the same direction.",
+            "schema": {
+              "default": "CreatedAt",
+              "$ref": "#/components/schemas/EMapProposalSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "Sort direction. Descending CreatedAt shows newest proposals first.",
+            "schema": {
+              "default": "Desc",
+              "$ref": "#/components/schemas/EOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfProposal"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/map-requests/allowance/@me": {
+      "get": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Get your per-context proposal usage and the configured submission, review and queue rules.",
+        "description": "Limits count proposals per player and context, not threads. New-ranking and revision proposals have separate limits. Boost allowances are global and returned by GET /players/@me/map-request-boosts.",
+        "operationId": "GetMyMapRequestAllowance",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Allowance"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/map-requests/{threadId}/proposals": {
+      "post": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Create a private draft with a complete alternative configuration in an existing thread.",
+        "description": "Supply a complete configuration, not a patch, whether the thread already has a ranked map or not. The draft remains private until submitted. Competing with another author's submitted proposal may require a configured subscription tier. Ranking-team members, guild leaders and managers bypass that restriction.",
+        "operationId": "CreateMapProposal",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+                  "title": "Conflict",
+                  "status": 409,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.6.3",
+                  "title": "Bad Gateway",
+                  "status": 502,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}": {
+      "get": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Get a published proposal or your own private draft.",
+        "operationId": "GetMapProposal",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "GET contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          { },
+          {
+            "SessionCookie": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Permanently delete your private draft.",
+        "description": "Only the author's private drafts can be deleted. Missing drafts, other authors' drafts and published proposals return 404.",
+        "operationId": "DeleteMapProposalDraft",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "DELETE contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/map-requests/{threadId}/boosts/@me": {
+      "put": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Allocate one of your global boosts to a thread with submitted proposals.",
+        "description": "The thread must have a submitted proposal. At most one boost per player per thread. Repeating this request does not consume another slot. Boosts affect ordering, not acceptance requirements, and are released on acceptance or when no submitted proposals remain. The allowance is shared across all guilds and contexts. Exhaustion returns 429 with code 'boost_limit' and limit.",
+        "operationId": "BoostMapRequest",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "PUT contexts/{contextId}/map-requests/{threadId}/boosts/@me",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+                  "title": "Conflict",
+                  "status": 409,
+                  "detail": null,
+                  "instance": "PUT contexts/{contextId}/map-requests/{threadId}/boosts/@me",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": null,
+                  "instance": "PUT contexts/{contextId}/map-requests/{threadId}/boosts/@me",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Release your boost on this thread back to your global allowance.",
+        "description": "Release the allocation without changing proposal votes. Returns 204 even if no allocation exists. No boost history is retained.",
+        "operationId": "RemoveMapRequestBoost",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/map-requests/{threadId}/boosts/@me/move": {
+      "post": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Transfer your existing boost to another queued thread, without consuming another allowance slot.",
+        "description": "Transfer the player's boost from sourceThreadId to the thread in this route, including across contexts or guilds. The destination must have a submitted proposal. Moving to a different thread already boosted by that player returns 409. No additional slot is consumed, but excess allocations after a tier downgrade must be released first. No boost history is retained.",
+        "operationId": "MoveMapRequestBoost",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveBoost"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/boosts/@me/move",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+                  "title": "Conflict",
+                  "status": 409,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/boosts/@me/move",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/boosts/@me/move",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/submit": {
+      "post": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Publish your private draft as an immutable proposal in the ranking queue.",
+        "description": "Publish the author's draft after resolving missing ratings. For threads without a ranked map, any shared difficulty in another ranked map or submitted thread in this context returns 409 with code 'duplicate_maps' and duplicates containing threadId and either rankedMapId or proposalId. Review those matches before retrying with force=true. Revisions skip this duplicate check. Failed rating calculation returns 502 with code 'rating_calculation' and leaves the proposal as a draft.",
+        "operationId": "SubmitMapProposal",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "description": "If true, allows submission despite difficulties shared with ranked maps or submitted proposals in other\nthreads in the same context. If false, any duplicate match returns 409 with code 'duplicate_maps'\nand the matching thread/map/proposal IDs in 'duplicates'. The matches should be reviewed before retrying with true.\nOnly applies to threads without a current ranked map. Does not bypass ownership, permissions, quotas,\nvalidation, rating calculation or acceptance vote requirements.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/submit",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/submit",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/submit",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+                  "title": "Conflict",
+                  "status": 409,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/submit",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/submit",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.6.3",
+                  "title": "Bad Gateway",
+                  "status": 502,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/submit",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/close": {
+      "post": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Withdraw your submitted proposal, retaining its configuration and votes in history.",
+        "description": "Only the author can withdraw a submitted proposal. Its configuration and votes remain in history. It cannot be reopened. Boosts are released when no submitted proposals remain. Use DELETE to discard a private draft.",
+        "operationId": "CloseMapProposal",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Close"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/close",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/close",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+                  "title": "Conflict",
+                  "status": 409,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/close",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/accept": {
+      "post": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Explicitly accept a submitted proposal and apply its complete configuration to the ranked map.",
+        "description": "Requires ranking-team, guild-leader or manager permissions. Ranking-team vote requirements apply unless a guild leader or manager accepts. Community votes do not count. Acceptance creates or updates the ranked map, closes competing submitted proposals and releases boosts. Private drafts remain open. Score/stat refresh is queued afterwards. Unmet vote requirements return 409 with code 'vote_requirements', positiveVotes, negativeVotes, requiredPositiveVotes and requireNoNegativeVotes.",
+        "operationId": "AcceptMapProposal",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acceptance"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/accept",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/accept",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/accept",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+                  "title": "Conflict",
+                  "status": 409,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/accept",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/deny": {
+      "post": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Deny a submitted proposal as a reviewer, retaining its configuration and votes in history.",
+        "description": "Requires ranking-team, guild-leader or manager permissions. Retains the proposal and its votes without changing the ranked map. Boosts are released when no submitted proposals remain.",
+        "operationId": "DenyMapProposal",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Close"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/deny",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/deny",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+                  "title": "Conflict",
+                  "status": 409,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/deny",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/votes/community/@me": {
+      "put": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Cast or replace your community vote on a submitted proposal.",
+        "description": "A player can have one community vote and a separate ranking-team vote per proposal. Community votes affect CommunityVotes ordering, not acceptance requirements. Votes can only change while the proposal is submitted.",
+        "operationId": "VoteCommunityOnMapProposal",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityVote"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "PUT contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/votes/community/@me",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+                  "title": "Conflict",
+                  "status": 409,
+                  "detail": null,
+                  "instance": "PUT contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/votes/community/@me",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Remove your community vote while the proposal is submitted.",
+        "description": "Only submitted proposals allow vote removal. Returns 204 if no community vote exists. Historical votes cannot be removed.",
+        "operationId": "RemoveMapProposalCommunityVote",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "DELETE contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/votes/community/@me",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+                  "title": "Conflict",
+                  "status": 409,
+                  "detail": null,
+                  "instance": "DELETE contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/votes/community/@me",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/votes/ranking-team/@me": {
+      "put": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Cast or replace your ranking-team vote and optional reason on a submitted proposal.",
+        "description": "Requires ranking-team, guild-leader or manager permissions. Counts towards acceptance requirements, but acceptance is always explicit. Replaces the current player's ranking-team vote and reason without changing their community vote. Only submitted proposals can be voted on.",
+        "operationId": "VoteRankingTeamOnMapProposal",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RankingTeamVote"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": null,
+                  "instance": "PUT contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/votes/ranking-team/@me",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "PUT contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/votes/ranking-team/@me",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+                  "title": "Conflict",
+                  "status": 409,
+                  "detail": null,
+                  "instance": "PUT contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/votes/ranking-team/@me",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Remove your ranking-team vote while the proposal is submitted.",
+        "description": "Requires ranking-team, guild-leader or manager permissions. Only submitted proposals allow vote removal. Returns 204 if no ranking-team vote exists. Does not remove the player's community vote.",
+        "operationId": "RemoveMapProposalRankingTeamVote",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": null,
+                  "instance": "DELETE contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/votes/ranking-team/@me",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "DELETE contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/votes/ranking-team/@me",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+                  "title": "Conflict",
+                  "status": 409,
+                  "detail": null,
+                  "instance": "DELETE contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/votes/ranking-team/@me",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
     "/contexts/{contextId}/points/{pointId}/ranked-maps/{rankedMapId}/leaderboard": {
       "get": {
         "tags": [
@@ -2629,6 +4516,7 @@
           {
             "name": "search",
             "in": "query",
+            "description": "A search term to filter leaderboard entries by player username.",
             "schema": {
               "type": "string"
             }
@@ -2722,6 +4610,7 @@
           {
             "name": "search",
             "in": "query",
+            "description": "A search term to filter leaderboard entries by player username.",
             "schema": {
               "type": "string"
             }
@@ -2823,6 +4712,7 @@
           {
             "name": "search",
             "in": "query",
+            "description": "A search term to filter leaderboard entries by player username.",
             "schema": {
               "type": "string"
             }
@@ -3057,8 +4947,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -3219,8 +5112,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -3331,7 +5227,10 @@
         },
         "security": [
           {
-            "SessionCookie": []
+            "SessionCookie": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -3414,7 +5313,10 @@
         },
         "security": [
           {
-            "SessionCookie": []
+            "SessionCookie": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -3567,8 +5469,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -3690,8 +5595,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       },
@@ -3736,8 +5644,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4134,8 +6045,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4225,8 +6139,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       },
@@ -4279,8 +6196,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4513,8 +6433,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4553,8 +6476,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4603,8 +6529,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4623,8 +6552,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4643,8 +6575,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4663,8 +6598,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4693,8 +6631,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4723,8 +6664,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4753,8 +6697,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4773,8 +6720,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4802,8 +6752,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4822,8 +6775,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4852,8 +6808,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4882,8 +6841,11 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
           }
         ]
       }
@@ -4960,7 +6922,7 @@
         },
         "security": [
           {
-            "SessionCookie": []
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -5022,7 +6984,7 @@
         },
         "security": [
           {
-            "SessionCookie": []
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -5094,7 +7056,7 @@
         },
         "security": [
           {
-            "SessionCookie": []
+            "SessionCookie": [ ]
           }
         ]
       }
@@ -5483,8 +7445,8 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
           }
         ]
       }
@@ -5503,8 +7465,8 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
           }
         ]
       }
@@ -5533,8 +7495,8 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
           }
         ]
       }
@@ -5563,8 +7525,8 @@
         },
         "security": [
           {
-            "SessionCookie": [],
-            "X-GuildSaber-Request": []
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
           }
         ]
       }
@@ -5572,6 +7534,94 @@
   },
   "components": {
     "schemas": {
+      "Acceptance": {
+        "required": [
+          "proposal",
+          "rankedMapId"
+        ],
+        "type": "object",
+        "properties": {
+          "proposal": {
+            "description": "Accepted configuration snapshot, including its acceptance timestamp and reviewer.",
+            "$ref": "#/components/schemas/Accepted"
+          },
+          "rankedMapId": {
+            "description": "Ranked map created or updated in the proposal's thread.",
+            "$ref": "#/components/schemas/RankedMapId"
+          }
+        },
+        "description": "Successful explicit acceptance. Competing submitted proposals are closed and thread boosts released."
+      },
+      "Accepted": {
+        "required": [
+          "submittedAt",
+          "acceptedAt",
+          "acceptedById",
+          "id",
+          "threadId",
+          "authorId",
+          "createdAt",
+          "configuration",
+          "votes"
+        ],
+        "type": "object",
+        "properties": {
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acceptedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acceptedById": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlayerId"
+              }
+            ]
+          },
+          "id": {
+            "description": "Proposal identity, retained throughout its lifecycle.",
+            "$ref": "#/components/schemas/MapProposalId"
+          },
+          "threadId": {
+            "description": "Thread containing this proposal.",
+            "$ref": "#/components/schemas/MapRequestThreadId"
+          },
+          "authorId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Proposal author. Absent for imports or when the player was deleted.",
+                "$ref": "#/components/schemas/PlayerId"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Draft creation time, not submission or acceptance time.",
+            "format": "date-time"
+          },
+          "configuration": {
+            "description": "Entire desired configuration, not a patch against an earlier proposal.",
+            "$ref": "#/components/schemas/Configuration"
+          },
+          "votes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Vote"
+            },
+            "description": "Community and ranking-team votes. These cannot be changed once the proposal is accepted or closed."
+          }
+        },
+        "description": "Historical configuration applied to the ranked map at 'acceptedAt'. Order accepted proposals by 'acceptedAt'\nto reconstruct revisions. An older accepted proposal need not match the current ranked map.\nThe 'acceptedById' field is absent for imports or a deleted reviewer. Accepted proposals cannot be applied again."
+      },
       "AccuracyTracker": {
         "required": [
           "accRight",
@@ -6069,36 +8119,131 @@
           }
         }
       },
-      "AddMapVersion": {
+      "AchievementSnapshot": {
         "required": [
-          "beatSaverKey"
+          "id",
+          "name"
         ],
         "type": "object",
         "properties": {
-          "beatSaverKey": {
-            "$ref": "#/components/schemas/BeatSaverKey"
-          },
-          "characteristic": {
-            "type": "string",
-            "default": "Standard"
-          },
-          "difficulty": {
-            "$ref": "#/components/schemas/EDifficulty"
-          },
-          "playMode": {
-            "type": "string",
-            "default": "Standard"
-          },
-          "order": {
+          "id": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
               "string"
             ],
-            "format": "uint8",
-            "default": 0
+            "description": "Original achievement ID. Does not guarantee that the achievement still exists.",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "description": "Achievement name captured when the draft was created."
           }
-        }
+        },
+        "description": "Historical ranked-map-list association, retained even if the live achievement is renamed or deleted."
+      },
+      "Allowance": {
+        "required": [
+          "drafts",
+          "maxDrafts",
+          "rankingRequests",
+          "maxRankingRequests",
+          "revisionRequests",
+          "maxRevisionRequests",
+          "minimumAmendmentTier",
+          "minimumPositiveVotes",
+          "requireNoNegativeVotes",
+          "priorityBonusPerBoost"
+        ],
+        "type": "object",
+        "properties": {
+          "drafts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Your private drafts in this context.",
+            "format": "int32"
+          },
+          "maxDrafts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Maximum private drafts you may hold in this context.",
+            "format": "int32"
+          },
+          "rankingRequests": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Your submitted proposals in threads without a current ranked map.",
+            "format": "int32"
+          },
+          "maxRankingRequests": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Maximum submitted new-ranking proposals you may hold in this context.",
+            "format": "int32"
+          },
+          "revisionRequests": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Your submitted proposals in threads with a current ranked map.",
+            "format": "int32"
+          },
+          "maxRevisionRequests": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Maximum submitted revision proposals you may hold in this context.",
+            "format": "int32"
+          },
+          "minimumAmendmentTier": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Minimum subscription tier for competing with another author's submitted proposal: 0 allows everyone,\n1/2/3 require Tier1/Tier2/Tier3 respectively. Ranking-team members, guild leaders and managers bypass this rule.",
+            "format": "int32"
+          },
+          "minimumPositiveVotes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Minimum positive ranking-team votes for acceptance, except for leader/manager bypass.",
+            "format": "int32"
+          },
+          "requireNoNegativeVotes": {
+            "type": "boolean",
+            "description": "Whether any negative ranking-team vote blocks acceptance, except for leader/manager bypass."
+          },
+          "priorityBonusPerBoost": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "Fractional waiting-time bonus per boost for Priority sorting: priority = waiting seconds * (1 + boosts * bonus).\nWaiting starts at the earliest currently submitted proposal. For example, 0.25 adds 25% per boost.",
+            "format": "double"
+          }
+        },
+        "description": "Your per-context proposal usage and the current configurable rules. Counts are proposals, not threads."
       },
       "AverageHeadPosition": {
         "type": "object",
@@ -6129,7 +8274,7 @@
           }
         }
       },
-      "BeatLeaderScoreId": {},
+      "BeatLeaderScoreId": { },
       "BeatSaverKey": {
         "examples": [
           "a3c3"
@@ -6148,6 +8293,50 @@
         ],
         "type": "string",
         "format": "int64"
+      },
+      "BoostAllocation": {
+        "required": [
+          "threadId",
+          "contextId"
+        ],
+        "type": "object",
+        "properties": {
+          "threadId": {
+            "description": "Thread currently receiving your boost.",
+            "$ref": "#/components/schemas/MapRequestThreadId"
+          },
+          "contextId": {
+            "description": "Thread's context, used to locate it or release the boost.",
+            "$ref": "#/components/schemas/ContextId"
+          }
+        },
+        "description": "One active boost allocation. No boost history is retained after release or transfer."
+      },
+      "BoostAllowance": {
+        "required": [
+          "limit",
+          "allocations"
+        ],
+        "type": "object",
+        "properties": {
+          "limit": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Maximum active boosts for your current subscription tier and server configuration.",
+            "format": "int32"
+          },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoostAllocation"
+            },
+            "description": "Current allocations. May exceed the limit after a tier downgrade. Release excess boosts."
+          }
+        },
+        "description": "Global boost allowance shared across every guild and context."
       },
       "Category": {
         "type": "object",
@@ -6178,9 +8367,127 @@
           }
         }
       },
+      "CategorySnapshot": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Original category ID. Does not guarantee that the category still exists.",
+            "$ref": "#/components/schemas/CategoryId"
+          },
+          "name": {
+            "type": "string",
+            "description": "Category name captured when the draft was created."
+          }
+        },
+        "description": "Historical category association, retained even if the live category is renamed or deleted."
+      },
+      "Close": {
+        "required": [
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional explanation retained with the closed proposal."
+          }
+        },
+        "description": "Withdraw or deny a submitted proposal without deleting its history."
+      },
+      "CommunityVote": {
+        "required": [
+          "isPositive"
+        ],
+        "type": "object",
+        "properties": {
+          "isPositive": {
+            "type": "boolean",
+            "description": "True to support the proposal, false to oppose it. Replaces your existing community vote."
+          }
+        },
+        "additionalProperties": false,
+        "description": "A community vote on a submitted proposal. Does not count towards the ranking-team votes required for acceptance."
+      },
+      "Configuration": {
+        "required": [
+          "requirements",
+          "rating",
+          "mapVersions",
+          "categories",
+          "achievements",
+          "comment"
+        ],
+        "type": "object",
+        "properties": {
+          "requirements": {
+            "description": "Score eligibility requirements that acceptance applies to the ranked map.",
+            "$ref": "#/components/schemas/RankedMapRequirements"
+          },
+          "rating": {
+            "description": "Proposed ratings and whether they were calculated automatically during submission.",
+            "$ref": "#/components/schemas/Rating"
+          },
+          "mapVersions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalVersion"
+            },
+            "description": "Resolved song difficulties and play modes, in ascending display order."
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategorySnapshot"
+            },
+            "description": "Explicit category associations, with names captured when the draft was created."
+          },
+          "achievements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AchievementSnapshot"
+            },
+            "description": "Explicit ranked-map-list associations, not dynamically matched star achievements."
+          },
+          "comment": {
+            "maxLength": 2000,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional original author comment, up to 2000 characters."
+          }
+        },
+        "description": "Complete proposed configuration retained independently of the current ranked map."
+      },
       "ContextId": {
         "type": "integer",
         "format": "int32"
+      },
+      "Controller": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ControllerId"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "ControllerId": {
+        "type": "integer",
+        "format": "int16"
       },
       "CreateCategory": {
         "type": "object",
@@ -6192,6 +8499,58 @@
             "type": "string"
           }
         }
+      },
+      "CreateDraft": {
+        "required": [
+          "mapVersions",
+          "requirements",
+          "rating",
+          "categoryIds",
+          "achievementIds"
+        ],
+        "type": "object",
+        "properties": {
+          "mapVersions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MapVersionInput"
+            },
+            "description": "At least one map version. Each resolved song difficulty and play-mode combination must be unique.\nSong versions and leaderboard IDs are resolved during draft creation: a BeatLeader leaderboard is required,\nbut a missing ScoreSaber leaderboard does not prevent creation."
+          },
+          "requirements": {
+            "description": "Complete score requirements. Send an empty object to use their defaults.",
+            "$ref": "#/components/schemas/RankedMapRequirements"
+          },
+          "rating": {
+            "description": "Required rating object. Either star rating may be null or omitted to calculate it when the draft is submitted.\nCalculation failure prevents submission. No zero-value fallback is used.",
+            "$ref": "#/components/schemas/ManualRating"
+          },
+          "categoryIds": {
+            "type": "array",
+            "description": "Distinct category IDs from the thread's guild. Required even when empty. An empty array proposes no categories."
+          },
+          "achievementIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            },
+            "description": "Distinct ranked-map-list achievement IDs from the thread's context. Required even when empty.\nStar-based achievements are matched dynamically and must not be supplied here."
+          },
+          "comment": {
+            "maxLength": 2000,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional author comment retained with the proposal, up to 2000 characters."
+          }
+        },
+        "description": "Complete proposed configuration, not a patch. Creates a private draft without publishing it to the queue.\nDrafts cannot be edited: delete and recreate them, or withdraw submitted proposals and create another variant."
       },
       "CreateGuild": {
         "required": [
@@ -6208,50 +8567,43 @@
           }
         }
       },
-      "CreateRankedMap": {
+      "Devices": {
         "required": [
-          "baseMapVersion",
-          "requirements",
-          "manualRating",
-          "categoryIds",
-          "achievementIds"
+          "hmd",
+          "controllerLeft",
+          "controllerRight"
         ],
         "type": "object",
         "properties": {
-          "baseMapVersion": {
-            "description": "The map version that will be used as the base for the ranked map.",
-            "$ref": "#/components/schemas/AddMapVersion"
+          "hmd": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Hmd"
+              }
+            ]
           },
-          "requirements": {
-            "$ref": "#/components/schemas/RankedMapRequirements"
+          "controllerLeft": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Controller"
+              }
+            ]
           },
-          "manualRating": {
-            "description": "Used to force a specific difficulty and/or accuracy star rating for the map.\nIf null, the star ratings will be calculated automatically by BeatLeader's ExMachina.",
-            "$ref": "#/components/schemas/ManualRating"
-          },
-          "categoryIds": {
-            "type": "array",
-            "items": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
-            },
-            "description": "The categories to assign the ranked map to."
-          },
-          "achievementIds": {
-            "type": "array",
-            "items": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
-            },
-            "description": "The ranked-map-list achievements to assign the ranked map to."
+          "controllerRight": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Controller"
+              }
+            ]
           }
         }
       },
@@ -6314,61 +8666,6 @@
           "Private"
         ]
       },
-      "EHMD": {
-        "enum": [
-          "Unknown",
-          "Rift",
-          "Vive",
-          "VivePro",
-          "WMR",
-          "RiftS",
-          "Quest",
-          "PicoNeo3",
-          "PicoNeo2",
-          "VivePro2",
-          "ViveElite",
-          "Miramar",
-          "Pimax8K",
-          "Pimax5K",
-          "PimaxArtisan",
-          "HpReverb",
-          "SamsungWMR",
-          "QiyuDream",
-          "Disco",
-          "LenovoExplorer",
-          "AcerWMR",
-          "ViveFocus",
-          "Arpara",
-          "DellVisor",
-          "E3",
-          "ViveDvt",
-          "Glasses20",
-          "Hedy",
-          "Vaporeon",
-          "Huaweivr",
-          "AsusWMR",
-          "CloudXR",
-          "Vridge",
-          "Medion",
-          "PicoNeo4",
-          "QuestPro",
-          "PimaxCrystal",
-          "E4",
-          "Index",
-          "Controllable",
-          "BigScreenBeyond",
-          "Nolosonic",
-          "Hypereal",
-          "Varjoaero",
-          "PSVR2",
-          "Megane1",
-          "VarjoXR3",
-          "ViveCosmos",
-          "Quest2",
-          "Quest3",
-          "Quest3S"
-        ]
-      },
       "EInvalidReason": {
         "type": "string"
       },
@@ -6381,6 +8678,21 @@
           "Refused",
           "Banned"
         ]
+      },
+      "EMapProposalSorter": {
+        "enum": [
+          "CreatedAt",
+          "Id"
+        ]
+      },
+      "EMapRequestSorter": {
+        "enum": [
+          "Priority",
+          "WaitingSince",
+          "BoostCount",
+          "CommunityVotes"
+        ],
+        "description": "Available sorting methods for the ranking queue. Ordering is calculated at request time."
       },
       "EMemberSorters": {
         "enum": [
@@ -6755,6 +9067,7 @@
           "max115Streak": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
+              "null",
               "integer",
               "string"
             ],
@@ -6825,6 +9138,25 @@
             "format": "int32"
           }
         }
+      },
+      "Hmd": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/HmdId"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "HmdId": {
+        "type": "integer",
+        "format": "int16"
       },
       "HttpValidationProblemDetails": {
         "type": "object",
@@ -6902,7 +9234,7 @@
                 "path": {
                   "type": "string"
                 },
-                "value": {}
+                "value": { }
               },
               "additionalProperties": false
             },
@@ -6962,7 +9294,7 @@
               "number",
               "string"
             ],
-            "description": "When specified, the difficulty rating of the map won't be calculated by BeatLeader's ExMachina.",
+            "description": "Finite, non-negative difficulty stars. Null or omitted requests automatic calculation from BeatLeader's\nExMachina at submission, using the lowest-order proposed difficulty and the proposed requirements.",
             "format": "float"
           },
           "accuracyStar": {
@@ -6972,10 +9304,23 @@
               "number",
               "string"
             ],
-            "description": "When specified, the accuracy rating of the map won't be calculated by BeatLeader's ExMachina.",
+            "description": "Finite, non-negative accuracy stars. Null or omitted requests calculation at submission from BeatLeader's\nExMachina and the guild's accuracy curve. Missing or invalid calculation data prevents submission.",
             "format": "float"
           }
-        }
+        },
+        "description": "Optional manual star ratings. Missing values are resolved before a proposal can be submitted."
+      },
+      "MapProposalId": {
+        "examples": [
+          "123456789"
+        ],
+        "type": "string"
+      },
+      "MapRequestThreadId": {
+        "examples": [
+          "123456789"
+        ],
+        "type": "string"
       },
       "MapVersion": {
         "required": [
@@ -7005,6 +9350,44 @@
             "$ref": "#/components/schemas/SongDifficulty"
           }
         }
+      },
+      "MapVersionInput": {
+        "required": [
+          "song",
+          "characteristic",
+          "difficulty",
+          "playMode",
+          "order"
+        ],
+        "type": "object",
+        "properties": {
+          "song": {
+            "description": "Select a song by BeatSaver key or an exact version hash, using the type discriminator.",
+            "$ref": "#/components/schemas/SongReference"
+          },
+          "characteristic": {
+            "type": "string",
+            "description": "Supported BeatSaver characteristic name, such as Standard."
+          },
+          "difficulty": {
+            "description": "Difficulty within the selected song version and characteristic.",
+            "$ref": "#/components/schemas/EDifficulty"
+          },
+          "playMode": {
+            "type": "string",
+            "description": "Supported GuildSaber play-mode name, not a leaderboard ID."
+          },
+          "order": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Ascending display order. The lowest-order difficulty supplies automatic ratings at submission.\nWhen either rating is automatic, different difficulties must not tie for the lowest order.",
+            "format": "uint8"
+          }
+        },
+        "description": "A song difficulty and play mode to include in the proposed ranked map."
       },
       "Member": {
         "required": [
@@ -7124,6 +9507,19 @@
         ],
         "type": "string",
         "format": "int64"
+      },
+      "MoveBoost": {
+        "required": [
+          "sourceThreadId"
+        ],
+        "type": "object",
+        "properties": {
+          "sourceThreadId": {
+            "description": "Thread currently holding your boost. It may belong to another context or guild.\nMoving the boost does not consume another allowance slot. The target must have a submitted proposal.",
+            "$ref": "#/components/schemas/MapRequestThreadId"
+          }
+        },
+        "description": "Transfer an existing boost to the thread identified by the route."
       },
       "PagedListOfCategory": {
         "type": "object",
@@ -7328,6 +9724,55 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Player"
+            }
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPages": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PagedListOfProposal": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Proposal"
             }
           },
           "page": {
@@ -7615,6 +10060,55 @@
           }
         }
       },
+      "PagedListOfThread": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Thread"
+            }
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPages": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        }
+      },
       "PassCountWithRank": {
         "type": "object",
         "properties": {
@@ -7646,13 +10140,39 @@
           }
         }
       },
+      "PauseStatistics": {
+        "required": [
+          "pauseCount",
+          "totalPauseDuration"
+        ],
+        "type": "object",
+        "properties": {
+          "pauseCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPauseDuration": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          }
+        }
+      },
       "Player": {
         "required": [
           "id",
           "playerInfo",
-          "playerHardwareInfo",
           "playerLinkedAccounts",
           "playerSubscriptionInfo",
+          "hmd",
+          "platform",
           "isManager"
         ],
         "type": "object",
@@ -7663,14 +10183,24 @@
           "playerInfo": {
             "$ref": "#/components/schemas/PlayerInfo"
           },
-          "playerHardwareInfo": {
-            "$ref": "#/components/schemas/PlayerHardwareInfo"
-          },
           "playerLinkedAccounts": {
             "$ref": "#/components/schemas/PlayerLinkedAccounts"
           },
           "playerSubscriptionInfo": {
             "$ref": "#/components/schemas/PlayerSubscriptionInfo"
+          },
+          "hmd": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Hmd"
+              }
+            ]
+          },
+          "platform": {
+            "type": "string"
           },
           "isManager": {
             "type": "boolean"
@@ -7692,17 +10222,6 @@
             "items": {
               "$ref": "#/components/schemas/Member"
             }
-          }
-        }
-      },
-      "PlayerHardwareInfo": {
-        "type": "object",
-        "properties": {
-          "hmd": {
-            "type": "string"
-          },
-          "platform": {
-            "type": "string"
           }
         }
       },
@@ -7935,9 +10454,377 @@
           }
         }
       },
+      "Proposal": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ProposalDraft"
+          },
+          {
+            "$ref": "#/components/schemas/ProposalSubmitted"
+          },
+          {
+            "$ref": "#/components/schemas/ProposalAccepted"
+          },
+          {
+            "$ref": "#/components/schemas/ProposalClosed"
+          }
+        ],
+        "description": "Complete configuration with a lifecycle discriminator: Draft, Submitted, Accepted or Closed.\nThere is no edit-proposal subtype. A thread with a current ranked map applies accepted proposals as revisions.",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Draft": "#/components/schemas/ProposalDraft",
+            "Submitted": "#/components/schemas/ProposalSubmitted",
+            "Accepted": "#/components/schemas/ProposalAccepted",
+            "Closed": "#/components/schemas/ProposalClosed"
+          }
+        }
+      },
+      "ProposalAccepted": {
+        "required": [
+          "submittedAt",
+          "acceptedAt",
+          "acceptedById",
+          "id",
+          "threadId",
+          "authorId",
+          "createdAt",
+          "configuration",
+          "votes"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Accepted"
+            ],
+            "type": "string"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acceptedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acceptedById": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlayerId"
+              }
+            ]
+          },
+          "id": {
+            "description": "Proposal identity, retained throughout its lifecycle.",
+            "$ref": "#/components/schemas/MapProposalId"
+          },
+          "threadId": {
+            "description": "Thread containing this proposal.",
+            "$ref": "#/components/schemas/MapRequestThreadId"
+          },
+          "authorId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Proposal author. Absent for imports or when the player was deleted.",
+                "$ref": "#/components/schemas/PlayerId"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Draft creation time, not submission or acceptance time.",
+            "format": "date-time"
+          },
+          "configuration": {
+            "description": "Entire desired configuration, not a patch against an earlier proposal.",
+            "$ref": "#/components/schemas/Configuration"
+          },
+          "votes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Vote"
+            },
+            "description": "Community and ranking-team votes. These cannot be changed once the proposal is accepted or closed."
+          }
+        },
+        "description": "Historical configuration applied to the ranked map at 'acceptedAt'. Order accepted proposals by 'acceptedAt'\nto reconstruct revisions. An older accepted proposal need not match the current ranked map.\nThe 'acceptedById' field is absent for imports or a deleted reviewer. Accepted proposals cannot be applied again."
+      },
+      "ProposalClosed": {
+        "required": [
+          "submittedAt",
+          "closedAt",
+          "closedById",
+          "reason",
+          "id",
+          "threadId",
+          "authorId",
+          "createdAt",
+          "configuration",
+          "votes"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Closed"
+            ],
+            "type": "string"
+          },
+          "submittedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "closedById": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlayerId"
+              }
+            ]
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "id": {
+            "description": "Proposal identity, retained throughout its lifecycle.",
+            "$ref": "#/components/schemas/MapProposalId"
+          },
+          "threadId": {
+            "description": "Thread containing this proposal.",
+            "$ref": "#/components/schemas/MapRequestThreadId"
+          },
+          "authorId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Proposal author. Absent for imports or when the player was deleted.",
+                "$ref": "#/components/schemas/PlayerId"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Draft creation time, not submission or acceptance time.",
+            "format": "date-time"
+          },
+          "configuration": {
+            "description": "Entire desired configuration, not a patch against an earlier proposal.",
+            "$ref": "#/components/schemas/Configuration"
+          },
+          "votes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Vote"
+            },
+            "description": "Community and ranking-team votes. These cannot be changed once the proposal is accepted or closed."
+          }
+        },
+        "description": "Proposal withdrawn by its author, denied by a reviewer or superseded by another accepted proposal.\nConfiguration and votes remain in history. It cannot be reopened. A missing 'submittedAt' means it was never\npublished and remains private. The 'closedById' field may be absent for imports or a deleted player.\nThe reason is optional."
+      },
+      "ProposalDraft": {
+        "required": [
+          "id",
+          "threadId",
+          "authorId",
+          "createdAt",
+          "configuration",
+          "votes"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Draft"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "description": "Proposal identity, retained throughout its lifecycle.",
+            "$ref": "#/components/schemas/MapProposalId"
+          },
+          "threadId": {
+            "description": "Thread containing this proposal.",
+            "$ref": "#/components/schemas/MapRequestThreadId"
+          },
+          "authorId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Proposal author. Absent for imports or when the player was deleted.",
+                "$ref": "#/components/schemas/PlayerId"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Draft creation time, not submission or acceptance time.",
+            "format": "date-time"
+          },
+          "configuration": {
+            "description": "Entire desired configuration, not a patch against an earlier proposal.",
+            "$ref": "#/components/schemas/Configuration"
+          },
+          "votes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Vote"
+            },
+            "description": "Community and ranking-team votes. These cannot be changed once the proposal is accepted or closed."
+          }
+        },
+        "description": "Private draft visible only to its author. Delete and recreate it to change its configuration."
+      },
+      "ProposalSubmitted": {
+        "required": [
+          "submittedAt",
+          "id",
+          "threadId",
+          "authorId",
+          "createdAt",
+          "configuration",
+          "votes"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Submitted"
+            ],
+            "type": "string"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "description": "Proposal identity, retained throughout its lifecycle.",
+            "$ref": "#/components/schemas/MapProposalId"
+          },
+          "threadId": {
+            "description": "Thread containing this proposal.",
+            "$ref": "#/components/schemas/MapRequestThreadId"
+          },
+          "authorId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Proposal author. Absent for imports or when the player was deleted.",
+                "$ref": "#/components/schemas/PlayerId"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Draft creation time, not submission or acceptance time.",
+            "format": "date-time"
+          },
+          "configuration": {
+            "description": "Entire desired configuration, not a patch against an earlier proposal.",
+            "$ref": "#/components/schemas/Configuration"
+          },
+          "votes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Vote"
+            },
+            "description": "Community and ranking-team votes. These cannot be changed once the proposal is accepted or closed."
+          }
+        },
+        "description": "Published, immutable configuration awaiting explicit review. Votes may change while it is submitted."
+      },
+      "ProposalVersion": {
+        "required": [
+          "hash",
+          "key",
+          "characteristic",
+          "difficulty",
+          "playModeId",
+          "playModeName",
+          "order"
+        ],
+        "type": "object",
+        "properties": {
+          "hash": {
+            "description": "Exact resolved song version. Does not follow later BeatSaver updates.",
+            "$ref": "#/components/schemas/SongHash"
+          },
+          "key": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "BeatSaver map key when known. The hash identifies the actual proposed version.",
+                "$ref": "#/components/schemas/BeatSaverKey"
+              }
+            ]
+          },
+          "characteristic": {
+            "type": "string",
+            "description": "Song characteristic, such as Standard."
+          },
+          "difficulty": {
+            "description": "Difficulty within the resolved song version and characteristic.",
+            "$ref": "#/components/schemas/EDifficulty"
+          },
+          "playModeId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Historical play-mode ID. The referenced play mode may no longer exist.",
+            "format": "int32"
+          },
+          "playModeName": {
+            "type": "string",
+            "description": "Play-mode name captured when the draft was created."
+          },
+          "order": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Ascending display order. The lowest-order difficulty supplies automatic ratings.",
+            "format": "uint8"
+          }
+        },
+        "description": "Resolved song version and play mode retained by the proposal."
+      },
       "RankedMap": {
         "required": [
           "id",
+          "threadId",
           "guildId",
           "contextId",
           "info",
@@ -7951,6 +10838,9 @@
         "properties": {
           "id": {
             "$ref": "#/components/schemas/RankedMapId"
+          },
+          "threadId": {
+            "$ref": "#/components/schemas/MapRequestThreadId"
           },
           "guildId": {
             "$ref": "#/components/schemas/GuildId"
@@ -8050,10 +10940,12 @@
         "properties": {
           "needConfirmation": {
             "type": "boolean",
+            "description": "Otherwise eligible scores remain pending until explicitly confirmed.",
             "default": false
           },
           "needFullCombo": {
             "type": "boolean",
+            "description": "Require a full-combo score.",
             "default": false
           },
           "maxPauseDurationSec": {
@@ -8063,12 +10955,15 @@
               "number",
               "string"
             ],
+            "description": "Maximum total pause duration in seconds. Must be finite and non-negative. Null imposes no pause limit.\nSetting a limit excludes ScoreSaber scores, which lack the required pause tracking.",
             "format": "float"
           },
           "prohibitedModifiers": {
+            "description": "Any matching modifier invalidates the score. Must not overlap mandatory modifiers.",
             "$ref": "#/components/schemas/EModifiers"
           },
           "mandatoryModifiers": {
+            "description": "Every selected modifier must be present. Must not overlap prohibited modifiers.",
             "$ref": "#/components/schemas/EModifiers"
           },
           "minAccuracy": {
@@ -8078,13 +10973,16 @@
               "number",
               "string"
             ],
+            "description": "Minimum accuracy in percent, from 0 to 100 inclusive. Null imposes no minimum.",
             "format": "float"
           }
-        }
+        },
+        "description": "Requirements for a score to qualify on the ranked map."
       },
       "RankedMapSimple": {
         "required": [
           "id",
+          "threadId",
           "guildId",
           "contextId",
           "info",
@@ -8097,6 +10995,9 @@
         "properties": {
           "id": {
             "$ref": "#/components/schemas/RankedMapId"
+          },
+          "threadId": {
+            "$ref": "#/components/schemas/MapRequestThreadId"
           },
           "guildId": {
             "$ref": "#/components/schemas/GuildId"
@@ -8617,6 +11518,68 @@
           }
         }
       },
+      "RankingTeamVote": {
+        "required": [
+          "isPositive",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "isPositive": {
+            "type": "boolean",
+            "description": "True to support acceptance, false to oppose it. Replaces your existing ranking-team vote."
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional explanation for either a positive or a negative vote, retained in proposal history."
+          }
+        },
+        "additionalProperties": false,
+        "description": "A ranking-team vote on a submitted proposal. Meeting the vote requirements does not auto-accept it."
+      },
+      "Rating": {
+        "required": [
+          "accStar",
+          "diffStar",
+          "isAccStarAutoCalculated",
+          "isDiffStarAutoCalculated"
+        ],
+        "type": "object",
+        "properties": {
+          "accStar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "Accuracy stars. Absent on a draft when calculation is requested at submission.",
+            "format": "float"
+          },
+          "diffStar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "Difficulty stars. Absent on a draft when calculation is requested at submission.",
+            "format": "float"
+          },
+          "isAccStarAutoCalculated": {
+            "type": "boolean",
+            "description": "True once accuracy stars were calculated at submission. False for manual or unresolved ratings."
+          },
+          "isDiffStarAutoCalculated": {
+            "type": "boolean",
+            "description": "True once difficulty stars were calculated at submission. False for manual or unresolved ratings."
+          }
+        },
+        "description": "Rating snapshot, resolved before a draft can be submitted."
+      },
       "RedirectHttpResult": {
         "type": "object",
         "properties": {
@@ -8657,9 +11620,6 @@
       },
       "ScoreBeatLeaderScore": {
         "required": [
-          "pauseCount",
-          "totalPauseDuration",
-          "hasStatistics",
           "beatLeaderScoreId",
           "id",
           "songDifficultyId",
@@ -8670,7 +11630,9 @@
           "isFullCombo",
           "missedNotes",
           "badCuts",
-          "hmd"
+          "devices",
+          "pauseStatistics",
+          "hasStatistics"
         ],
         "type": "object",
         "properties": {
@@ -8679,27 +11641,6 @@
               "BeatLeader"
             ],
             "type": "string"
-          },
-          "pauseCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "totalPauseDuration": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-            "type": [
-              "null",
-              "number",
-              "string"
-            ],
-            "format": "float"
-          },
-          "hasStatistics": {
-            "type": "boolean"
           },
           "beatLeaderScoreId": {
             "oneOf": [
@@ -8765,8 +11706,21 @@
             ],
             "format": "int32"
           },
-          "hmd": {
-            "$ref": "#/components/schemas/EHMD"
+          "devices": {
+            "$ref": "#/components/schemas/Devices"
+          },
+          "pauseStatistics": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PauseStatistics"
+              }
+            ]
+          },
+          "hasStatistics": {
+            "type": "boolean"
           }
         }
       },
@@ -8800,13 +11754,10 @@
         "type": "string",
         "format": "int64"
       },
-      "ScoreSaberScoreId": {},
+      "ScoreSaberScoreId": { },
       "ScoreScoreSaberScore": {
         "required": [
           "scoreSaberScoreId",
-          "deviceHmd",
-          "deviceControllerLeft",
-          "deviceControllerRight",
           "id",
           "songDifficultyId",
           "baseScore",
@@ -8816,7 +11767,9 @@
           "isFullCombo",
           "missedNotes",
           "badCuts",
-          "hmd"
+          "devices",
+          "pauseStatistics",
+          "hasStatistics"
         ],
         "type": "object",
         "properties": {
@@ -8828,24 +11781,6 @@
           },
           "scoreSaberScoreId": {
             "$ref": "#/components/schemas/ScoreSaberScoreId"
-          },
-          "deviceHmd": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "deviceControllerLeft": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "deviceControllerRight": {
-            "type": [
-              "null",
-              "string"
-            ]
           },
           "id": {
             "$ref": "#/components/schemas/ScoreId"
@@ -8901,8 +11836,21 @@
             ],
             "format": "int32"
           },
-          "hmd": {
-            "$ref": "#/components/schemas/EHMD"
+          "devices": {
+            "$ref": "#/components/schemas/Devices"
+          },
+          "pauseStatistics": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PauseStatistics"
+              }
+            ]
+          },
+          "hasStatistics": {
+            "type": "boolean"
           }
         }
       },
@@ -9168,6 +12116,66 @@
           }
         }
       },
+      "SongReference": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/SongReferenceByKey"
+          },
+          {
+            "$ref": "#/components/schemas/SongReferenceByHash"
+          }
+        ],
+        "description": "Song selector: use type \"Key\" with key to resolve BeatSaver's last-listed version during draft creation,\nor type \"Hash\" with hash to select an exact version. The resolved version is retained in the proposal.",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Key": "#/components/schemas/SongReferenceByKey",
+            "Hash": "#/components/schemas/SongReferenceByHash"
+          }
+        }
+      },
+      "SongReferenceByHash": {
+        "required": [
+          "hash"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Hash"
+            ],
+            "type": "string"
+          },
+          "hash": {
+            "description": "Song hash identifying the exact BeatSaver version to use.",
+            "$ref": "#/components/schemas/SongHash"
+          }
+        },
+        "description": "Select an exact song version, including an older version."
+      },
+      "SongReferenceByKey": {
+        "required": [
+          "key"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Key"
+            ],
+            "type": "string"
+          },
+          "key": {
+            "description": "BeatSaver map key. Resolution happens at draft creation, not again at submission or acceptance.",
+            "$ref": "#/components/schemas/BeatSaverKey"
+          }
+        },
+        "description": "Resolve a BeatSaver key using the last entry in BeatSaver's versions array."
+      },
       "SongStats": {
         "required": [
           "bpm",
@@ -9208,6 +12216,82 @@
         "type": "string",
         "format": "int64"
       },
+      "Thread": {
+        "required": [
+          "id",
+          "contextId",
+          "authorId",
+          "createdAt",
+          "rankedMapId",
+          "boostCount",
+          "isBoostedByMe",
+          "isLegacyImport",
+          "proposals"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Thread identity, retained across proposals and ranked-map revisions.",
+            "$ref": "#/components/schemas/MapRequestThreadId"
+          },
+          "contextId": {
+            "description": "Context to which the thread permanently belongs.",
+            "$ref": "#/components/schemas/ContextId"
+          },
+          "authorId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Original thread creator. Absent for imports or when the player was deleted.",
+                "$ref": "#/components/schemas/PlayerId"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Thread creation time, not the waiting-time origin used to sort the queue.",
+            "format": "date-time"
+          },
+          "rankedMapId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Current ranked map, absent before acceptance or after that map is deleted.",
+                "$ref": "#/components/schemas/RankedMapId"
+              }
+            ]
+          },
+          "boostCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Number of active player boosts, not historical boosts or proposal votes.",
+            "format": "int32"
+          },
+          "isBoostedByMe": {
+            "type": "boolean",
+            "description": "Whether the authenticated viewer boosts this thread. False for anonymous viewers."
+          },
+          "isLegacyImport": {
+            "type": "boolean",
+            "description": "Whether the thread belongs to the legacy-import synchronization path."
+          },
+          "proposals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Proposal"
+            },
+            "description": "Queue results contain submitted proposals only. Thread detail includes visible history and the viewer's own\nprivate drafts. Ordered by creation time, then proposal ID, ascending. Not by acceptance time."
+          }
+        },
+        "description": "A persistent ranking thread in one context, with at most one current ranked map."
+      },
       "UpdateCategory": {
         "type": "object",
         "properties": {
@@ -9219,51 +12303,100 @@
           }
         }
       },
-      "UpdateRankedMap": {
+      "Vote": {
         "required": [
-          "requirements",
-          "manualRating",
-          "categoryIds",
-          "achievementIds"
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/VoteCommunity"
+          },
+          {
+            "$ref": "#/components/schemas/VoteRankingTeam"
+          }
+        ],
+        "description": "A community or ranking-team vote. One player may hold one of each kind on the same proposal.",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Community": "#/components/schemas/VoteCommunity",
+            "RankingTeam": "#/components/schemas/VoteRankingTeam"
+          }
+        }
+      },
+      "VoteCommunity": {
+        "required": [
+          "playerId",
+          "isPositive",
+          "votedAt"
         ],
         "type": "object",
         "properties": {
-          "requirements": {
-            "$ref": "#/components/schemas/RankedMapRequirements"
+          "type": {
+            "enum": [
+              "Community"
+            ],
+            "type": "string"
           },
-          "manualRating": {
-            "$ref": "#/components/schemas/ManualRating"
+          "playerId": {
+            "description": "Player who cast the vote.",
+            "$ref": "#/components/schemas/PlayerId"
           },
-          "categoryIds": {
-            "type": "array",
-            "items": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
-            }
+          "isPositive": {
+            "type": "boolean",
+            "description": "True for support, false for opposition."
           },
-          "achievementIds": {
-            "type": "array",
-            "items": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
-            }
+          "votedAt": {
+            "type": "string",
+            "description": "Time the vote was last cast or replaced, not a history of earlier choices.",
+            "format": "date-time"
           }
-        }
+        },
+        "description": "Community feedback. Contributes to CommunityVotes queue sorting, not the acceptance gate."
+      },
+      "VoteRankingTeam": {
+        "required": [
+          "reason",
+          "playerId",
+          "isPositive",
+          "votedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "RankingTeam"
+            ],
+            "type": "string"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "playerId": {
+            "description": "Player who cast the vote.",
+            "$ref": "#/components/schemas/PlayerId"
+          },
+          "isPositive": {
+            "type": "boolean",
+            "description": "True for support, false for opposition."
+          },
+          "votedAt": {
+            "type": "string",
+            "description": "Time the vote was last cast or replaced, not a history of earlier choices.",
+            "format": "date-time"
+          }
+        },
+        "description": "Vote counted towards the acceptance gate, with an optional explanation for support or opposition."
       },
       "WinTracker": {
         "required": [
           "isWin",
           "endTime",
-          "pauseCount",
-          "totalPauseDuration",
+          "pauseStatistics",
           "jumpDistance",
           "averageHeight",
           "totalScore",
@@ -9283,25 +12416,20 @@
             ],
             "format": "float"
           },
-          "pauseCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "totalPauseDuration": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-            "type": [
-              "number",
-              "string"
-            ],
-            "format": "float"
+          "pauseStatistics": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PauseStatistics"
+              }
+            ]
           },
           "jumpDistance": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
             "type": [
+              "null",
               "number",
               "string"
             ],
@@ -9351,6 +12479,11 @@
       }
     },
     "securitySchemes": {
+      "Basic": {
+        "type": "http",
+        "description": "Trusted API clients: Discord ID as username and the API key as password.",
+        "scheme": "basic"
+      },
       "SessionCookie": {
         "type": "apiKey",
         "description": "GuildSaber session cookie. Browsers and cookie-enabled HTTP clients send it automatically.",
@@ -9385,6 +12518,10 @@
     {
       "name": "Context.Achievements",
       "description": "Endpoints for managing achievements within a context."
+    },
+    {
+      "name": "Context.MapRequests",
+      "description": "Thread-based ranking requests, immutable proposals, votes and boosts."
     },
     {
       "name": "Context.Members.AchievementStats",
@@ -9425,6 +12562,9 @@
     {
       "name": "Leaderboards",
       "description": "Endpoints for accessing leaderboards in the server."
+    },
+    {
+      "name": "MapRequests"
     },
     {
       "name": "Players",

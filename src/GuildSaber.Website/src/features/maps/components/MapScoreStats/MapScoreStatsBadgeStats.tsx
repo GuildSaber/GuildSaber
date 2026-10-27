@@ -17,6 +17,7 @@ interface Props {
 
 export const MapScoreStatsBadgeStats = ({ data }: Props) => {
   const { winTracker, hitTracker, maxCombo } = data
+  const { pauseStatistics } = winTracker
 
   const totals = {
     leftMistakes: Number(hitTracker.leftMiss) + Number(hitTracker.leftBadCuts),
@@ -55,13 +56,15 @@ export const MapScoreStatsBadgeStats = ({ data }: Props) => {
 
       <StatPill stat={{ label: "Bomb hit", value: totals.bombs }} />
       <StatPill stat={{ label: "Max combo", value: maxCombo ?? "–" }} />
-      <StatPill stat={{ label: "115 streak", value: hitTracker.max115Streak }} />
-      <StatPill stat={{ label: "Pauses", value: winTracker.pauseCount }} />
-      {Number(winTracker.pauseCount) > 0 && (
-        <StatPill stat={{ label: "Pause time", value: formatTime(Number(winTracker.totalPauseDuration)) }} />
+      {hitTracker.max115Streak != null && <StatPill stat={{ label: "115 streak", value: hitTracker.max115Streak }} />}
+      {pauseStatistics != null && <StatPill stat={{ label: "Pauses", value: pauseStatistics.pauseCount }} />}
+      {pauseStatistics != null && Number(pauseStatistics.pauseCount) > 0 && (
+        <StatPill stat={{ label: "Pause time", value: formatTime(Number(pauseStatistics.totalPauseDuration)) }} />
       )}
       <StatPill stat={{ label: "Accuracy", value: `${totals.accuracy.toFixed(2)}%` }} />
-      <StatPill stat={{ label: "JD", value: Number(winTracker.jumpDistance).toFixed(2) }} />
+      {winTracker.jumpDistance != null && (
+        <StatPill stat={{ label: "JD", value: Number(winTracker.jumpDistance).toFixed(2) }} />
+      )}
     </div>
   )
 }

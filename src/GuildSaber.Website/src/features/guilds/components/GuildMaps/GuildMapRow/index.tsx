@@ -1,4 +1,4 @@
-import type { RankedMapWithScores, RankedScore } from "@/client"
+import type { RankedMapSimple, RankedScore } from "@/client"
 import { Badge } from "@/components/Badge"
 import BeatSaver from "@/components/icons/BeatSaver"
 import Twitch from "@/components/icons/Twitch"
@@ -29,7 +29,10 @@ const STATUS_COLORS: Record<RankedScore["type"], string> = {
 }
 
 interface Props {
-  score: RankedMapWithScores
+  score: {
+    rankedMap: RankedMapSimple
+    rankedScores: RankedScore[]
+  }
 }
 
 const GuildMapRow = ({ score: { rankedMap, rankedScores } }: Props) => {

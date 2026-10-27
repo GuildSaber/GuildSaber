@@ -1,4 +1,3 @@
-import type { RankedMapWithScores } from "@/client"
 import { getRankedMapsOptions, getRankedMapsWithScoresAtMeOptions } from "@/client/@tanstack/react-query.gen"
 import Pagination from "@/components/Pagination"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -61,7 +60,7 @@ const GuildMapsList = () => {
 
   const activeQuery = session ? rankedMapsWithScoresQuery : rankedMapsQuery
 
-  const scores: RankedMapWithScores[] | undefined = session
+  const scores = session
     ? rankedMapsWithScoresQuery.data?.data
     : rankedMapsQuery.data?.data?.map((rankedMap) => ({ rankedMap, rankedScores: [] }))
 

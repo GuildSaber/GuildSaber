@@ -1,4 +1,4 @@
-import type { Category, RankedMap } from "@/client"
+import type { Category, RankedMapSimple } from "@/client"
 import { getCategoriesOptions } from "@/client/@tanstack/react-query.gen"
 import { Badge } from "@/components/Badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -7,7 +7,7 @@ import { getCdnUrl } from "@/utils/url"
 import { useQuery } from "@tanstack/react-query"
 import { useState, type TouchEvent } from "react"
 
-export const useMapCategories = (map: RankedMap) => {
+export const useMapCategories = (map: RankedMapSimple) => {
   const { data: categories } = useQuery(getCategoriesOptions({ path: { guildId: String(map.guildId) } }))
   const mapCategoryIds = map.categoryIds.map(Number)
   const mapCategories = categories?.filter(
@@ -18,7 +18,7 @@ export const useMapCategories = (map: RankedMap) => {
 }
 
 interface Props {
-  map: RankedMap
+  map: RankedMapSimple
   className?: string
 }
 

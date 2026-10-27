@@ -1,6 +1,6 @@
-import type { RankedMap, RankedScore } from "@/client"
+import type { RankedMapSimple, RankedScore } from "@/client"
 
-export const getAccuracy = (rankedMap: RankedMap, rankedScore: RankedScore) => {
+export const getAccuracy = (rankedMap: RankedMapSimple, rankedScore: RankedScore) => {
   const version = rankedMap.versions.find((v) => v.difficulty.id === rankedScore.score.songDifficultyId)
   const maxScore = Number(version?.difficulty.stats.maxScore ?? 0)
 
