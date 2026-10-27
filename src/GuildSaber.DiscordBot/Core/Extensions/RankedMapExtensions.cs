@@ -103,7 +103,7 @@ public static class RankedMapExtensions
                     mapContainerBuilder.WithSection(sectionBuilder
                         .WithTextDisplay(sb.ToString())
                         .WithAccessory(new ThumbnailBuilder()
-                            .WithMedia($"https://cdn.beatsaver.com/{self.Versions[0].Song.Hash}.jpg")));
+                            .WithMedia($"https://cfcdn.beatsaver.com/{self.Versions[0].Song.Hash}.jpg")));
 
                 foreach (var rankedScore in rankedScores)
                 {

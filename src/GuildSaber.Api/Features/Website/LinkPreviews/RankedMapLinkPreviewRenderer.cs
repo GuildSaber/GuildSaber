@@ -20,7 +20,7 @@ internal static class RankedMapLinkPreviewRenderer
         var encodedTitle = Encode(BuildTitle(preview).Truncate(MaximumTitleLength));
         var encodedDescription = Encode(description);
         var encodedPageUrl = Encode(pageUrl);
-        var encodedCoverUrl = Encode($"https://eu.cdn.beatsaver.com/{preview.Hash}.jpg");
+        var encodedCoverUrl = Encode($"https://cfcdn.beatsaver.com/{preview.Hash}.jpg");
         var encodedImageAlt = Encode($"Cover art for {preview.SongInfo.SongName}");
         var encodedBodyDescription = string.Join("<br>", description.Split('\n').Select(Encode));
 

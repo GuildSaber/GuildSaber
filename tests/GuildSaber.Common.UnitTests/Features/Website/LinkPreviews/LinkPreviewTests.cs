@@ -234,7 +234,7 @@ public class LinkPreviewTests
         decodedHtml.Should().Contain("Prohibited Modifiers: NoBombs");
         decodedHtml.Should().Contain("Mandatory Modifiers: FasterSong");
         decodedHtml.Should().Contain("Requirements: Full Combo · Pause < 5s · Confirmation");
-        html.Should().Contain("https://eu.cdn.beatsaver.com/1234567890abcdef1234567890abcdef12345678.jpg");
+        html.Should().Contain("https://cfcdn.beatsaver.com/1234567890abcdef1234567890abcdef12345678.jpg");
         html.Should().Contain("https://dev.guildsaber.com/maps/8872?from=a&amp;value=&quot;unsafe&quot;");
         html.Should().NotContain("<dangerous>");
         html.Should().NotContain("<script");
