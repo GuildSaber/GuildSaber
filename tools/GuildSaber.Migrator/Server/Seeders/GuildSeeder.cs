@@ -24,7 +24,8 @@ public static class GuildSeeder
             ).Unwrap(),
             Requirements = new GuildRequirements
             {
-                RequireSubmission = false
+                RequireSubmission = false,
+                AccountAgeUnix = TimeSpan.FromDays(30).Seconds
             },
             Status = Guild.EGuildStatus.Featured,
             DiscordInfo = new GuildDiscordInfo(null, null, null, null)
@@ -44,11 +45,7 @@ public static class GuildSeeder
             Requirements = new GuildRequirements
             {
                 RequireSubmission = false,
-                MinRank = 200,
-                MaxRank = 10,
-                MinPP = 0,
-                MaxPP = 10000,
-                AccountAgeUnix = TimeSpan.FromDays(365 * 6).Seconds
+                AccountAgeUnix = TimeSpan.FromDays(30).Seconds
             },
             DiscordInfo = new GuildDiscordInfo(null, null, null, null)
         }

@@ -17,7 +17,7 @@ public class MapProposalPersistenceTests
 {
     [Test]
     [Arguments(typeof(MapRequestThread), nameof(ServerDbContext.MapRequestThreads))]
-    [Arguments(typeof(MapRequestThreadVote), nameof(ServerDbContext.MapRequestThreadVotes))]
+    [Arguments(typeof(MapRequestThreadBoost), nameof(ServerDbContext.MapRequestThreadBoosts))]
     [Arguments(typeof(MapProposal), nameof(ServerDbContext.MapProposals))]
     [Arguments(typeof(MapProposalVersion), nameof(ServerDbContext.MapProposalVersions))]
     [Arguments(typeof(MapProposalCategory), nameof(ServerDbContext.MapProposalCategories))]

@@ -5,7 +5,8 @@ namespace GuildSaber.Api.Features.RankedMaps;
 public static class RankedMapsInstaller
 {
     public static IServiceCollection AddRankedMapsFeature(this IServiceCollection services) => services
-        .AddScoped<RankedMapService>()
+        .AddScoped<RankedMapLimitService>()
         .AddTransient<AddRankedMapPipeline>()
-        .AddTransient<EditRankedMapPipeline>();
+        .AddTransient<EditRankedMapPipeline>()
+        .AddTransient<ApplyMapProposalPipeline>();
 }

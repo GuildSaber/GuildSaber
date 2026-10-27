@@ -11,6 +11,7 @@ using GuildSaber.Api.Features.Players;
 using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Api.Features.RankedScores;
 using GuildSaber.Api.Features.Scores;
+using GuildSaber.Api.Features.Songs;
 using GuildSaber.Api.Features.Website;
 using GuildSaber.Api.Setup;
 using MyCSharp.HttpUserAgentParser.AspNetCore.DependencyInjection;
@@ -53,6 +54,7 @@ builder.Services.AddCors(options => options
 builder.Services
     .AddPlayersFeature()
     .AddScoresFeature()
+    .AddSongsFeature()
     .AddGuildsFeature()
     .AddGuildMembersFeature()
     .AddLegacyGuildSaberFeature()

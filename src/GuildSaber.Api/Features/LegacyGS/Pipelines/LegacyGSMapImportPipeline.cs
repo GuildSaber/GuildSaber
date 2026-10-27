@@ -3,9 +3,10 @@ using System.Drawing;
 using System.Linq.Expressions;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Guilds.Members.Pipelines;
-using GuildSaber.Api.Features.RankedMaps;
+using GuildSaber.Api.Features.MapRequests.Http;
+using GuildSaber.Api.Features.MapRequests.Services;
 using GuildSaber.Api.Features.RankedMaps.Http;
-using GuildSaber.Api.Features.RankedMaps.MapVersions.Http;
+using GuildSaber.Api.Features.RankedMaps.Pipelines;
 using GuildSaber.Common.Services.LegacyGuildSaber;
 using GuildSaber.Common.Services.LegacyGuildSaber.Models;
 using GuildSaber.Database.Contexts.Server;
@@ -13,19 +14,22 @@ using GuildSaber.Database.Models.Mappers;
 using GuildSaber.Database.Models.Server.Guilds.Achievements;
 using GuildSaber.Database.Models.Server.Guilds.Achievements.Types;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
+using GuildSaber.Database.Models.Server.MapRequests.Proposals.Types;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore;
 using LegacyCategoryId = GuildSaber.Common.Services.LegacyGuildSaber.Models.Responses.RankingCategory.LegacyCategoryId;
 using LegacyLevelId = GuildSaber.Common.Services.LegacyGuildSaber.Models.Responses.RankingLevel.LegacyLevelId;
-using static GuildSaber.Api.Features.RankedMaps.RankedMapService;
 
 namespace GuildSaber.Api.Features.LegacyGS.Pipelines;
 
 public class LegacyGuildSaberMapImportPipeline(
     ServerDbContext dbContext,
     LegacyGuildSaberApi legacyGuildSaberApi,
-    RankedMapService rankedMapService,
+    MapProposalDraftService draftService,
+    MapProposalService proposalService,
+    MapProposalReviewService reviewService,
+    ApplyMapProposalPipeline applyPipeline,
     MemberPointStatsPipeline memberPointStatsPipeline,
     MemberAchievementStatsPipeline memberAchievementStatsPipeline,
     ILogger<LegacyGuildSaberMapImportPipeline> logger)
@@ -56,7 +60,8 @@ public class LegacyGuildSaberMapImportPipeline(
         var categoryDict = await SyncCategoriesWithLegacyAsync(guildId, token);
         var achievementDict = await SyncAchievementsWithLegacyAsync(guildId, contextId, categoryDict, token);
 
-        var rankedMapIdsToRemove = await dbContext.RankedMaps.Where(x => x.GuildId == guildId)
+        var rankedMapIdsToRemove = await dbContext.RankedMaps
+            .Where(x => x.ContextId == contextId && x.Thread.IsLegacyImport)
             .Select(x => x.Id)
             .ToHashSetAsync(token);
 
@@ -64,7 +69,10 @@ public class LegacyGuildSaberMapImportPipeline(
                            .WithCancellation(token))
         {
             if (!guildRankedMapsResult.TryGetValue(out var guildRankedMaps))
-                break;
+            {
+                logger.LogWarning("Legacy map enumeration failed. Skipping deletion of unseen maps.");
+                return;
+            }
 
             foreach (var rankedMap in guildRankedMaps.Where(x => x.BeatSaverId is not null))
             foreach (var difficulty in rankedMap.Difficulties.Where(x => x.GameModeName is not null))
@@ -72,13 +80,15 @@ public class LegacyGuildSaberMapImportPipeline(
                 var existingRankedMaps = await dbContext.RankedMaps
                     .Include(x => x.Categories)
                     .Include(x => x.Achievements)
+                    .Where(x => x.ContextId == contextId && x.Thread.IsLegacyImport)
                     .Where(MapDifficultyIsAlreadyRankedOnGuild(
                         guildId, difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId!.Value,
                         difficulty.GameModeName!, dbContext))
                     .ToArrayAsync(token);
 
                 var achievementKey = new LegacyAchievementKey(difficulty.LevelId, new LegacyCategoryId(0));
-                var achievement = achievementDict[achievementKey];
+                if (!achievementDict.TryGetValue(achievementKey, out var achievement))
+                    throw new InvalidOperationException("Cannot synchronize maps without their legacy achievements.");
 
                 var requirements = new RankedMapRequests.RankedMapRequirements(
                     NeedConfirmation: difficulty.Requirements.HasFlag(ERequirements.NeedAdminConfirmation),
@@ -91,53 +101,48 @@ public class LegacyGuildSaberMapImportPipeline(
                     MinAccuracy: difficulty.MinScoreRequirement is not 0
                         ? (int)((float)difficulty.MinScoreRequirement / difficulty.MaxScore * 100f)
                         : null);
+
                 var manualRating = new RankedMapRequests.ManualRating(
                     DifficultyStar: achievement.MinStar,
-                    AccuracyStar: null);
+                    //TODO: Remove for production. Bypass BeatLeader ExMachina for the legacy import.
+                    AccuracyStar: 0);
+
                 int[] categoryIds = difficulty.GuildCategoryId.HasValue && difficulty.GuildCategoryId != 0
                     ? [categoryDict[difficulty.GuildCategoryId.Value].Id]
                     : [];
 
-                if (existingRankedMaps.Length > 0)
-                {
-                    var currentMap = existingRankedMaps[0];
-                    rankedMapIdsToRemove.Remove(currentMap.Id);
+                // A difficulty may intentionally occur in multiple rankings. Do not merge or remove duplicates here.
+                foreach (var current in existingRankedMaps)
+                    rankedMapIdsToRemove.Remove(current.Id);
 
-                    if (MapShouldBeUpdated(currentMap, requirements, manualRating, categoryIds))
-                        _ = await UpdateMapAsync(currentMap.Id, contextId,
-                            new RankedMapRequests.UpdateRankedMap(
-                                Requirements: requirements,
-                                ManualRating: manualRating,
-                                CategoryIds: categoryIds,
-                                AchievementIds: []), token);
-
+                var currentMap = existingRankedMaps.FirstOrDefault();
+                if (currentMap is not null && !MapShouldBeUpdated(currentMap, requirements, manualRating, categoryIds))
                     continue;
-                }
 
-                if (existingRankedMaps.Length > 1)
-                {
-                    logger.LogWarning(
-                        "Found {Count} existing ranked maps for BeatSaver map {BeatSaverKey} difficulty {Difficulty} characteristic {Characteristic} in guild {GuildId}." +
-                        "Removing duplicates and keeping the most recently edited one.",
-                        existingRankedMaps.Length, rankedMap.BeatSaverId, difficulty.BeatSaverDifficultyName,
-                        difficulty.GameModeName, guildId);
+                // Retry pending imports instead of opening another thread when acceptance failed.
+                var threadId = currentMap?.ThreadId;
+                var pendingProposalId = await GetPendingProposalIdAsync(
+                    contextId, threadId, difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId.Value,
+                    difficulty.GameModeName!, token);
 
-                    // Yes we don't care about member stats recalculation, since it's not worth it. 
-                    dbContext.RankedMaps.RemoveRange(existingRankedMaps.Skip(1));
-                }
-
-                _ = await RankMapWithRetryAsync(contextId, new RankedMapRequests.CreateRankedMap(
-                    BaseMapVersion: new MapVersionRequests.AddMapVersion(
-                        BeatSaverKey: rankedMap.BeatSaverId.Value,
-                        Characteristic: difficulty.GameModeName!,
-                        Difficulty: difficulty.BeatSaverDifficultyValue,
-                        PlayMode: "Standard",
-                        Order: 0),
-                    ManualRating: manualRating,
+                var proposalRequest = new MapProposalRequests.CreateDraft(
+                    MapVersions: currentMap is null
+                        ?
+                        [
+                            new MapProposalRequests.MapVersionInput(
+                                new MapProposalRequests.SongReference.ByKey(rankedMap.BeatSaverId.Value),
+                                difficulty.GameModeName!, difficulty.BeatSaverDifficultyValue, "Standard", 0)
+                        ]
+                        : await GetMapVersionsAsync(currentMap.Id, token),
                     Requirements: requirements,
-                    CategoryIds: categoryIds,
-                    AchievementIds: []
-                ), retryCount: 3, token);
+                    Rating: manualRating with
+                    {
+                        AccuracyStar = currentMap?.Rating.AccStar.Value ?? manualRating.AccuracyStar
+                    },
+                    CategoryIds: categoryIds.Select(id => new CategoryId(id)).ToArray(),
+                    AchievementIds: []);
+
+                await ImportProposalAsync(contextId, threadId, pendingProposalId, proposalRequest, token);
             }
         }
 
@@ -186,14 +191,14 @@ public class LegacyGuildSaberMapImportPipeline(
         logger.LogInformation("Completed legacy GuildSaber map import for guild {GuildId}", guildId);
     }
 
-    private bool MapShouldBeUpdated(
+    private static bool MapShouldBeUpdated(
         RankedMap currentMap, RankedMapRequests.RankedMapRequirements requirements,
         RankedMapRequests.ManualRating manualRating, int[] categoryIds)
     {
-        if (!currentMap.Categories.All(x => categoryIds.Contains(x.Id)))
+        if (!currentMap.Categories.Select(x => (int)x.Id).ToHashSet().SetEquals(categoryIds))
             return true;
 
-        // Legacy star achievements are dynamic; any direct association is stale.
+        // Legacy star achievements are dynamic. Any direct association is stale.
         if (currentMap.Achievements.Count != 0)
             return true;
 
@@ -205,89 +210,95 @@ public class LegacyGuildSaberMapImportPipeline(
         return Math.Abs(currentMap.Rating.DiffStar.Value - manualRating.DifficultyStar.Value) > 0.01f;
     }
 
-    public async Task<bool> UpdateMapAsync(
-        RankedMapId rankedMapId, ContextId contextId, RankedMapRequests.UpdateRankedMap request,
-        CancellationToken token)
-    {
-        var result = await rankedMapService.UpdateRankedMapAsync(rankedMapId, contextId, request);
-        switch (result)
-        {
-            case UpdateResponse.Success:
-                logger.LogInformation("Updated ranked map {RankedMapId} for context {ContextId}",
-                    rankedMapId, contextId);
-                return true;
-            case UpdateResponse.NotFound:
-                logger.LogWarning("Ranked map {RankedMapId} not found for update", rankedMapId);
-                return false;
-            case UpdateResponse.ValidationFailure validationFailure:
-                logger.LogWarning(
-                    "Validation failed when updating ranked map {RankedMapId} for contextId {ContextId}: {Errors}",
-                    rankedMapId, contextId, string.Join(", ", validationFailure.Errors)
-                );
-                return false;
-            case UpdateResponse.UnexpectedFailure failure:
-                logger.LogError(
-                    "Unexpected failure when updating ranked map {RankedMapId} for contextId {ContextId}: {ErrorMessage}",
-                    rankedMapId, contextId, failure.Message);
-                return false;
-            default: throw new UnreachableException();
-        }
-    }
+    private Task<MapProposalId?> GetPendingProposalIdAsync(
+        ContextId contextId, MapRequestThreadId? threadId, EDifficulty difficulty, BeatSaverKey beatSaverKey,
+        string gameMode, CancellationToken token)
+        => dbContext.MapProposals
+            .Where(x => x.Thread.ContextId == contextId && x.Thread.IsLegacyImport && x.AuthorId == null
+                        && (x is DraftProposal || x is SubmittedProposal))
+            .Where(x => threadId == null ? x.Thread.RankedMap == null : x.ThreadId == threadId)
+            .Where(x => x.MapVersions.Any(version =>
+                version.SongDifficulty.GameMode.Name.Contains(gameMode)
+                && version.SongDifficulty.Difficulty == difficulty
+                && version.SongDifficulty.Song.BeatSaverKey == beatSaverKey))
+            .OrderBy(x => x.Id)
+            .Select(x => (MapProposalId?)x.Id)
+            .FirstOrDefaultAsync(token);
 
-    public async Task<bool> RankMapWithRetryAsync(
-        ContextId contextId, RankedMapRequests.CreateRankedMap request, int retryCount, CancellationToken token)
+    private Task<MapProposalRequests.MapVersionInput[]> GetMapVersionsAsync(
+        RankedMapId rankedMapId, CancellationToken token)
+        => dbContext.MapVersions
+            .Where(x => x.RankedMapId == rankedMapId)
+            .Select(x => new MapProposalRequests.MapVersionInput(
+                new MapProposalRequests.SongReference.ByHash(x.Song.Hash),
+                x.SongDifficulty.GameMode.Name,
+                x.SongDifficulty.Difficulty,
+                dbContext.PlayModes.Where(mode => mode.Id == x.PlayModeId).Select(mode => mode.Name).First(),
+                x.Order))
+            .ToArrayAsync(token);
+
+    private async Task ImportProposalAsync(
+        ContextId contextId, MapRequestThreadId? threadId, MapProposalId? proposalId,
+        MapProposalRequests.CreateDraft request, CancellationToken token)
     {
-        do
+        if (proposalId is null)
         {
-            var result = await rankedMapService.CreateRankedMapAsync(contextId, request);
-            switch (result)
+            MapProposalDraftService.CreateResponse creation = new MapProposalDraftService.CreateResponse.Conflict();
+
+            for (var attempt = 0; attempt < 3; attempt++)
             {
-                case CreateResponse.Success success:
-                    logger.LogInformation(
-                        "Imported BeatSaver map {BeatSaverKey} difficulty {Difficulty} characteristic {Characteristic} as ranked map {RankedMapId} for guild {GuildId}",
-                        request.BaseMapVersion.BeatSaverKey, request.BaseMapVersion.Difficulty,
-                        request.BaseMapVersion.Characteristic, success.RankedMap.Id, success.RankedMap.GuildId);
-                    return true;
-                case CreateResponse.RateLimited limited:
-                    logger.LogWarning("Rate limited when creating ranked map, retrying in {RetryAfter}ms",
-                        limited.RetryAfter);
-                    await Task.Delay(limited.RetryAfter, token);
-                    continue;
-                case CreateResponse.NotOnBeatSaver notOnBeatSaver:
-                    logger.LogWarning("Map not on BeatSaver: {BeatSaverKey}", notOnBeatSaver.BeatSaverKey);
-                    return false;
-                case CreateResponse.ValidationFailure validationFailure:
-                    logger.LogWarning(
-                        "Validation failed when importing BeatSaver map {BeatSaverKey} difficulty {Difficulty} characteristic {Characteristic} for contextId {ContextId}: {Errors}",
-                        request.BaseMapVersion.BeatSaverKey, request.BaseMapVersion.Difficulty,
-                        request.BaseMapVersion.Characteristic, contextId, string.Join(", ", validationFailure.Errors)
-                    );
-                    return false;
-                case CreateResponse.UnexpectedFailure failure:
-                    logger.LogError(
-                        "Unexpected failure when creating ranked map with BeatSaverKey {BeatSaverKey} difficulty {Difficulty} for contextId {ContextId}: {ErrorMessage}",
-                        request.BaseMapVersion.BeatSaverKey, request.BaseMapVersion.Difficulty, contextId,
-                        failure.Message);
+                creation = await draftService.CreateImportedAsync(contextId, threadId, request, token);
+                if (creation is not MapProposalDraftService.CreateResponse.RateLimited limited)
                     break;
-                case CreateResponse.TooManyRankedMaps tooMany:
-                    logger.LogWarning(
-                        "Too many ranked maps ({CurrentCount}/{MaxCount}) in contextId {ContextId}",
-                        tooMany.CurrentCount, tooMany.MaxCount, contextId);
-                    return false;
-                default: throw new UnreachableException();
-            }
-        } while (retryCount++ < 3);
 
-        logger.LogError(
-            "Exceeded maximum retries when creating ranked map with BeatSaverKey {BeatSaverKey} difficulty {Difficulty} for contextId {ContextId}",
-            request.BaseMapVersion.BeatSaverKey, request.BaseMapVersion.Difficulty, contextId);
-        return false;
+                await Task.Delay(limited.RetryAfter, token);
+            }
+
+            if (creation is not MapProposalDraftService.CreateResponse.Success(var draft))
+            {
+                logger.LogWarning("Legacy proposal creation failed in context {ContextId}: {Result}", contextId,
+                    creation);
+                return;
+            }
+
+            proposalId = draft.Id;
+        }
+
+        if (await dbContext.MapProposals.OfType<DraftProposal>().AnyAsync(x => x.Id == proposalId, token))
+        {
+            var submission = await proposalService.SubmitImportedAsync(contextId, proposalId.Value, token);
+            if (submission is not MapProposalService.TransitionResponse.Success)
+            {
+                logger.LogWarning("Legacy proposal submission failed: {Result}", submission);
+                await dbContext.MapProposals
+                    .OfType<DraftProposal>()
+                    .Where(x => x.Id == proposalId && x.AuthorId == null)
+                    .ExecuteDeleteAsync(token);
+
+                dbContext.ChangeTracker.Clear();
+                return;
+            }
+        }
+
+        var review = await reviewService.AcceptImportedAsync(contextId, proposalId.Value, token);
+        if (review is not MapProposalReviewService.ReviewResponse.Accepted accepted)
+        {
+            logger.LogWarning("Legacy proposal {ProposalId} remains submitted for review: {Result}", proposalId,
+                review);
+            return;
+        }
+
+        await applyPipeline.ExecuteAsync(accepted.RankedMapId, accepted.AddedDifficultyIds, token);
     }
 
     public async Task<Dictionary<LegacyCategoryId, Category>> SyncCategoriesWithLegacyAsync(
         GuildId guildId, CancellationToken token)
     {
-        var categories = await dbContext.Categories.AsTracking().Where(x => x.GuildId == guildId).ToListAsync(token);
+        var categories = await dbContext.Categories
+            .AsTracking()
+            .Where(x => x.GuildId == guildId)
+            .ToListAsync(token);
+
         if (!(await legacyGuildSaberApi.GetRankingCategoriesAsync(guildId)).TryGetValue(out var legacyCategories))
             return [];
 
@@ -324,6 +335,7 @@ public class LegacyGuildSaberMapImportPipeline(
             .Where(x => x.GuildId == guildId && x.ContextId == contextId)
             .OfType<DiffStarAchievement>()
             .ToListAsync(token);
+
         if (!(await legacyGuildSaberApi.GetRankingLevelsAsync(guildId)).TryGetValue(out var legacyLevels))
             return [];
 
@@ -341,8 +353,7 @@ public class LegacyGuildSaberMapImportPipeline(
                 x.Info.Name == achievementName);
             if (achievement is null)
             {
-                achievement = new DiffStarAchievement
-                (
+                achievement = new DiffStarAchievement(
                     id: default,
                     guildId: guildId,
                     contextId: contextId,
@@ -381,12 +392,11 @@ public class LegacyGuildSaberMapImportPipeline(
 
             foreach (var (legacyCategoryId, category) in categories)
             {
-                var categoryAchievementName = $"Lvl {legacyLevel.LevelNumber:G}";
                 var categoryAchievement = achievements.FirstOrDefault(x =>
                     x.GuildId == guildId &&
                     x.ContextId == contextId &&
                     x.CategoryId == category.Id &&
-                    x.Info.Name == categoryAchievementName);
+                    x.Info.Name == achievementName);
                 if (categoryAchievement is null)
                 {
                     categoryAchievement = new DiffStarAchievement(
@@ -396,8 +406,7 @@ public class LegacyGuildSaberMapImportPipeline(
                         categoryId: category.Id,
                         info: new AchievementInfo
                         {
-                            Name = Name_2_50.CreateUnsafe(categoryAchievementName)
-                                .Value,
+                            Name = Name_2_50.CreateUnsafe(achievementName).Value,
                             Color = Color.FromArgb(legacyLevel.Color)
                         },
                         discordBindings: new AchievementDiscordBindings(DiscordRoleId
@@ -443,7 +452,7 @@ public class LegacyGuildSaberMapImportPipeline(
         => new(MathF.Floor(minStar) + 1);
 
     internal static uint? GetLegacyProgressionOrder(float legacyLevelNumber)
-        => legacyLevelNumber == 100 ? null : (uint)Math.Round(legacyLevelNumber);
+        => legacyLevelNumber.Equals(100f) ? null : (uint)Math.Round(legacyLevelNumber);
 
     private static Expression<Func<RankedMap, bool>> MapDifficultyIsAlreadyRankedOnGuild(
         GuildId guildId, EDifficulty difficulty, BeatSaverKey beatSaverKey, string gameMode,

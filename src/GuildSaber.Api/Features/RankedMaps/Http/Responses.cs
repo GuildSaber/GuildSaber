@@ -60,6 +60,7 @@ public static class RankedMapResponses
 
     public record RankedMapSimple(
         RankedMapId Id,
+        MapRequestThreadId ThreadId,
         GuildId GuildId,
         int ContextId,
         RankedMapInfo Info,
@@ -71,6 +72,7 @@ public static class RankedMapResponses
 
     public record RankedMap(
         RankedMapId Id,
+        MapRequestThreadId ThreadId,
         GuildId GuildId,
         int ContextId,
         RankedMapInfo Info,

@@ -55,7 +55,7 @@ public class GuildConfiguration : IEntityTypeConfiguration<Guild>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(x => x.Boosts)
-            .WithOne().HasForeignKey(x => x.GuildId)
+            .WithOne(x => x.Guild).HasForeignKey(x => x.GuildId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(x => x.Points)

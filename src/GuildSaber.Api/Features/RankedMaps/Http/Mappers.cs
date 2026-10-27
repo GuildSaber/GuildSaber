@@ -29,6 +29,7 @@ public static class RankedMapMappers
     public static Expression<Func<RankedMap, RankedMapResponses.RankedMapSimple>> MapRankedMapSimpleExpression()
         => self => new RankedMapResponses.RankedMapSimple(
             self.Id,
+            self.ThreadId,
             self.GuildId,
             self.ContextId,
             self.Info.Map(),
@@ -75,6 +76,7 @@ public static class RankedMapMappers
     public static Expression<Func<RankedMap, RankedMapResponses.RankedMap>> MapRankedMapExpression()
         => self => new RankedMapResponses.RankedMap(
             self.Id,
+            self.ThreadId,
             self.GuildId,
             self.ContextId,
             self.Info.Map(),

@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net11.0;netstandard2.1</TargetFrameworks>
-        <LangVersion>latest</LangVersion>
+        <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
@@ -29,10 +29,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\GuildSaber.Common\GuildSaber.Common.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="Routes\RankedMaps\MapVersions\" />
     </ItemGroup>
 
 </Project>

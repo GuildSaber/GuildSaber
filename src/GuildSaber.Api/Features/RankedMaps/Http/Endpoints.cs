@@ -12,7 +12,6 @@ using GuildSaber.Database.Models.Server.RankedScores;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using ServerRankedMap = GuildSaber.Database.Models.Server.RankedMaps.RankedMap;
-using static GuildSaber.Api.Features.RankedMaps.RankedMapService;
 using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapRequests;
 using static GuildSaber.Api.Features.RankedMaps.Http.RankedMapResponses;
 
@@ -63,28 +62,6 @@ public class RankedMapEndpoints : IEndpoints
             .WithDescription("Get ranked maps for a context by its Id, with optional search and sorting, including " +
                              "the current player's best point scores on each map.")
             .RequireAuthorization();
-
-        group.MapPost("/", CreateRankedMapAsync)
-            .WithName("CreateRankedMap")
-            .WithSummary("Create a ranked map for a context.")
-            .WithDescription("Create a ranked map for a context by its Id.")
-            .Produces<RankedMapSimple>()
-            .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status429TooManyRequests)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesValidationProblem()
-            .RequireGuildPermission(EPermission.RankingTeam);
-
-        group.MapPut("/{rankedMapId}", UpdateRankedMap)
-            .WithName("UpdateRankedMap")
-            .WithSummary("Update a ranked map.")
-            .WithDescription("Update a ranked map by its Id.")
-            .Produces<RankedMapSimple>()
-            .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesValidationProblem()
-            .RequireGuildPermission(EPermission.RankingTeam);
     }
 
     private static async Task<Results<Ok<RankedMapWithScores>, NotFound>> GetRankedMapWithScoresAtMeAsync(
@@ -103,57 +80,6 @@ public class RankedMapEndpoints : IEndpoints
         {
             null => TypedResults.NotFound(),
             var rankedMap => TypedResults.Ok(rankedMap)
-        };
-
-    /// <remarks>
-    /// This endpoint:
-    /// <list type="bullet">
-    ///     <item>Returns 200 OK with ranked map details when created successfully.</item>
-    ///     <item>Returns 401 Unauthorized when the guild has reached its maximum number of ranked maps.</item>
-    ///     <item>Returns 400 Bad Request with validation details when validation fails.</item>
-    ///     <item>Returns 404 Not Found when the map is not found on BeatSaver.</item>
-    ///     <item>Returns 429 Too Many Requests when rate limited by BeatSaver API.</item>
-    ///     <item>Returns 500 Internal Server Error when BeatSaver API fails.</item>
-    /// </list>
-    /// </remarks>
-    public static async Task<IResult> CreateRankedMapAsync(
-        ContextId contextId, CreateRankedMap create, RankedMapService rankedMapService)
-        => await rankedMapService.CreateRankedMapAsync(contextId, create) switch
-        {
-            CreateResponse.Success(var rankedMap) => TypedResults.Ok(rankedMap.MapSimple()),
-            CreateResponse.TooManyRankedMaps(var current, var max) => TypedResults.Problem(
-                $"Guild has reached its maximum number of ranked maps ({current}/{max}), consider getting more boosts.",
-                statusCode: StatusCodes.Status401Unauthorized,
-                title: "Too many ranked maps"),
-            CreateResponse.ValidationFailure(var errors) => TypedResults
-                .ValidationProblem(errors: errors,
-                    detail: "Failed to validate ranked map creation."),
-            CreateResponse.NotOnBeatSaver(var beatSaverKey) => TypedResults
-                .NotFound($"Map with BeatSaver key {beatSaverKey} not found."),
-            CreateResponse.RateLimited(var retryAfter) => TypedResults
-                .Problem($"Rate limited by BeatSaver API. Retry after {retryAfter.TotalSeconds:N0} seconds.",
-                    statusCode: StatusCodes.Status429TooManyRequests),
-            CreateResponse.BeatSaverError(var message) => TypedResults
-                .InternalServerError($"BeatSaver API error: {message}"),
-            CreateResponse.UnexpectedFailure(var message) => TypedResults
-                .InternalServerError($"Unexpected error: {message}"),
-            _ => throw new ArgumentOutOfRangeException(nameof(rankedMapService.CreateRankedMapAsync),
-                "Unexpected response from CreateRankedMap.")
-        };
-
-    public static async Task<IResult> UpdateRankedMap(
-        ContextId contextId, RankedMapId rankedMapId, UpdateRankedMap update, RankedMapService rankedMapService)
-        => await rankedMapService.UpdateRankedMapAsync(rankedMapId, contextId, update) switch
-        {
-            UpdateResponse.Success(var rankedMap) => TypedResults.Ok(rankedMap.MapSimple()),
-            UpdateResponse.NotFound => TypedResults.NotFound(),
-            UpdateResponse.ValidationFailure(var errors) => TypedResults
-                .ValidationProblem(errors: errors,
-                    detail: "Failed to validate ranked map update."),
-            UpdateResponse.UnexpectedFailure(var message) => TypedResults
-                .InternalServerError($"Unexpected error: {message}"),
-            _ => throw new ArgumentOutOfRangeException(nameof(rankedMapService.UpdateRankedMapAsync),
-                "Unexpected response from UpdateRankedMap.")
         };
 
     private static async Task<Results<Ok<RankedMap>, NotFound>> GetRankedMapAsync(

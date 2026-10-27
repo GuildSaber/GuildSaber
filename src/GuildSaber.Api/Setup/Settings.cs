@@ -1,5 +1,6 @@
 using GuildSaber.Api.Features.Auth;
 using GuildSaber.Api.Features.Guilds;
+using GuildSaber.Api.Features.MapRequests.Settings;
 using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Common.Settings;
 
@@ -49,6 +50,18 @@ public static class SettingsSetup
         builder.Services
             .AddOptionsWithValidateOnStart<RankedMapSettings>()
             .Bind(builder.Configuration.GetSection(RankedMapSettings.RankedMapSettingsSectionKey))
+            .ValidateDataAnnotations();
+        builder.Services
+            .AddOptionsWithValidateOnStart<MapRequestBoostSettings>()
+            .Bind(builder.Configuration.GetSection(MapRequestBoostSettings.SectionKey))
+            .ValidateDataAnnotations();
+        builder.Services
+            .AddOptionsWithValidateOnStart<MapProposalReviewSettings>()
+            .Bind(builder.Configuration.GetSection(MapProposalReviewSettings.SectionKey))
+            .ValidateDataAnnotations();
+        builder.Services
+            .AddOptionsWithValidateOnStart<MapRequestSettings>()
+            .Bind(builder.Configuration.GetSection(MapRequestSettings.SectionKey))
             .ValidateDataAnnotations();
         builder.Services
             .AddOptionsWithValidateOnStart<LinkSettings>()

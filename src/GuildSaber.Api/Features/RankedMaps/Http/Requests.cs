@@ -1,4 +1,3 @@
-using GuildSaber.Api.Features.RankedMaps.MapVersions.Http;
 using GuildSaber.Common.Helpers;
 using ERankedScoreType = GuildSaber.Api.Features.RankedScores.Http.RankedScoreRequests.ERankedScoreType;
 
@@ -38,22 +37,24 @@ public static class RankedMapRequests
     /// <param name="DurationSecTo">The maximum duration (in seconds) to filter maps.</param>
     /// <param name="BpmFrom">The minimum BPM to filter maps.</param>
     /// <param name="BpmTo">The maximum BPM to filter maps.</param>
-    /// <param name="NeedConfirmation">If specified, filters maps based on whether they require confirmation for ranked scores.</param>
+    /// <param name="NeedConfirmation">
+    /// If specified, filters maps based on whether they require confirmation for ranked scores.
+    /// </param>
     public record struct Filters(
-        [FromQuery(Name = "search")] string? Search = null,
-        [FromQuery(Name = "categoryIds")] int[]? CategoryIds = null,
-        [FromQuery(Name = "matchAnyCategory")] bool MatchAnyCategory = true,
-        [FromQuery(Name = "rankedScoreTypes")] ERankedScoreType RankedScoreTypes = ERankedScoreType.None,
-        [FromQuery(Name = "includeMapsWithoutScore")] bool IncludeMapsWithoutScore = false,
-        [FromQuery(Name = "difficultyStarFrom")] float? DifficultyStarFrom = null,
-        [FromQuery(Name = "difficultyStarTo")] float? DifficultyStarTo = null,
-        [FromQuery(Name = "accuracyStarFrom")] float? AccuracyStarFrom = null,
-        [FromQuery(Name = "accuracyStarTo")] float? AccuracyStarTo = null,
-        [FromQuery(Name = "durationSecFrom")] float? DurationSecFrom = null,
-        [FromQuery(Name = "durationSecTo")] float? DurationSecTo = null,
-        [FromQuery(Name = "bpmFrom")] float? BpmFrom = null,
-        [FromQuery(Name = "bpmTo")] float? BpmTo = null,
-        [FromQuery(Name = "needConfirmation")] bool? NeedConfirmation = null
+        [property: FromQuery(Name = "search")] string? Search = null,
+        [property: FromQuery(Name = "categoryIds")] int[]? CategoryIds = null,
+        [property: FromQuery(Name = "matchAnyCategory")] bool MatchAnyCategory = true,
+        [property: FromQuery(Name = "rankedScoreTypes")] ERankedScoreType RankedScoreTypes = ERankedScoreType.None,
+        [property: FromQuery(Name = "includeMapsWithoutScore")] bool IncludeMapsWithoutScore = false,
+        [property: FromQuery(Name = "difficultyStarFrom")] float? DifficultyStarFrom = null,
+        [property: FromQuery(Name = "difficultyStarTo")] float? DifficultyStarTo = null,
+        [property: FromQuery(Name = "accuracyStarFrom")] float? AccuracyStarFrom = null,
+        [property: FromQuery(Name = "accuracyStarTo")] float? AccuracyStarTo = null,
+        [property: FromQuery(Name = "durationSecFrom")] float? DurationSecFrom = null,
+        [property: FromQuery(Name = "durationSecTo")] float? DurationSecTo = null,
+        [property: FromQuery(Name = "bpmFrom")] float? BpmFrom = null,
+        [property: FromQuery(Name = "bpmTo")] float? BpmTo = null,
+        [property: FromQuery(Name = "needConfirmation")] bool? NeedConfirmation = null
     );
 
     [Flags]
@@ -97,14 +98,35 @@ public static class RankedMapRequests
         Name = 7
     }
 
+    /// <summary>
+    /// Optional manual star ratings. Missing values are resolved before a proposal can be submitted.
+    /// </summary>
     /// <param name="DifficultyStar">
-    /// When specified, the difficulty rating of the map won't be calculated by BeatLeader's ExMachina.
+    /// Finite, non-negative difficulty stars. Null or omitted requests automatic calculation from BeatLeader's
+    /// ExMachina at submission, using the lowest-order proposed difficulty and the proposed requirements.
     /// </param>
     /// <param name="AccuracyStar">
-    /// When specified, the accuracy rating of the map won't be calculated by BeatLeader's ExMachina.
+    /// Finite, non-negative accuracy stars. Null or omitted requests calculation at submission from BeatLeader's
+    /// ExMachina and the guild's accuracy curve. Missing or invalid calculation data prevents submission.
     /// </param>
     public record ManualRating(float? DifficultyStar = null, float? AccuracyStar = null);
 
+    /// <summary>
+    /// Requirements for a score to qualify on the ranked map.
+    /// </summary>
+    /// <param name="NeedConfirmation">Otherwise eligible scores remain pending until explicitly confirmed.</param>
+    /// <param name="NeedFullCombo">Require a full-combo score.</param>
+    /// <param name="MaxPauseDurationSec">
+    /// Maximum total pause duration in seconds. Must be finite and non-negative. Null imposes no pause limit.
+    /// Setting a limit excludes ScoreSaber scores, which lack the required pause tracking.
+    /// </param>
+    /// <param name="ProhibitedModifiers">
+    /// Any matching modifier invalidates the score. Must not overlap mandatory modifiers.
+    /// </param>
+    /// <param name="MandatoryModifiers">
+    /// Every selected modifier must be present. Must not overlap prohibited modifiers.
+    /// </param>
+    /// <param name="MinAccuracy">Minimum accuracy in percent, from 0 to 100 inclusive. Null imposes no minimum.</param>
     public record RankedMapRequirements(
         bool NeedConfirmation = false,
         bool NeedFullCombo = false,
@@ -112,39 +134,6 @@ public static class RankedMapRequests
         EModifiers ProhibitedModifiers = EModifiers.ProhibitedDefaults,
         EModifiers MandatoryModifiers = EModifiers.None,
         float? MinAccuracy = null
-    );
-
-    /// <param name="BaseMapVersion">
-    /// The map version that will be used as the base for the ranked map.
-    /// </param>
-    /// <param name="Requirements"></param>
-    /// <param name="ManualRating">
-    /// Used to force a specific difficulty and/or accuracy star rating for the map.
-    /// If null, the star ratings will be calculated automatically by BeatLeader's ExMachina.
-    /// </param>
-    /// <param name="CategoryIds">
-    /// The categories to assign the ranked map to.
-    /// </param>
-    /// <param name="AchievementIds">
-    /// The ranked-map-list achievements to assign the ranked map to.
-    /// </param>
-    /// <remarks>
-    /// If you want to create a ranked map with multiple map versions, create the ranked map with one map version first,
-    /// then add the other map versions using the proper endpoint.
-    /// </remarks>
-    public record CreateRankedMap(
-        MapVersionRequests.AddMapVersion BaseMapVersion,
-        RankedMapRequirements Requirements,
-        ManualRating ManualRating,
-        int[] CategoryIds,
-        int[] AchievementIds
-    );
-
-    public record UpdateRankedMap(
-        RankedMapRequirements Requirements,
-        ManualRating ManualRating,
-        int[] CategoryIds,
-        int[] AchievementIds
     );
 
     public static string ToModifiersString(this EModifiers modifiers) => modifiers

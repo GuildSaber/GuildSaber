@@ -17,9 +17,10 @@ public closed class MapProposal
     public PlayerId? AuthorId { get; init; }
 
     public required DateTimeOffset CreatedAt { get; init; }
+    public string? Comment { get; init; }
 
     public required RankedMapRequirements Requirements { get; init; }
-    public required RankedMapRating Rating { get; init; }
+    public required MapProposalRating Rating { get; init; }
 
     public MapRequestThread Thread { get; init; } = null!;
     public Player? Author { get; init; }
@@ -54,23 +55,32 @@ public class MapProposalConfiguration : IEntityTypeConfiguration<MapProposal>
             .HasConversion(from => from.Value, to => new MapProposalId(to))
             .ValueGeneratedOnAdd();
 
+        builder.Property(x => x.Comment).HasMaxLength(2000);
+
         builder.ComplexProperty(x => x.Requirements).Configure(new RankedMapRequirementsConfiguration());
-        builder.ComplexProperty(x => x.Rating).Configure(new RankedMapRatingConfiguration());
+        builder.ComplexProperty(x => x.Rating).Configure(new MapProposalRatingConfiguration());
 
         builder.ToTable(tableBuilder =>
         {
             tableBuilder.HasCheckConstraint(
+                "CK_MapProposals_ResolvedRating",
+                $"""
+                 "{nameof(SubmittedProposal.SubmittedAt)}" IS NULL
+                 OR ("{nameof(MapProposal.Rating)}_{nameof(MapProposalRating.AccStar)}" IS NOT NULL
+                     AND "{nameof(MapProposal.Rating)}_{nameof(MapProposalRating.DiffStar)}" IS NOT NULL)
+                 """);
+            tableBuilder.HasCheckConstraint(
                 "CK_MapProposals_Lifecycle",
                 $"""
-                ("status" = {(byte)MapProposalStatus.Draft}
-                    AND "SubmittedAt" IS NULL AND "AcceptedAt" IS NULL AND "ClosedAt" IS NULL)
-                OR ("status" = {(byte)MapProposalStatus.Submitted}
-                    AND "SubmittedAt" IS NOT NULL AND "AcceptedAt" IS NULL AND "ClosedAt" IS NULL)
-                OR ("status" = {(byte)MapProposalStatus.Accepted}
-                    AND "SubmittedAt" IS NOT NULL AND "AcceptedAt" IS NOT NULL AND "ClosedAt" IS NULL)
-                OR ("status" = {(byte)MapProposalStatus.Closed}
-                    AND "AcceptedAt" IS NULL AND "ClosedAt" IS NOT NULL)
-                """);
+                 ("status" = {(byte)MapProposalStatus.Draft}
+                     AND "SubmittedAt" IS NULL AND "AcceptedAt" IS NULL AND "ClosedAt" IS NULL)
+                 OR ("status" = {(byte)MapProposalStatus.Submitted}
+                     AND "SubmittedAt" IS NOT NULL AND "AcceptedAt" IS NULL AND "ClosedAt" IS NULL)
+                 OR ("status" = {(byte)MapProposalStatus.Accepted}
+                     AND "SubmittedAt" IS NOT NULL AND "AcceptedAt" IS NOT NULL AND "ClosedAt" IS NULL)
+                 OR ("status" = {(byte)MapProposalStatus.Closed}
+                     AND "AcceptedAt" IS NULL AND "ClosedAt" IS NOT NULL)
+                 """);
         });
 
         builder.HasOne(x => x.Thread)

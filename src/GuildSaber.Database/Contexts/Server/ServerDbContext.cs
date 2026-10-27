@@ -55,7 +55,7 @@ public class ServerDbContext : DbContext
     public DbSet<PlayMode> PlayModes { get; set; }
 
     public DbSet<MapRequestThread> MapRequestThreads { get; set; }
-    public DbSet<MapRequestThreadVote> MapRequestThreadVotes { get; set; }
+    public DbSet<MapRequestThreadBoost> MapRequestThreadBoosts { get; set; }
 
     public DbSet<MapProposal> MapProposals { get; set; }
     public DbSet<MapProposalVersion> MapProposalVersions { get; set; }

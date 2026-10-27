@@ -23,7 +23,7 @@ public class Player
     public IList<Member> Members { get; init; } = null!;
     public IList<MapRequestThread> RequestThreads { get; init; } = null!;
     public IList<MapProposal> Proposals { get; init; } = null!;
-    public IList<MapRequestThreadVote> RequestThreadVotes { get; init; } = null!;
+    public IList<MapRequestThreadBoost> RequestThreadBoosts { get; init; } = null!;
     public IList<MapProposalVote> ProposalVotes { get; init; } = null!;
 
     public enum EPlatform

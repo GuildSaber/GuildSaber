@@ -14,6 +14,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\GuildSaber.Api\GuildSaber.Api.csproj" />
+        <ProjectReference Include="..\..\clients\GuildSaber.CSharpClient\GuildSaber.CSharpClient.csproj" Aliases="Client" />
         <ProjectReference Include="..\..\src\GuildSaber.Database\GuildSaber.Database.csproj" />
     </ItemGroup>
 

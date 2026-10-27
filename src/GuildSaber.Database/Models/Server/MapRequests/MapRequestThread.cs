@@ -1,6 +1,5 @@
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals;
-using GuildSaber.Database.Models.Server.MapRequests.Votes;
 using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using Microsoft.EntityFrameworkCore;
@@ -19,21 +18,16 @@ public sealed class MapRequestThread
     public ContextId ContextId { get; init; }
     public PlayerId? AuthorId { get; init; }
 
+    /// <summary>Limits legacy synchronization to its own maps. Player-created rankings must never be swept by it.</summary>
+    public bool IsLegacyImport { get; init; }
+
     // Could argue we could save the author name in case they get deleted but that would mean keeping data after profile deletion so I would rather not for something like that yet.
     public DateTimeOffset CreatedAt { get; init; }
-
-    public MapRequestThreadLane Lane { get; init; }
 
     public Player? Author { get; init; }
     public RankedMap? RankedMap { get; init; }
     public IList<MapProposal> Proposals { get; init; } = null!;
-    public IList<MapRequestThreadVote> Votes { get; init; } = null!;
-}
-
-public enum MapRequestThreadLane : byte
-{
-    Standard = 0,
-    Premium = 1
+    public IList<MapRequestThreadBoost> Boosts { get; init; } = null!;
 }
 
 public class MapRequestThreadConfiguration : IEntityTypeConfiguration<MapRequestThread>

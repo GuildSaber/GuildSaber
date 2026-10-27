@@ -1,11 +1,12 @@
 using AwesomeAssertions;
-using GuildSaber.Api.Features.MapRequests;
+using GuildSaber.Api.Features.MapRequests.Services;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals.Snapshots;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals.Types;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.Scores;
+using SongDifficultyId = GuildSaber.Database.Models.Server.Songs.SongDifficulties.SongDifficulty.SongDifficultyId;
 
 namespace GuildSaber.Common.UnitTests.Features.MapRequests;
 
@@ -65,11 +66,11 @@ public class MapProposalTransitionTests
     public void InvalidRating_ShouldPreventSubmission(float rating)
     {
         var draft = CreateDraft();
-        draft.Rating.AccStar = new(rating);
-        draft.Rating.DiffStar = new(rating);
+        draft.Rating.AccStar = new RankedMapRating.AccuracyStar(rating);
+        draft.Rating.DiffStar = new RankedMapRating.DifficultyStar(rating);
 
         MapProposalService.GetConfigurationErrors(draft).Select(x => x.Key)
-            .Should().BeEquivalentTo(["Rating.AccStar", "Rating.DiffStar"]);
+            .Should().BeEquivalentTo("Rating.AccStar", "Rating.DiffStar");
     }
 
     [Test]
@@ -78,10 +79,52 @@ public class MapProposalTransitionTests
     public void FiniteNonNegativeRatings_ShouldBeValid(float rating)
     {
         var draft = CreateDraft();
-        draft.Rating.AccStar = new(rating);
-        draft.Rating.DiffStar = new(rating);
+        draft.Rating.AccStar = new RankedMapRating.AccuracyStar(rating);
+        draft.Rating.DiffStar = new RankedMapRating.DifficultyStar(rating);
 
         MapProposalService.GetConfigurationErrors(draft).Should().BeEmpty();
+    }
+
+    [Test]
+    [Arguments(false, true)]
+    [Arguments(true, false)]
+    [Arguments(true, true)]
+    public void MissingRatings_ShouldBeAllowedBeforeResolution(bool automaticAccuracy, bool automaticDifficulty)
+    {
+        var draft = CreateDraft();
+        if (automaticAccuracy) draft.Rating.AccStar = null;
+        if (automaticDifficulty) draft.Rating.DiffStar = null;
+
+        MapProposalService.GetConfigurationErrors(draft).Should().BeEmpty();
+    }
+
+    [Test]
+    [Arguments(true, true, false)]
+    [Arguments(true, true, true)]
+    [Arguments(true, false, false)]
+    [Arguments(false, true, false)]
+    public void AutomaticRatingSource_ShouldRequireOneDifficultyAtLowestOrder(
+        bool automaticRating, bool tiedOrder, bool sameDifficulty)
+    {
+        var draft = CreateDraft();
+        if (automaticRating) draft.Rating.AccStar = null;
+        draft.MapVersions.Clear();
+        draft.MapVersions.Add(new MapProposalVersion
+        {
+            SongDifficultyId = new SongDifficultyId(1), PlayModeName = "Standard", Order = 0
+        });
+        draft.MapVersions.Add(new MapProposalVersion
+        {
+            SongDifficultyId = new SongDifficultyId(sameDifficulty ? 1 : 2), PlayModeName = "Alternate",
+            Order = (byte)(tiedOrder ? 0 : 1)
+        });
+
+        var errors = MapProposalService.GetConfigurationErrors(draft);
+
+        if (automaticRating && tiedOrder && !sameDifficulty)
+            errors.Should().ContainSingle().Which.Key.Should().Be(nameof(MapProposal.MapVersions));
+        else
+            errors.Should().BeEmpty();
     }
 
     [Test]
@@ -90,7 +133,8 @@ public class MapProposalTransitionTests
         var draft = CreateDraft();
         draft.MapVersions.Clear();
 
-        MapProposalService.GetConfigurationErrors(draft).Should().Contain(x => x.Key == nameof(MapProposal.MapVersions));
+        MapProposalService.GetConfigurationErrors(draft).Should()
+            .Contain(x => x.Key == nameof(MapProposal.MapVersions));
     }
 
     [Test]
@@ -99,20 +143,23 @@ public class MapProposalTransitionTests
         var draft = new DraftProposal
         {
             AuthorId = new PlayerId(1), CreatedAt = DateTimeOffset.UnixEpoch,
-            Rating = new RankedMapRating { AccStar = new(1), DiffStar = new(1) },
+            Rating = new MapProposalRating
+                { AccStar = new RankedMapRating.AccuracyStar(1), DiffStar = new RankedMapRating.DifficultyStar(1) },
             Requirements = new RankedMapRequirements(false, false, null,
                 AbstractScore.EModifiers.FasterSong, AbstractScore.EModifiers.FasterSong, null),
             MapVersions = [new MapProposalVersion { PlayModeName = "Standard" }]
         };
 
-        MapProposalService.GetConfigurationErrors(draft).Should().Contain(x => x.Key == "Requirements.MandatoryModifiers");
+        MapProposalService.GetConfigurationErrors(draft).Should()
+            .Contain(x => x.Key == "Requirements.MandatoryModifiers");
     }
 
     private static DraftProposal CreateDraft() => new()
     {
         AuthorId = new PlayerId(1),
         CreatedAt = DateTimeOffset.UnixEpoch,
-        Rating = new RankedMapRating { AccStar = new(1), DiffStar = new(1) },
+        Rating = new MapProposalRating
+            { AccStar = new RankedMapRating.AccuracyStar(1), DiffStar = new RankedMapRating.DifficultyStar(1) },
         Requirements = new RankedMapRequirements(false, false, null, 0, 0, null),
         MapVersions = [new MapProposalVersion { PlayModeName = "Standard" }]
     };

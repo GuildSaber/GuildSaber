@@ -10,6 +10,7 @@ using GuildSaber.CSharpClient.Routes.Guilds.Categories;
 using GuildSaber.CSharpClient.Routes.Guilds.Members.AchievementStats;
 using GuildSaber.CSharpClient.Routes.Guilds.Members.ContextStats;
 using GuildSaber.CSharpClient.Routes.Leaderboards;
+using GuildSaber.CSharpClient.Routes.MapRequests;
 using GuildSaber.CSharpClient.Routes.Players;
 using GuildSaber.CSharpClient.Routes.RankedMaps;
 using GuildSaber.CSharpClient.Routes.RankedScores;
@@ -59,6 +60,7 @@ public class GuildSaberClient : IDisposable
         HttpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         if (HttpClient.BaseAddress is null)
             throw new ArgumentNullException(nameof(httpClient.BaseAddress), "HttpClient must have a BaseAddress set.");
+
         HttpClient.Timeout = TimeSpan.FromSeconds(30);
 
         if (!HttpClient.DefaultRequestHeaders.Contains("User-Agent"))
@@ -132,6 +134,9 @@ public class GuildSaberClient : IDisposable
     /// </summary>
     public RankedMapClient RankedMaps
         => field ??= new RankedMapClient(HttpClient, _authenticationHeader, _jsonOptions);
+
+    public MapRequestClient MapRequests
+        => field ??= new MapRequestClient(HttpClient, _authenticationHeader, _jsonOptions);
 
     /// <summary>
     /// Gets the ranked score client for interacting with ranked score endpoints.

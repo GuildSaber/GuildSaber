@@ -14,24 +14,19 @@ namespace GuildSaber.Common.UnitTests.Features.MapRequests;
 public class MapVotePersistenceTests
 {
     [Test]
-    [Arguments(typeof(MapRequestThreadVote), nameof(MapRequestThreadVote.ThreadId), typeof(MapRequestThread))]
-    [Arguments(typeof(MapProposalVote), nameof(MapProposalVote.ProposalId), typeof(MapProposal))]
-    public void Vote_ShouldHaveUniqueIdentityAndCascadeFromBothParents(
-        Type voteType, string targetKey, Type targetType)
+    public void Vote_ShouldHaveUniqueIdentityAndCascadeFromBothParents()
     {
         using var db = CreateContext();
-        var vote = db.Model.FindEntityType(voteType)!;
+        var vote = db.Model.FindEntityType(typeof(MapProposalVote))!;
 
-        string[] expectedKey = voteType == typeof(MapProposalVote)
-            ? [targetKey, "PlayerId", "Kind"]
-            : [targetKey, "PlayerId"];
-        vote.FindPrimaryKey()!.Properties.Select(x => x.Name).Should().Equal(expectedKey);
-        vote.FindProperty(targetKey)!.GetTypeMapping().Converter!.ProviderClrType.Should().Be(typeof(long));
+        vote.FindPrimaryKey()!.Properties.Select(x => x.Name).Should().Equal("ProposalId", "PlayerId", "Kind");
+        vote.FindProperty(nameof(MapProposalVote.ProposalId))!.GetTypeMapping().Converter!.ProviderClrType.Should()
+            .Be(typeof(long));
         vote.FindProperty("PlayerId")!.GetTypeMapping().Converter!.ProviderClrType.Should().Be(typeof(int));
 
         var relationships = vote.GetForeignKeys().ToArray();
         relationships.Select(x => x.PrincipalEntityType.ClrType)
-            .Should().BeEquivalentTo([targetType, typeof(Player)]);
+            .Should().BeEquivalentTo([typeof(MapProposal), typeof(Player)]);
 
         // Verify that unloaded votes also get deleted by the database, not only by EF's change tracker.
         var sql = db.Database.GenerateCreateScript();
@@ -46,7 +41,7 @@ public class MapVotePersistenceTests
     }
 
     [Test]
-    public void DeletingPlayer_ShouldDeleteThreadAndBothProposalVoteKindsWithoutDeletingAcceptedProposal()
+    public void DeletingPlayer_ShouldDeleteBothProposalVoteKindsWithoutDeletingAcceptedProposal()
     {
         using var db = CreateContext();
         var timestamp = new DateTimeOffset(2026, 10, 10, 12, 0, 0, TimeSpan.Zero);
@@ -73,16 +68,8 @@ public class MapVotePersistenceTests
             SubmittedAt = timestamp,
             AcceptedAt = timestamp,
             Requirements = new RankedMapRequirements(false, false, null, 0, 0, null),
-            Rating = new RankedMapRating { AccStar = new(1), DiffStar = new(1) }
-        };
-        var threadVote = new MapRequestThreadVote
-        {
-            ThreadId = thread.Id,
-            Thread = thread,
-            PlayerId = player.Id,
-            Player = player,
-            IsPositive = true,
-            VotedAt = timestamp
+            Rating = new MapProposalRating
+                { AccStar = new RankedMapRating.AccuracyStar(1), DiffStar = new RankedMapRating.DifficultyStar(1) }
         };
         var communityVote = new CommunityProposalVote
         {
@@ -102,12 +89,11 @@ public class MapVotePersistenceTests
             IsPositive = true,
             VotedAt = timestamp
         };
-        db.AttachRange(threadVote, communityVote, rankingTeamVote);
+        db.AttachRange(communityVote, rankingTeamVote);
 
         db.Remove(player);
         db.ChangeTracker.CascadeChanges();
 
-        db.Entry(threadVote).State.Should().Be(EntityState.Deleted);
         db.Entry(communityVote).State.Should().Be(EntityState.Deleted);
         db.Entry(rankingTeamVote).State.Should().Be(EntityState.Deleted);
         db.Entry(thread).State.Should().Be(EntityState.Unchanged);
@@ -122,6 +108,7 @@ public class MapVotePersistenceTests
     {
         using var db = CreateContext();
         var timestamp = new DateTimeOffset(2026, 10, 10, 12, 0, 0, TimeSpan.Zero);
+
         MapProposalVote CreateVote(bool rankingTeam) => rankingTeam
             ? new RankingTeamProposalVote
             {
@@ -172,12 +159,6 @@ public class MapVotePersistenceTests
     public void SeparateCommunityAndRankingTeamVoteCounts_ShouldTranslate()
     {
         using var db = CreateContext();
-        var threads = db.MapRequestThreads.Select(thread => new
-        {
-            thread.Id,
-            PositiveVotes = thread.Votes.Count(vote => vote.IsPositive),
-            NegativeVotes = thread.Votes.Count(vote => !vote.IsPositive)
-        });
         var proposals = db.MapProposals.OfType<SubmittedProposal>().Select(proposal => new
         {
             proposal.Id,
@@ -187,7 +168,6 @@ public class MapVotePersistenceTests
             RankingTeamNegativeVotes = proposal.Votes.OfType<RankingTeamProposalVote>().Count(vote => !vote.IsPositive)
         });
 
-        threads.ToQueryString().Should().NotBeNullOrWhiteSpace();
         proposals.ToQueryString().Should().NotBeNullOrWhiteSpace();
     }
 
@@ -209,7 +189,7 @@ public class MapVotePersistenceTests
         db.Attach(vote);
 
         db.Entry(vote).Property(x => x.Reason).CurrentValue.Should().Be(reason);
-        db.Entry(vote).Property<byte>("Kind").CurrentValue.Should().Be((byte)1);
+        db.Entry(vote).Property<byte>("Kind").CurrentValue.Should().Be(1);
 
         var reviews = db.MapProposalVotes.OfType<RankingTeamProposalVote>()
             .Where(x => x.IsPositive == isPositive)
