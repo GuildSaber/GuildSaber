@@ -62,15 +62,17 @@ public static class HybridCacheExtensions
                     Expiration = TimeSpan.FromHours(5)
                 });
 
-        public ValueTask<PlayerResponses.Player?> GetPlayerByIdAsync(PlayerId id, GuildSaberClient client)
-            => self.GetOrCreateAsync($"Player_{id}", (id, client),
-                async static (state, token) => await state.client.Players
-                    .GetByIdAsync(state.id, token)
-                    .Unwrap(),
-                new HybridCacheEntryOptions
-                {
-                    Expiration = TimeSpan.FromMinutes(20)
-                });
+        public ValueTask<PlayerResponses.Player?> GetPlayerByIdAsync(PlayerId? id, GuildSaberClient client)
+            => id is not { } playerId
+                ? ValueTask.FromResult<PlayerResponses.Player?>(null)
+                : self.GetOrCreateAsync($"Player_{playerId}", (playerId, client),
+                    async static (state, token) => await state.client.Players
+                        .GetByIdAsync(state.playerId, token)
+                        .Unwrap(),
+                    new HybridCacheEntryOptions
+                    {
+                        Expiration = TimeSpan.FromMinutes(20)
+                    });
 
         public ValueTask<GuildResponses.Guild?> GetGuildFromDiscordGuildIdAsync(
             DiscordGuildId id, GuildSaberClient client)
