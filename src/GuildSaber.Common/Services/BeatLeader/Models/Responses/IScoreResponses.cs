@@ -19,8 +19,8 @@ public interface IUnprocessedScore
     int WallsHit { get; init; }
     int Pauses { get; init; }
     string Platform { get; init; }
-    HMD Hmd { get; init; }
-    ControllerEnum Controller { get; init; }
+    BeatLeaderHmdId Hmd { get; init; }
+    BeatLeaderControllerId Controller { get; init; }
     string TimeSet { get; init; }
     int TimePost { get; init; }
 }

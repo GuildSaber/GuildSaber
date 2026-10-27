@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using GuildSaber.Api.Features.Guilds.Members.Http;
+using GuildSaber.Api.Features.Hardware.Http;
 using GuildSaber.Database.Models.Server.Players;
 
 namespace GuildSaber.Api.Features.Players.Http;
@@ -19,10 +20,6 @@ public static class PlayerMappers
                 self.Info.Country,
                 self.Info.CreatedAt
             ),
-            new PlayerResponses.PlayerHardwareInfo(
-                self.HardwareInfo.HMD.ToString(),
-                self.HardwareInfo.Platform.ToString()
-            ),
             new PlayerResponses.PlayerLinkedAccounts(
                 self.LinkedAccounts.SteamId,
                 self.LinkedAccounts.MetaPCId,
@@ -33,6 +30,8 @@ public static class PlayerMappers
             new PlayerResponses.PlayerSubscriptionInfo(
                 self.SubscriptionInfo.Tier.Map()
             ),
+            self.Hmd.Map(),
+            self.Platform.ToString(),
             self.IsManager
         );
 
@@ -45,10 +44,6 @@ public static class PlayerMappers
                     self.Info.Country,
                     self.Info.CreatedAt
                 ),
-                new PlayerResponses.PlayerHardwareInfo(
-                    self.HardwareInfo.HMD.ToString(),
-                    self.HardwareInfo.Platform.ToString()
-                ),
                 new PlayerResponses.PlayerLinkedAccounts(
                     self.LinkedAccounts.SteamId,
                     self.LinkedAccounts.MetaPCId,
@@ -59,6 +54,8 @@ public static class PlayerMappers
                 new PlayerResponses.PlayerSubscriptionInfo(
                     self.SubscriptionInfo.Tier.Map()
                 ),
+                self.Hmd.Map(),
+                self.Platform.ToString(),
                 self.IsManager),
             self.Members.Select(x => new MemberResponses.Member(
                 x.PlayerId,

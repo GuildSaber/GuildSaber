@@ -49,14 +49,14 @@ public static class ScoreStatisticsMappers
     private static WinTracker Map(this BLWinTracker self) => new(
         IsWin: self.Won,
         EndTime: self.EndTime,
-        PauseCount: self.NbOfPause,
-        TotalPauseDuration: self.TotalPauseDuration,
         JumpDistance: self.JumpDistance,
         AverageHeight: self.AverageHeight,
         TotalScore: self.TotalScore,
         MaxScore: self.MaxScore)
     {
-        AverageHeadPosition = self.AverageHeadPosition.Map()!.Value
+        // Complex property can't be mapped from contructor parameters.
+        PauseStatistics = new PauseStatistics(self.NbOfPause, self.TotalPauseDuration),
+        AverageHeadPosition = self.AverageHeadPosition.Map()
     };
 
     private static ScoreGraphTracker Map(this BLScoreGraphTracker self) => new(self.Graph);

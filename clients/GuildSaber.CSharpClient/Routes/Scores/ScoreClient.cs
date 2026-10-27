@@ -14,7 +14,7 @@ public sealed class ScoreClient(
     JsonSerializerOptions jsonOptions)
 {
     /// <summary>
-    /// Gets score statistics for a BeatLeader score.
+    /// Gets score statistics for a score.
     /// </summary>
     /// <param name="scoreId">The score identifier.</param>
     /// <param name="token">Cancellation token.</param>

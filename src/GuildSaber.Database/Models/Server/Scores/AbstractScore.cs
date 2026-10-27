@@ -1,3 +1,5 @@
+using GuildSaber.Database.Extensions;
+using GuildSaber.Database.Models.Server.Hardware;
 using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using GuildSaber.Database.Models.StrongTypes;
@@ -21,7 +23,15 @@ public abstract class AbstractScore
     public required bool IsFullCombo { get; init; }
     public required int MissedNotes { get; init; }
     public required int BadCuts { get; init; }
-    public required PlayerHardwareInfo.EHMD HMD { get; set; }
+    public required ScoreStatistics? Statistics { get; init; }
+
+    public HmdId? HmdId { get; set; }
+    public ControllerId? LeftControllerId { get; set; }
+    public ControllerId? RightControllerId { get; set; }
+
+    public Hmd? Hmd { get; set; }
+    public Controller? LeftController { get; set; }
+    public Controller? RightController { get; set; }
 
     public EScoreType Type { get; private init; }
     public enum EScoreType : byte { ScoreSaber = 0, BeatLeader = 1 }
@@ -77,6 +87,8 @@ public class AbstractScoreConfiguration : IEntityTypeConfiguration<AbstractScore
         builder.Property(x => x.BaseScore)
             .HasConversion<int>(from => from, to => BaseScore.CreateUnsafe(to).Value);
 
+        builder.ComplexProperty(x => x.Statistics).Configure(new ScoreStatisticConfiguration());
+
         builder.HasOne<Player>()
             .WithMany().HasForeignKey(x => x.PlayerId)
             .OnDelete(DeleteBehavior.Cascade);
@@ -84,5 +96,17 @@ public class AbstractScoreConfiguration : IEntityTypeConfiguration<AbstractScore
         builder.HasOne<SongDifficulty>()
             .WithMany().HasForeignKey(x => x.SongDifficultyId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(x => x.Hmd)
+            .WithMany().HasForeignKey(x => x.HmdId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.LeftController)
+            .WithMany().HasForeignKey(x => x.LeftControllerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.RightController)
+            .WithMany().HasForeignKey(x => x.RightControllerId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

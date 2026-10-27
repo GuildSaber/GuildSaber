@@ -10,11 +10,13 @@ namespace GuildSaber.Common.UnitTests.Services.ScoreSaber;
 
 public class ScoreSaberApiTests
 {
+    private readonly SSLeaderboardId _invalidLeaderboardId = SSLeaderboardId.TryCreate(int.MaxValue).Value;
     private readonly ScoreSaberId _invalidScoreSaberId = ScoreSaberId.CreateUnsafe(99999999999).Value;
 
     private readonly string _invalidSongCharacteristic = "InvalidMode";
     private readonly SongHash _invalidSongHash = SongHash.TryCreate("abcdef1234567890abcdef1234567890abcdef12").Value;
     private readonly ScoreSaberApi _scoreSaberApi;
+    private readonly SSLeaderboardId _validLeaderboardId = SSLeaderboardId.TryCreate(236516).Value;
     private readonly ScoreSaberId _validScoreSaberId = ScoreSaberId.CreateUnsafe(76561198126131670).Value;
 
     private readonly string _validSongCharacteristic = "Standard";
@@ -58,6 +60,7 @@ public class ScoreSaberApiTests
 
     [Test]
     [Arguments(PlayerScoresSortBy.Recent), Arguments(PlayerScoresSortBy.Top)]
+    [Arguments(PlayerScoresSortBy.Oldest), Arguments(PlayerScoresSortBy.Accuracy)]
     public async Task GetPlayerScores_ShouldReturnScoresInCorrectSortingOrder_WhenSortBySpecified(
         PlayerScoresSortBy sortBy)
     {
@@ -85,16 +88,24 @@ public class ScoreSaberApiTests
         // Arrange Assertion
         var compFunc = (Expression<Func<PlayerScore, IComparable>>)(sortBy switch
         {
-            PlayerScoresSortBy.Recent => x => x.Score.TimeSet,
+            PlayerScoresSortBy.Recent => x => x.Score.CreatedAt,
             PlayerScoresSortBy.Top => x => x.Score.Pp,
+            PlayerScoresSortBy.Oldest => x => x.Score.CreatedAt,
+            PlayerScoresSortBy.Accuracy => x => x.Score.Accuracy,
             _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
         });
 
 
         // Assert
-        scores.Should()
-            .BeInDescendingOrder(compFunc, "because the scores should be sorted according to the specified sortBy")
-            .And.HaveCount((requestOptions.MaxPage - requestOptions.Page + 1) * requestOptions.PageSize);
+        if (sortBy == PlayerScoresSortBy.Oldest)
+            scores.Should().BeInAscendingOrder(compFunc,
+                "because the scores should be sorted according to the specified sortBy");
+        else
+            scores.Should().BeInDescendingOrder(compFunc,
+                "because the scores should be sorted according to the specified sortBy");
+
+        scores.Should().HaveCount((requestOptions.MaxPage - requestOptions.Page + 1) * requestOptions.PageSize);
+        scores.Should().OnlyContain(x => x.Score.PersonalBest);
     }
 
     [Test]
@@ -104,20 +115,87 @@ public class ScoreSaberApiTests
         var playerId = _validScoreSaberId;
         var requestOptions = new ScoreSaberApi.PaginatedRequestOptions<PlayerScoresSortBy>
         {
-            Page = 1,
+            Page = 10_000,
             PageSize = 2,
-            MaxPage = 2,
+            MaxPage = 10_002,
             SortBy = PlayerScoresSortBy.Recent
         };
+        var iterationCount = 0;
 
         // Act
         await foreach (var data in _scoreSaberApi.GetPlayerScores(playerId, requestOptions))
         {
+            iterationCount++;
             if (!data.TryGetValue(out var scores))
                 Assert.Fail(data.Error);
 
-            scores.Should().NotBeNullOrEmpty("because we expect to receive scores");
+            scores.Should().NotBeNull().And.BeEmpty("because the requested page has no scores");
         }
+
+        iterationCount.Should().Be(1, "because enumeration should stop after the empty page");
+    }
+
+    [Test]
+    [Arguments(LeaderboardScoresSortBy.Score, SortDirection.Desc)]
+    [Arguments(LeaderboardScoresSortBy.Score, SortDirection.Asc)]
+    [Arguments(LeaderboardScoresSortBy.TimeSet, SortDirection.Desc)]
+    [Arguments(LeaderboardScoresSortBy.TimeSet, SortDirection.Asc)]
+    public async Task GetLeaderboardScores_ShouldReturnScoresInCorrectSortingOrder_WhenSortBySpecified(
+        LeaderboardScoresSortBy sortBy, SortDirection sortDirection)
+    {
+        // Arrange
+        var requestOptions = new ScoreSaberApi.PaginatedRequestOptions<LeaderboardScoresSortBy>
+        {
+            Page = 1, PageSize = 2, MaxPage = 2, SortBy = sortBy, SortDirection = sortDirection
+        };
+        var scores = new List<Score>();
+
+        // Act
+        await foreach (var data in _scoreSaberApi.GetLeaderboardScores(_validLeaderboardId, requestOptions))
+        {
+            if (!data.TryGetValue(out var page))
+                Assert.Fail(data.Error);
+
+            scores.AddRange(page!);
+        }
+
+        // Assert
+        var compFunc = (Expression<Func<Score, IComparable>>)(sortBy switch
+        {
+            LeaderboardScoresSortBy.Score => x => x.ModifiedScore,
+            LeaderboardScoresSortBy.TimeSet => x => x.CreatedAt,
+            _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, null)
+        });
+        if (sortDirection == SortDirection.Asc)
+            scores.Should().BeInAscendingOrder(compFunc);
+        else
+            scores.Should().BeInDescendingOrder(compFunc);
+
+        scores.Should().HaveCount((requestOptions.MaxPage - requestOptions.Page + 1) * requestOptions.PageSize);
+    }
+
+    [Test]
+    public async Task GetLeaderboardScores_ShouldReturnEmptyArrayAndStopIteration_WhenInvalidLeaderboardId()
+    {
+        // Arrange
+        var requestOptions = new ScoreSaberApi.PaginatedRequestOptions<LeaderboardScoresSortBy>
+        {
+            Page = 1, PageSize = 2, MaxPage = 2
+        };
+        var iterationCount = 0;
+
+        // Act
+        await foreach (var data in _scoreSaberApi.GetLeaderboardScores(_invalidLeaderboardId, requestOptions))
+        {
+            iterationCount++;
+            if (!data.TryGetValue(out var scores))
+                Assert.Fail(data.Error);
+
+            scores.Should().NotBeNull().And.BeEmpty("because the leaderboard ID is invalid");
+        }
+
+        // Assert
+        iterationCount.Should().Be(1, "because enumeration should stop after the empty page");
     }
 
     [Test]
@@ -149,8 +227,8 @@ public class ScoreSaberApiTests
         // Assert
         leaderboardInfo.SuccessShould().NotBeNull();
         leaderboardInfo.SuccessShould()
-            .Match<LeaderboardInfo>(lb =>
-                    lb.Difficulty.Difficulty == difficulty &&
+            .Match<Leaderboard>(lb =>
+                    lb.Difficulty.EDifficulty == difficulty &&
                     lb.Difficulty.GameMode == characteristic,
                 "Leaderboard should match the requested difficulty and characteristic"
             );

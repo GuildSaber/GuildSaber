@@ -263,7 +263,8 @@ public sealed class ScoreAddOrUpdatePipeline(
         Func<RankedScoreTransformContext, RankedScore?, RankedScore> transform)
     {
         foreach (var rankedMap in rankingContext.RankedMapsWithVersionsWithSongDifficulty)
-        foreach (var mapVersion in rankedMap.MapVersions)
+            // Ranked-score matching doesn't include play modes, so we process each difficulty once per ranked map.
+        foreach (var mapVersion in rankedMap.MapVersions.DistinctBy(x => x.SongDifficultyId))
         foreach (var point in rankingContext.ContextsWithPoints.First(x => x.Id == rankedMap.ContextId).Points)
         foreach (var score in rankingContext.Scores.Where(x => x.SongDifficultyId == mapVersion.SongDifficultyId))
         {

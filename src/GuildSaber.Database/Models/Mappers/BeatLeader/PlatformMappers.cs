@@ -4,12 +4,11 @@ namespace GuildSaber.Database.Models.Mappers.BeatLeader;
 
 public class PlatformMappers
 {
-    public static PlayerHardwareInfo.EPlatform Map(string platform)
-        => platform switch
-        {
-            "steam" => PlayerHardwareInfo.EPlatform.Steam,
-            "oculuspc" => PlayerHardwareInfo.EPlatform.MetaPC,
-            "oculus" => PlayerHardwareInfo.EPlatform.MetaNative,
-            _ => PlayerHardwareInfo.EPlatform.Unknown
-        };
+    public static Player.EPlatform Map(string platform) => platform switch
+    {
+        "steam" => Player.EPlatform.Steam,
+        "oculuspc" => Player.EPlatform.MetaPC,
+        "oculus" => Player.EPlatform.MetaNative,
+        _ => Player.EPlatform.Unknown
+    };
 }

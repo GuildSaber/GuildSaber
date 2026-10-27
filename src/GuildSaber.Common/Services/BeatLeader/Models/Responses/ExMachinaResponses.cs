@@ -15,13 +15,13 @@ public class ExMachinaResponse
 public class RatingResult
 {
     [JsonPropertyName("predicted_acc")]
-    public float PredictedAcc { get; set; } = 0;
+    public required float PredictedAcc { get; set; }
 
     [JsonPropertyName("acc_rating")]
     public float AccRating { get; set; } = 0;
 
     [JsonPropertyName("lack_map_calculation")]
-    public LackMapCalculation LackMapCalculation { get; set; } = new();
+    public required LackMapCalculation LackMapCalculation { get; set; }
 
     [JsonPropertyName("pointlist")]
     public List<CurvePoint> PointList { get; set; } = new();
@@ -33,13 +33,13 @@ public class LackMapCalculation
     public float PatternRating { get; set; } = 0;
 
     [JsonPropertyName("balanced_pass_diff")]
-    public float PassRating { get; set; } = 0;
+    public required float PassRating { get; set; }
 
     [JsonPropertyName("linear_rating")]
     public float LinearRating { get; set; } = 0;
 
     [JsonPropertyName("balanced_tech")]
-    public float TechRating { get; set; } = 0;
+    public required float TechRating { get; set; }
 
     [JsonPropertyName("low_note_nerf")]
     public float LowNoteNerf { get; set; } = 0;

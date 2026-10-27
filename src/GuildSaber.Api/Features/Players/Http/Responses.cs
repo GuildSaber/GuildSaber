@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using GuildSaber.Api.Features.Guilds.Members.Http;
+using GuildSaber.Api.Features.Hardware.Http;
 
 namespace GuildSaber.Api.Features.Players.Http;
 
@@ -8,9 +9,10 @@ public static class PlayerResponses
     public record Player(
         PlayerId Id,
         PlayerInfo PlayerInfo,
-        PlayerHardwareInfo PlayerHardwareInfo,
         PlayerLinkedAccounts PlayerLinkedAccounts,
         PlayerSubscriptionInfo PlayerSubscriptionInfo,
+        HardwareResponses.Hmd? Hmd,
+        string Platform,
         bool IsManager
     );
 
@@ -19,11 +21,6 @@ public static class PlayerResponses
         string AvatarUrl,
         string Country,
         DateTimeOffset CreatedAt
-    );
-
-    public readonly record struct PlayerHardwareInfo(
-        string HMD,
-        string Platform
     );
 
     public readonly record struct PlayerLinkedAccounts(

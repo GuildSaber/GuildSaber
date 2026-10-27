@@ -83,8 +83,12 @@ public sealed class RankedScoreService(
 
         dbContext.ChangeTracker.Clear();
         var rankedScores = await dbContext.RankedScores
-            .Include(x => x.Score)
-            .Include(x => x.PrevScore)
+            .Include(x => x.Score).ThenInclude(x => x.Hmd)
+            .Include(x => x.Score).ThenInclude(x => x.LeftController)
+            .Include(x => x.Score).ThenInclude(x => x.RightController)
+            .Include(x => x.PrevScore).ThenInclude(x => x!.Hmd)
+            .Include(x => x.PrevScore).ThenInclude(x => x!.LeftController)
+            .Include(x => x.PrevScore).ThenInclude(x => x!.RightController)
             .Where(x => x.ContextId == contextId && x.ScoreId == scoreId)
             .ToArrayAsync(token);
 

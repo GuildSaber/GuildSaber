@@ -78,9 +78,9 @@ public static class ScoringUtils
 
         if (requirements.MaxPauseDurationSec is not null)
         {
-            if (score is not BeatLeaderScore blScore)
+            if (score.Statistics?.WinTracker.PauseStatistics is not { } pauses)
                 invalidReason |= EInvalidReason.MissingTrackers;
-            else if (blScore.Statistics?.WinTracker.TotalPauseDuration > requirements.MaxPauseDurationSec)
+            else if (pauses.TotalPauseDuration > requirements.MaxPauseDurationSec)
                 invalidReason |= EInvalidReason.PausedTooMuch;
         }
 
@@ -124,16 +124,19 @@ public static class ScoringUtils
     /// </returns>
     public static (RankedMapRating.AccuracyStar, RankedMapRating.DifficultyStar) StarsFromExMachina(
         ExMachinaResponse exMachina, RankedMapRequirements requirements, CustomCurve accCurve)
-        => requirements.MandatoryModifiers switch
-        {
-            var mods when mods.HasFlag(EModifiers.SlowerSong)
-                => (exMachina.SS.ToAccStar(accCurve), exMachina.SS.ToDiffStar()),
-            var mods when mods.HasFlag(EModifiers.FasterSong)
-                => (exMachina.FS.ToAccStar(accCurve), exMachina.FS.ToDiffStar()),
-            var mods when mods.HasFlag(EModifiers.SuperFastSong)
-                => (exMachina.SFS.ToAccStar(accCurve), exMachina.SFS.ToDiffStar()),
-            _ => (exMachina.None.ToAccStar(accCurve), exMachina.None.ToDiffStar())
-        };
+    {
+        var rating = GetExMachinaRating(exMachina, requirements);
+        return (rating.ToAccStar(accCurve), rating.ToDiffStar());
+    }
+
+    public static RatingResult GetExMachinaRating(
+        ExMachinaResponse exMachina, RankedMapRequirements requirements) => requirements.MandatoryModifiers switch
+    {
+        var mods when mods.HasFlag(EModifiers.SlowerSong) => exMachina.SS,
+        var mods when mods.HasFlag(EModifiers.FasterSong) => exMachina.FS,
+        var mods when mods.HasFlag(EModifiers.SuperFastSong) => exMachina.SFS,
+        _ => exMachina.None
+    };
 
     public static RankedMapRating.AccuracyStar ToAccStar(this RatingResult rating, CustomCurve accCurve)
         => new(Inflate(GetPP(AccRating(rating, accCurve), rating, accCurve)));

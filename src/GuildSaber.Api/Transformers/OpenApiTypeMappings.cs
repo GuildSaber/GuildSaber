@@ -16,6 +16,10 @@ public static class OpenApiTypeMappings
             { Type = JsonSchemaType.Integer, Format = "int32" });
         OpenApiTypeTransformer.MapType<CategoryId>(new OpenApiSchema
             { Type = JsonSchemaType.Integer, Format = "int32" });
+        OpenApiTypeTransformer.MapType<HmdId>(new OpenApiSchema
+            { Type = JsonSchemaType.Integer, Format = "int16" });
+        OpenApiTypeTransformer.MapType<ControllerId>(new OpenApiSchema
+            { Type = JsonSchemaType.Integer, Format = "int16" });
         OpenApiTypeTransformer.MapType<DiscordId>(new OpenApiSchema
             { Type = JsonSchemaType.String, Examples = ["123456789012345678"], Format = "int64" });
         OpenApiTypeTransformer.MapType<SteamId>(new OpenApiSchema

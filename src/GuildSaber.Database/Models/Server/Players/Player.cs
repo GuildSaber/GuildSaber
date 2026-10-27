@@ -1,5 +1,6 @@
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds.Members;
+using GuildSaber.Database.Models.Server.Hardware;
 using GuildSaber.Database.Models.Server.MapRequests;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals;
 using GuildSaber.Database.Models.Server.MapRequests.Votes;
@@ -12,16 +13,26 @@ public class Player
 {
     public PlayerId Id { get; init; }
     public required PlayerInfo Info { get; set; }
-    public required PlayerHardwareInfo HardwareInfo { get; set; }
     public required PlayerLinkedAccounts LinkedAccounts { get; set; }
     public required PlayerSubscriptionInfo SubscriptionInfo { get; set; }
+    public required EPlatform Platform { get; set; }
+    public HmdId? HmdId { get; set; }
     public bool IsManager { get; set; }
 
+    public Hmd? Hmd { get; set; }
     public IList<Member> Members { get; init; } = null!;
     public IList<MapRequestThread> RequestThreads { get; init; } = null!;
     public IList<MapProposal> Proposals { get; init; } = null!;
     public IList<MapRequestThreadVote> RequestThreadVotes { get; init; } = null!;
     public IList<MapProposalVote> ProposalVotes { get; init; } = null!;
+
+    public enum EPlatform
+    {
+        Unknown = 0,
+        Steam = 1,
+        MetaNative = 2,
+        MetaPC = 3
+    }
 }
 
 public class PlayerConfiguration : IEntityTypeConfiguration<Player>
@@ -34,7 +45,6 @@ public class PlayerConfiguration : IEntityTypeConfiguration<Player>
             .ValueGeneratedOnAdd();
 
         builder.ComplexProperty(x => x.Info);
-        builder.ComplexProperty(x => x.HardwareInfo);
         builder.ComplexProperty(x => x.LinkedAccounts).Configure(new PlayerLinkedAccountsConfiguration());
         builder.ComplexProperty(x => x.SubscriptionInfo);
 
@@ -43,6 +53,10 @@ public class PlayerConfiguration : IEntityTypeConfiguration<Player>
         builder.HasIndex(x => x.LinkedAccounts.BLNativeId);
         builder.HasIndex(x => x.LinkedAccounts.ScoreSaberId);
         builder.HasIndex(x => x.LinkedAccounts.DiscordId);
+
+        builder.HasOne(x => x.Hmd)
+            .WithMany().HasForeignKey(x => x.HmdId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(x => x.Members)
             .WithOne(x => x.Player)

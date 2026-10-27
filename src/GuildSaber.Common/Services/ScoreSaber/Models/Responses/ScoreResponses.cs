@@ -1,99 +1,253 @@
+using System.Text.Json.Serialization;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 
 namespace GuildSaber.Common.Services.ScoreSaber.Models.Responses;
 
-public record PlayerScoreCollection
+public record ScoreCollection<TScore>(
+    [property: JsonRequired] TScore[] Data,
+    [property: JsonRequired] PaginationMetadata Metadata
+);
+
+public record PaginationMetadata(
+    [property: JsonRequired] int Page,
+    [property: JsonRequired] int ItemsPerPage,
+    [property: JsonRequired] int TotalItems,
+    [property: JsonRequired] int TotalPages
+);
+
+public record PlayerScore(
+    [property: JsonRequired] Score Score,
+    [property: JsonRequired] Leaderboard Leaderboard
+);
+
+public record ScoreDetails(
+    [property: JsonRequired] Leaderboard Leaderboard,
+    [property: JsonRequired] Score Score,
+    [property: JsonRequired] ScoreStats? ScoreStats
+);
+
+public record Device(
+    [property: JsonRequired] string? Hmd,
+    [property: JsonRequired] string? ControllerLeft,
+    [property: JsonRequired] string? ControllerRight
+);
+
+public record Player(
+    [property: JsonRequired] ScoreSaberId Id,
+    [property: JsonRequired] string Name,
+    [property: JsonRequired] string PlayerNameInGame,
+    [property: JsonRequired] string Country,
+    [property: JsonRequired] string? Role,
+    [property: JsonRequired] string Avatar,
+    [property: JsonRequired] long AvatarVersion,
+    [property: JsonRequired] int Permissions
+);
+
+public record Leaderboard(
+    [property: JsonRequired] DateTimeOffset CreatedAt,
+    [property: JsonRequired] int DailyScores,
+    [property: JsonRequired] Difficulty Difficulty,
+    [property: JsonRequired] SSLeaderboardId Id,
+    [property: JsonRequired] Map Map,
+    [property: JsonRequired] int MaxScore,
+    [property: JsonRequired] Realm Realm,
+    [property: JsonRequired] int TotalScores,
+    int? LegacyMaxScore = null
+);
+
+/// <remarks>Not using SongHash strong type because ScoreSaber sends "_ostFoo" as song hash for OSTs.</remarks>
+public record Map(
+    [property: JsonRequired] int Id,
+    [property: JsonRequired] string Hash,
+    [property: JsonRequired] BeatSaverKey? Bsid,
+    [property: JsonRequired] string SongName,
+    [property: JsonRequired] string SongSubName,
+    [property: JsonRequired] string SongAuthorName,
+    [property: JsonRequired] string LevelAuthorName,
+    [property: JsonRequired] double Bpm,
+    [property: JsonRequired] string CoverUrl,
+    [property: JsonRequired] bool Verified
+);
+
+public record Realm(
+    [property: JsonRequired] int RealmId,
+    [property: JsonRequired] string RealmName,
+    [property: JsonRequired] LeaderboardStatus LeaderboardStatus,
+    [property: JsonRequired] bool PositiveModifiers,
+    [property: JsonRequired] double Stars,
+    [property: JsonRequired] DateTimeOffset? RankedAt,
+    [property: JsonRequired] DateTimeOffset? QualifiedAt,
+    [property: JsonRequired] DateTimeOffset? LovedAt,
+    string? ModifierValues = null
+);
+
+[JsonConverter(typeof(JsonStringEnumConverter<LeaderboardStatus>))]
+public enum LeaderboardStatus
 {
-    public required Metadata Metadata { get; init; }
-    public required PlayerScore[] PlayerScores { get; init; }
+    [JsonStringEnumMemberName("UNRANKED")] Unranked = 0,
+    [JsonStringEnumMemberName("RANKED")] Ranked = 1,
+    [JsonStringEnumMemberName("QUALIFIED")] Qualified = 2,
+    [JsonStringEnumMemberName("LOVED")] Loved = 3
 }
 
-public record PlayerScore
+public record Difficulty(
+    [property: JsonRequired] SSLeaderboardId Id,
+    [property: JsonRequired, JsonPropertyName("difficulty")] EDifficulty EDifficulty,
+    [property: JsonRequired] SSGameMode GameMode,
+    [property: JsonRequired] string RawDifficulty
+);
+
+public record Score(
+    [property: JsonRequired] double Accuracy,
+    [property: JsonRequired] int BadCuts,
+    [property: JsonRequired] DateTimeOffset CreatedAt,
+    [property: JsonRequired] Device? Device,
+    [property: JsonRequired] bool FullCombo,
+    [property: JsonRequired] bool HasReplay,
+    [property: JsonRequired] ScoreSaberScoreId Id,
+    [property: JsonRequired, JsonPropertyName("legacyHmdId")] LegacyHMD? LegacyHmd,
+    [property: JsonRequired] int MaxCombo,
+    [property: JsonRequired] int MissedNotes,
+    [property: JsonRequired] int ModifiedScore,
+    [property: JsonRequired] string[] Mods,
+    [property: JsonRequired] bool PersonalBest,
+    [property: JsonRequired] Player Player,
+    [property: JsonRequired] PlayOutcome PlayOutcome,
+    [property: JsonRequired] double? PlayOutcomeTime,
+    [property: JsonRequired] double Pp,
+    [property: JsonRequired] int Rank,
+    [property: JsonRequired] int UnmodifiedScore,
+    [property: JsonRequired] string? Version,
+    [property: JsonRequired] double Weight,
+    bool HasHistory = false,
+    int ReplayViewCount = 0
+);
+
+[JsonConverter(typeof(JsonStringEnumConverter<PlayOutcome>))]
+public enum PlayOutcome
 {
-    public required Score Score { get; init; }
-    public required LeaderboardInfo Leaderboard { get; init; }
+    [JsonStringEnumMemberName("CLEAR")] Clear = 0,
+    [JsonStringEnumMemberName("FAIL")] Fail = 1,
+    [JsonStringEnumMemberName("QUIT")] Quit = 2,
+    [JsonStringEnumMemberName("RESTART")] Restart = 3
 }
 
-public class Score
-{
-    public required ScoreSaberScoreId Id { get; init; }
-    public required LeaderboardPlayerInfo? LeaderboardPlayerInfo { get; init; }
-    public required int Rank { get; init; }
-    public required int BaseScore { get; init; }
-    public required int ModifiedScore { get; init; }
-    public required float Pp { get; init; }
-    public required float Weight { get; init; }
-    public required string Modifiers { get; init; }
-    public required float Multiplier { get; init; }
-    public required int BadCuts { get; init; }
-    public required int MissedNotes { get; init; }
-    public required int MaxCombo { get; init; }
-    public required bool FullCombo { get; init; }
-    public required HMD Hmd { get; init; }
-    public required bool HasReplay { get; init; }
-    public required DateTimeOffset TimeSet { get; init; }
-    public required string? DeviceHmd { get; init; }
-    public required string? DeviceControllerLeft { get; init; }
-    public required string? DeviceControllerRight { get; init; }
-}
+public record ScoreStats(
+    [property: JsonRequired] int TotalScore,
+    [property: JsonRequired] int MaxScore,
+    [property: JsonRequired] bool Passed,
+    [property: JsonRequired] double FailTime,
+    [property: JsonRequired] double EndTime,
+    [property: JsonRequired] int MaxCombo,
+    [property: JsonRequired] int? Max115Streak,
+    [property: JsonRequired] double FcAcc,
+    [property: JsonRequired] double AccLeft,
+    [property: JsonRequired] double AccRight,
+    [property: JsonRequired] double LeftPreswing,
+    [property: JsonRequired] double RightPreswing,
+    [property: JsonRequired] double LeftPostswing,
+    [property: JsonRequired] double RightPostswing,
+    [property: JsonRequired] double LeftTimeDependence,
+    [property: JsonRequired] double RightTimeDependence,
+    [property: JsonRequired] double LeftTiming,
+    [property: JsonRequired] double RightTiming,
+    [property: JsonRequired] double[] LeftAverageCut,
+    [property: JsonRequired] double[] RightAverageCut,
+    [property: JsonRequired] int LeftMiss,
+    [property: JsonRequired] int RightMiss,
+    [property: JsonRequired] int LeftBadCuts,
+    [property: JsonRequired] int RightBadCuts,
+    [property: JsonRequired] int LeftBombs,
+    [property: JsonRequired] int RightBombs,
+    [property: JsonRequired] double LeftSaberHitOffset,
+    [property: JsonRequired] double RightSaberHitOffset,
+    [property: JsonRequired] double NoteSpawnOffset,
+    [property: JsonRequired] double AverageHeight,
+    [property: JsonRequired] HeadPosition AverageHeadPosition,
+    [property: JsonRequired] double[] ScoreGraph,
+    [property: JsonRequired] GridCutDetails GridCutDetails,
+    [property: JsonRequired] HandSummary[] HandSummary,
+    [property: JsonRequired] AccuracyDistribution AccuracyDistribution,
+    [property: JsonRequired] AccuracyTimeline AccuracyTimeline,
+    [property: JsonRequired] UnderswingStats UnderswingStats,
+    double? JumpDistance = null,
+    int? PauseCount = null,
+    double? PauseTotalDurationSeconds = null
+);
 
-public record LeaderboardInfo
-{
-    public required SSLeaderboardId Id { get; init; }
+public record HeadPosition(
+    [property: JsonRequired] double X,
+    [property: JsonRequired] double Y,
+    [property: JsonRequired] double Z
+);
 
-    /// <remarks>Not using SongHash strong type because scoresaber sends "_ostFoo" as song hash for OSTs</remarks>
-    public required string SongHash { get; init; }
+public record GridCutDetails(
+    [property: JsonRequired] GridCell[] Grid,
+    [property: JsonRequired] GridSummary[][] SummaryGrids
+);
 
-    public required string SongName { get; init; }
-    public required string SongSubName { get; init; }
-    public required string SongAuthorName { get; init; }
-    public required string LevelAuthorName { get; init; }
-    public required DifficultyResponse Difficulty { get; init; }
-    public required int MaxScore { get; init; }
+public record GridCell(
+    [property: JsonRequired] int Count,
+    [property: JsonRequired] double AvgScore,
+    [property: JsonRequired] CutDetails[] Left,
+    [property: JsonRequired] CutDetails[] Right
+);
 
-    public required DateTimeOffset CreatedDate { get; init; }
-    public required DateTimeOffset? RankedDate { get; init; }
-    public required DateTimeOffset? QualifiedDate { get; init; }
-    public required DateTimeOffset? LovedDate { get; init; }
+public record CutDetails(
+    [property: JsonRequired] int Count,
+    [property: JsonRequired] double AvgScore,
+    [property: JsonRequired] double AvgCutAngle,
+    [property: JsonRequired] double AvgCutOffset,
+    [property: JsonRequired] double[] AvgCutScore
+);
 
-    public required bool Ranked { get; init; }
-    public required bool Qualified { get; init; }
-    public required bool Loved { get; init; }
+public record GridSummary(
+    [property: JsonRequired] int Count,
+    [property: JsonRequired] double AvgScore
+);
 
-    public required float MaxPP { get; init; }
-    public required float Stars { get; init; }
-    public required bool PositiveModifiers { get; init; }
-    public required int Plays { get; init; }
-    public required int DailyPlays { get; init; }
-    public required string CoverImage { get; init; }
+public record HandSummary(
+    [property: JsonRequired] string Label,
+    [property: JsonRequired] HandStats Left,
+    [property: JsonRequired] HandStats Right
+);
 
-    public required PlayerScore? PlayerScore { get; init; }
-    public required DifficultyResponse[] Difficulties { get; init; }
-}
+public record HandStats(
+    [property: JsonRequired] int Count,
+    [property: JsonRequired] double AvgScore,
+    [property: JsonRequired] double AvgTd
+);
 
-public record DifficultyResponse
-{
-    public required string GameMode { get; init; }
-    public required string DifficultyRaw { get; init; }
+public record AccuracyDistribution(
+    [property: JsonRequired] int LeftTotal,
+    [property: JsonRequired] int RightTotal,
+    [property: JsonRequired] double[] LeftCount,
+    [property: JsonRequired] double[] RightCount,
+    [property: JsonRequired] double?[] LeftTd,
+    [property: JsonRequired] double?[] RightTd,
+    [property: JsonRequired] double?[] TimingStdDev
+);
 
-    public EDifficulty Difficulty => DifficultyRaw switch
-    {
-        [_, 'E', 'a', 's', 'y', ..] => EDifficulty.Easy,
-        [_, 'N', 'o', 'r', 'm', 'a', 'l', ..] => EDifficulty.Normal,
-        [_, 'H', 'a', 'r', 'd', ..] => EDifficulty.Hard,
-        [_, 'E', 'x', 'p', 'e', 'r', 't', 'P', 'l', 'u', 's', ..] => EDifficulty.ExpertPlus,
-        [_, 'E', 'x', 'p', 'e', 'r', 't', ..] => EDifficulty.Expert,
-        _ => throw new InvalidOperationException($"Unknown difficulty: {DifficultyRaw}")
-    };
-}
+public record AccuracyTimeline(
+    [property: JsonRequired] double[] Times,
+    [property: JsonRequired] AccuracyTimelineData Left,
+    [property: JsonRequired] AccuracyTimelineData Right,
+    [property: JsonRequired] AccuracyTimelineData Total
+);
 
-public class LeaderboardPlayerInfo
-{
-    public required ScoreSaberId Id { get; init; }
-    public required string Name { get; init; }
-    public required string ProfilePicture { get; init; }
-    public required string Country { get; init; }
-    public required int Permissions { get; init; }
-    public required string Role { get; init; }
-}
+public record AccuracyTimelineData(
+    [property: JsonRequired] double[] FullSwing,
+    [property: JsonRequired] double[] Actual
+);
+
+public record UnderswingStats(
+    [property: JsonRequired] int Count,
+    [property: JsonRequired] int FcScore,
+    [property: JsonRequired] int FullSwingScore,
+    [property: JsonRequired] int FullSwingFcScore,
+    [property: JsonRequired] int MaxCutScore,
+    [property: JsonRequired] double FcAcc,
+    [property: JsonRequired] double FullSwingAcc,
+    [property: JsonRequired] double FullSwingFcAcc
+);

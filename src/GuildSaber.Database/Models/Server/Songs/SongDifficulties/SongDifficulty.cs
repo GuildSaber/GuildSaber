@@ -19,6 +19,7 @@ public class SongDifficulty
     public required SongDifficultyStats Stats { get; init; }
 
     public GameMode GameMode { get; set; } = null!;
+    public Song Song { get; set; } = null!;
 
     public readonly record struct SongDifficultyId(long Value) : IEFStrongTypedId<SongDifficultyId, long>
     {
@@ -64,7 +65,7 @@ public class SongDifficultyConfiguration : IEntityTypeConfiguration<SongDifficul
         builder.ComplexProperty(x => x.Stats).Configure(new SongDifficultyStatsConfiguration());
 
         builder.HasOne(x => x.GameMode).WithMany().HasForeignKey(x => x.GameModeId);
-        builder.HasOne<Song>()
+        builder.HasOne(x => x.Song)
             .WithMany(x => x.SongDifficulties).HasForeignKey(x => x.SongId)
             .OnDelete(DeleteBehavior.Cascade);
     }

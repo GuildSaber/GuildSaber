@@ -7,28 +7,33 @@ public static class ModifiersMapper
 {
     private static readonly char[] _separator = [','];
 
+    private static AbstractScore.EModifiers ToModifier(string input) => input switch
+    {
+        "NO" => AbstractScore.EModifiers.NoObstacles,
+        "NB" => AbstractScore.EModifiers.NoBombs,
+        "NF" => AbstractScore.EModifiers.NoFail,
+        "SS" => AbstractScore.EModifiers.SlowerSong,
+        "BE" => AbstractScore.EModifiers.BatteryEnergy,
+        "IF" => AbstractScore.EModifiers.InstaFail,
+        "SC" => AbstractScore.EModifiers.SmallNotes,
+        "PM" => AbstractScore.EModifiers.ProMode,
+        "FS" => AbstractScore.EModifiers.FasterSong,
+        "SA" => AbstractScore.EModifiers.StrictAngles,
+        "DA" => AbstractScore.EModifiers.DisappearingArrows,
+        "GN" => AbstractScore.EModifiers.GhostNotes,
+        "NA" => AbstractScore.EModifiers.NoArrows,
+        "SF" => AbstractScore.EModifiers.SuperFastSong,
+        "OD" => AbstractScore.EModifiers.OldDots,
+        "OP" => AbstractScore.EModifiers.OffPlatform,
+        _ => AbstractScore.EModifiers.Unk
+    };
+
+    public static AbstractScore.EModifiers ToModifiers(string[] inputs) => inputs
+        .Aggregate<string, AbstractScore.EModifiers>(0, (current, modifier) => current | ToModifier(modifier));
+
     public static AbstractScore.EModifiers ToModifiers(string input) => input
         .Split(_separator, StringSplitOptions.RemoveEmptyEntries)
-        .Aggregate<string, AbstractScore.EModifiers>(0, (current, modifier) => current | modifier switch
-        {
-            "NO" => AbstractScore.EModifiers.NoObstacles,
-            "NB" => AbstractScore.EModifiers.NoBombs,
-            "NF" => AbstractScore.EModifiers.NoFail,
-            "SS" => AbstractScore.EModifiers.SlowerSong,
-            "BE" => AbstractScore.EModifiers.BatteryEnergy,
-            "IF" => AbstractScore.EModifiers.InstaFail,
-            "SC" => AbstractScore.EModifiers.SmallNotes,
-            "PM" => AbstractScore.EModifiers.ProMode,
-            "FS" => AbstractScore.EModifiers.FasterSong,
-            "SA" => AbstractScore.EModifiers.StrictAngles,
-            "DA" => AbstractScore.EModifiers.DisappearingArrows,
-            "GN" => AbstractScore.EModifiers.GhostNotes,
-            "NA" => AbstractScore.EModifiers.NoArrows,
-            "SF" => AbstractScore.EModifiers.SuperFastSong,
-            "OD" => AbstractScore.EModifiers.OldDots,
-            "OP" => AbstractScore.EModifiers.OffPlatform,
-            _ => AbstractScore.EModifiers.Unk
-        });
+        .Aggregate<string, AbstractScore.EModifiers>(0, (current, modifier) => current | ToModifier(modifier));
 
     public static string ToModifiersString(AbstractScore.EModifiers modifiers) => modifiers
         .GetFlags()

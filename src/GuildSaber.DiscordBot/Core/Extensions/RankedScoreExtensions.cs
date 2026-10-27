@@ -69,16 +69,11 @@ public static class RankedScoreExtensions
                 stringBuilder.Append("Misses: **").Append(score.MissedNotes).AppendLine("**");
 
             if (scoreStatistic is null)
-            {
                 stringBuilder.AppendLine("> No other stats available for this score.");
-            }
-            else
-            {
-                if (scoreStatistic.WinTracker.PauseCount > 0)
-                    stringBuilder.Append(
-                        $"Pause duration: **{scoreStatistic.WinTracker.TotalPauseDuration:N1}sec**" +
-                        $" in **{scoreStatistic.WinTracker.PauseCount}** pauses");
-            }
+            else if (scoreStatistic.WinTracker.PauseStatistics is { PauseCount: > 0 } pauses)
+                stringBuilder.Append(
+                    $"Pause duration: **{pauses.TotalPauseDuration:N1}sec**" +
+                    $" in **{pauses.PauseCount}** pauses");
 
             builder.WithTextDisplay(
                     $"### [{player.PlayerInfo.Username}](https://beatleader.com/u/{player.PlayerLinkedAccounts.BeatLeaderId})\n{stringBuilder}")

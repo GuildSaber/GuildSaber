@@ -19,8 +19,15 @@ public class BeatLeaderApi(HttpClient httpClient)
         {
             new BeatLeaderIdJsonConverter(),
             new BeatLeaderScoreIdJsonConverter(),
-            new BLLeaderboardIdJsonConverter()
+            new BLLeaderboardIdJsonConverter(),
+            new BeatLeaderHmdIdJsonConverter(),
+            new BeatLeaderControllerIdJsonConverter()
         }
+    };
+
+    private static readonly JsonSerializerOptions _exMachinaJsonOptions = new(_jsonOptions)
+    {
+        RespectNullableAnnotations = true
     };
 
     /// <summary>
@@ -210,8 +217,9 @@ public class BeatLeaderApi(HttpClient httpClient)
         };
 
     public async Task<Result<ExMachinaResponse?>> GetExMachinaStarRatingAsync(
-        SongHash hash, EDifficulty difficulty, string gameMode)
-        => await httpClient.GetAsync($"https://stage.api.beatleader.net/ppai2/{hash}/{gameMode}/{(int)difficulty}")
+        SongHash hash, EDifficulty difficulty, string gameMode, CancellationToken token = default)
+        => await httpClient.GetAsync(
+                $"https://stage.api.beatleader.net/ppai2/{hash}/{gameMode}/{(int)difficulty}", token)
             switch
             {
                 { StatusCode: HttpStatusCode.NotFound } => Success<ExMachinaResponse?>(null),
@@ -220,7 +228,7 @@ public class BeatLeaderApi(HttpClient httpClient)
                         $"Failed to retrieve ExMachina rating for song {hash} difficulty {difficulty} gameMode {gameMode}: {statusCode} {reasonPhrase}"
                     ),
                 var response => await Try(() => response.Content
-                    .ReadFromJsonAsync<ExMachinaResponse>(_jsonOptions))
+                    .ReadFromJsonAsync<ExMachinaResponse>(_exMachinaJsonOptions, token))
             };
 
     /// <summary>
@@ -233,16 +241,16 @@ public class BeatLeaderApi(HttpClient httpClient)
     /// - Success with null when the song doesn't exist (HTTP 404)
     /// - Failure with an error message for other HTTP errors
     /// </remarks>
-    public async Task<Result<LeaderboardsResponse?>> GetLeaderboardsAsync(SongHash hash)
-        => await httpClient.GetAsync($"leaderboards/hash/{hash}") switch
+    public async Task<Result<LeaderboardsResponse?>> GetLeaderboardsAsync(
+        SongHash hash, CancellationToken token = default)
+        => await httpClient.GetAsync($"leaderboards/hash/{hash}", token) switch
         {
             { StatusCode: HttpStatusCode.NotFound } => Success<LeaderboardsResponse?>(null),
             { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
                 => Failure<LeaderboardsResponse?>(
-                    $"Failed to retrieve leaderboards for song {hash}: {statusCode} {reasonPhrase}"
-                ),
+                    $"Failed to retrieve leaderboards for song {hash}: {statusCode} {reasonPhrase}"),
             var response => await Try(() => response.Content
-                .ReadFromJsonAsync<LeaderboardsResponse>(_jsonOptions))
+                .ReadFromJsonAsync<LeaderboardsResponse>(_jsonOptions, token))
         };
 
     /// <summary>
@@ -310,4 +318,48 @@ public class BeatLeaderApi(HttpClient httpClient)
                 yield break;
         }
     }
+
+    public async Task<Result<Hmd[]>> GetHmdsAsync(CancellationToken token = default)
+        => await httpClient.GetAsync("describe/hmd", token) switch
+        {
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<Hmd[]>($"Failed to retrieve hmds: {statusCode} {reasonPhrase}"),
+            var response => await Try<Hmd[]>(() => response.Content
+                .ReadFromJsonAsync<Hmd[]>(_jsonOptions, cancellationToken: token)!
+            )
+        };
+
+    public async Task<Result<Hmd?>> GetHmdAsync(int hmdId, CancellationToken token = default)
+        => await httpClient.GetAsync($"describe/hmd?value={hmdId}", token) switch
+        {
+            { StatusCode: HttpStatusCode.NotFound } => Success<Hmd?>(null),
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<Hmd?>($"Failed to retrieve hmd with Id {hmdId}: {statusCode} {reasonPhrase}"),
+            var response => await Try(() => response.Content
+                .ReadFromJsonAsync<Hmd?>(_jsonOptions, cancellationToken: token)
+            )
+        };
+
+
+    public async Task<Result<Controller[]>> GetControllersAsync(CancellationToken token = default)
+        => await httpClient.GetAsync("describe/controllers", token) switch
+        {
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<Controller[]>($"Failed to retrieve controllers: {statusCode} {reasonPhrase}"),
+            var response => await Try<Controller[]>(() => response.Content
+                .ReadFromJsonAsync<Controller[]>(_jsonOptions, cancellationToken: token)!
+            )
+        };
+
+    public async Task<Result<Controller?>> GetControllerAsync(int controllerId, CancellationToken token = default)
+        => await httpClient.GetAsync($"describe/controllers?value={controllerId}", token) switch
+        {
+            { StatusCode: HttpStatusCode.NotFound } => Success<Controller?>(null),
+            { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
+                => Failure<Controller?>(
+                    $"Failed to retrieve controller with Id {controllerId}: {statusCode} {reasonPhrase}"),
+            var response => await Try(() => response.Content
+                .ReadFromJsonAsync<Controller?>(_jsonOptions, cancellationToken: token)!
+            )
+        };
 }

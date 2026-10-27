@@ -12,8 +12,8 @@ public record CompactScore
     public required int MaxCombo { get; init; }
     public required int MissedNotes { get; init; }
     public required int BadCuts { get; init; }
-    public required HMD Hmd { get; init; }
-    public required ControllerEnum Controller { get; init; }
+    public required BeatLeaderHmdId Hmd { get; init; }
+    public required BeatLeaderControllerId Controller { get; init; }
     public required float Accuracy { get; init; }
     public required float? Pp { get; init; }
 
@@ -47,10 +47,9 @@ public record ScoreResponse : IProcessedScore, IWithPP, IWithPlayer, IWithScoreI
     public required bool FullCombo { get; init; }
     public required string Platform { get; init; }
     public required int MaxCombo { get; init; }
-    public required HMD Hmd { get; init; }
+    public required BeatLeaderHmdId Hmd { get; init; }
 
-    //TODO: Add Controller to BeatLeaderScore. (Might not be needed to be displayed on the website, but it could still be sent through the api).
-    public required ControllerEnum Controller { get; init; }
+    public required BeatLeaderControllerId Controller { get; init; }
     public required string TimeSet { get; init; }
     public required int TimePost { get; init; }
     public required ReplayOffsets Offsets { get; init; }

@@ -51,8 +51,8 @@ public record UploadedScore : IUnprocessedScore
     public required string Modifiers { get; init; }
     public required int Pauses { get; init; }
     public required bool FullCombo { get; init; }
-    public required HMD Hmd { get; init; }
-    public required ControllerEnum Controller { get; init; }
+    public required BeatLeaderHmdId Hmd { get; init; }
+    public required BeatLeaderControllerId Controller { get; init; }
     public required string Platform { get; init; }
 
     public required string TimeSet { get; init; }
@@ -91,8 +91,8 @@ public record AcceptedScore : IProcessedScore, IWithScoreContext, IWithAcc
     public required string Modifiers { get; init; }
     public required int Pauses { get; init; }
     public required bool FullCombo { get; init; }
-    public required HMD Hmd { get; init; }
-    public required ControllerEnum Controller { get; init; }
+    public required BeatLeaderHmdId Hmd { get; init; }
+    public required BeatLeaderControllerId Controller { get; init; }
     public required string Platform { get; init; }
 
     public required string TimeSet { get; init; }
@@ -137,8 +137,8 @@ public record RejectedScore : IProcessedScore, IWithScoreContext, IWithAcc
     public required string Modifiers { get; init; }
     public required int Pauses { get; init; }
     public required bool FullCombo { get; init; }
-    public required HMD Hmd { get; init; }
-    public required ControllerEnum Controller { get; init; }
+    public required BeatLeaderHmdId Hmd { get; init; }
+    public required BeatLeaderControllerId Controller { get; init; }
     public required string Platform { get; init; }
 
     public required string TimeSet { get; init; }

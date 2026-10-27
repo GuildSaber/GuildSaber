@@ -43,7 +43,7 @@ public class PlayerScoreStats
     public required float AverageRank { get; init; }
 
     public required string TopPlatform { get; init; } = "";
-    public required HMD TopHMD { get; init; }
+    public required BeatLeaderHmdId TopHMD { get; init; }
 }
 
 public interface IWithPlayerScoreStats

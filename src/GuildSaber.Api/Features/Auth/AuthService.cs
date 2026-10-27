@@ -1,6 +1,7 @@
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Auth.Sessions;
 using GuildSaber.Api.Features.Players.Http;
+using GuildSaber.Api.Features.Scores.Services;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models;
@@ -25,9 +26,11 @@ public class AuthService(
     IHttpUserAgentParserAccessor userAgentParser,
     BeatLeaderApi beatLeaderApi,
     ScoreSaberApi scoreSaberApi,
+    HmdResolverService hmdResolver,
     ServerDbContext dbContext,
     TimeProvider timeProvider,
-    HybridCache cache)
+    HybridCache cache,
+    ILogger<AuthService> logger)
 {
     public async Task<Maybe<PlayerId>> GetPlayerIdAsync(BeatLeaderId beatLeaderId)
         => await dbContext.Players
@@ -128,7 +131,7 @@ public class AuthService(
 
     public void DeleteSessionCookie(HttpResponse response) => sessionCookieService.Delete(response);
 
-    public Task<Result<Player>> CreatePlayerAsync(BeatLeaderId beatleaderId)
+    public Task<Result<Player>> CreatePlayerAsync(BeatLeaderId beatleaderId, CancellationToken token = default)
         => beatLeaderApi.GetPlayerProfileWithStatsAsync(beatleaderId)
             .Bind(async blPlayer =>
             {
@@ -160,16 +163,13 @@ public class AuthService(
                         Country = blPlayer.Country,
                         CreatedAt = timeProvider.GetUtcNow()
                     },
-                    HardwareInfo = new PlayerHardwareInfo
-                    {
-                        HMD = blPlayer.ScoreStats.TopHMD.Map(),
-                        Platform = PlatformMappers.Map(blPlayer.Platform)
-                    },
+                    HmdId = await hmdResolver.ResolveHmdIdAsync(blPlayer.ScoreStats.TopHMD, token),
+                    Platform = PlatformMappers.Map(blPlayer.Platform),
                     LinkedAccounts = new PlayerLinkedAccounts(
                         steamId,
                         metaPCId,
                         blNativeId,
-                        await GetUsedScoreSaberIdAsync(steamId, metaPCId),
+                        (await GetUsedScoreSaberIdAsync(steamId, metaPCId)).GetValueOrDefault(),
                         DiscordId: null),
                     SubscriptionInfo = new PlayerSubscriptionInfo(PlayerSubscriptionInfo.ESubscriptionTier.None),
                     IsManager = managerSettings.Value.SteamIds.Contains(blPlayer.Id)
@@ -178,15 +178,8 @@ public class AuthService(
             .Map(static (player, dbContext) => dbContext
                 .AddAndSaveAsync(player), dbContext);
 
-    public async Task<ScoreSaberId?> GetUsedScoreSaberIdAsync(SteamId? steamId, MetaPCId? metaPCId)
+    public async Task<Result<ScoreSaberId?>> GetUsedScoreSaberIdAsync(SteamId? steamId, MetaPCId? metaPCId)
     {
-        var ssIds = new[] { ScoreSaberId.CreateUnsafe(steamId), ScoreSaberId.CreateUnsafe(metaPCId) }
-            .OfType<ScoreSaberId>()
-            .ToArray();
-
-        if (ssIds.Length == 0)
-            return null;
-
         var latestScoreRequest = new ScoreSaberApi.PaginatedRequestOptions<PlayerScoresSortBy>
         {
             Page = 1,
@@ -195,20 +188,24 @@ public class AuthService(
             SortBy = PlayerScoresSortBy.Recent
         };
 
-        var latestScores = ssIds.Select(async scoreSaberId => (scoreSaberId, latestScore: await scoreSaberApi
-                .GetPlayerScores(scoreSaberId, latestScoreRequest)
-                .SelectMany(result => result.Unwrap() ?? [])
-                .FirstOrDefaultAsync()))
-            .ToList();
-
-        return (from tuple in await Task.WhenAll(latestScores)
-                where tuple.latestScore is not null
-                orderby tuple.latestScore.Score.TimeSet descending
-                select tuple.scoreSaberId)
-            .FirstOrDefault();
+        return (await Task.WhenAll(new[] { ScoreSaberId.CreateUnsafe(steamId), ScoreSaberId.CreateUnsafe(metaPCId) }
+                .OfType<ScoreSaberId>()
+                .Distinct()
+                .Select(async scoreSaberId => (await scoreSaberApi
+                        .GetPlayerScores(scoreSaberId, latestScoreRequest)
+                        .FirstOrDefaultAsync())
+                    .Map(static (scores, scoreSaberId) => (scoreSaberId, latestScore: scores?.FirstOrDefault()),
+                        scoreSaberId))))
+            .Combine()
+            .Map(scores => (from tuple in scores
+                            where tuple.latestScore is not null
+                            orderby tuple.latestScore.Score.CreatedAt descending
+                            select (ScoreSaberId?)tuple.scoreSaberId)
+                .FirstOrDefault())
+            .TapError(error => logger.LogWarning("Unable to resolve the active ScoreSaber account: {Error}", error));
     }
 
-    public Task UpdatePlayerInfoAsync(PlayerId playerId, BeatLeaderId beatleaderId)
+    public Task UpdatePlayerInfoAsync(PlayerId playerId, BeatLeaderId beatleaderId, CancellationToken token = default)
         => beatLeaderApi.GetPlayerProfileWithStatsAsync(beatleaderId)
             .Bind(async blPlayer =>
             {
@@ -226,11 +223,8 @@ public class AuthService(
                     CreatedAt = player.Info.CreatedAt
                 };
 
-                player.HardwareInfo = new PlayerHardwareInfo
-                {
-                    HMD = blPlayer.ScoreStats.TopHMD.Map(),
-                    Platform = PlatformMappers.Map(blPlayer.Platform)
-                };
+                player.HmdId = await hmdResolver.ResolveHmdIdAsync(blPlayer.ScoreStats.TopHMD, token) ?? player.HmdId;
+                player.Platform = PlatformMappers.Map(blPlayer.Platform);
 
                 // BeatLeader doesn't return linked accounts if only one of them is linked.
                 var steamId = blPlayer.LinkedIds?.SteamId ?? (beatleaderId.Kind == BeatLeaderId.Platform.Steam
@@ -254,7 +248,8 @@ public class AuthService(
                     SteamId = steamId,
                     MetaPCId = metaPCId,
                     BLNativeId = blNativeId,
-                    ScoreSaberId = await GetUsedScoreSaberIdAsync(steamId, metaPCId)
+                    ScoreSaberId = (await GetUsedScoreSaberIdAsync(steamId, metaPCId))
+                    .GetValueOrDefault(player.LinkedAccounts.ScoreSaberId)
                 };
 
                 return Success(player);

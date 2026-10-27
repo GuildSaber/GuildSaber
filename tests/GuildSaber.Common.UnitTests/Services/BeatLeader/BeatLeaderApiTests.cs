@@ -541,4 +541,87 @@ public class BeatLeaderApiTests
         receivedNull.Should()
             .BeTrue("because iteration should stop by receiving null when no more scores are available");
     }
+
+    [Test]
+    public async Task GetHmdsAsync_ShouldReturnAllHmds()
+    {
+        // Act
+        var hmds = await _beatLeaderApi.GetHmdsAsync();
+
+        // Assert
+        hmds.SuccessShould()
+            .NotBeNull("The Hmds response should not be null")
+            .And.NotBeEmpty("The Hmds response should contain at least one Hmd");
+    }
+
+    [Test]
+    public async Task GetHmdAsync_ShouldReturnHmd_WhenValidHmdId()
+    {
+        // Arrange
+        var validHmd = new Hmd(Value: BeatLeaderHmdId.TryCreate(1).Value, Key: "rift", Name: "Oculus Rift");
+
+        // Act
+        var hmd = await _beatLeaderApi.GetHmdAsync(validHmd.Value);
+
+        // Assert
+        hmd.SuccessShould()
+            .NotBeNull("The Hmd response should not be null for a valid HMD ID")
+            .And.Be(validHmd, "The Hmd response should match the expected Hmd for the given ID");
+    }
+
+    [Test]
+    public async Task GetHmdAsync_ShouldReturnNull_WhenInvalidHmdId()
+    {
+        // Arrange
+        const int invalidHmdId = 9999;
+
+        // Act
+        var hmd = await _beatLeaderApi.GetHmdAsync(invalidHmdId);
+
+        // Assert
+        hmd.SuccessShould()
+            .BeNull("The Hmd response should be null for an invalid HMD ID");
+    }
+
+    [Test]
+    public async Task GetControllersAsync_ShouldReturnAllControllers()
+    {
+        // Act
+        var hmds = await _beatLeaderApi.GetControllersAsync();
+
+        // Assert
+        hmds.SuccessShould()
+            .NotBeNull("The Controllers response should not be null")
+            .And.NotBeEmpty("The Controllers response should contain at least one controller");
+    }
+
+    [Test]
+    public async Task GetControllerAsync_ShouldReturnController_WhenValidControllerId()
+    {
+        // Arrange
+        var validController = new Controller(Value: BeatLeaderControllerId.TryCreate(1).Value, Key: "oculustouch",
+            Name: "Oculus Touch");
+
+        // Act
+        var controller = await _beatLeaderApi.GetControllerAsync(validController.Value);
+
+        // Assert
+        controller.SuccessShould()
+            .NotBeNull("The Controller response should not be null for a valid controller ID")
+            .And.Be(validController, "The Controller response should match the expected controller for the given ID");
+    }
+
+    [Test]
+    public async Task GetControllerAsync_ShouldReturnNull_WhenInvalidControllerId()
+    {
+        // Arrange
+        const int invalidControllerId = 9999;
+
+        // Act
+        var controller = await _beatLeaderApi.GetControllerAsync(invalidControllerId);
+
+        // Assert
+        controller.SuccessShould()
+            .BeNull("The Controller response should be null for an invalid controller ID");
+    }
 }

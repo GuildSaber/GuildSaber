@@ -6,6 +6,7 @@ using GuildSaber.Database.Models.Server.Guilds.Boosts;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
+using GuildSaber.Database.Models.Server.Hardware;
 using GuildSaber.Database.Models.Server.MapRequests;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals.Snapshots;
@@ -65,6 +66,9 @@ public class ServerDbContext : DbContext
     public DbSet<AbstractScore> Scores { get; set; }
     public DbSet<ScoreSaberScore> ScoreSaberScores { get; set; }
     public DbSet<BeatLeaderScore> BeatLeaderScores { get; set; }
+
+    public DbSet<Hmd> Hmds { get; set; }
+    public DbSet<Controller> Controllers { get; set; }
 
     public DbSet<RankedScore> RankedScores { get; set; }
     public DbSet<ScoredRankedScore> ScoredRankedScores { get; set; }

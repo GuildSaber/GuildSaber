@@ -1,11 +1,13 @@
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.Scores.Pipelines;
+using GuildSaber.Api.Features.Scores.Services;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models;
+using GuildSaber.Common.Services.ScoreSaber.Models.Responses;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Mappers.BeatLeader;
 using GuildSaber.Database.Models.Mappers.ScoreSaber;
@@ -18,6 +20,8 @@ public sealed class PlayerScoresPipeline(
     ServerDbContext dbContext,
     BeatLeaderApi beatLeaderApi,
     ScoreSaberApi scoreSaberApi,
+    HmdResolverService hmdResolver,
+    ControllerResolverService controllerResolver,
     ScoreAddOrUpdatePipeline addOrUpdatePipeline,
     MemberPointStatsPipeline memberPointStatsPipeline,
     MemberAchievementStatsPipeline memberAchievementStatsPipeline,
@@ -77,8 +81,9 @@ public sealed class PlayerScoresPipeline(
         var chunkedScoresToProcess = new List<(ScoreResponse, SongDifficultyId)>(parallelizedChunkSize);
 
         var toBeatLeaderScoreAsync = async (ScoreResponse score, SongDifficultyId songDifficultyId) =>
-            score.Map(playerId, songDifficultyId, (await beatLeaderApi.GetScoreStatisticsAsync(score.Id))
-                .GetValueOrDefault().Map());
+            await score.MapAsync(playerId, songDifficultyId, (await beatLeaderApi.GetScoreStatisticsAsync(score.Id))
+                .GetValueOrDefault().Map(), hmdResolver.ResolveHmdIdAsync, controllerResolver.ResolveControllerIdAsync,
+                token);
 
         // Unwrap the result to kill the current Task if there's an error.
         await foreach (var scoreResponses in beatLeaderApi.GetPlayerScoresAsyncEnumerable(beatLeaderId, initialRequest)
@@ -139,12 +144,14 @@ public sealed class PlayerScoresPipeline(
         // Unwrap the result to kill the current Task if there's an error.
         await foreach (var playerScore in scoreSaberApi.GetPlayerScores(scoreSaberId, initialRequest)
                            .SelectMany(x => x.Unwrap() ?? [])
+                           .Where(x => x.Score.PlayOutcome == PlayOutcome.Clear)
                            .WithCancellation(token))
         {
-            if (!(await GetSongDifficultyIdAsync(playerScore.Leaderboard.Id, dbContext, token))
+            if (!(await ResolveSongDifficultyIdAsync(playerScore.Leaderboard, dbContext, token))
                 .TryGetValue(out var difficultyId)) continue;
 
-            var abstractScore = playerScore.Score.Map(playerId, difficultyId);
+            var abstractScore = await playerScore.Score.MapAsync(playerId, difficultyId,
+                hmdResolver.ResolveHmdIdAsync, controllerResolver.ResolveControllerIdAsync, token);
             var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(abstractScore, token);
 
             count++;
@@ -160,6 +167,43 @@ public sealed class PlayerScoresPipeline(
         }
 
         logger.LogInformation("Completed importing {count} ScoreSaber scores for player {PlayerId}", count, playerId);
+    }
+
+    /// <summary>Resolves a ScoreSaber score's difficulty, learning its leaderboard ID when it was previously unavailable.</summary>
+    public static async Task<Maybe<SongDifficultyId>> ResolveSongDifficultyIdAsync(
+        Leaderboard leaderboard, ServerDbContext dbContext, CancellationToken token)
+    {
+        if ((await GetSongDifficultyIdAsync(leaderboard.Id, dbContext, token)).TryGetValue(out var difficultyId))
+            return From(difficultyId);
+
+        // ScoreSaber also sends OST identifiers, which are not BeatSaver song hashes.
+        if (!SongHash.TryCreate(leaderboard.Map.Hash).TryGetValue(out var hash))
+            return None;
+
+        var difficulty = leaderboard.Difficulty.EDifficulty;
+        var candidates = await dbContext.Songs
+            .Where(song => EF.Functions.ILike(song.Hash, hash))
+            .SelectMany(song => song.SongDifficulties)
+            .Where(songDifficulty => songDifficulty.Difficulty == difficulty)
+            .Select(songDifficulty => new { songDifficulty.Id, GameMode = songDifficulty.GameMode.Name })
+            .ToArrayAsync(token);
+
+        var matches = candidates.Where(candidate
+                => SSGameMode.TryCreate(candidate.GameMode).TryGetValue(out var gameMode)
+                   && string.Equals(gameMode, leaderboard.Difficulty.GameMode, StringComparison.OrdinalIgnoreCase))
+            .Take(2).ToArray();
+
+        if (matches is not [var match])
+            return None;
+
+        var songDifficulties = dbContext.SongDifficulties.Where(x => x.Id == match.Id);
+        var updatedCount = await songDifficulties.Where(x => x.SSLeaderboardId == null)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.SSLeaderboardId, leaderboard.Id), token);
+
+        // Another import may have resolved it concurrently. Never overwrite a different identity.
+        return updatedCount > 0 || await songDifficulties.AnyAsync(x => x.SSLeaderboardId == leaderboard.Id, token)
+            ? From(match.Id)
+            : None;
     }
 
     public static async Task<Maybe<SongDifficultyId>> GetSongDifficultyIdAsync(

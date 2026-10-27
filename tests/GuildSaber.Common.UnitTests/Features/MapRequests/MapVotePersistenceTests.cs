@@ -54,7 +54,7 @@ public class MapVotePersistenceTests
         {
             Id = new PlayerId(1),
             Info = new PlayerInfo("Voter", "", "", timestamp),
-            HardwareInfo = default,
+            Platform = default,
             LinkedAccounts = default,
             SubscriptionInfo = default
         };

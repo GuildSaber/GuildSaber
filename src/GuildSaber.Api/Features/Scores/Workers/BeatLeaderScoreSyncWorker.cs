@@ -3,6 +3,7 @@ using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.Players.Http;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Features.Scores.Pipelines;
+using GuildSaber.Api.Features.Scores.Services;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatLeader.Models.Responses;
 using GuildSaber.Database.Contexts.Server;
@@ -51,6 +52,8 @@ public class BeatLeaderScoreSyncWorker(
         await using var scope = serviceScopeFactory.CreateAsyncScope();
         await using var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
 
+        var hmdResolver = scope.ServiceProvider.GetRequiredService<HmdResolverService>();
+        var controllerResolver = scope.ServiceProvider.GetRequiredService<ControllerResolverService>();
         var cache = scope.ServiceProvider.GetRequiredService<HybridCache>();
         var pointStatsLogger = scope.ServiceProvider.GetRequiredService<ILogger<MemberPointStatsPipeline>>();
         var achievementStatsLogger = scope.ServiceProvider
@@ -78,13 +81,17 @@ public class BeatLeaderScoreSyncWorker(
 
                 var dbScore = response switch
                 {
-                    GeneralSocketMessage<UploadedScore>(var upload) => upload.Map(playerId, difficultyId),
-                    GeneralSocketMessage<AcceptedScore>(var accepted) => accepted.Map<AcceptedScore>(playerId,
+                    GeneralSocketMessage<UploadedScore>(var upload) => await upload.MapAsync(playerId, difficultyId,
+                        hmdResolver.ResolveHmdIdAsync, controllerResolver.ResolveControllerIdAsync, token),
+                    GeneralSocketMessage<AcceptedScore>(var accepted) => await accepted.MapAsync<AcceptedScore>(
+                        playerId, difficultyId,
+                        (await beatLeaderApi.GetScoreStatisticsAsync(accepted.Id)).GetValueOrDefault().Map(),
+                        hmdResolver.ResolveHmdIdAsync, controllerResolver.ResolveControllerIdAsync, token),
+                    GeneralSocketMessage<RejectedScore>(var rejected) => await rejected.MapAsync<RejectedScore>(
+                        playerId,
                         difficultyId,
-                        (await beatLeaderApi.GetScoreStatisticsAsync(accepted.Id)).GetValueOrDefault().Map()),
-                    GeneralSocketMessage<RejectedScore>(var rejected) => rejected.Map<RejectedScore>(playerId,
-                        difficultyId,
-                        (await beatLeaderApi.GetScoreStatisticsAsync(rejected.Id)).GetValueOrDefault().Map()),
+                        (await beatLeaderApi.GetScoreStatisticsAsync(rejected.Id)).GetValueOrDefault().Map(),
+                        hmdResolver.ResolveHmdIdAsync, controllerResolver.ResolveControllerIdAsync, token),
                     _ => throw new InvalidOperationException(
                         $"Unknown message type received from BeatLeader: {response.GetType().Name}")
                 };

@@ -17,11 +17,11 @@ public class ScoreEndpoints : IEndpoints
         group.MapGet("/{scoreId}/statistics", GetScoreStatisticsAsync)
             .WithName("GetScoreStatistics")
             .WithSummary("Get score statistics.")
-            .WithDescription("Get score statistics by score Id (BeatLeader kind only).");
+            .WithDescription("Get score statistics by score Id.");
     }
 
     private static async Task<Results<Ok<ScoreStatistics>, NotFound>> GetScoreStatisticsAsync(
-        [FromRoute] ScoreId scoreId, ServerDbContext context) => await context.BeatLeaderScores
+        [FromRoute] ScoreId scoreId, ServerDbContext context) => await context.Scores
             .Where(x => x.Id == scoreId)
             .Select(ScoreMappers.MapScoreStatisticsExpression)
             .FirstOrDefaultAsync() switch

@@ -1,6 +1,9 @@
 namespace GuildSaber.Common.Services.ScoreSaber.Models;
 
-public enum HMD
+/// <remarks>
+/// There isn't more Hmds than the ones listed here, the Quest2 and onward was added when they moved to the Device system.
+/// </remarks>
+public enum LegacyHMD
 {
     Unknown = 0,
     Rift = 1,

@@ -12,7 +12,7 @@ public class ScoreStatistics
 
 public class HitTracker
 {
-    public required int MaxStreak { get; init; }
+    public required int? MaxStreak { get; init; }
     public required float LeftTiming { get; init; }
     public required float RightTiming { get; init; }
     public required int LeftMiss { get; init; }

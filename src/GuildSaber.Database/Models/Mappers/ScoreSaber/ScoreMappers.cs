@@ -1,3 +1,4 @@
+using GuildSaber.Common.Services.ScoreSaber.Models;
 using GuildSaber.Common.Services.ScoreSaber.Models.Responses;
 using GuildSaber.Database.Models.Server.Scores;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
@@ -7,26 +8,29 @@ namespace GuildSaber.Database.Models.Mappers.ScoreSaber;
 
 public static class ScoreMappers
 {
-    public static ScoreSaberScore Map(
+    public static async ValueTask<ScoreSaberScore> MapAsync(
         this Score score, PlayerId playerId,
-        SongDifficulty.SongDifficultyId songDifficultyId) => new()
+        SongDifficulty.SongDifficultyId songDifficultyId,
+        Func<Device?, LegacyHMD?, CancellationToken, ValueTask<HmdId?>> resolveHmdId,
+        Func<string?, CancellationToken, ValueTask<ControllerId?>> resolveControllerId,
+        CancellationToken token) => new()
     {
         PlayerId = playerId,
         SongDifficultyId = songDifficultyId,
         ScoreSaberScoreId = score.Id,
 
-        BaseScore = BaseScore.CreateUnsafe(score.BaseScore).Value,
-        Modifiers = ModifiersMapper.ToModifiers(score.Modifiers),
-        SetAt = score.TimeSet,
+        BaseScore = BaseScore.CreateUnsafe(score.UnmodifiedScore).Value,
+        Modifiers = ModifiersMapper.ToModifiers(score.Mods),
+        SetAt = score.CreatedAt,
 
         MaxCombo = score.MaxCombo,
         IsFullCombo = score.FullCombo,
         BadCuts = score.BadCuts,
         MissedNotes = score.MissedNotes,
-        HMD = score.Hmd.Map(score.DeviceHmd),
+        Statistics = null,
 
-        DeviceHmd = score.DeviceHmd,
-        DeviceControllerLeft = score.DeviceControllerLeft,
-        DeviceControllerRight = score.DeviceControllerRight
+        HmdId = await resolveHmdId(score.Device, score.LegacyHmd, token),
+        LeftControllerId = await resolveControllerId(score.Device?.ControllerLeft, token),
+        RightControllerId = await resolveControllerId(score.Device?.ControllerRight, token)
     };
 }
