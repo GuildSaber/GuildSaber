@@ -19,7 +19,7 @@ builder.AddDockerComposeEnvironment("guildsaber-env")
         }));
 
 var postgres = builder.AddPostgres("postgres")
-    .WithImageTag("18.3")
+    .WithImageTag("18.6")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume(isReadOnly: false)
     .PublishAsDockerComposeService((_, service) =>
