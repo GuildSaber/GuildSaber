@@ -266,11 +266,15 @@ file static class FlexCommand
                         "(To avoid level loss, try to play more maps for each level.)",
                     (null, { } achievement) =>
                         $"## Your first level!\n\u200B\nGG on reaching **{achievement.Info.Name}**!",
-                    ({ Progression: AchievementResponses.AchievementProgression.Ordered previousProgression } previousAchievement,
+                    ({
+                            Progression: AchievementResponses.AchievementProgression.Ordered previousProgression
+                        } previousAchievement,
                         { Progression: AchievementResponses.AchievementProgression.Ordered progression } achievement)
                         when previousProgression.Order < progression.Order =>
                         $"## Level up!\n\u200B\nYou moved from **{previousAchievement.Info.Name}** to **{achievement.Info.Name}**!",
-                    ({ Progression: AchievementResponses.AchievementProgression.Ordered previousProgression } previousAchievement,
+                    ({
+                            Progression: AchievementResponses.AchievementProgression.Ordered previousProgression
+                        } previousAchievement,
                         { Progression: AchievementResponses.AchievementProgression.Ordered progression } achievement)
                         when previousProgression.Order > progression.Order =>
                         $"## Level down..\n\u200B\nIt seems like you lost some levels since your last flex," +

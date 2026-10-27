@@ -23,8 +23,10 @@ public class PlayerCardConfig
     public int SchemaVersion { get; set; }
 
     public PlayerCardColorMode ColorMode { get; set; } = PlayerCardColorMode.Automatic;
+
     /// <summary>Shows category ordered achievements (aka. levels), their average, and skill equilibrium.</summary>
     public bool ShowOrderedAchievements { get; set; } = true;
+
     public bool ShowHandle { get; set; }
 
     public void Migrate()

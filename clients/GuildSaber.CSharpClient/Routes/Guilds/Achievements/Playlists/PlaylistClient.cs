@@ -20,7 +20,8 @@ public sealed class PlaylistClient(
 
     public readonly record struct AchievementWithPlaylist(
         AchievementResponses.Achievement Achievement,
-        Playlist? Playlist);
+        Playlist? Playlist
+    );
 
     /// <summary>
     /// Gets the playlist for an achievement by its ID.
