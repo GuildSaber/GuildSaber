@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using CSharpFunctionalExtensions;
 
-namespace GuildSaber.Database.Models.StrongTypes;
+namespace GuildSaber.Common.StrongTypes;
 
 [JsonConverter(typeof(MaxScoreJsonConverter))]
 public readonly record struct MaxScore
@@ -39,9 +39,14 @@ public readonly record struct MaxScore
 public sealed class MaxScoreJsonConverter : JsonConverter<MaxScore>
 {
     public override MaxScore Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        => MaxScore.TryCreate(reader.GetInt32()).TryGetValue(out var value)
+    {
+        if (reader.TokenType is not JsonTokenType.Number || !reader.TryGetInt32(out var rawValue))
+            throw new JsonException("MaxScore must be a JSON integer within the Int32 range.");
+
+        return MaxScore.TryCreate(rawValue).TryGetValue(out var value, out var error)
             ? value
-            : throw new JsonException("Cannot convert to MaxScore.");
+            : throw new JsonException(error);
+    }
 
     public override void Write(Utf8JsonWriter writer, MaxScore value, JsonSerializerOptions options)
         => writer.WriteNumberValue(value);

@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 
 namespace GuildSaber.Common.Services.BeatSaver.Models;
@@ -57,7 +58,7 @@ public class Version
 
 public class Diff
 {
-    public required float Njs { get; set; }
+    public required NJS Njs { get; set; }
     public required float Offset { get; set; }
     public required int Notes { get; set; }
     public required int Bombs { get; set; }
@@ -72,7 +73,11 @@ public class Diff
     public required bool Ne { get; set; }
     public required bool Cinema { get; set; }
     public required float Seconds { get; set; }
+
     public required ParitySummary ParitySummary { get; set; }
+
+    // BeatSaver includes zero-score lightshows alongside playable difficulties.
+    [JsonNumberHandling(JsonNumberHandling.Strict)]
     public required int MaxScore { get; set; }
 }
 

@@ -1,5 +1,4 @@
 using GuildSaber.Database.Extensions;
-using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GuildSaber.Database.Models.Server.Songs.SongDifficulties;
