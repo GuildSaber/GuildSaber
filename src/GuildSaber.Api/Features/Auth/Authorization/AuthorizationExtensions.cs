@@ -13,6 +13,9 @@ public static class AuthorizationExtensions
 
     extension(RouteHandlerBuilder builder)
     {
+        public RouteHandlerBuilder WithOptionalAuthentication() => builder
+            .RequireAuthorization(AuthConstants.OptionalAuthenticationPolicy);
+
         public RouteHandlerBuilder RequireSession() => builder
             .RequireAuthorization(AuthConstants.SessionPolicy);
 
@@ -21,10 +24,24 @@ public static class AuthorizationExtensions
 
         public RouteHandlerBuilder RequireGuildPermission(EPermission requiredPermission) => builder
             .RequireAuthorization($"{GuildPermissionPolicyPrefix}{requiredPermission}");
+
+        public RouteHandlerBuilder RequireAnyGuildPermission(EPermission permissions) => builder
+            .RequireAuthorization(policy =>
+            {
+                policy.Requirements.Add(new GuildPermissionRequirement(permissions, MatchAny: true));
+                policy.AuthenticationSchemes = _authenticationSchemes;
+            });
     }
 
     extension(AuthorizationBuilder builder)
     {
+        public AuthorizationBuilder AddOptionalAuthenticationPolicy() => builder
+            .AddPolicy(AuthConstants.OptionalAuthenticationPolicy, policy =>
+            {
+                policy.AuthenticationSchemes = _authenticationSchemes;
+                policy.RequireAssertion(_ => true);
+            });
+
         public AuthorizationBuilder AddManagerAuthorizationPolicy()
             => builder.AddPolicy(AuthConstants.ManagerPolicy, policy =>
             {

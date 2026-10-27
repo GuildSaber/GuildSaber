@@ -79,6 +79,7 @@ public static class AuthInstaller
                 .AddAuthenticationSchemes(SessionCookieDefaults.AuthenticationScheme)
                 .RequireAuthenticatedUser())
             .AddManagerAuthorizationPolicy()
+            .AddOptionalAuthenticationPolicy()
             .AddGuildAuthorizationPolicies();
 
         return builder;

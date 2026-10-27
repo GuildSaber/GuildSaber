@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
@@ -24,7 +25,7 @@ namespace GuildSaber.Api.Transformers;
 /// </example>
 public static class OpenApiTypeTransformer
 {
-    private static readonly Dictionary<Type, OpenApiSchema> _transforms = new();
+    private static readonly ConcurrentDictionary<Type, OpenApiSchema> _transforms = new();
 
     public sealed class TypeTransformer : IOpenApiSchemaTransformer
     {

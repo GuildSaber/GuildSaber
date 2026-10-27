@@ -15,13 +15,13 @@ public static class RankedScoreRequests
     /// <param name="BpmFrom">The minimum BPM to filter scores.</param>
     /// <param name="BpmTo">The maximum BPM to filter scores.</param>
     public record struct Filters(
-        [FromQuery(Name = "rankedScoreTypes")] ERankedScoreType RankedScoreTypes = ERankedScoreType.None,
-        [FromQuery(Name = "difficultyStarFrom")] float? DifficultyStarFrom = null,
-        [FromQuery(Name = "difficultyStarTo")] float? DifficultyStarTo = null,
-        [FromQuery(Name = "accuracyStarFrom")] float? AccuracyStarFrom = null,
-        [FromQuery(Name = "accuracyStarTo")] float? AccuracyStarTo = null,
-        [FromQuery(Name = "bpmFrom")] float? BpmFrom = null,
-        [FromQuery(Name = "bpmTo")] float? BpmTo = null
+        [property: FromQuery(Name = "rankedScoreTypes")] ERankedScoreType RankedScoreTypes = ERankedScoreType.None,
+        [property: FromQuery(Name = "difficultyStarFrom")] float? DifficultyStarFrom = null,
+        [property: FromQuery(Name = "difficultyStarTo")] float? DifficultyStarTo = null,
+        [property: FromQuery(Name = "accuracyStarFrom")] float? AccuracyStarFrom = null,
+        [property: FromQuery(Name = "accuracyStarTo")] float? AccuracyStarTo = null,
+        [property: FromQuery(Name = "bpmFrom")] float? BpmFrom = null,
+        [property: FromQuery(Name = "bpmTo")] float? BpmTo = null
     );
 
     [Flags]

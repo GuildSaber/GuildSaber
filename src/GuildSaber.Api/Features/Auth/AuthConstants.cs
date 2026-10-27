@@ -7,6 +7,7 @@ public static class AuthConstants
 {
     public const string PlayerIdClaimType = "PlayerId";
     public const string SessionPolicy = "Session";
+    public const string OptionalAuthenticationPolicy = "OptionalAuthentication";
     public const string ManagerPolicy = "Manager";
     public const string ManagerRole = "Manager";
     public const string GuildPermissionClaimPrefix = "Guild_";

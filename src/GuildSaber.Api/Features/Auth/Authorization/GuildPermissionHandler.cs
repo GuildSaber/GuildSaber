@@ -90,7 +90,9 @@ public class GuildPermissionHandler(
         AuthorizationHandlerContext context) => user.FindFirst(AuthConstants.GuildPermissionClaimType(guildId)) switch
     {
         { Value: var perm } when Enum.TryParse<EPermission>(perm.AsSpan(), out var permission)
-                                 && permission.HasFlag(requirement.RequiredPermission)
+                                 && (requirement.MatchAny
+                                     ? (permission & requirement.RequiredPermission) != 0
+                                     : permission.HasFlag(requirement.RequiredPermission))
             => Succeed(context, requirement),
         _ => Fail(context)
     };
@@ -99,7 +101,7 @@ public class GuildPermissionHandler(
     /// Try to find the GuildId from the route values in the current HTTP context.
     /// </summary>
     /// <param name="httpContextAccessor">The HTTP context accessor.</param>
-    /// <returns>The GuildId as a string if found; otherwise, null.</returns>
+    /// <returns>The GuildId as a string if found, or null otherwise.</returns>
     private static string? FindGuildIdInHttpContextAccessor(IHttpContextAccessor httpContextAccessor)
     {
         if (httpContextAccessor.HttpContext is null)
@@ -116,7 +118,7 @@ public class GuildPermissionHandler(
     /// Try to find the ContextId from the route values in the current HTTP context.
     /// </summary>
     /// <param name="httpContextAccessor">The HTTP context accessor.</param>
-    /// <returns> The ContextId if found; otherwise, null.</returns>
+    /// <returns>The ContextId if found, or null otherwise.</returns>
     private static string? FindContextIdInHttpContextAccessor(IHttpContextAccessor httpContextAccessor)
     {
         if (httpContextAccessor.HttpContext is null)

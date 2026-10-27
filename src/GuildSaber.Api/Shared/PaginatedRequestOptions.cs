@@ -12,5 +12,6 @@ public record struct PaginatedRequestOptions<TSortBy>(
     EOrder Order = EOrder.Desc
 ) where TSortBy : struct, Enum
 {
-    public static readonly PaginatedRequestOptions<TSortBy> Default = new();
+    /// <remarks>Struct have a public parameterless constructor so we make sure it would follow the proper defaults on use.</remarks>
+    public PaginatedRequestOptions() : this(Page: 1) { }
 }

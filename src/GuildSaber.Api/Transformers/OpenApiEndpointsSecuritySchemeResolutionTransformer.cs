@@ -1,3 +1,4 @@
+using GuildSaber.Api.Features.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OpenApi;
@@ -8,57 +9,47 @@ namespace GuildSaber.Api.Transformers;
 public static class OpenApiEndpointsSecuritySchemeResolutionTransformer
 {
     internal sealed class EndpointsHttpSecuritySchemeResolutionTransformer(
-        IAuthenticationSchemeProvider authenticationSchemeProvider) : IOpenApiOperationTransformer
+        IAuthenticationSchemeProvider authenticationSchemeProvider,
+        IAuthorizationPolicyProvider authorizationPolicyProvider) : IOpenApiOperationTransformer
     {
-        private static string? _defaultSchemeName;
-
         public async Task TransformAsync(
-            OpenApiOperation operation,
-            OpenApiOperationTransformerContext context,
-            CancellationToken cancellationToken)
+            OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
         {
-            var authorizeAttribute = context.Description.ActionDescriptor.EndpointMetadata
-                .OfType<AuthorizeAttribute>()
-                .FirstOrDefault();
-
-            if (authorizeAttribute is null)
+            var metadata = context.Description.ActionDescriptor.EndpointMetadata;
+            if (metadata.OfType<IAllowAnonymous>().Any()
+                || !metadata.OfType<IAuthorizeData>().Any() && !metadata.OfType<AuthorizationPolicy>().Any())
                 return;
 
-            var targetSchemes = authorizeAttribute.AuthenticationSchemes?.Split(',');
-            if (targetSchemes is null)
-            {
-                _defaultSchemeName ??= (await authenticationSchemeProvider.GetDefaultAuthenticateSchemeAsync())?.Name;
-                ArgumentException.ThrowIfNullOrWhiteSpace(
-                    _defaultSchemeName,
-                    "No default authentication scheme found while one was expected."
-                );
+            var policy = await AuthorizationPolicy.CombineAsync(
+                authorizationPolicyProvider,
+                metadata.OfType<IAuthorizeData>(),
+                metadata.OfType<AuthorizationPolicy>()
+            );
 
-                operation.Security ??= new List<OpenApiSecurityRequirement>(1);
-                operation.Security.Add(new OpenApiSecurityRequirement
-                {
-                    [new OpenApiSecuritySchemeReference(_defaultSchemeName, context.Document)] = []
-                });
+            var schemes = policy?.AuthenticationSchemes;
+            if (schemes is not { Count: > 0 })
+                schemes =
+                [
+                    (await authenticationSchemeProvider.GetDefaultAuthenticateSchemeAsync())?.Name
+                    ?? throw new InvalidOperationException(
+                        "No default authentication scheme found while one was expected.")
+                ];
 
-                return;
-            }
+            operation.Security ??= new List<OpenApiSecurityRequirement>(schemes.Count);
+            if (metadata.OfType<IAuthorizeData>().All(x => x.Policy == AuthConstants.OptionalAuthenticationPolicy)
+                && !metadata.OfType<AuthorizationPolicy>().Any())
+                operation.Security.Add(new OpenApiSecurityRequirement());
 
-            operation.Security ??= new List<OpenApiSecurityRequirement>(targetSchemes.Length);
-            foreach (var scheme in targetSchemes.Select(x => x.Trim()))
-            {
-                ArgumentException.ThrowIfNullOrEmpty(
-                    scheme,
-                    "Encountered an empty authentication scheme while processing AuthorizeAttribute."
-                );
+            foreach (var scheme in schemes)
                 operation.Security.Add(new OpenApiSecurityRequirement
                 {
                     [new OpenApiSecuritySchemeReference(scheme, context.Document)] = []
                 });
-            }
         }
     }
 
     /// <summary>
-    /// Adds the security requirement for operations that have the <see cref="AuthorizeAttribute" /> applied.
+    /// Adds security requirements from the endpoint's named or inline authorization policies.
     /// </summary>
     /// <param name="options">The <see cref="OpenApiOptions" /> to add endpoints security scheme resolution to.</param>
     /// <returns>The same <see cref="OpenApiOptions" /> returned to allow chaining.</returns>
