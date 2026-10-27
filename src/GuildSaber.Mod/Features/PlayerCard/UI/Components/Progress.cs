@@ -135,7 +135,7 @@ internal sealed class PlayerCardCategories : XUIVLayout
         _averageAchievement
             .SetText($"Avg {progress.AverageCategoryAchievement:0.##}")
             .SetColor(progress.AverageCategoryAchievementColor);
-        _balance.Render(progress.Equilibrium, accent);
+        _balance.Render(progress.Equilibrium, progress.AverageCategoryAchievementColor);
         RenderPage();
     }
 

@@ -13,6 +13,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
 using static GuildSaber.Api.Features.Guilds.Achievements.Http.AchievementResponses;
+using static GuildSaber.Api.Features.Guilds.Achievements.Playlists.Http.PlaylistRequests;
 
 namespace GuildSaber.Mod.Features.PlaylistDownloader.UI;
 
@@ -26,12 +27,22 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
     private XUISecondaryButton _deleteAllButton = null!;
     private XUISecondaryButton _downloadAllButton = null!;
     private XUIText _guildNameText = null!;
+    private XUITextSegmentedControl _playlistType = null!;
     private XUISlider _rangeDownloadMaxSlider = null!;
     private XUISlider _rangeDownloadMinSlider = null!;
     private XUIToggle _rangeDownloadToggle = null!;
     private XUIText _uniquePlaylistDownloadedText = null!;
 
     public event Action OnResultsModalClosed = null!;
+
+
+    private PlaylistFilter SelectedPlaylistFilter => _playlistType.Element.GetActiveText() switch
+    {
+        0 => PlaylistFilter.None,
+        1 => PlaylistFilter.NoneWithPassedScores,
+        2 => PlaylistFilter.NoneWithPassedNorPendingScores,
+        _ => throw new ArgumentOutOfRangeException()
+    };
 
     protected override void OnViewCreation()
     {
@@ -54,7 +65,7 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
                                 .Bind(ref _rangeDownloadToggle)
                         ),
                         XUIHLayout.Make(
-                            XUIText.Make("Minimum achievement order:"),
+                            XUIText.Make("Minimum level:"),
                             XUISlider.Make()
                                 .OnValueChanged(RangeDownloadValueChanged)
                                 .SetInteger(true)
@@ -63,7 +74,7 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
                                 .Bind(ref _rangeDownloadMinSlider)
                         ),
                         XUIHLayout.Make(
-                            XUIText.Make("Maximum achievement order:"),
+                            XUIText.Make("Maximum level:"),
                             XUISlider.Make()
                                 .OnValueChanged(RangeDownloadValueChanged)
                                 .SetInteger(true)
@@ -71,6 +82,9 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
                                 .SetInteractable(false)
                                 .Bind(ref _rangeDownloadMaxSlider)
                         ),
+                        XUITextSegmentedControl.Make("Type", "All", "Hide passed", "Hide passed & pending")
+                            .Bind(ref _playlistType)
+                            .SetActiveText(0, false),
                         XUISecondaryButton.Make("Download all")
                             .Bind(ref _downloadAllButton)
                             .SetWidth(30)
@@ -215,9 +229,9 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
             Download(_playlistDownloader.DownloadPlaylistsAsync(
                 (int)_rangeDownloadMinSlider.Element.GetValue(),
                 (int)_rangeDownloadMaxSlider.Element.GetValue(),
-                null));
+                null, SelectedPlaylistFilter));
         else
-            Download(_playlistDownloader.DownloadPlaylistsAsync());
+            Download(_playlistDownloader.DownloadPlaylistsAsync(SelectedPlaylistFilter));
     }
 
     private void DownloadCategoryClicked(CategoryId categoryId)
@@ -226,9 +240,9 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
             Download(_playlistDownloader.DownloadPlaylistsAsync(
                 (int)_rangeDownloadMinSlider.Element.GetValue(),
                 (int)_rangeDownloadMaxSlider.Element.GetValue(),
-                categoryId));
+                categoryId, SelectedPlaylistFilter));
         else
-            Download(_playlistDownloader.DownloadPlaylistsAsync(categoryId));
+            Download(_playlistDownloader.DownloadPlaylistsAsync(categoryId, SelectedPlaylistFilter));
     }
 
     private async void Download(Task task)

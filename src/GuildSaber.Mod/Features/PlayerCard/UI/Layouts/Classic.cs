@@ -31,7 +31,7 @@ internal sealed class ClassicPlayerCardLayout(
     private PlayerCardCategories _categories = null!;
     private ImageView _divider = null!;
     private Texture2D? _guildIcon;
-    private XUIImage _guildImage = null!;
+    private XUIIconButton _guildImage = null!;
     private Sprite? _guildSprite;
     private XUIIconButton _playerImage = null!;
     private XUIText _playerName = null!;
@@ -109,7 +109,11 @@ internal sealed class ClassicPlayerCardLayout(
     {
         _root.SetActive(active);
         _borderLayout.SetActive(active);
-        if (active) _playerImage.Element.IconImageC.rectTransform.localScale = Vector3.one;
+        if (active)
+        {
+            _playerImage.Element.IconImageC.rectTransform.localScale = Vector3.one;
+            _guildImage.Element.IconImageC.rectTransform.localScale = Vector3.one;
+        }
     }
 
     public Vector2 GetSize(PlayerCardReady ready)
@@ -161,7 +165,7 @@ internal sealed class ClassicPlayerCardLayout(
                                         x.LElement.flexibleWidth = 0;
                                     }),
                                 XUIVLayout.Make(
-                                        XUIImage.Make()
+                                        XUIIconButton.Make(() => send(new PlayerCardActionMessage.OpenActions()))
                                             .Bind(ref _guildImage)
                                             .SetWidth(9)
                                             .SetHeight(9))

@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using GuildSaber.Api.Features.Guilds.Achievements.Playlists.Http;
 using GuildSaber.Api.Features.Guilds.Http;
 using GuildSaber.CSharpClient;
 using GuildSaber.CSharpClient.Routes.Guilds.Achievements.Playlists;
@@ -11,6 +10,7 @@ using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using UnityEngine;
 using Object = UnityEngine.Object;
 using static GuildSaber.Api.Features.Guilds.Achievements.Http.AchievementResponses;
+using static GuildSaber.Api.Features.Guilds.Achievements.Playlists.Http.PlaylistRequests;
 
 namespace GuildSaber.Mod.Features.PlaylistDownloader;
 
@@ -30,17 +30,17 @@ public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manag
     /// </summary>
     public event Action<string, string, bool>? EventUniquePlaylistDownloadCompleted;
 
-    public Task DownloadPlaylistsAsync(CategoryId categoryId)
-        => DownloadPlaylistsAsync(-1, int.MaxValue, categoryId, includeUnordered: true);
+    public Task DownloadPlaylistsAsync(CategoryId categoryId, PlaylistFilter filter)
+        => DownloadPlaylistsAsync(-1, int.MaxValue, categoryId, filter, includeUnordered: true);
 
-    public Task DownloadPlaylistsAsync()
-        => DownloadPlaylistsAsync(rangeMin: -1, rangeMax: int.MaxValue, categoryId: null, includeUnordered: true);
+    public Task DownloadPlaylistsAsync(PlaylistFilter filter)
+        => DownloadPlaylistsAsync(rangeMin: -1, rangeMax: int.MaxValue, categoryId: null, filter, includeUnordered: true);
 
-    public async Task DownloadPlaylistsAsync(int rangeMin, int rangeMax, CategoryId? categoryId)
-        => await DownloadPlaylistsAsync(rangeMin, rangeMax, categoryId, includeUnordered: false);
+    public Task DownloadPlaylistsAsync(int rangeMin, int rangeMax, CategoryId? categoryId, PlaylistFilter filter)
+        => DownloadPlaylistsAsync(rangeMin, rangeMax, categoryId, filter, includeUnordered: false);
 
     private async Task DownloadPlaylistsAsync(
-        int rangeMin, int rangeMax, CategoryId? categoryId, bool includeUnordered)
+        int rangeMin, int rangeMax, CategoryId? categoryId, PlaylistFilter filter, bool includeUnordered)
     {
         if (IsDownloading) throw new InvalidOperationException("Already downloading playlists");
         if (manager.State is not GuildSaberRuntimeState.Ready(var snapshot))
@@ -85,7 +85,8 @@ public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manag
 
                     var response = await client.Playlists
                         .GetByAchievementIdAsync(
-                            achievementStat.Achievement.Id, PlaylistRequests.PlaylistFilter.None, null);
+                            achievementStat.Achievement.Id, filter,
+                            filter is PlaylistFilter.None ? null : snapshot.PlayerId);
 
                     if (!response.TryGetValue(out var resultPlaylist, out var error) || resultPlaylist is null)
                     {

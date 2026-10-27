@@ -49,7 +49,7 @@ public sealed class GuildAssetCache(
         => GetOrFetchCachedTextureAsync(
             $"{PlayerAvatarCacheKeyPrefix}{playerId}:{avatarUrl}",
             new Uri(avatarUrl),
-            round: false);
+            round: true);
 
     private async Task<Texture2D?> GetOrFetchCachedTextureAsync(string key, Uri uri, bool round = true)
     {
