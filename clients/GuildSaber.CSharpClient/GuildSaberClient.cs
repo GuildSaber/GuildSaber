@@ -60,7 +60,7 @@ public class GuildSaberClient : IDisposable
     {
         HttpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         if (HttpClient.BaseAddress is null)
-            throw new ArgumentNullException(nameof(httpClient.BaseAddress), "HttpClient must have a BaseAddress set.");
+            throw new ArgumentNullException(nameof(httpClient), "HttpClient must have a BaseAddress set.");
 
         HttpClient.Timeout = TimeSpan.FromSeconds(30);
 
@@ -170,14 +170,26 @@ public class GuildSaberClient : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        if (_disposeHttpClient)
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>Releases the HTTP client when this instance owns it.</summary>
+    /// <param name="disposing">Whether disposal was explicitly requested.</param>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing && _disposeHttpClient)
             HttpClient.Dispose();
     }
 
     private static HttpClient CreateHttpClient(Uri baseUri, CookieContainer cookieContainer)
     {
+#if NETSTANDARD2_1
         if (cookieContainer is null)
             throw new ArgumentNullException(nameof(cookieContainer));
+#else
+        ArgumentNullException.ThrowIfNull(cookieContainer);
+#endif
 
 #if NETCOREAPP2_1_OR_GREATER
         var handler = new SocketsHttpHandler
