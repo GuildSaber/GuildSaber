@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
+using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Api.Shared;
 using GuildSaber.Api.Transformers;
 using GuildSaber.Database.Contexts.Server;
@@ -112,16 +113,10 @@ public class PlayerEndpoints : IEndpoints
     }
 
     private static async Task<Results<NoContent, NotFound>> DeletePlayerAsync(
-        PlayerId playerId, ServerDbContext dbContext)
-    {
-        var affectedRows = await dbContext.Players
-            .Where(x => x.Id == playerId)
-            .ExecuteDeleteAsync();
-
-        return affectedRows > 0
+        PlayerId playerId, PlayerDeletionPipeline pipeline, CancellationToken token)
+        => await pipeline.ExecuteAsync(playerId, token)
             ? TypedResults.NoContent()
             : TypedResults.NotFound();
-    }
 
     private static async Task<Results<Ok<PlayerId>, NotFound>> LookupPlayerIdByDiscordIdAsync(
         DiscordId discordId, ServerDbContext dbContext)

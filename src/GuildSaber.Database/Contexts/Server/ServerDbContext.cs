@@ -49,6 +49,7 @@ public class ServerDbContext : DbContext
     public DbSet<Session> Sessions { get; set; }
 
     public DbSet<RankedMap> RankedMaps { get; set; }
+    public DbSet<RankedMapPointCurve> RankedMapPointCurves { get; set; }
     public DbSet<MapVersion> MapVersions { get; set; }
     public DbSet<PlayMode> PlayModes { get; set; }
 

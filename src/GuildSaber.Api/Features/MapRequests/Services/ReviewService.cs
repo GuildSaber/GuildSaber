@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using GuildSaber.Api.Features.MapRequests.Settings;
 using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Api.Features.RankedMaps.Pipelines;
+using GuildSaber.Api.Features.RankedScores.Pipelines;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds.Achievements.Types;
@@ -13,6 +14,7 @@ using GuildSaber.Database.Models.Server.MapRequests.Votes;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
@@ -129,10 +131,9 @@ public sealed class MapProposalReviewService(
 
             var guildId = await dbContext.Contexts.Where(x => x.Id == contextId).Select(x => x.GuildId)
                 .SingleAsync(token);
-            if (playerId is null && (proposal.AuthorId is not null || !await dbContext.MapRequestThreads
+            if (proposal is not SubmittedProposal submitted
+                || playerId is null && (proposal.AuthorId is not null || !await dbContext.MapRequestThreads
                     .AnyAsync(x => x.Id == proposal.ThreadId && x.IsLegacyImport, token)))
-                return new ReviewResponse.InvalidState();
-            if (proposal is not SubmittedProposal submitted)
                 return new ReviewResponse.InvalidState();
 
             var now = timeProvider.GetUtcNow();
@@ -172,6 +173,10 @@ public sealed class MapProposalReviewService(
                         new KeyValuePair<string, string[]>(nameof(MapRequestThread.ContextId),
                             ["The ranked map and thread must belong to the same context."])
                     ]);
+
+                if (map is not null)
+                    await RankedScoreUpdateRankPipeline.LockMapsAsync([map.Id], dbContext, token);
+
                 if (map is null)
                     // The creation limit does not apply when updating the thread's existing ranked map.
                     if (rankedMapService.ValidateRankedMapCreationLimit(
@@ -188,8 +193,8 @@ public sealed class MapProposalReviewService(
 
                 var previousDifficulties = map?.MapVersions.Select(x => x.SongDifficultyId).Distinct().ToArray() ?? [];
                 map = await ApplyAsync(map, guildId, contextId, submitted, now, token);
-                addedDifficulties = submitted.MapVersions.Select(x => x.SongDifficultyId).Distinct()
-                    .Except(previousDifficulties).ToArray();
+                addedDifficulties = [.. submitted.MapVersions.Select(x => x.SongDifficultyId).Distinct()
+                    .Except(previousDifficulties)];
             }
 
             if (await dbContext.Database.ExecuteSqlAsync(FormattableStringFactory.Create(
@@ -225,12 +230,12 @@ public sealed class MapProposalReviewService(
                     "The proposal did not transition to the requested review state.")
             };
         }
-        catch (Exception exception) when ((exception as PostgresException ??
-                                           exception.InnerException as PostgresException)
-                                          ?.SqlState is PostgresErrorCodes.SerializationFailure
-                                                        or PostgresErrorCodes.DeadlockDetected
-                                                        or PostgresErrorCodes.UniqueViolation
-                                                        or PostgresErrorCodes.ForeignKeyViolation)
+        catch (Exception exception)
+            when ((exception as PostgresException ??
+                   exception.InnerException as PostgresException) is { SqlState: var sqlState }
+                  && (sqlState is PostgresErrorCodes.UniqueViolation or PostgresErrorCodes.ForeignKeyViolation
+                      || ExecutionStrategy.Current?.RetriesOnFailure is not true
+                      && sqlState is PostgresErrorCodes.SerializationFailure or PostgresErrorCodes.DeadlockDetected))
         {
             return new ReviewResponse.Conflict();
         }

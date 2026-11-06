@@ -1,4 +1,4 @@
-using GuildSaber.Api.Features.Scores.Pipelines;
+using GuildSaber.Api.Features.PointCurves;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,25 +6,26 @@ namespace GuildSaber.Api.Features.RankedMaps.Pipelines;
 
 public class EditRankedMapPipeline(
     ServerDbContext dbContext,
-    ScoreAddOrUpdatePipeline scoreAddOrUpdatePipeline,
+    MapPointCurvePipeline curvePipeline,
     ILogger<EditRankedMapPipeline> logger)
 {
-    public async Task ExecuteAsync(RankedMapId rankedMapId, CancellationToken token)
+    public async Task ExecuteAsync(
+        RankedMapId rankedMapId, bool refreshMemberStats = true, CancellationToken token = default)
     {
-        logger.LogInformation("Executing edit pipeline for ranked map with Id {RankedMapId}", rankedMapId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Executing edit pipeline for ranked map with Id {RankedMapId}", rankedMapId);
 
-        var versions = await dbContext.MapVersions
-            .Where(x => x.RankedMapId == rankedMapId)
-            .Select(x => x.SongDifficultyId)
+        var points = await dbContext.RankedMaps
+            .Where(x => x.Id == rankedMapId)
+            .SelectMany(x => x.Context.Points)
+            .Select(x => x.Id)
             .ToArrayAsync(token);
 
-        if (versions.Length == 0) return;
-        await foreach (var score in dbContext.Scores
-                           .Where(x => ((IEnumerable<SongDifficultyId>)versions).Contains(x.SongDifficultyId))
-                           .AsAsyncEnumerable()
-                           .WithCancellation(token))
-            await scoreAddOrUpdatePipeline.ExecuteAsync(score, token);
+        foreach (var point in points)
+            await curvePipeline.ExecuteAsync(
+                rankedMapId, point, true, refreshMemberStats: refreshMemberStats, token: token);
 
-        logger.LogInformation("Completed editing ranked map with Id {RankedMapId}", rankedMapId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Completed editing ranked map with Id {RankedMapId}", rankedMapId);
     }
 }

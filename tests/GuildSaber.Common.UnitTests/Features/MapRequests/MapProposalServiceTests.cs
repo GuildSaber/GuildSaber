@@ -5,12 +5,13 @@ using GuildSaber.Api.Features.MapRequests.Http;
 using GuildSaber.Api.Features.MapRequests.Services;
 using GuildSaber.Api.Features.MapRequests.Settings;
 using GuildSaber.Api.Features.RankedMaps;
-using GuildSaber.Api.Features.Scores;
+using GuildSaber.Api.Features.Scores.Calculations;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Api.Shared;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
+using GuildSaber.Common.UnitTests.Utils;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Achievements;
@@ -32,6 +33,7 @@ using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties.GameModes;
 using LinqKit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -39,6 +41,7 @@ using Color = System.Drawing.Color;
 using Context = GuildSaber.Database.Models.Server.Guilds.Context;
 using ExMachinaResponse = GuildSaber.Common.Services.BeatLeader.Models.Responses.ExMachinaResponse;
 using LackMapCalculation = GuildSaber.Common.Services.BeatLeader.Models.Responses.LackMapCalculation;
+using MapStatistics = GuildSaber.Common.Services.BeatLeader.Models.Responses.MapStatistics;
 using RatingResult = GuildSaber.Common.Services.BeatLeader.Models.Responses.RatingResult;
 using Response = GuildSaber.Api.Features.MapRequests.Services.MapProposalService.TransitionResponse;
 using ReviewResponse = GuildSaber.Api.Features.MapRequests.Services.MapProposalReviewService.ReviewResponse;
@@ -115,12 +118,16 @@ public partial class MapProposalServiceTests : IDisposable
 
         public ServerDbContext CreateContext() => new(options);
 
+        public ServerDbContext CreateRetryingContext(DbCommandInterceptor interceptor)
+            => new(new DbContextOptionsBuilder<ServerDbContext>(options)
+                .UseNpgsql(npgsql => npgsql.EnableRetryOnFailure(2, TimeSpan.Zero, null))
+                .AddInterceptors(interceptor)
+                .Options);
+
         public static async Task<TestDatabase> CreateAsync(MapProposalRating? rating = null)
         {
-            var connectionString = Environment.GetEnvironmentVariable("GUILDSABER_TEST_POSTGRES");
-            Skip.Unless(!string.IsNullOrWhiteSpace(connectionString),
-                "Set GUILDSABER_TEST_POSTGRES to an isolated PostgreSQL server to run persistence tests.");
-            var connection = new NpgsqlConnectionStringBuilder(connectionString!)
+            var connectionString = await PostgresTestServer.GetConnectionStringAsync();
+            var connection = new NpgsqlConnectionStringBuilder(connectionString)
             {
                 Database = $"guildsaber_proposal_test_{Guid.NewGuid():N}", Pooling = false
             };
@@ -424,7 +431,7 @@ public partial class MapProposalServiceTests : IDisposable
         var submitted = result.Should().BeOfType<Response.Success>().Which.Proposal
             .Should().BeOfType<SubmittedProposal>().Which;
         var calculated = ScoringUtils.GetExMachinaRating(exMachina, submitted.Requirements);
-        submitted.Rating.AccStar.Should().Be(rating.AccStar ?? calculated.ToAccStar(_accuracyCurve));
+        submitted.Rating.AccStar.Should().Be(rating.AccStar ?? calculated.ToAccStar(LegacyAccuracyCalibration.Curve));
         submitted.Rating.DiffStar.Should().Be(rating.DiffStar ?? calculated.ToDiffStar());
         submitted.Rating.IsAccStarAutoCalculated.Should().Be(automaticAccuracy);
         submitted.Rating.IsDiffStarAutoCalculated.Should().Be(automaticDifficulty);
@@ -527,19 +534,23 @@ public partial class MapProposalServiceTests : IDisposable
     }
 
     [Test]
-    public async Task MissingAccuracyCurve_ShouldLeaveDraftUnchangedWithoutCallingBeatLeader()
+    public async Task MissingPointAccuracyCurve_ShouldUseFixedLegacyCalibration()
     {
         var rating = new MapProposalRating { DiffStar = new RankedMapRating.DifficultyStar(5) };
         await using var database = await TestDatabase.CreateAsync(rating);
-        var service = CreateService(database.Context);
+        var exMachina = CreateExMachinaResponse();
+        using var handler = new RatingHandler(_ => JsonResponse(JsonSerializer.Serialize(exMachina)));
+        using var client = new HttpClient(handler);
+        var service = CreateService(database.Context, new BeatLeaderApi(client));
 
         var result = await service.SubmitAsync(new ContextId(1), new MapProposalId(1), new PlayerId(1),
             CancellationToken.None);
 
-        result.Should().BeOfType<Response.RatingCalculationFailure>().Which.Message.Should().Contain("accuracy curve");
-        var persisted = await database.Context.MapProposals.SingleAsync();
-        persisted.Should().BeOfType<DraftProposal>();
-        persisted.Rating.Should().Be(rating);
+        var submitted = result.Should().BeOfType<Response.Success>().Which.Proposal.Should()
+            .BeOfType<SubmittedProposal>().Which;
+        submitted.Rating.AccStar.Should().Be(exMachina.None.ToAccStar(LegacyAccuracyCalibration.Curve));
+        handler.RequestCount.Should().Be(1);
+        (await database.Context.Points.AnyAsync()).Should().BeFalse();
     }
 
     [Test]
@@ -942,20 +953,25 @@ public partial class MapProposalServiceTests : IDisposable
 
     private static ExMachinaResponse CreateExMachinaResponse(bool nullModifier = false, bool negativeRating = false)
     {
-        var normal = new RatingResult
-        {
-            PredictedAcc = 0.96f,
-            LackMapCalculation = new LackMapCalculation { PassRating = negativeRating ? -4 : 4, TechRating = 0.2f }
-        };
-        var faster = new RatingResult
+        var statistics = new MapStatistics(
+            Stacks: 0, Towers: 0, Sliders: 0, CurvedSliders: 0, Windows: 0, SlantedWindows: 0, Chains: 0,
+            DodgeWalls: 0, DodgeWallDuration: 0, CrouchWalls: 0, CrouchWallDuration: 0, ParityErrors: 0,
+            BombAvoidances: 0, LinearSwings: 0, Inlines: 0);
+        var normal = new RatingResult(
+            PredictedAcc: 0.96f,
+            AccRating: 0,
+            LackMapCalculation: new LackMapCalculation(
+                PassRating: negativeRating ? -4 : 4, TechRating: 0.2f, MultiPercentage: 0, LinearPercentage: 0,
+                SliderPercentage: 0, HitDistance: 0, HardSwingRatio: 0, NoteCount: 0, NoteSpan: 0,
+                Statistics: statistics),
+            PointList: [], Stars: 0, Length: 0, Njs: 0);
+        var faster = normal with
         {
             PredictedAcc = 0.94f,
-            LackMapCalculation = new LackMapCalculation { PassRating = 7, TechRating = 0.3f }
+            LackMapCalculation = normal.LackMapCalculation with { PassRating = 7, TechRating = 0.3f }
         };
-        return new ExMachinaResponse
-        {
-            None = nullModifier ? null! : normal, SS = normal, FS = faster, SFS = faster, BFS = normal, BSF = normal
-        };
+        return new ExMachinaResponse(
+            FS: faster, SFS: faster, BFS: normal, BSF: normal, SS: normal, None: nullModifier ? null! : normal);
     }
 
     private static HttpResponseMessage JsonResponse(string json)

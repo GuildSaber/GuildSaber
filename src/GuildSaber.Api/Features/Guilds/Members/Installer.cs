@@ -8,5 +8,6 @@ public static class GuildMembersInstaller
         .AddScoped<MemberService>()
         .AddTransient<MemberPointStatsPipeline>()
         .AddTransient<MemberAchievementStatsPipeline>()
+        .AddTransient<MemberStatsPipeline>()
         .AddTransient<MemberJoinPipeline>();
 }

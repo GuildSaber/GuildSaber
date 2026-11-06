@@ -27,35 +27,53 @@ public sealed class PlayerScoresPipeline(
     MemberAchievementStatsPipeline memberAchievementStatsPipeline,
     ILogger<PlayerScoresPipeline> logger)
 {
+    private const int ScoreBatchSize = 128;
+
     public async Task RecalculatePlayerScoresAsync(PlayerId playerId, CancellationToken token)
     {
-        logger.LogInformation("Recalculating scores for player {PlayerId}", playerId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Recalculating scores for player {PlayerId}", playerId);
 
         // Caches might not reflect latest changes, so we clear them first.
-        await addOrUpdatePipeline.ClearPlayerCacheAsync(playerId);
+        await addOrUpdatePipeline.ClearPlayerCacheAsync(playerId, token);
 
         var count = 0;
         var contextsWithPoints = new Dictionary<ContextId, Context>();
-        await foreach (var score in dbContext.Scores
-                           .Where(s => s.PlayerId == playerId)
-                           .AsAsyncEnumerable()
-                           .WithCancellation(token))
-        {
-            var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(score, token);
+        var cursor = 0;
 
-            count++;
-            foreach (var context in pipelineResult.ImpactedContextsWithPoints)
-                contextsWithPoints.TryAdd(context.Id, context);
+        while (true)
+        {
+            var after = new ScoreId(cursor);
+            var scores = await dbContext.Scores
+                .Where(s => s.PlayerId == playerId && s.Id > after)
+                .OrderBy(s => s.Id)
+                .Take(ScoreBatchSize)
+                .ToArrayAsync(token);
+
+            if (scores.Length == 0)
+                break;
+
+            foreach (var score in scores)
+            {
+                var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(score, refreshCurveBenchmarks: true, token);
+                count++;
+                foreach (var context in pipelineResult.ImpactedContextsWithPoints)
+                    contextsWithPoints.TryAdd(context.Id, context);
+            }
+
+            cursor = scores[^1].Id.Value;
         }
 
         foreach (var tuple in contextsWithPoints)
         {
-            await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value);
+            await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value, token);
             foreach (var point in tuple.Value.Points)
-                await memberAchievementStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key, point.Id);
+                await memberAchievementStatsPipeline.ExecuteAsync(
+                    playerId, tuple.Value.GuildId, tuple.Key, point.Id, token);
         }
 
-        logger.LogInformation("Completed recalculating {count} scores for player {PlayerId}", count, playerId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Completed recalculating {count} scores for player {PlayerId}", count, playerId);
     }
 
     /// <remarks>
@@ -64,7 +82,9 @@ public sealed class PlayerScoresPipeline(
     /// </remarks>
     public async Task ImportBeatLeaderScoresAsync(PlayerId playerId, BeatLeaderId beatLeaderId, CancellationToken token)
     {
-        logger.LogInformation("Importing BeatLeader scores for player {PlayerId}", playerId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Importing BeatLeader scores for player {PlayerId}", playerId);
+
         var initialRequest = new BeatLeaderApi.PaginatedRequestOptions<ScoresSortBy>
         {
             Page = 1,
@@ -105,7 +125,7 @@ public sealed class PlayerScoresPipeline(
 
             foreach (var score in scores)
             {
-                var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(score, token);
+                var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(score, token: token);
 
                 count++;
                 foreach (var context in pipelineResult.ImpactedContextsWithPoints)
@@ -115,12 +135,15 @@ public sealed class PlayerScoresPipeline(
 
         foreach (var tuple in contextsWithPoints)
         {
-            await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value);
+            await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value, token);
             foreach (var point in tuple.Value.Points)
-                await memberAchievementStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key, point.Id);
+                await memberAchievementStatsPipeline.ExecuteAsync(
+                    playerId, tuple.Value.GuildId, tuple.Key, point.Id, token);
         }
 
-        logger.LogInformation("Completed importing {count} BeatLeader scores for player {PlayerId}", count, playerId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Completed importing {count} BeatLeader scores for player {PlayerId}", count,
+                playerId);
     }
 
     /// <remarks>
@@ -129,7 +152,9 @@ public sealed class PlayerScoresPipeline(
     /// </remarks>
     public async Task ImportScoreSaberScoresAsync(PlayerId playerId, ScoreSaberId scoreSaberId, CancellationToken token)
     {
-        logger.LogInformation("Importing ScoreSaber scores for player {PlayerId}", playerId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Importing ScoreSaber scores for player {PlayerId}", playerId);
+
         var initialRequest = new ScoreSaberApi.PaginatedRequestOptions<PlayerScoresSortBy>
         {
             Page = 1,
@@ -142,7 +167,7 @@ public sealed class PlayerScoresPipeline(
         var contextsWithPoints = new Dictionary<ContextId, Context>();
 
         // Unwrap the result to kill the current Task if there's an error.
-        await foreach (var playerScore in scoreSaberApi.GetPlayerScores(scoreSaberId, initialRequest)
+        await foreach (var playerScore in scoreSaberApi.GetPlayerScores(scoreSaberId, initialRequest, token)
                            .SelectMany(x => x.Unwrap() ?? [])
                            .Where(x => x.Score.PlayOutcome == PlayOutcome.Clear)
                            .WithCancellation(token))
@@ -152,7 +177,7 @@ public sealed class PlayerScoresPipeline(
 
             var abstractScore = await playerScore.Score.MapAsync(playerId, difficultyId,
                 hmdResolver.ResolveHmdIdAsync, controllerResolver.ResolveControllerIdAsync, token);
-            var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(abstractScore, token);
+            var pipelineResult = await addOrUpdatePipeline.ExecuteAsync(abstractScore, token: token);
 
             count++;
             foreach (var context in pipelineResult.ImpactedContextsWithPoints)
@@ -161,12 +186,15 @@ public sealed class PlayerScoresPipeline(
 
         foreach (var tuple in contextsWithPoints)
         {
-            await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value);
+            await memberPointStatsPipeline.ExecuteAsync(playerId, tuple.Value, token);
             foreach (var point in tuple.Value.Points)
-                await memberAchievementStatsPipeline.ExecuteAsync(playerId, tuple.Value.GuildId, tuple.Key, point.Id);
+                await memberAchievementStatsPipeline.ExecuteAsync(
+                    playerId, tuple.Value.GuildId, tuple.Key, point.Id, token);
         }
 
-        logger.LogInformation("Completed importing {count} ScoreSaber scores for player {PlayerId}", count, playerId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Completed importing {count} ScoreSaber scores for player {PlayerId}", count,
+                playerId);
     }
 
     /// <summary>Resolves a ScoreSaber score's difficulty, learning its leaderboard ID when it was previously unavailable.</summary>

@@ -162,7 +162,7 @@ internal static class RankedMapLinkPreviewRenderer
             : duration.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
     }
 
-    private static string FormatNumber(float value, string format)
+    private static string FormatNumber(double value, string format)
         => value.ToString(format, CultureInfo.InvariantCulture);
 
     private static string Encode(string value) => HtmlEncoder.Default.Encode(value);

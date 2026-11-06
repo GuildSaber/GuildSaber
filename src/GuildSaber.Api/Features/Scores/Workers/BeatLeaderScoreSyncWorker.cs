@@ -2,6 +2,7 @@ using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.Players.Http;
 using GuildSaber.Api.Features.Players.Pipelines;
+using GuildSaber.Api.Features.PointCurves;
 using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Api.Features.Scores.Services;
 using GuildSaber.Common.Services.BeatLeader;
@@ -54,12 +55,13 @@ public class BeatLeaderScoreSyncWorker(
 
         var hmdResolver = scope.ServiceProvider.GetRequiredService<HmdResolverService>();
         var controllerResolver = scope.ServiceProvider.GetRequiredService<ControllerResolverService>();
-        var cache = scope.ServiceProvider.GetRequiredService<HybridCache>();
         var pointStatsLogger = scope.ServiceProvider.GetRequiredService<ILogger<MemberPointStatsPipeline>>();
         var achievementStatsLogger = scope.ServiceProvider
             .GetRequiredService<ILogger<MemberAchievementStatsPipeline>>();
 
-        var scoreAddOrUpdatePipeline = new ScoreAddOrUpdatePipeline(dbContext, serviceScopeFactory, cache);
+        var scoreAddOrUpdatePipeline = new ScoreAddOrUpdatePipeline(
+            dbContext, serviceScopeFactory, scope.ServiceProvider.GetRequiredService<HybridCache>(),
+            scope.ServiceProvider.GetRequiredService<PointCurveService>());
         var memberPointStatsPipeline = new MemberPointStatsPipeline(dbContext, pointStatsLogger);
         var memberAchievementStatsPipeline = new MemberAchievementStatsPipeline(dbContext, achievementStatsLogger);
 
@@ -96,13 +98,13 @@ public class BeatLeaderScoreSyncWorker(
                         $"Unknown message type received from BeatLeader: {response.GetType().Name}")
                 };
 
-                var pipelineResult = await scoreAddOrUpdatePipeline.ExecuteAsync(dbScore, token);
+                var pipelineResult = await scoreAddOrUpdatePipeline.ExecuteAsync(dbScore, token: token);
 
                 foreach (var context in pipelineResult.ImpactedContextsWithPoints)
                 {
-                    await memberPointStatsPipeline.ExecuteAsync(playerId, context);
+                    await memberPointStatsPipeline.ExecuteAsync(playerId, context, token);
                     await memberAchievementStatsPipeline.ExecuteAsync(playerId, context.GuildId, context.Id,
-                        context.Points.FirstOrDefault()?.Id ?? default);
+                        context.Points.FirstOrDefault()?.Id ?? default, token);
                 }
             }
 

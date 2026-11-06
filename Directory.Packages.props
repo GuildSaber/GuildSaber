@@ -71,6 +71,7 @@
         <PackageVersion Include="Cronos" Version="0.13.0" />
         <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.11.0" />
         <PackageVersion Include="TUnit" Version="1.78.0" />
+        <PackageVersion Include="Testcontainers.PostgreSql" Version="4.16.0" />
         <PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
         <PackageVersion Include="CSharpFunctionalExtensions.AwesomeAssertions" Version="9.4.0" />
         <PackageVersion Include="PolySharp" Version="1.16.0" />

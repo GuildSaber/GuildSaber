@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using CSharpFunctionalExtensions;
+using GuildSaber.Api.Features.PointCurves;
 using GuildSaber.Api.Features.RankedScores.Pipelines;
+using GuildSaber.Api.Features.Scores.Calculations;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.Server.Guilds;
@@ -19,30 +21,35 @@ namespace GuildSaber.Api.Features.Scores.Pipelines;
 public sealed class ScoreAddOrUpdatePipeline(
     ServerDbContext dbContext,
     IServiceScopeFactory scopeFactory,
-    HybridCache cache)
+    HybridCache cache,
+    PointCurveService pointCurves)
 {
     private const string ContextWithPointsForPlayerCacheKeyPrefix = "ContextWithPointsForPlayer_";
+    internal const string PlayerContextsCacheTag = "ScoringPlayerContexts";
 
     private static readonly HybridCacheEntryOptions _cacheEntryOptions = new()
     {
         Expiration = TimeSpan.FromMinutes(5)
     };
 
+    private static readonly string[] _cacheTags = [PlayerContextsCacheTag];
+
     private static readonly Func<ServerDbContext, PlayerId, IAsyncEnumerable<Context>>
         _getContextWithPointsForPlayerQuery = EF.CompileAsyncQuery((ServerDbContext dbContext, PlayerId playerId)
             => dbContext.ContextMembers
                 .Where(x => x.PlayerId == playerId)
-                .Include(x => x.Context).ThenInclude(c => c.Points)
+                .Include(x => x.Context).ThenInclude(x => x.Points)
                 .Select(x => x.Context));
 
     /// <summary>
     /// Check if there is the same BeatLeader score already existing, ignoring the BeatLeaderScoreId.
     /// </summary>
     private static readonly Func<ServerDbContext, PlayerId, SongDifficultyId, DateTimeOffset, BaseScore,
-        Task<BeatLeaderScore?>> _findExistingBeatLeaderScoreIgnoringBLScoreIdQuery = EF.CompileAsyncQuery((
+        CancellationToken, Task<BeatLeaderScore?>> _findExistingBeatLeaderScoreIgnoringBLScoreIdQuery =
+        EF.CompileAsyncQuery((
             ServerDbContext dbContext, PlayerId playerId,
             SongDifficultyId songDifficultyId,
-            DateTimeOffset setAt, BaseScore baseScore)
+            DateTimeOffset setAt, BaseScore baseScore, CancellationToken token)
         => dbContext.BeatLeaderScores.FirstOrDefault(x =>
             x.PlayerId == playerId
             && x.SongDifficultyId == songDifficultyId
@@ -50,10 +57,10 @@ public sealed class ScoreAddOrUpdatePipeline(
             && x.BaseScore == baseScore));
 
     private static readonly Func<ServerDbContext, PlayerId, SongDifficultyId, DateTimeOffset, BaseScore,
-        Task<ScoreSaberScore?>> _findExistingScoreSaberScoreQuery = EF.CompileAsyncQuery((
+        CancellationToken, Task<ScoreSaberScore?>> _findExistingScoreSaberScoreQuery = EF.CompileAsyncQuery((
             ServerDbContext dbContext, PlayerId playerId,
             SongDifficultyId songDifficultyId,
-            DateTimeOffset setAt, BaseScore baseScore)
+            DateTimeOffset setAt, BaseScore baseScore, CancellationToken token)
         => dbContext.ScoreSaberScores.FirstOrDefault(x =>
             x.PlayerId == playerId
             && x.SongDifficultyId == songDifficultyId
@@ -64,8 +71,12 @@ public sealed class ScoreAddOrUpdatePipeline(
         RankedMap[] RankedMapsWithVersionsWithSongDifficulty,
         RankedScore[] ExistingRankedScores,
         Context[] ContextsWithPoints,
-        AbstractScore[] Scores
+        AbstractScore[] Scores,
+        IReadOnlyDictionary<(RankedMapId, Point.PointId), RankedMapPointCurve> Curves,
+        AbstractScore? PreviousScore = null
     );
+
+    private readonly record struct ScoreUpdate(AbstractScore Score, AbstractScore? PreviousScore);
 
     /// <summary>
     /// Represents a processing context for a single score within the ranking system calculation.
@@ -85,58 +96,224 @@ public sealed class ScoreAddOrUpdatePipeline(
         RankedMap Map,
         SongDifficulty SongDifficulty,
         Point Point,
-        AbstractScore Score
+        AbstractScore Score,
+        CustomCurve? AccuracyCurve
     );
 
     public readonly record struct PipelineResult(Context[] ImpactedContextsWithPoints);
 
-    public ValueTask ClearPlayerCacheAsync(PlayerId playerId)
-        => cache.RemoveAsync($"{ContextWithPointsForPlayerCacheKeyPrefix}{playerId}");
+    public ValueTask ClearPlayerCacheAsync(PlayerId playerId, CancellationToken token = default)
+        => cache.RemoveAsync($"{ContextWithPointsForPlayerCacheKeyPrefix}{playerId}", token);
 
     /// <remarks>
     /// There is codebase assumption that all scores going in are stored and updated by default, don't change this behavior.
     /// </remarks>
-    public async Task<PipelineResult> ExecuteAsync(AbstractScore scoreToAdd, CancellationToken token)
-        => await (await UpdateScoreIfChangedAsync(scoreToAdd, dbContext)
-                .Or(() => dbContext.AddAndSaveAsync(scoreToAdd))
-                .ToResult("Failed to add or update score.")
-                .Map(async static (score, state) =>
-                        await PrepareScoreRankingContextAsync(
-                            score.PlayerId, score.SongDifficultyId, state.dbContext, state.scopeFactory, state.cache),
-                    (dbContext, scopeFactory, cache))
-#pragma warning disable ASP0034 // .NET 11 RC1 mistakes this CSharpFunctionalExtensions.Map for an HTTP endpoint.
-                .Map(rankingContext => (rankingContext,
-                    IterateRankedScoresWithTransform(rankingContext, RecalculateRankedScore)))
-#pragma warning restore ASP0034
-                .Map(tuple => (tuple.rankingContext, rankedScores: SetStateForBestRankedScorePerGroup(tuple.Item2))))
-            .Map(static async (tuple, state) =>
+    public async Task<PipelineResult> ExecuteAsync(
+        AbstractScore scoreToAdd, bool refreshCurveBenchmarks = false, CancellationToken token = default)
+    {
+        if (!(await UpdateScoreIfChangedAsync(scoreToAdd, dbContext, token)).TryGetValue(out var score))
+            score = await dbContext.AddAndSaveAsync(scoreToAdd, static score => new ScoreUpdate(score, null), token);
+
+        var (rankingContext, rankedScores) = await dbContext.Database
+            .CreateExecutionStrategy()
+            .ExecuteAsync((score, dbContext, scopeFactory, cache), static (state, token) =>
+                    RecalculateRankedScoresAsync(state.score, state.dbContext, state.scopeFactory, state.cache, token),
+                token);
+
+        await MaybeQueueCurveRefreshesAsync(rankingContext, rankedScores, refreshCurveBenchmarks, pointCurves, token);
+
+        return new PipelineResult(rankingContext.ContextsWithPoints);
+    }
+
+    private static async Task<(ScoreRankingContext rankingContext, RankedScore[] rankedScores)>
+        RecalculateRankedScoresAsync(
+            ScoreUpdate update, ServerDbContext dbContext,
+            IServiceScopeFactory scopeFactory, HybridCache cache, CancellationToken token)
+    {
+        var (contextsWithPoints, rankedMapIds) = await GetScoreRankingTargetsAsync(
+            update.Score, dbContext, scopeFactory, cache, token
+        );
+
+        if (rankedMapIds.Length == 0)
+        {
+            dbContext.ChangeTracker.Clear();
+
+            return (new ScoreRankingContext([], [], contextsWithPoints, [],
+                new Dictionary<(RankedMapId, Point.PointId), RankedMapPointCurve>()), []);
+        }
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(token);
+
+        try
+        {
+            await RankedScoreUpdateRankPipeline.LockMapsAsync(rankedMapIds, dbContext, token);
+
+            var rankingContext = await PrepareScoreRankingContextAsync(
+                update, rankedMapIds, contextsWithPoints, dbContext, token);
+
+            var rankedScores = SetStateForBestRankedScorePerGroup(
+                    IterateRankedScoresWithTransform(rankingContext, RecalculateRankedScore))
+                .ToArray();
+
+            await SaveRankedScoresAsync(rankedScores, dbContext, token);
+            await RankedScoreUpdateRankPipeline.UpdateLockedMapRanksAsync(
+                rankingContext.RankedMapsWithVersionsWithSongDifficulty.Select(x => x.Id), dbContext, null, token);
+
+            await transaction.CommitAsync(token);
+
+            return (rankingContext, rankedScores);
+        }
+        finally
+        {
+            // A retried transaction must start without entities from its rolled-back attempt.
+            dbContext.ChangeTracker.Clear();
+        }
+    }
+
+    private static async ValueTask MaybeQueueCurveRefreshesAsync(
+        ScoreRankingContext rankingContext, RankedScore[] rankedScores, bool refreshCurveBenchmarks,
+        PointCurveService pointCurves, CancellationToken token)
+    {
+        if (rankedScores.Length == 0)
+            return;
+
+        // Queue after commit because heavy imports can execute this work inline in another scope.
+        foreach (var group in rankedScores.GroupBy(x => (x.RankedMapId, x.PointId)))
+            if (ShouldRefreshCurve(rankingContext, group.Key, group, refreshCurveBenchmarks))
+                await pointCurves.QueueRefreshAsync(group.Key.RankedMapId, group.Key.PointId, token);
+    }
+
+    private static async Task<(Context[] ContextsWithPoints, RankedMapId[] RankedMapIds)> GetScoreRankingTargetsAsync(
+        AbstractScore score, ServerDbContext dbContext, IServiceScopeFactory scopeFactory,
+        HybridCache cache, CancellationToken token)
+    {
+        var contextsWithPoints = await GetContextWithPointsForPlayerAsync(score.PlayerId, cache, scopeFactory, token);
+
+        if (contextsWithPoints.Length == 0)
+            return (contextsWithPoints, []);
+
+        var contextIds = contextsWithPoints
+            .Select(x => x.Id)
+            .ToArray();
+
+        var rankedMapIds = await dbContext.RankedMaps
+            .Where(x =>
+                ((IEnumerable<ContextId>)contextIds).Contains(x.ContextId)
+                && x.MapVersions.Any(v => v.SongDifficultyId == score.SongDifficultyId))
+            .Select(x => x.Id)
+            .ToArrayAsync(token);
+
+        return (contextsWithPoints, rankedMapIds);
+    }
+
+    /// <summary>Recalculates a player's ranked scores for one map and point type.</summary>
+    /// <returns>Whether the player's selected pass eligibility changed.</returns>
+    public Task<bool> RecalculatePlayerScoresForMapAsync(
+        RankedMapId mapId, Point.PointId pointId, PlayerId playerId, bool updateRanks = true,
+        CancellationToken token = default)
+        => dbContext.Database.CreateExecutionStrategy().ExecuteAsync(
+            (dbContext, mapId, pointId, playerId, updateRanks),
+            static async (state, token) =>
             {
-                var enumerated = tuple.rankedScores.ToArray();
-                /* We need to nullify the Score property before updating the RankedScore,
-                 * otherwise EF Core will try to insert/update the AbstractScore (which is not tracked) and fail. */
-                foreach (var rankedScore in enumerated)
-                    rankedScore.Score = null!;
+                await using var transaction = await state.dbContext.Database.BeginTransactionAsync(token);
 
-                state.dbContext.RankedScores.UpdateRange(enumerated);
-                await state.dbContext.SaveChangesAsync(state.token);
+                try
+                {
+                    await RankedScoreUpdateRankPipeline.LockMapsAsync([state.mapId], state.dbContext, token);
 
-                /* An optimization at the cost of memory consumption would be:
-                 * track the RankedScores (in EF Core with .AsTracking()),
-                 * then only update the ranks for the RankedMaps that is tracked as changed. */
-                var changedRankedMapIds = enumerated
-                    .Select(x => x.RankedMapId)
-                    .Distinct().ToArray();
+                    var passChanged = await RecalculateRankedScoresAsync(
+                        state.mapId, state.pointId, state.playerId, state.updateRanks,
+                        state.dbContext, token);
 
-                await RankedScoreUpdateRankPipeline.UpdateRanksForRankedMapsAsync(
-                    changedRankedMapIds,
-                    state.dbContext
-                );
+                    await transaction.CommitAsync(token);
 
-                // The same "ranked scores" might be used multiple time by the same context, we need to clean up tracking.
-                state.dbContext.ChangeTracker.Clear();
-                return new PipelineResult(tuple.rankingContext.ContextsWithPoints);
-            }, (dbContext, scoreToAdd.PlayerId, token))
-            .Unwrap();
+                    return passChanged;
+                }
+                finally
+                {
+                    state.dbContext.ChangeTracker.Clear();
+                }
+            }, token);
+
+    private static async Task<bool> RecalculateRankedScoresAsync(
+        RankedMapId mapId, Point.PointId pointId, PlayerId playerId, bool updateRanks,
+        ServerDbContext dbContext, CancellationToken token)
+    {
+        var map = await dbContext.RankedMaps
+            .Include(x => x.MapVersions)
+            .ThenInclude(x => x.SongDifficulty)
+            .SingleOrDefaultAsync(x => x.Id == mapId, token);
+
+        if (map is null) return false;
+
+        if (!await dbContext.ContextMembers
+                .AnyAsync(x => x.ContextId == map.ContextId && x.PlayerId == playerId, token))
+            return false;
+
+        var context = await dbContext.Contexts
+            .Include(x => x.Points.Where(p => p.Id == pointId))
+            .SingleAsync(x => x.Id == map.ContextId, token);
+
+        var point = context.Points.SingleOrDefault(x => x.Id == pointId);
+
+        if (point is null) return false;
+
+        context.Points = [point];
+
+        var difficultyIds = map.MapVersions
+            .Select(x => x.SongDifficultyId)
+            .ToArray();
+
+        var scores = await dbContext.Scores
+            .Where(x =>
+                x.PlayerId == playerId
+                && ((IEnumerable<SongDifficultyId>)difficultyIds).Contains(x.SongDifficultyId))
+            .ToArrayAsync(token);
+
+        var existing = await dbContext.RankedScores
+            .Where(x =>
+                x.RankedMapId == mapId
+                && x.PointId == pointId
+                && x.PlayerId == playerId)
+            .ToArrayAsync(token);
+
+        var hadSelectedPass = existing.Any(x => x.IsSelected && x is PointGivingRankedScore);
+
+        var curves = new Dictionary<(RankedMapId, Point.PointId), RankedMapPointCurve>();
+
+        if (point.CurveSettings.AccuracyBonusRatio > 0 && point.CurveSettings.MapCurvePolicy != PointCurvePolicy.Shared)
+        {
+            var curve = await dbContext.RankedMapPointCurves
+                .Where(x => x.RankedMapId == mapId && x.PointId == pointId)
+                .SingleOrDefaultAsync(token);
+
+            if (curve is not null) curves.Add((mapId, pointId), curve);
+        }
+
+        var rankingContext = new ScoreRankingContext([map], existing, [context], scores, curves);
+        var rankedScores = SetStateForBestRankedScorePerGroup(
+                IterateRankedScoresWithTransform(rankingContext, RecalculateRankedScore))
+            .ToArray();
+
+        await SaveRankedScoresAsync(rankedScores, dbContext, token);
+
+        if (updateRanks)
+            await RankedScoreUpdateRankPipeline.UpdateLockedMapRanksAsync([mapId], dbContext, pointId, token);
+
+        return hadSelectedPass != rankedScores.Any(x => x.IsSelected && x is PointGivingRankedScore);
+    }
+
+    private static Task SaveRankedScoresAsync(
+        RankedScore[] rankedScores, ServerDbContext dbContext, CancellationToken token)
+    {
+        // Raw scores are saved separately. Keep their navigation properties out of the tracked graph.
+        foreach (var rankedScore in rankedScores)
+            rankedScore.Score = null!;
+
+        dbContext.RankedScores.UpdateRange(rankedScores);
+
+        return dbContext.SaveChangesAsync(token);
+    }
 
     /// <summary>
     /// There is cases when Scores are processed and sent again from BeatLeader but with a score ID.
@@ -147,12 +324,13 @@ public sealed class ScoreAddOrUpdatePipeline(
     /// <param name="dbContext">
     /// The database context to use for the operation.
     /// </param>
-    private static async Task<Maybe<AbstractScore>> UpdateScoreIfChangedAsync(
-        AbstractScore score, ServerDbContext dbContext)
+    /// <param name="token">The cancellation token for the database operations.</param>
+    private static async Task<Maybe<ScoreUpdate>> UpdateScoreIfChangedAsync(
+        AbstractScore score, ServerDbContext dbContext, CancellationToken token)
         => score switch
         {
-            BeatLeaderScore beatLeaderScore => await UpdateScoreIfChangedAsync(beatLeaderScore, dbContext),
-            ScoreSaberScore saberScore => await UpdateScoreIfChangedAsync(saberScore, dbContext),
+            BeatLeaderScore beatLeaderScore => await UpdateScoreIfChangedAsync(beatLeaderScore, dbContext, token),
+            ScoreSaberScore saberScore => await UpdateScoreIfChangedAsync(saberScore, dbContext, token),
             _ => throw new InvalidOperationException("Score must be either a BeatLeaderScore or a ScoreSaberScore.")
         };
 
@@ -163,100 +341,226 @@ public sealed class ScoreAddOrUpdatePipeline(
     /// </summary>
     /// <param name="score"></param>
     /// <param name="dbContext"></param>
+    /// <param name="token">The cancellation token for the database operations.</param>
     /// <remarks>
     /// BeatLeader can send the same score multiple times, first without a BLScoreId, then with it.
     /// We want to avoid creating duplicates (when sent multiple times),
     /// and we also want to update the existing score with the BLScoreId when it arrives.
     /// </remarks>
     /// <returns></returns>
-    private static async Task<Maybe<AbstractScore>> UpdateScoreIfChangedAsync(
-        BeatLeaderScore score, ServerDbContext dbContext)
+    private static async Task<Maybe<ScoreUpdate>> UpdateScoreIfChangedAsync(
+        BeatLeaderScore score, ServerDbContext dbContext, CancellationToken token)
     {
         var oldScore = await _findExistingBeatLeaderScoreIgnoringBLScoreIdQuery(
             dbContext,
             score.PlayerId,
             score.SongDifficultyId,
             score.SetAt,
-            score.BaseScore);
+            score.BaseScore,
+            token);
         if (oldScore is null)
             return None;
 
         /* It was already there, but the incoming score has no scoreId, there is no need to update the score.
          * It might just be a full score recalculation/refresh (no need to update). */
         if (score.BeatLeaderScoreId is null)
-            return oldScore;
+            return new ScoreUpdate(oldScore, oldScore);
 
         /* The score seems to be the exact same, no need to update.
          * It might just be a full score recalculation/refresh (no need to update).
          * PS: This also fixes .ScoreStatistics null causing .Discriminator changed crash. */
         if (score.Id == oldScore.Id && score.BeatLeaderScoreId == oldScore.BeatLeaderScoreId)
-            return oldScore;
+            return new ScoreUpdate(oldScore, oldScore);
 
         score.Id = oldScore.Id;
         dbContext.BeatLeaderScores.Update(score);
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(token);
 
-        return score;
+        return new ScoreUpdate(score, oldScore);
     }
 
-    private static async Task<Maybe<AbstractScore>> UpdateScoreIfChangedAsync(
-        ScoreSaberScore score, ServerDbContext dbContext)
+    private static async Task<Maybe<ScoreUpdate>> UpdateScoreIfChangedAsync(
+        ScoreSaberScore score, ServerDbContext dbContext, CancellationToken token)
     {
         var oldScore = await _findExistingScoreSaberScoreQuery(
             dbContext,
             score.PlayerId,
             score.SongDifficultyId,
             score.SetAt,
-            score.BaseScore);
+            score.BaseScore,
+            token);
         if (oldScore is null)
             return None;
 
         /* The score seems to be the exact same, no need to update.
          * It might just be a full score recalculation/refresh (no need to update). */
         if (score.Id == oldScore.Id && score.ScoreSaberScoreId == oldScore.ScoreSaberScoreId)
-            return oldScore;
+            return new ScoreUpdate(oldScore, oldScore);
 
         score.Id = oldScore.Id;
         dbContext.ScoreSaberScores.Update(score);
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(token);
 
-        return score;
+        return new ScoreUpdate(score, oldScore);
     }
 
     private static async Task<ScoreRankingContext> PrepareScoreRankingContextAsync(
-        PlayerId playerId, SongDifficultyId songDifficultyId, ServerDbContext dbContext,
-        IServiceScopeFactory scopeFactory, HybridCache cache)
+        ScoreUpdate update, RankedMapId[] rankedMapIds, Context[] contextsWithPoints,
+        ServerDbContext dbContext, CancellationToken token)
     {
-        var contextsWithPointsForPlayer = await GetContextWithPointsForPlayerAsync(playerId, cache, scopeFactory);
-        var contextIdsForPlayer = contextsWithPointsForPlayer
-            .Select(x => x.Id)
-            .ToArray() as IEnumerable<ContextId>;
-
+        /* As a revision can change versions or requirements while we wait, we only fetched the IDs before acquiring the map locks.
+         * Therefore we only then now load the maps to avoid applying scoring with outdated data. */
         var rankedMaps = await dbContext.RankedMaps
-            .Include(x => x.MapVersions).ThenInclude(x => x.SongDifficulty)
-            .Where(x => contextIdsForPlayer.Contains(x.ContextId)
-                        && x.MapVersions.Any(v => v.SongDifficultyId == songDifficultyId))
-            .ToArrayAsync();
+            .Include(x => x.MapVersions)
+            .ThenInclude(x => x.SongDifficulty)
+            .Where(x =>
+                ((IEnumerable<RankedMapId>)rankedMapIds).Contains(x.Id)
+                && x.MapVersions.Any(v => v.SongDifficultyId == update.Score.SongDifficultyId))
+            .ToArrayAsync(token);
+
+        return await PrepareScoreRankingContextAsync(
+            update.Score.PlayerId, rankedMaps, contextsWithPoints, dbContext, update.PreviousScore, token);
+    }
+
+    private static async Task<ScoreRankingContext> PrepareScoreRankingContextAsync(
+        PlayerId playerId, RankedMap[] rankedMaps, Context[] contextsWithPointsForPlayer,
+        ServerDbContext dbContext, AbstractScore? previousScore = null, CancellationToken token = default)
+    {
+        if (rankedMaps.Length == 0)
+            return new ScoreRankingContext(rankedMaps, [], contextsWithPointsForPlayer, [],
+                new Dictionary<(RankedMapId, Point.PointId), RankedMapPointCurve>(), previousScore);
+
         var rankedMapsIds = rankedMaps
             .Select(x => x.Id)
-            .ToArray() as IEnumerable<RankedMapId>;
-        var rankedScores = await dbContext.RankedScores
-            .AsNoTracking()
-            .Where(x => x.PlayerId == playerId && rankedMapsIds.Contains(x.RankedMapId))
-            .ToArrayAsync();
+            .ToArray();
 
-        var mapVersions = rankedMaps.SelectMany(x => x.MapVersions).ToArray();
-        var songDifficultyIds = mapVersions.Select(x => x.SongDifficultyId).ToArray() as IEnumerable<SongDifficultyId>;
+        var rankedScores = await dbContext.RankedScores
+            .Where(x =>
+                x.PlayerId == playerId
+                && ((IEnumerable<RankedMapId>)rankedMapsIds).Contains(x.RankedMapId))
+            .ToArrayAsync(token);
+
+        var songDifficultyIds = rankedMaps
+            .SelectMany(x => x.MapVersions)
+            .Select(x => x.SongDifficultyId)
+            .ToArray() as IEnumerable<SongDifficultyId>;
 
         // We grab all the scores that are related to the Ranked maps, not just the ranked map version.
         var scores = await dbContext.Scores
             .Where(x => x.PlayerId == playerId && songDifficultyIds.Contains(x.SongDifficultyId))
-            .ToArrayAsync();
+            .ToArrayAsync(token);
 
-        return new ScoreRankingContext(
-            rankedMaps, rankedScores, contextsWithPointsForPlayer, scores
-        );
+        var pointIds = contextsWithPointsForPlayer
+            .SelectMany(x => x.Points)
+            .Where(x =>
+                x.CurveSettings.AccuracyBonusRatio > 0
+                && x.CurveSettings.MapCurvePolicy != PointCurvePolicy.Shared)
+            .Select(x => x.Id)
+            .ToArray();
+
+        var curves = pointIds.Length == 0
+            ? []
+            : await dbContext.RankedMapPointCurves
+                .Where(x =>
+                    ((IEnumerable<RankedMapId>)rankedMapsIds).Contains(x.RankedMapId)
+                    && ((IEnumerable<Point.PointId>)pointIds).Contains(x.PointId))
+                .ToDictionaryAsync(x => (x.RankedMapId, x.PointId), token);
+
+        return new ScoreRankingContext(rankedMaps, rankedScores, contextsWithPointsForPlayer, scores,
+            curves, previousScore);
     }
+
+    private static bool ShouldRefreshCurve(
+        ScoreRankingContext context,
+        (RankedMapId MapId, Point.PointId PointId) key,
+        IEnumerable<RankedScore> candidates,
+        bool refreshCurveBenchmarks)
+    {
+        var (mapId, pointId) = key;
+        var point = context.ContextsWithPoints
+            .SelectMany(x => x.Points)
+            .First(x => x.Id == pointId);
+
+        if (point.CurveSettings is not
+            { AccuracyBonusRatio: > 0, MapCurvePolicy: PointCurvePolicy.ScoreDerivedMapCurve })
+            return false;
+
+        var map = context.RankedMapsWithVersionsWithSongDifficulty
+            .Single(x => x.Id == mapId);
+
+        var curve = context.Curves.GetValueOrDefault(key);
+        var benchmarks = curve?.BenchmarkAccuracies ?? [];
+        var current = BestAccuracy(context, candidates, map, pointId, beforeUpdate: false);
+
+        // A missing override still needs bootstrapping when an existing score is replayed.
+        if (curve is null) return current is not null;
+
+        var previous = BestAccuracy(context, context.ExistingRankedScores, map, pointId,
+            beforeUpdate: true, refreshCurveBenchmarks ? benchmarks : null);
+
+        // Explicit replay also covers approvals and membership changes persisted before this call.
+        if (!refreshCurveBenchmarks && Nullable.Equals(previous, current)) return false;
+
+        // Only an entrant or a disappearing benchmark can affect a full benchmark set.
+        return benchmarks.Length < point.CurveSettings.RunnerUpRewardFractions.Length + 1
+               || previous >= benchmarks[^1]
+               || current > benchmarks[^1];
+    }
+
+    private static double? BestAccuracy(
+        ScoreRankingContext context, IEnumerable<RankedScore> entries, RankedMap map, Point.PointId pointId,
+        bool beforeUpdate, double[]? formerBenchmarks = null)
+    {
+        double? best = null;
+        SongDifficulty? difficulty = null;
+
+        foreach (var entry in entries)
+        {
+            if (entry.RankedMapId != map.Id || entry.PointId != pointId
+                                            || formerBenchmarks is null && entry is not PointGivingRankedScore)
+                continue;
+
+            var score = beforeUpdate && context.PreviousScore?.Id == entry.ScoreId
+                ? context.PreviousScore
+                : FindScore(context.Scores, entry.ScoreId);
+
+            if (score is null || formerBenchmarks is null && score.Statistics?.WinTracker.IsWin == false
+                              || score.BaseScore <= 0)
+                continue;
+
+            if (difficulty?.Id != entry.SongDifficultyId)
+                difficulty = FindDifficulty(map, entry.SongDifficultyId);
+
+            if (difficulty is null
+                || !Accuracy.From(score.BaseScore, difficulty.Stats.MaxScore)
+                    .TryGetValue(out var scoreAccuracy))
+                continue;
+
+            var accuracy = scoreAccuracy / 100d;
+
+            // An already-ineligible entry matters on replay only if it could be a stored benchmark.
+            if (formerBenchmarks is not null
+                && (entry is not PointGivingRankedScore || score.Statistics?.WinTracker.IsWin == false)
+                && !formerBenchmarks.Contains(accuracy))
+                continue;
+
+            if (best is null || accuracy > best) best = accuracy;
+        }
+
+        return best;
+    }
+
+    private static AbstractScore? FindScore(ReadOnlySpan<AbstractScore> scores, ScoreId scoreId)
+    {
+        foreach (var score in scores)
+            if (score.Id == scoreId)
+                return score;
+
+        return null;
+    }
+
+    private static SongDifficulty? FindDifficulty(RankedMap map, SongDifficultyId difficultyId)
+        => map.MapVersions.FirstOrDefault(x => x.SongDifficultyId == difficultyId)?.SongDifficulty;
 
     private static IEnumerable<RankedScore> IterateRankedScoresWithTransform(
         ScoreRankingContext rankingContext,
@@ -272,7 +576,8 @@ public sealed class ScoreAddOrUpdatePipeline(
                 rankedMap,
                 mapVersion.SongDifficulty,
                 point,
-                score
+                score,
+                rankingContext.Curves.GetValueOrDefault((rankedMap.Id, point.Id))?.Curve
             );
 
             var rankedScores = rankingContext.ExistingRankedScores.Where(y =>
@@ -316,7 +621,8 @@ public sealed class ScoreAddOrUpdatePipeline(
             effectiveScore,
             context.SongDifficulty.Stats.MaxScore,
             context.Point,
-            context.Map.Rating
+            context.Map.Rating,
+            context.AccuracyCurve
         );
 
         return type switch
@@ -477,14 +783,14 @@ public sealed class ScoreAddOrUpdatePipeline(
     }
 
     private static ValueTask<Context[]> GetContextWithPointsForPlayerAsync(
-        PlayerId playerId, HybridCache cache, IServiceScopeFactory scopeFactory)
+        PlayerId playerId, HybridCache cache, IServiceScopeFactory scopeFactory, CancellationToken token)
         => cache.GetOrCreateAsync($"{ContextWithPointsForPlayerCacheKeyPrefix}{playerId}", (scopeFactory, playerId),
-            async static (state, token) =>
+            async static (state, cancellationToken) =>
             {
                 await using var scope = state.scopeFactory.CreateAsyncScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<ServerDbContext>();
 
                 return await _getContextWithPointsForPlayerQuery(dbContext, state.playerId)
-                    .ToArrayAsync(token);
-            }, _cacheEntryOptions);
+                    .ToArrayAsync(cancellationToken);
+            }, _cacheEntryOptions, tags: _cacheTags, cancellationToken: token);
 }

@@ -23,7 +23,7 @@ public class DeleteRankedMapPipeline(
                            .Where(x => ((IEnumerable<SongDifficultyId>)versions).Contains(x.SongDifficultyId))
                            .AsAsyncEnumerable()
                            .WithCancellation(token))
-            await scoreAddOrUpdatePipeline.ExecuteAsync(score, token);
+            await scoreAddOrUpdatePipeline.ExecuteAsync(score, token: token);
 
         logger.LogInformation("Completed delete pipeline for ranked map with RankedMapId {RankedMapId}", rankedMapId);
     }

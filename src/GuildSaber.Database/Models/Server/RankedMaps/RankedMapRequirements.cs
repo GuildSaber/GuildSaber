@@ -20,7 +20,7 @@ public class RankedMapRequirementsConfiguration : IComplexPropertyConfiguration<
         ComplexPropertyBuilder<RankedMapRequirements> builder)
     {
         builder.Property(x => x.MinAccuracy)
-            .HasConversion<float?>(from => from, to => Accuracy.CreateUnsafe(to));
+            .HasConversion<double?>(from => from, to => Accuracy.CreateUnsafe(to));
 
         return builder;
     }

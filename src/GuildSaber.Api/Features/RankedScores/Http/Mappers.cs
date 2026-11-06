@@ -103,8 +103,8 @@ public static class RankedScoreMappers
                     => RankedScoreResponses.EInvalidReason.MissingModifiers,
                 InvalidRankedScore.EInvalidReason.PausedTooMuch => RankedScoreResponses.EInvalidReason.PausedTooMuch,
                 InvalidRankedScore.EInvalidReason.NoFullCombo => RankedScoreResponses.EInvalidReason.NoFullCombo,
-                InvalidRankedScore.EInvalidReason.MissingTrackers
-                    => RankedScoreResponses.EInvalidReason.MissingTrackers,
+                InvalidRankedScore.EInvalidReason.MissingPauseStatistics
+                    => RankedScoreResponses.EInvalidReason.MissingPauseStatistics,
                 _ => throw new ArgumentOutOfRangeException(nameof(flag), flag, null)
             })
             .Aggregate(RankedScoreResponses.EInvalidReason.Unspecified, (acc, mapped) => acc | mapped);

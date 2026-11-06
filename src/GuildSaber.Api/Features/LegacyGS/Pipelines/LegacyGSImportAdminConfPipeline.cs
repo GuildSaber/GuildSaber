@@ -111,7 +111,7 @@ public class LegacyGSImportAdminConfPipeline(
 
         logger.LogInformation("Completed importing {count} legacy GuildSaber admin confirmations for player {PlayerId}",
             impactedContextPoints.Count, playerId);
-        await RankedScoreUpdateRankPipeline.UpdateRanksForRankedMapsAsync(impactedRankedMapIds, dbContext);
+        await RankedScoreUpdateRankPipeline.UpdateRanksForRankedMapsAsync(impactedRankedMapIds, dbContext, token: token);
 
         return true;
     }

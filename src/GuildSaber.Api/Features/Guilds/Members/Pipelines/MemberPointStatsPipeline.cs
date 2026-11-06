@@ -51,7 +51,7 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<
           ) ranked_scores
           """;
 
-    public async Task ExecuteAsync(PlayerId playerId, Context context)
+    public async Task ExecuteAsync(PlayerId playerId, Context context, CancellationToken token = default)
     {
         ArgumentNullException.ThrowIfNull(context.Points);
         logger.LogInformation("Calculating member point stats for player {PlayerId} in context {ContextId}",
@@ -59,19 +59,19 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<
 
         var categories = await dbContext.Categories
             .Where(c => c.GuildId == context.GuildId)
-            .ToListAsync();
+            .ToListAsync(token);
 
         foreach (var point in context.Points)
         {
-            await GetOrCreateMemberStatAsync(context.GuildId, context.Id, playerId, null, point);
+            await GetOrCreateMemberStatAsync(context.GuildId, context.Id, playerId, null, point, token);
 
             foreach (var category in categories)
-                await GetOrCreateMemberStatAsync(context.GuildId, context.Id, playerId, category.Id, point);
+                await GetOrCreateMemberStatAsync(context.GuildId, context.Id, playerId, category.Id, point, token);
         }
 
         logger.LogInformation("Completed calculating member point stats for player {PlayerId} in context {ContextId}",
             playerId, context.Id);
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(token);
     }
 
     private async Task GetOrCreateMemberStatAsync(
@@ -79,7 +79,8 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<
         ContextId contextId,
         PlayerId playerId,
         CategoryId? categoryId,
-        Point point)
+        Point point,
+        CancellationToken token)
     {
         var memberStat = await dbContext.MemberPointStats
             .AsTracking()
@@ -88,7 +89,7 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<
                 x.ContextId == contextId &&
                 x.PlayerId == playerId &&
                 x.PointId == point.Id &&
-                x.CategoryId == categoryId);
+                x.CategoryId == categoryId, token);
 
         if (memberStat is null)
         {
@@ -116,10 +117,11 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<
             validPassesQuery = validPassesQuery.Where(x => x.RankedMap.Categories.Any(c => c.Id == categoryId));
 
         memberStat.Points = point.WeightingSettings.IsEnabled
-            ? await CalculateMemberPointsWithWeightQuery(dbContext, guildId, contextId, playerId, point, categoryId)
-            : await validPassesQuery.SumAsync(x => x.RawPoints);
+            ? await CalculateMemberPointsWithWeightQuery(
+                dbContext, guildId, contextId, playerId, point, categoryId, token)
+            : await validPassesQuery.SumAsync(x => x.RawPoints, token);
 
-        memberStat.PassCount = validPassesQuery.Count();
+        memberStat.PassCount = await validPassesQuery.CountAsync(token);
         logger.LogDebug(
             "Calculated member point stat for player {PlayerId} in context {ContextId}, point {PointId}, category {CategoryId}: Points={Points}, PassCount={PassCount}",
             playerId, contextId, point.Id, categoryId?.ToString() ?? "null",
@@ -133,7 +135,8 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<
         ContextId contextId,
         PlayerId playerId,
         Point point,
-        CategoryId? categoryId)
+        CategoryId? categoryId,
+        CancellationToken token = default)
         => dbContext.Database.SqlQuery<float>(categoryId switch
         {
             null => FormattableStringFactory.Create(
@@ -153,5 +156,5 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<
                 (int)point.Id,
                 (int)categoryId.Value
             )
-        }).FirstOrDefaultAsync();
+        }).FirstOrDefaultAsync(token);
 }

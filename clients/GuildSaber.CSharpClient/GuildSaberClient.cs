@@ -12,6 +12,7 @@ using GuildSaber.CSharpClient.Routes.Guilds.Members.ContextStats;
 using GuildSaber.CSharpClient.Routes.Leaderboards;
 using GuildSaber.CSharpClient.Routes.MapRequests;
 using GuildSaber.CSharpClient.Routes.Players;
+using GuildSaber.CSharpClient.Routes.PointCurves;
 using GuildSaber.CSharpClient.Routes.RankedMaps;
 using GuildSaber.CSharpClient.Routes.RankedScores;
 using GuildSaber.CSharpClient.Routes.Scores;
@@ -137,6 +138,10 @@ public class GuildSaberClient : IDisposable
 
     public MapRequestClient MapRequests
         => field ??= new MapRequestClient(HttpClient, _authenticationHeader, _jsonOptions);
+
+    /// <summary>Gets the client for shared curve settings, normalized map overrides and reward previews.</summary>
+    public PointCurveClient PointCurves
+        => field ??= new PointCurveClient(HttpClient, _authenticationHeader, _jsonOptions);
 
     /// <summary>
     /// Gets the ranked score client for interacting with ranked score endpoints.

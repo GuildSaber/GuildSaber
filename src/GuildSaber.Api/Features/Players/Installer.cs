@@ -5,5 +5,6 @@ namespace GuildSaber.Api.Features.Players;
 public static class PlayersInstaller
 {
     public static IServiceCollection AddPlayersFeature(this IServiceCollection services) => services
-        .AddTransient<PlayerScoresPipeline>();
+        .AddTransient<PlayerScoresPipeline>()
+        .AddTransient<PlayerDeletionPipeline>();
 }

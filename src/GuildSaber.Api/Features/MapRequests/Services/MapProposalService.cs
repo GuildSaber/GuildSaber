@@ -3,17 +3,17 @@ using System.Runtime.CompilerServices;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.MapRequests.Http;
 using GuildSaber.Api.Features.MapRequests.Settings;
-using GuildSaber.Api.Features.Scores;
+using GuildSaber.Api.Features.Scores.Calculations;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds.Achievements.Types;
-using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.MapRequests;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals.Snapshots;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals.Types;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using AchievementId = GuildSaber.Database.Models.Server.Guilds.Achievements.Achievement.AchievementId;
@@ -27,6 +27,16 @@ public sealed class MapProposalService(
     BeatLeaderApi beatLeaderApi,
     IOptions<MapRequestSettings> settings)
 {
+    private sealed record RatingInput(
+        MapProposalRating Rating, RankedMapRequirements Requirements, SongDifficultyId SourceId)
+    {
+        public static RatingInput From(DraftProposal proposal)
+            => new(proposal.Rating, proposal.Requirements,
+                proposal.MapVersions.MinBy(x => x.Order)!.SongDifficultyId);
+    }
+
+    private sealed record PreparedRating(RatingInput Input, MapProposalRating Rating);
+
     private static readonly string _updateProposalStateFormattableString =
         $$"""
           UPDATE "{{nameof(ServerDbContext.MapProposals)}}" AS proposal
@@ -70,12 +80,7 @@ public sealed class MapProposalService(
     public Task<TransitionResponse> SubmitAsync(
         ContextId contextId, MapProposalId proposalId, PlayerId playerId, CancellationToken token, bool force = false,
         bool bypassAmendmentRequirement = false)
-        => dbContext.Database.CreateExecutionStrategy().ExecuteAsync(
-            (service: this, contextId, proposalId, playerId, force, bypassAmendmentRequirement),
-            static (state, cancellationToken) => state.service.SetStateAsync(
-                state.contextId, state.proposalId, state.playerId, MapProposalStatus.Submitted, null,
-                cancellationToken, state.force, state.bypassAmendmentRequirement),
-            token);
+        => SubmitPreparedAsync(contextId, proposalId, playerId, token, force, bypassAmendmentRequirement);
 
     public Task<TransitionResponse> CloseAsync(
         ContextId contextId, MapProposalId proposalId, PlayerId playerId, string? reason, CancellationToken token)
@@ -88,13 +93,43 @@ public sealed class MapProposalService(
 
     internal Task<TransitionResponse> SubmitImportedAsync(
         ContextId contextId, MapProposalId proposalId, CancellationToken token)
-        => dbContext.Database.CreateExecutionStrategy().ExecuteAsync((service: this, contextId, proposalId),
-            static (state, cancellationToken) => state.service.SetStateAsync(state.contextId, state.proposalId,
-                null, MapProposalStatus.Submitted, null, cancellationToken, force: true), token);
+        => SubmitPreparedAsync(contextId, proposalId, null, token, force: true);
+
+    private async Task<TransitionResponse> SubmitPreparedAsync(
+        ContextId contextId, MapProposalId proposalId, PlayerId? playerId, CancellationToken token,
+        bool force = false, bool bypassAmendmentRequirement = false)
+    {
+        var proposal = await GetProposal(contextId, proposalId).SingleOrDefaultAsync(token);
+        if (proposal is null)
+            return new TransitionResponse.NotFound();
+
+        if (GetTransitionError(proposal, playerId, MapProposalStatus.Submitted) is { } error)
+            return error;
+
+        var errors = GetConfigurationErrors(proposal);
+        if (errors.Count > 0)
+            return new TransitionResponse.ValidationFailure(errors);
+
+        var draft = (DraftProposal)proposal;
+        var input = RatingInput.From(draft);
+
+        // ExMachina can be slow. Keep its response across database retries and recheck the inputs on publication.
+        if (!(await ResolveRatingAsync(draft, token)).TryGetValue(out var rating, out var ratingError))
+            return new TransitionResponse.RatingCalculationFailure(ratingError);
+
+        var prepared = new PreparedRating(input, rating);
+
+        return await dbContext.Database.CreateExecutionStrategy().ExecuteAsync(
+            (service: this, contextId, proposalId, playerId, force, bypassAmendmentRequirement, prepared),
+            static (state, cancellationToken) => state.service.SetStateAsync(
+                state.contextId, state.proposalId, state.playerId, MapProposalStatus.Submitted, null,
+                cancellationToken, state.force, state.bypassAmendmentRequirement, state.prepared), token);
+    }
 
     private async Task<TransitionResponse> SetStateAsync(
         ContextId contextId, MapProposalId proposalId, PlayerId? playerId, MapProposalStatus targetStatus,
-        string? reason, CancellationToken token, bool force = false, bool bypassAmendmentRequirement = false)
+        string? reason, CancellationToken token, bool force = false, bool bypassAmendmentRequirement = false,
+        PreparedRating? preparedRating = null)
     {
         try
         {
@@ -142,15 +177,21 @@ public sealed class MapProposalService(
                     return new TransitionResponse.AmendmentTierRequired();
 
                 var revision = await dbContext.RankedMaps.AnyAsync(x => x.ThreadId == draft.ThreadId, token);
-                var limit = revision
-                    ? settings.Value.MaxRevisionRequestsPerPlayer
-                    : settings.Value.MaxRankingRequestsPerPlayer;
 
-                var count = await dbContext.MapProposals.OfType<SubmittedProposal>()
-                    .CountAsync(x => x.AuthorId == playerId && x.Thread.ContextId == contextId
-                                                            && x.Thread.RankedMap != null == revision, token);
-                if (playerId is not null && count >= limit)
-                    return new TransitionResponse.LimitReached(limit);
+                // Automated imports have no player quota; counting all anonymous proposals adds contention.
+                if (playerId is not null)
+                {
+                    var limit = revision
+                        ? settings.Value.MaxRevisionRequestsPerPlayer
+                        : settings.Value.MaxRankingRequestsPerPlayer;
+
+                    var count = await dbContext.MapProposals.OfType<SubmittedProposal>()
+                        .CountAsync(x => x.AuthorId == playerId && x.Thread.ContextId == contextId
+                                                                && x.Thread.RankedMap != null == revision, token);
+
+                    if (count >= limit)
+                        return new TransitionResponse.LimitReached(limit);
+                }
 
                 if (!revision && !force)
                 {
@@ -163,8 +204,10 @@ public sealed class MapProposalService(
                 if (errors.Count > 0)
                     return new TransitionResponse.ValidationFailure(errors);
 
-                if (!(await ResolveRatingAsync(contextId, draft, token)).TryGetValue(out rating, out var ratingError))
-                    return new TransitionResponse.RatingCalculationFailure(ratingError);
+                if (preparedRating is null || preparedRating.Input != RatingInput.From(draft))
+                    return new TransitionResponse.Conflict();
+
+                rating = preparedRating.Rating;
             }
 
             var expectedStatus = proposal is DraftProposal ? MapProposalStatus.Draft : MapProposalStatus.Submitted;
@@ -212,12 +255,15 @@ public sealed class MapProposalService(
             return new TransitionResponse.Success(updated);
         }
         catch (PostgresException exception)
-            when (exception.SqlState is PostgresErrorCodes.SerializationFailure or PostgresErrorCodes.DeadlockDetected)
+            when (ExecutionStrategy.Current?.RetriesOnFailure is not true
+                  && exception.SqlState is PostgresErrorCodes.SerializationFailure
+                                           or PostgresErrorCodes.DeadlockDetected)
         {
             return new TransitionResponse.Conflict();
         }
         catch (InvalidOperationException exception)
-            when (exception.InnerException is PostgresException
+            when (ExecutionStrategy.Current?.RetriesOnFailure is not true
+                  && exception.InnerException is PostgresException
                   {
                       SqlState: PostgresErrorCodes.SerializationFailure
                                 or PostgresErrorCodes.DeadlockDetected
@@ -237,13 +283,11 @@ public sealed class MapProposalService(
         // Published proposals are immutable history. Only private drafts can be deleted.
         if (await dbContext.MapProposals.OfType<DraftProposal>()
                 .Where(x => x.Id == proposalId && x.AuthorId == playerId && x.Thread.ContextId == contextId)
-                .ExecuteDeleteAsync(token) > 0)
-        {
-            dbContext.ChangeTracker.Clear();
-            return new TransitionResponse.Deleted();
-        }
+                .ExecuteDeleteAsync(token) == 0)
+            return new TransitionResponse.NotFound();
 
-        return new TransitionResponse.NotFound();
+        dbContext.ChangeTracker.Clear();
+        return new TransitionResponse.Deleted();
     }
 
     private async Task<MapRequestResponses.DuplicateMatch[]> FindDuplicatesAsync(
@@ -277,25 +321,11 @@ public sealed class MapProposalService(
             .AsSplitQuery();
 
     private async Task<Result<MapProposalRating>> ResolveRatingAsync(
-        ContextId contextId, DraftProposal proposal, CancellationToken token)
+        DraftProposal proposal, CancellationToken token)
     {
         var rating = proposal.Rating;
         if (rating is { AccStar: not null, DiffStar: not null })
             return rating with { IsAccStarAutoCalculated = false, IsDiffStarAutoCalculated = false };
-
-        CustomCurve? accuracyCurve = null;
-        if (rating.AccStar is null)
-        {
-            accuracyCurve = await dbContext.Points
-                .Where(point => dbContext.Contexts
-                    .Any(context => context.Id == contextId && context.GuildId == point.GuildId))
-                .OrderBy(x => x.Id)
-                .Select(x => x.CurveSettings.Accuracy)
-                .FirstOrDefaultAsync(token);
-
-            if (accuracyCurve is null)
-                return Failure<MapProposalRating>("An accuracy curve is required to calculate accuracy stars.");
-        }
 
         var sourceId = proposal.MapVersions.MinBy(x => x.Order)!.SongDifficultyId;
         var source = await (
@@ -325,7 +355,7 @@ public sealed class MapProposalService(
         if (!validDifficulty || !validAccuracy)
             return Failure<MapProposalRating>("The automatic rating response contains invalid calculation values.");
 
-        var accStar = rating.AccStar ?? calculated.ToAccStar(accuracyCurve!);
+        var accStar = rating.AccStar ?? calculated.ToAccStar(LegacyAccuracyCalibration.Curve);
         var diffStar = rating.DiffStar ?? calculated.ToDiffStar();
         if (!float.IsFinite(accStar) || accStar < 0 || !float.IsFinite(diffStar) || diffStar < 0)
             return Failure<MapProposalRating>("The calculated ratings must be finite and non-negative.");
@@ -431,7 +461,7 @@ public sealed class MapProposalService(
             errors.Add(new KeyValuePair<string, string[]>("Requirements.MaxPauseDurationSec",
                 ["Maximum pause duration must be finite and non-negative."]));
 
-        if (requirements.MinAccuracy is { } accuracy && (!float.IsFinite(accuracy) || accuracy < 0 || accuracy > 100))
+        if (requirements.MinAccuracy is { } accuracy && (!double.IsFinite(accuracy) || accuracy < 0 || accuracy > 100))
             errors.Add(new KeyValuePair<string, string[]>("Requirements.MinAccuracy",
                 ["Minimum accuracy must be finite and between 0 and 100."]));
 

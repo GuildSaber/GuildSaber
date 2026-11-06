@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using GuildSaber.Api.Features.PointCurves;
 using GuildSaber.Api.Features.RankedScores.Pipelines;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Scores;
@@ -6,40 +6,42 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GuildSaber.Api.Features.Scores.Pipelines;
 
-public class ScoreDeletionPipeline(ServerDbContext dbContext)
+public class ScoreDeletionPipeline(ServerDbContext dbContext, PointCurveService curves)
 {
-    private readonly record struct GuildsWithRankedMaps(GuildId[] GuildIds, RankedMapId[] RankedMapIds);
-
-    public async Task ExecuteAsync(AbstractScore score)
-        => await ExecuteAsync(score, await GetImpactedGuildsAndRankedMapsFromScoreIdsIfDeletionAsync(score.Id));
-
-    private async ValueTask ExecuteAsync(AbstractScore score, GuildsWithRankedMaps guildsWithRankedMaps)
+    public async Task ExecuteAsync(AbstractScore score, CancellationToken token = default)
     {
-        var affectedRow = await dbContext.Scores.Where(x => x.Id == score.Id).ExecuteDeleteAsync();
-        Trace.Assert(!(guildsWithRankedMaps.RankedMapIds.Length != 0 && affectedRow == 0),
-            "If there were ranked scores, the score should have existed and been deleted.");
+        var (deleted, affected) = await dbContext.Database.CreateExecutionStrategy().ExecuteAsync(
+            (dbContext, score.Id, score.SongDifficultyId),
+            static async (state, token) =>
+            {
+                var maps = await state.dbContext.RankedMaps
+                    .Where(x =>
+                        x.MapVersions.Any(v => v.SongDifficultyId == state.SongDifficultyId)
+                        || x.RankedScores.Any(s => s.ScoreId == state.Id || s.PrevScoreId == state.Id))
+                    .Select(x => x.Id)
+                    .ToArrayAsync(token);
 
-        if (affectedRow == 0) return;
-        if (guildsWithRankedMaps.RankedMapIds.Length == 0) return;
+                await using var transaction = await state.dbContext.Database.BeginTransactionAsync(token);
+                await RankedScoreUpdateRankPipeline.LockMapsAsync(maps, state.dbContext, token);
 
-        //TODO: Recalculate rankedScores for each RankedMapIds because one of their scores got deleted, and there might be a score that fits a new ranked score. (UpdateOrAddAsync should just do it too, yoink the call from there)
-        await RankedScoreUpdateRankPipeline.UpdateRanksForRankedMapsAsync(guildsWithRankedMaps.RankedMapIds, dbContext);
+                // Both relationships cascade. Read the affected rows after other score writers finish.
+                var entries = await state.dbContext.RankedScores
+                    .Where(x => x.ScoreId == state.Id || x.PrevScoreId == state.Id)
+                    .Select(x => new { x.RankedMapId, x.PointId, x.PlayerId })
+                    .Distinct()
+                    .ToArrayAsync(token);
+
+                var deleted = await state.dbContext.Scores
+                    .Where(x => x.Id == state.Id)
+                    .ExecuteDeleteAsync(token);
+
+                await transaction.CommitAsync(token);
+                return (deleted, entries);
+            }, token);
+
+        if (deleted == 0) return;
+
+        foreach (var item in affected)
+            await curves.QueueRecalculationAsync(item.RankedMapId, item.PointId, true, item.PlayerId, token);
     }
-
-    /// <summary>
-    /// Retrieves the impacted guilds and ranked maps associated with a score ID, if any ranked scores exist for that score ID.
-    /// </summary>
-    /// <param name="scoreId"></param>
-    private async Task<GuildsWithRankedMaps> GetImpactedGuildsAndRankedMapsFromScoreIdsIfDeletionAsync(ScoreId scoreId)
-        => new(
-            await dbContext.RankedScores
-                .Where(x => x.ScoreId == scoreId)
-                .Select(x => x.GuildId)
-                .Distinct()
-                .ToArrayAsync(),
-            await dbContext.RankedScores
-                .Where(x => x.ScoreId == scoreId)
-                .Select(x => x.RankedMapId)
-                .ToArrayAsync()
-        );
 }

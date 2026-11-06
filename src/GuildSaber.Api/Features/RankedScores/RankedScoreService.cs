@@ -42,14 +42,32 @@ public sealed class RankedScoreService(
         ScoreId scoreId,
         RankedScore.ERankedScoreType targetType,
         CancellationToken token)
-        => dbContext.Database.ExecuteSqlAsync(
-            FormattableStringFactory.Create(
-                _updateRankedScoreConfirmationStateFormattableString,
-                (int)targetType,
-                timeProvider.GetUtcNow(),
-                scoreId.Value,
-                contextId.Value),
-            token);
+        => dbContext.Database.CreateExecutionStrategy().ExecuteAsync(
+            (dbContext, timeProvider, contextId, scoreId, targetType),
+            static async (state, cancellationToken) =>
+            {
+                await using var transaction = await state.dbContext.Database
+                    .BeginTransactionAsync(cancellationToken);
+
+                var maps = await state.dbContext.RankedScores
+                    .Where(x => x.ContextId == state.contextId && x.ScoreId == state.scoreId)
+                    .Select(x => x.RankedMapId)
+                    .Distinct()
+                    .ToArrayAsync(cancellationToken);
+
+                await RankedScoreUpdateRankPipeline.LockMapsAsync(maps, state.dbContext, cancellationToken);
+
+                var updated = await state.dbContext.Database.ExecuteSqlAsync(
+                    FormattableStringFactory.Create(
+                        _updateRankedScoreConfirmationStateFormattableString,
+                        (int)state.targetType,
+                        state.timeProvider.GetUtcNow(),
+                        state.scoreId.Value,
+                        state.contextId.Value), cancellationToken);
+
+                await transaction.CommitAsync(cancellationToken);
+                return updated;
+            }, token);
 
     public Task<ConfirmationResponse> SetConfirmedAsync(
         ContextId contextId, ScoreId scoreId, CancellationToken token)

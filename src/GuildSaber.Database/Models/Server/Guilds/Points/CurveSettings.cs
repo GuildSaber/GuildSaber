@@ -9,6 +9,9 @@ public record CurveSettings
 {
     public required CustomCurve Difficulty { get; set; }
     public required CustomCurve Accuracy { get; set; }
+    public double AccuracyBonusRatio { get; set; }
+    public PointCurvePolicy MapCurvePolicy { get; set; }
+    public double[] RunnerUpRewardFractions { get; set; } = [];
 }
 
 public class CurveSettingsConfiguration : IComplexPropertyConfiguration<CurveSettings>
@@ -51,8 +54,8 @@ public record CustomCurve(CurvePoint[] Points)
         {
             if (value <= Points[index].X && value >= Points[index + 1].X)
             {
-                result = Points[index].Y + (Points[index + 1].Y - Points[index].Y) *
-                    (value - Points[index].X) / (Points[index + 1].X - Points[index].X);
+                result = Points[index].Y + (Points[index + 1].Y - Points[index].Y)
+                    * (value - Points[index].X) / (Points[index + 1].X - Points[index].X);
                 break;
             }
 

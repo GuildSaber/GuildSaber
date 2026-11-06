@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Text;
+using CSharpFunctionalExtensions;
 using Discord;
 using GuildSaber.Api.Features.Players.Http;
 using GuildSaber.Api.Features.RankedMaps.Http;
@@ -35,12 +36,12 @@ public static class RankedScoreExtensions
                 RefusedRankedScore => emojiSettings.Value.Refused,
                 ValidRankedScore => ":white_check_mark: ",
                 _ => throw new UnreachableException()
-            }).Append(((float)Accuracy.From(
+            }).Append(Accuracy.From(
                     BaseScore.CreateUnsafe(score.BaseScore).Value,
                     MaxScore.CreateUnsafe(rankedMap.Versions
                         .First(x => x.Difficulty.Id == score.SongDifficultyId)
-                        .Difficulty.Stats.MaxScore).Value))
-                .ToString("N1")).Append("% ");
+                        .Difficulty.Stats.MaxScore).Value)
+                .Match(accuracy => ((double)accuracy).ToString("N1"), _ => "N/A")).Append("% ");
 
             if (self.PrevScore is { } prevScore)
             {

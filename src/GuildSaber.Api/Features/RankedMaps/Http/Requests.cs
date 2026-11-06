@@ -133,7 +133,7 @@ public static class RankedMapRequests
         float? MaxPauseDurationSec = null,
         EModifiers ProhibitedModifiers = EModifiers.ProhibitedDefaults,
         EModifiers MandatoryModifiers = EModifiers.None,
-        float? MinAccuracy = null
+        double? MinAccuracy = null
     );
 
     public static string ToModifiersString(this EModifiers modifiers) => modifiers

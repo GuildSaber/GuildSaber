@@ -361,7 +361,7 @@ public class DebugEndpoints : IEndpoints
         {
             await using var scope = serviceScopeFactory.CreateAsyncScope();
             await scope.ServiceProvider.GetRequiredService<EditRankedMapPipeline>()
-                .ExecuteAsync(rankedMapId, token);
+                .ExecuteAsync(rankedMapId, token: token);
         });
 
         return TypedResults.Ok();

@@ -4,6 +4,7 @@ using GuildSaber.Api.Features.MapRequests.Services;
 using GuildSaber.Api.Features.MapRequests.Settings;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.StrongTypes;
+using GuildSaber.Common.UnitTests.Utils;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.MapRequests;
@@ -75,9 +76,7 @@ public class MapRequestBoostServiceTests
 
         public static async Task<TestDatabase> CreateAsync(Tier tier = Tier.Tier1)
         {
-            var connectionString = Environment.GetEnvironmentVariable("GUILDSABER_TEST_POSTGRES");
-            Skip.Unless(!string.IsNullOrWhiteSpace(connectionString),
-                "Set GUILDSABER_TEST_POSTGRES to an isolated PostgreSQL server to run persistence tests.");
+            var connectionString = await PostgresTestServer.GetConnectionStringAsync();
             var connection = new NpgsqlConnectionStringBuilder(connectionString)
             {
                 Database = $"guildsaber_boost_test_{Guid.NewGuid():N}", Pooling = false

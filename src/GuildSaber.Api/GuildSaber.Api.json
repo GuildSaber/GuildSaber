@@ -2122,6 +2122,347 @@
         ]
       }
     },
+    "/guilds/{guildId}/points/{pointId}/curve-settings": {
+      "get": {
+        "tags": [
+          "PointCurves"
+        ],
+        "operationId": "GetPointCurveSettings",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settings"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "PointCurves"
+        ],
+        "operationId": "UpdatePointCurveSettings",
+        "parameters": [
+          {
+            "name": "guildId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settings"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/ranked-maps/{rankedMapId}/points/{pointId}/curve": {
+      "get": {
+        "tags": [
+          "PointCurves"
+        ],
+        "operationId": "GetMapPointCurve",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rankedMapId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Curve"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "PointCurves"
+        ],
+        "operationId": "PutMapPointCurve",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rankedMapId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutCurve"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Curve"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "PointCurves"
+        ],
+        "operationId": "DeleteMapPointCurve",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rankedMapId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Curve"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/ranked-maps/{rankedMapId}/points/{pointId}/curve/preview": {
+      "post": {
+        "tags": [
+          "PointCurves"
+        ],
+        "operationId": "PreviewMapPointCurve",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rankedMapId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pointId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Preview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preview"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/players": {
       "get": {
         "tags": [
@@ -8274,7 +8615,10 @@
           }
         }
       },
-      "BeatLeaderScoreId": { },
+      "BeatLeaderScoreId": {
+        "type": "integer",
+        "format": "int32"
+      },
       "BeatSaverKey": {
         "examples": [
           "a3c3"
@@ -8564,6 +8908,48 @@
           },
           "requirements": {
             "$ref": "#/components/schemas/GuildRequirements"
+          }
+        }
+      },
+      "Curve": {
+        "required": [
+          "points",
+          "isMapOverride",
+          "editable",
+          "updatedAt",
+          "benchmarkAccuracies"
+        ],
+        "type": "object",
+        "properties": {
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sample"
+            }
+          },
+          "isMapOverride": {
+            "type": "boolean"
+          },
+          "editable": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "benchmarkAccuracies": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "double"
+            }
           }
         }
       },
@@ -10413,6 +10799,157 @@
           }
         }
       },
+      "Policy": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/PolicyShared"
+          },
+          {
+            "$ref": "#/components/schemas/PolicyEditableMapCurve"
+          },
+          {
+            "$ref": "#/components/schemas/PolicyScoreDerivedMapCurve"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Shared": "#/components/schemas/PolicyShared",
+            "EditableMapCurve": "#/components/schemas/PolicyEditableMapCurve",
+            "ScoreDerivedMapCurve": "#/components/schemas/PolicyScoreDerivedMapCurve"
+          }
+        }
+      },
+      "PolicyEditableMapCurve": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "EditableMapCurve"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "PolicyScoreDerivedMapCurve": {
+        "required": [
+          "runnerUpRewardFractions"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "ScoreDerivedMapCurve"
+            ],
+            "type": "string"
+          },
+          "runnerUpRewardFractions": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "double"
+            }
+          }
+        }
+      },
+      "PolicyShared": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Shared"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "Preview": {
+        "required": [
+          "curve",
+          "basePoints",
+          "accuracyBonusRatio",
+          "maximumAdditionalPoints",
+          "values"
+        ],
+        "type": "object",
+        "properties": {
+          "curve": {
+            "$ref": "#/components/schemas/Curve"
+          },
+          "basePoints": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "accuracyBonusRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "maximumAdditionalPoints": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PreviewValue"
+            }
+          }
+        }
+      },
+      "PreviewValue": {
+        "required": [
+          "accuracy",
+          "bonusFraction",
+          "rawPoints"
+        ],
+        "type": "object",
+        "properties": {
+          "accuracy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "bonusFraction": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "rawPoints": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "float"
+          }
+        }
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -10821,6 +11358,20 @@
         },
         "description": "Resolved song version and play mode retained by the proposal."
       },
+      "PutCurve": {
+        "required": [
+          "points"
+        ],
+        "type": "object",
+        "properties": {
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sample"
+            }
+          }
+        }
+      },
       "RankedMap": {
         "required": [
           "id",
@@ -10974,7 +11525,7 @@
               "string"
             ],
             "description": "Minimum accuracy in percent, from 0 to 100 inclusive. Null imposes no minimum.",
-            "format": "float"
+            "format": "double"
           }
         },
         "description": "Requirements for a score to qualify on the ranked map."
@@ -11597,6 +12148,31 @@
           }
         }
       },
+      "Sample": {
+        "required": [
+          "x",
+          "y"
+        ],
+        "type": "object",
+        "properties": {
+          "x": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "y": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
       "Score": {
         "required": [
           "type"
@@ -11754,7 +12330,10 @@
         "type": "string",
         "format": "int64"
       },
-      "ScoreSaberScoreId": { },
+      "ScoreSaberScoreId": {
+        "type": "integer",
+        "format": "int32"
+      },
       "ScoreScoreSaberScore": {
         "required": [
           "scoreSaberScoreId",
@@ -11874,6 +12453,40 @@
           },
           "scoreGraphTracker": {
             "$ref": "#/components/schemas/ScoreGraphTracker"
+          }
+        }
+      },
+      "Settings": {
+        "required": [
+          "difficultyCurve",
+          "defaultAccuracyCurve",
+          "accuracyBonusRatio",
+          "policy"
+        ],
+        "type": "object",
+        "properties": {
+          "difficultyCurve": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sample"
+            }
+          },
+          "defaultAccuracyCurve": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sample"
+            }
+          },
+          "accuracyBonusRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/Policy"
           }
         }
       },
@@ -12303,6 +12916,40 @@
           }
         }
       },
+      "UpdateSettings": {
+        "required": [
+          "difficultyCurve",
+          "defaultAccuracyCurve",
+          "accuracyBonusRatio",
+          "policy"
+        ],
+        "type": "object",
+        "properties": {
+          "difficultyCurve": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sample"
+            }
+          },
+          "defaultAccuracyCurve": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sample"
+            }
+          },
+          "accuracyBonusRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/Policy"
+          }
+        }
+      },
       "Vote": {
         "required": [
           "type"
@@ -12573,6 +13220,9 @@
     {
       "name": "Players.RankedScores",
       "description": "Endpoints for managing players' ranked scores."
+    },
+    {
+      "name": "PointCurves"
     },
     {
       "name": "RankedMaps",

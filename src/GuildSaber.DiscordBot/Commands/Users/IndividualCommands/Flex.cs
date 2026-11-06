@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Interactions;
 using Discord.Net;
@@ -395,10 +396,10 @@ file static class FlexCommand
             _ => throw new UnreachableException()
         });
 
-        stringBuilder.Append(((float)Accuracy.From(
+        stringBuilder.Append(Accuracy.From(
                 BaseScore.CreateUnsafe(score.BaseScore).Value,
-                MaxScore.CreateUnsafe(version.Difficulty.Stats.MaxScore).Value))
-            .ToString("N1")).Append("% ");
+                MaxScore.CreateUnsafe(version.Difficulty.Stats.MaxScore).Value)
+            .Match(accuracy => ((double)accuracy).ToString("N1"), _ => "N/A")).Append("% ");
 
         if (rankedScore.PrevScore is { } prevScore)
         {

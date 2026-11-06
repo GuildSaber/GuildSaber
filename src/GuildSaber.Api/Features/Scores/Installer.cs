@@ -10,5 +10,6 @@ public static class ScoresInstaller
         .AddScoped<HmdResolverService>()
         .AddScoped<ControllerResolverService>()
         .AddTransient<ScoreAddOrUpdatePipeline>()
+        .AddTransient<ScoreDeletionPipeline>()
         .AddHostedService<BeatLeaderScoreSyncWorker>();
 }

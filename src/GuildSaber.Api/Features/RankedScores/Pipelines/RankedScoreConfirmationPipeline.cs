@@ -31,13 +31,14 @@ public sealed class RankedScoreConfirmationPipeline(
             return;
         }
 
-        var result = await scoreAddOrUpdatePipeline.ExecuteAsync(rankedScore.Score, token);
+        var result = await scoreAddOrUpdatePipeline.ExecuteAsync(
+            rankedScore.Score, refreshCurveBenchmarks: true, token);
         foreach (var context in result.ImpactedContextsWithPoints)
         {
-            await memberPointStatsPipeline.ExecuteAsync(rankedScore.PlayerId, context);
+            await memberPointStatsPipeline.ExecuteAsync(rankedScore.PlayerId, context, token);
             foreach (var pointId in context.Points.Select(x => x.Id))
                 await memberAchievementStatsPipeline.ExecuteAsync(rankedScore.PlayerId, context.GuildId, context.Id,
-                    pointId);
+                    pointId, token);
         }
 
         logger.LogInformation(

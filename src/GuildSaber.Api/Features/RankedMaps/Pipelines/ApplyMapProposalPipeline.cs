@@ -9,45 +9,39 @@ public sealed class ApplyMapProposalPipeline(
     ServerDbContext dbContext,
     AddRankedMapPipeline addRankedMapPipeline,
     EditRankedMapPipeline editRankedMapPipeline,
-    MemberPointStatsPipeline pointStatsPipeline,
-    MemberAchievementStatsPipeline achievementStatsPipeline)
+    MemberStatsPipeline memberStatsPipeline)
 {
     public async Task ExecuteAsync(
         RankedMapId rankedMapId, SongDifficultyId[] addedDifficultyIds, CancellationToken token)
     {
-        var context = await dbContext.RankedMaps.Where(x => x.Id == rankedMapId)
+        var context = await dbContext.RankedMaps
+            .Where(x => x.Id == rankedMapId)
             .Include(x => x.Context.Points)
             .Select(x => x.Context)
             .SingleOrDefaultAsync(token);
-        if (context is null) return;
+
+        if (context is null)
+            return;
 
         // Another proposal may have been accepted while this work waited in the queue.
         var addedDifficulties = await dbContext.SongDifficulties
-            .Where(x => ((IEnumerable<SongDifficultyId>)addedDifficultyIds).Contains(x.Id)
-                        && dbContext.MapVersions.Any(version
-                            => version.RankedMapId == rankedMapId && version.SongDifficultyId == x.Id))
+            .Where(x =>
+                ((IEnumerable<SongDifficultyId>)addedDifficultyIds).Contains(x.Id)
+                && dbContext.MapVersions.Any(version =>
+                    version.RankedMapId == rankedMapId
+                    && version.SongDifficultyId == x.Id))
             .ToArrayAsync(token);
 
         foreach (var difficulty in addedDifficulties)
             await addRankedMapPipeline.ExecuteAsync(difficulty, token);
 
-        await editRankedMapPipeline.ExecuteAsync(rankedMapId, token);
+        await editRankedMapPipeline.ExecuteAsync(rankedMapId, refreshMemberStats: false, token);
 
         // Removed versions and changed achievement/category membership can affect players without a remaining score.
-        var players = await dbContext.ContextMembers
+        var players = dbContext.ContextMembers
             .Where(x => x.ContextId == context.Id)
-            .Select(x => x.PlayerId)
-            .ToArrayAsync(token);
+            .Select(x => x.PlayerId);
 
-        foreach (var playerId in players)
-        {
-            token.ThrowIfCancellationRequested();
-            await pointStatsPipeline.ExecuteAsync(playerId, context);
-
-            foreach (var point in context.Points)
-                await achievementStatsPipeline.ExecuteAsync(playerId, context.GuildId, context.Id, point.Id);
-
-            dbContext.ChangeTracker.Clear();
-        }
+        await memberStatsPipeline.ExecuteAsync(context, players, token: token);
     }
 }

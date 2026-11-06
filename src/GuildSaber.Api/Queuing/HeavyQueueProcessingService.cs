@@ -4,9 +4,14 @@ public class HeavyQueueProcessingService(
     IHeavyBackgroundTaskQueue taskQueue,
     ILogger<HeavyQueueProcessingService> logger) : BackgroundService
 {
+    private static readonly AsyncLocal<bool> _isProcessingWorkItem = new();
+    internal static bool IsProcessingWorkItem => _isProcessingWorkItem.Value;
+
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("{HeavyQueueProcessingService} is running.\n\n", nameof(HeavyQueueProcessingService));
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("{HeavyQueueProcessingService} is running.\n\n", nameof(HeavyQueueProcessingService));
+
         return ProcessTaskQueueAsync(stoppingToken);
     }
 
@@ -17,7 +22,16 @@ public class HeavyQueueProcessingService(
             try
             {
                 var workItem = await taskQueue.DequeueAsync(stoppingToken);
-                await workItem(stoppingToken);
+                _isProcessingWorkItem.Value = true;
+
+                try
+                {
+                    await workItem(stoppingToken);
+                }
+                finally
+                {
+                    _isProcessingWorkItem.Value = false;
+                }
             }
             catch (OperationCanceledException)
             {
@@ -32,7 +46,9 @@ public class HeavyQueueProcessingService(
 
     public override async Task StopAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("{HeavyQueueProcessingService} is stopping.", nameof(HeavyQueueProcessingService));
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("{HeavyQueueProcessingService} is stopping.", nameof(HeavyQueueProcessingService));
+
         await base.StopAsync(stoppingToken);
     }
 }

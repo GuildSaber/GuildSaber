@@ -23,16 +23,32 @@ public class AddRankedMapPipeline(
     ControllerResolverService controllerResolver,
     ILogger<AddRankedMapPipeline> logger)
 {
+    private const int ScoreBatchSize = 128;
+
     public async Task ExecuteAsync(SongDifficulty songDifficulty, CancellationToken token)
     {
-        logger.LogInformation("Executing added pipeline for ranked map with SongDifficultyId {SongDifficultyId}",
-            songDifficulty.Id);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Executing added pipeline for ranked map with SongDifficultyId {SongDifficultyId}",
+                songDifficulty.Id);
 
-        await foreach (var score in dbContext.Scores
-                           .Where(x => x.SongDifficultyId == songDifficulty.Id)
-                           .AsAsyncEnumerable()
-                           .WithCancellation(token))
-            await scoreAddOrUpdatePipeline.ExecuteAsync(score, token);
+        var cursor = 0;
+        while (true)
+        {
+            var after = new ScoreId(cursor);
+            var scores = await dbContext.Scores
+                .Where(x => x.SongDifficultyId == songDifficulty.Id && x.Id > after)
+                .OrderBy(x => x.Id)
+                .Take(ScoreBatchSize)
+                .ToArrayAsync(token);
+
+            if (scores.Length == 0)
+                break;
+
+            foreach (var score in scores)
+                await scoreAddOrUpdatePipeline.ExecuteAsync(score, token: token);
+
+            cursor = scores[^1].Id.Value;
+        }
 
         if (songDifficulty.BLLeaderboardId is not null)
         {
@@ -59,7 +75,7 @@ public class AddRankedMapPipeline(
                 var abstractScore = await score.MapAsync(playerId, songDifficulty.Id, scoreStats,
                     hmdResolver.ResolveHmdIdAsync, controllerResolver.ResolveControllerIdAsync, token);
 
-                await scoreAddOrUpdatePipeline.ExecuteAsync(abstractScore, token);
+                await scoreAddOrUpdatePipeline.ExecuteAsync(abstractScore, token: token);
             }
         }
 
@@ -89,11 +105,12 @@ public class AddRankedMapPipeline(
                 var abstractScore = await score.MapAsync(playerId, songDifficulty.Id,
                     hmdResolver.ResolveHmdIdAsync, controllerResolver.ResolveControllerIdAsync, token);
 
-                await scoreAddOrUpdatePipeline.ExecuteAsync(abstractScore, token);
+                await scoreAddOrUpdatePipeline.ExecuteAsync(abstractScore, token: token);
             }
         }
 
-        logger.LogInformation("Completed added pipeline for ranked map with SongDifficultyId {SongDifficultyId}",
-            songDifficulty.Id);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Completed added pipeline for ranked map with SongDifficultyId {SongDifficultyId}",
+                songDifficulty.Id);
     }
 }

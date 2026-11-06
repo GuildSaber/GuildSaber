@@ -125,7 +125,7 @@ public static class RankedScoreResponses
         [Description("Score was not a full combo when one was required.")]
         NoFullCombo = 1 << 4,
 
-        [Description("Score was missing trackers.")]
-        MissingTrackers = 1 << 5
+        [Description("Score was missing pause statistics.")]
+        MissingPauseStatistics = 1 << 5
     }
 }

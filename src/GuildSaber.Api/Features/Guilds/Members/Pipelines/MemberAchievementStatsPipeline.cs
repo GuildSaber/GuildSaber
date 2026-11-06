@@ -16,7 +16,8 @@ using AccStarQueryFunc = System.Func<
     GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId,
     int?,
     float?,
-    float?, System.Threading.Tasks.Task<int>
+    float?,
+    System.Threading.CancellationToken, System.Threading.Tasks.Task<int>
 >;
 using DiffStarQueryFunc = System.Func<
     GuildSaber.Database.Contexts.Server.ServerDbContext,
@@ -26,7 +27,8 @@ using DiffStarQueryFunc = System.Func<
     GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId,
     int?,
     float?,
-    float?, System.Threading.Tasks.Task<int>
+    float?,
+    System.Threading.CancellationToken, System.Threading.Tasks.Task<int>
 >;
 using RankedMapListPassCountQueryFunc = System.Func<
     GuildSaber.Database.Contexts.Server.ServerDbContext,
@@ -35,7 +37,8 @@ using RankedMapListPassCountQueryFunc = System.Func<
     GuildSaber.Common.StrongTypes.PlayerId,
     GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId,
     GuildSaber.Database.Models.Server.Guilds.Achievements.Achievement.AchievementId,
-    int?, System.Threading.Tasks.Task<int>
+    int?,
+    System.Threading.CancellationToken, System.Threading.Tasks.Task<int>
 >;
 
 namespace GuildSaber.Api.Features.Guilds.Members.Pipelines;
@@ -47,7 +50,7 @@ public sealed class MemberAchievementStatsPipeline(
     private static readonly AccStarQueryFunc _getAccStarPassCountQuery = EF.CompileAsyncQuery((
         ServerDbContext db, GuildId guildId, ContextId contextId, PlayerId playerId,
         Point.PointId pointId, int? categoryId,
-        float? minStar, float? maxStar) => db.RankedScores
+        float? minStar, float? maxStar, CancellationToken token) => db.RankedScores
         .Where(x =>
             x.GuildId == guildId &&
             x.ContextId == contextId &&
@@ -61,7 +64,7 @@ public sealed class MemberAchievementStatsPipeline(
     private static readonly DiffStarQueryFunc _getDiffStarPassCountQuery = EF.CompileAsyncQuery((
         ServerDbContext db, GuildId guildId, ContextId contextId, PlayerId playerId,
         Point.PointId pointId, int? categoryId,
-        float? minStar, float? maxStar) => db.RankedScores
+        float? minStar, float? maxStar, CancellationToken token) => db.RankedScores
         .Where(x =>
             x.GuildId == guildId &&
             x.ContextId == contextId &&
@@ -74,7 +77,8 @@ public sealed class MemberAchievementStatsPipeline(
 
     private static readonly RankedMapListPassCountQueryFunc _getRankedMapListPassCountQuery = EF.CompileAsyncQuery((
         ServerDbContext db, GuildId guildId, ContextId contextId, PlayerId playerId,
-        Point.PointId pointId, Achievement.AchievementId achievementId, int? categoryId) => db.RankedScores
+        Point.PointId pointId, Achievement.AchievementId achievementId, int? categoryId,
+        CancellationToken token) => db.RankedScores
         .Where(x =>
             x.GuildId == guildId &&
             x.ContextId == contextId &&
@@ -93,19 +97,22 @@ public sealed class MemberAchievementStatsPipeline(
     /// <param name="pointId">
     /// The point is simply used for more efficient querying (since the passes are the same on multiple context points.
     /// </param>
+    /// <param name="token">The cancellation token for recalculating achievement stats.</param>
     [SuppressMessage("ReSharper", "InvertIf")]
-    public async Task ExecuteAsync(PlayerId playerId, GuildId guildId, ContextId contextId, Point.PointId pointId)
+    public async Task ExecuteAsync(
+        PlayerId playerId, GuildId guildId, ContextId contextId, Point.PointId pointId,
+        CancellationToken token = default)
     {
         logger.LogInformation("Recalculating member achievement stats for player {PlayerId} in context {ContextId}",
             playerId, contextId);
         var (achievements, achievementStats) = (
             await dbContext.Achievements
                 .Where(x => x.ContextId == contextId)
-                .ToArrayAsync(),
+                .ToArrayAsync(token),
             await dbContext.MemberAchievementStats
                 .AsTracking()
                 .Where(x => x.PlayerId == playerId && x.ContextId == contextId)
-                .ToDictionaryAsync(x => x.AchievementId)
+                .ToDictionaryAsync(x => x.AchievementId, token)
         );
 
         foreach (var achievement in achievements)
@@ -133,7 +140,7 @@ public sealed class MemberAchievementStatsPipeline(
                          .ThenBy(y => y.ProgressionOrder)))
         {
             var achievementStat = achievementStats[achievement.Id];
-            await RecalculateMemberAchievementStat(achievementStat, achievement, pointId);
+            await RecalculateMemberAchievementStat(achievementStat, achievement, pointId, token);
 
             if (achievement.ProgressionOrder is null)
                 continue;
@@ -148,29 +155,30 @@ public sealed class MemberAchievementStatsPipeline(
             }
         }
 
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(token);
         logger.LogInformation(
             "Completed recalculating member achievement stats for player {PlayerId} in context {ContextId}",
             playerId, contextId);
     }
 
     public ValueTask RecalculateMemberAchievementStat(
-        MemberAchievementStat memberAchievementStat, Achievement achievement, Point.PointId pointId)
+        MemberAchievementStat memberAchievementStat, Achievement achievement, Point.PointId pointId,
+        CancellationToken token = default)
         => achievement switch
         {
             RankedMapListAchievement rankedMapListAchievement => RecalculateRankedMapListAchievementStat(
-                memberAchievementStat, rankedMapListAchievement, achievement.CategoryId, pointId),
+                memberAchievementStat, rankedMapListAchievement, achievement.CategoryId, pointId, token),
             DiffStarAchievement diffStarAchievement => RecalculateDiffStarAchievementStat(
-                memberAchievementStat, diffStarAchievement, achievement.CategoryId, pointId),
+                memberAchievementStat, diffStarAchievement, achievement.CategoryId, pointId, token),
             AccStarAchievement accStarAchievement => RecalculateAccStarAchievementStat(
-                memberAchievementStat, accStarAchievement, achievement.CategoryId, pointId),
+                memberAchievementStat, accStarAchievement, achievement.CategoryId, pointId, token),
             _ => throw new UnreachableException($"Unknown achievement type: {achievement.GetType().FullName}")
         };
 
     public async ValueTask RecalculateRankedMapListAchievementStat(
         MemberAchievementStat memberAchievementStat, RankedMapListAchievement achievement,
         CategoryId? categoryId,
-        Point.PointId pointId)
+        Point.PointId pointId, CancellationToken token = default)
     {
         memberAchievementStat.IsLocked = false;
         memberAchievementStat.PassCount = await _getRankedMapListPassCountQuery(
@@ -180,14 +188,15 @@ public sealed class MemberAchievementStatsPipeline(
             memberAchievementStat.PlayerId,
             pointId,
             memberAchievementStat.AchievementId,
-            categoryId
+            categoryId,
+            token
         );
         memberAchievementStat.IsCompleted = memberAchievementStat.PassCount >= achievement.RequiredPassCount;
     }
 
     public async ValueTask RecalculateDiffStarAchievementStat(
         MemberAchievementStat memberAchievementStat, DiffStarAchievement achievement,
-        CategoryId? categoryId, Point.PointId pointId)
+        CategoryId? categoryId, Point.PointId pointId, CancellationToken token = default)
     {
         memberAchievementStat.IsLocked = false;
         memberAchievementStat.PassCount = await _getDiffStarPassCountQuery(
@@ -198,14 +207,15 @@ public sealed class MemberAchievementStatsPipeline(
             pointId,
             categoryId,
             achievement.MinStar,
-            achievement.MaxStar?.Value
+            achievement.MaxStar?.Value,
+            token
         );
         memberAchievementStat.IsCompleted = memberAchievementStat.PassCount >= achievement.RequiredPassCount;
     }
 
     public async ValueTask RecalculateAccStarAchievementStat(
         MemberAchievementStat memberAchievementStat, AccStarAchievement achievement,
-        CategoryId? categoryId, Point.PointId pointId)
+        CategoryId? categoryId, Point.PointId pointId, CancellationToken token = default)
     {
         memberAchievementStat.IsLocked = false;
         memberAchievementStat.PassCount = await _getAccStarPassCountQuery(
@@ -216,7 +226,8 @@ public sealed class MemberAchievementStatsPipeline(
             pointId,
             categoryId,
             achievement.MinStar,
-            achievement.MaxStar?.Value
+            achievement.MaxStar?.Value,
+            token
         );
         memberAchievementStat.IsCompleted = memberAchievementStat.PassCount >= achievement.RequiredPassCount;
     }

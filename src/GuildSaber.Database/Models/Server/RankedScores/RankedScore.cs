@@ -6,6 +6,7 @@ using GuildSaber.Database.Models.Server.Scores;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SongDifficultyId = GuildSaber.Database.Models.Server.Songs.SongDifficulties.SongDifficulty.SongDifficultyId;
 using PointId = GuildSaber.Database.Models.Server.Guilds.Points.Point.PointId;
@@ -138,6 +139,9 @@ public class RankedScoreConfiguration : IEntityTypeConfiguration<RankedScore>
             .HasValue<AcceptedRankedScore>(RankedScore.ERankedScoreType.Accepted)
             .HasValue<RefusedRankedScore>(RankedScore.ERankedScoreType.Refused)
             .IsComplete();
+
+        // Scoring replaces detached rows when their validity/confirmation subtype changes.
+        builder.Property(x => x.Type).Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Save);
 
         builder.Property(x => x.EffectiveScore)
             .HasConversion<int>(from => from, to => EffectiveScore.CreateUnsafe(to).Value);

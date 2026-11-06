@@ -120,10 +120,10 @@ public static class RankedMapExtensions
                             RankedScoreResponses.RankedScore.RefusedRankedScore => emojiSettings.Value.Refused,
                             RankedScoreResponses.RankedScore.ValidRankedScore => ":white_check_mark: ",
                             _ => string.Empty
-                        }).Append(((float)Accuracy.From(
+                        }).Append(Accuracy.From(
                                 BaseScore.CreateUnsafe(score.BaseScore).Value,
-                                MaxScore.CreateUnsafe(version.Difficulty.Stats.MaxScore).Value))
-                            .ToString("N1")).Append("% ");
+                                MaxScore.CreateUnsafe(version.Difficulty.Stats.MaxScore).Value)
+                            .Match(accuracy => ((double)accuracy).ToString("N1"), _ => "N/A")).Append("% ");
 
                     if (rankedScore.PrevScore is { } prevScore)
                     {

@@ -2,51 +2,60 @@
 
 namespace GuildSaber.Common.Services.BeatLeader.Models.Responses;
 
-public class ExMachinaResponse
-{
-    public required RatingResult FS { get; set; }
-    public required RatingResult SFS { get; set; }
-    public required RatingResult BFS { get; set; }
-    public required RatingResult BSF { get; set; }
-    public required RatingResult SS { get; set; }
-    public required RatingResult None { get; set; }
-}
+public record ExMachinaResponse(
+    [property: JsonRequired] RatingResult FS,
+    [property: JsonRequired] RatingResult SFS,
+    [property: JsonRequired] RatingResult BFS,
+    [property: JsonRequired] RatingResult BSF,
+    [property: JsonRequired] RatingResult SS,
+    [property: JsonRequired] RatingResult None
+);
 
-public class RatingResult
-{
-    [JsonPropertyName("predicted_acc")]
-    public required float PredictedAcc { get; set; }
+public record RatingResult(
+    [property: JsonRequired, JsonPropertyName("predicted_acc")] float PredictedAcc,
+    [property: JsonRequired, JsonPropertyName("acc_rating")] float AccRating,
+    [property: JsonRequired, JsonPropertyName("lack_map_calculation")] LackMapCalculation LackMapCalculation,
+    [property: JsonRequired] CurvePoint[] PointList,
+    [property: JsonRequired] float Stars,
+    [property: JsonRequired, JsonPropertyName("song_length")] float Length,
+    [property: JsonRequired] float Njs
+);
 
-    [JsonPropertyName("acc_rating")]
-    public float AccRating { get; set; } = 0;
+public record LackMapCalculation(
+    [property: JsonRequired, JsonPropertyName("balanced_pass_diff")] float PassRating,
+    [property: JsonRequired, JsonPropertyName("balanced_tech")] float TechRating,
+    [property: JsonRequired, JsonPropertyName("multi_percentage")] float MultiPercentage,
+    [property: JsonRequired, JsonPropertyName("linear_percentage")] float LinearPercentage,
+    [property: JsonRequired, JsonPropertyName("slider_percentage")] float SliderPercentage,
+    [property: JsonRequired] float HitDistance,
+    [property: JsonRequired] float HardSwingRatio,
+    [property: JsonRequired, JsonPropertyName("note_count")] int NoteCount,
+    [property: JsonRequired, JsonPropertyName("note_span")] double NoteSpan,
+    [property: JsonRequired] MapStatistics Statistics,
+    [property: JsonPropertyName("avg_pattern_rating")] float PatternRating = 0,
+    [property: JsonPropertyName("linear_rating")] float LinearRating = 0,
+    [property: JsonPropertyName("low_note_nerf")] float LowNoteNerf = 0
+);
 
-    [JsonPropertyName("lack_map_calculation")]
-    public required LackMapCalculation LackMapCalculation { get; set; }
+public record MapStatistics(
+    [property: JsonRequired] int Stacks,
+    [property: JsonRequired] int Towers,
+    [property: JsonRequired] int Sliders,
+    [property: JsonRequired] int CurvedSliders,
+    [property: JsonRequired] int Windows,
+    [property: JsonRequired] int SlantedWindows,
+    [property: JsonRequired] int Chains,
+    [property: JsonRequired] int DodgeWalls,
+    [property: JsonRequired] float DodgeWallDuration,
+    [property: JsonRequired] int CrouchWalls,
+    [property: JsonRequired] float CrouchWallDuration,
+    [property: JsonRequired] int ParityErrors,
+    [property: JsonRequired] int BombAvoidances,
+    [property: JsonRequired] int LinearSwings,
+    [property: JsonRequired] int Inlines
+);
 
-    [JsonPropertyName("pointlist")]
-    public List<CurvePoint> PointList { get; set; } = new();
-}
-
-public class LackMapCalculation
-{
-    [JsonPropertyName("avg_pattern_rating")]
-    public float PatternRating { get; set; } = 0;
-
-    [JsonPropertyName("balanced_pass_diff")]
-    public required float PassRating { get; set; }
-
-    [JsonPropertyName("linear_rating")]
-    public float LinearRating { get; set; } = 0;
-
-    [JsonPropertyName("balanced_tech")]
-    public required float TechRating { get; set; }
-
-    [JsonPropertyName("low_note_nerf")]
-    public float LowNoteNerf { get; set; } = 0;
-}
-
-public class CurvePoint
-{
-    public double X { get; set; } = 0;
-    public double Y { get; set; } = 0;
-}
+public record CurvePoint(
+    [property: JsonRequired] double X,
+    [property: JsonRequired] double Y
+);

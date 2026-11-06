@@ -7,6 +7,7 @@ using GuildSaber.Api.Features.Guilds.Members;
 using GuildSaber.Api.Features.LegacyGS;
 using GuildSaber.Api.Features.MapRequests;
 using GuildSaber.Api.Features.Players;
+using GuildSaber.Api.Features.PointCurves;
 using GuildSaber.Api.Features.RankedMaps;
 using GuildSaber.Api.Features.RankedScores;
 using GuildSaber.Api.Features.Scores;
@@ -60,6 +61,7 @@ builder.Services
     .AddRankedScoresFeature()
     .AddRankedMapsFeature()
     .AddMapRequestsFeature()
+    .AddPointCurvesFeature()
     .AddWebsiteFeature();
 
 var app = builder.Build();

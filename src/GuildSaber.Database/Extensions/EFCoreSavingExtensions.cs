@@ -14,12 +14,14 @@ public static class EFCoreSavingExtensions
     /// <param name="context">The DbContext.</param>
     /// <param name="entity">The entity to add.</param>
     /// <param name="mapper">A function to map the entity to the return value.</param>
+    /// <param name="token">The cancellation token for saving changes.</param>
     /// <returns>The mapped value from the added entity.</returns>
-    public static async Task<U> AddAndSaveAsync<T, U>(this DbContext context, T entity, Func<T, U> mapper)
+    public static async Task<U> AddAndSaveAsync<T, U>(
+        this DbContext context, T entity, Func<T, U> mapper, CancellationToken token = default)
         where T : class
     {
         context.Set<T>().Add(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(token);
         return mapper(entity);
     }
 
@@ -31,13 +33,15 @@ public static class EFCoreSavingExtensions
     /// <param name="context">The DbContext.</param>
     /// <param name="createEntity">A function to create the entity.</param>
     /// <param name="mapper">A function to map the entity to the return value.</param>
+    /// <param name="token">The cancellation token for saving changes.</param>
     /// <returns>The mapped value from the added entity.</returns>
-    public static async Task<U> AddAndSaveAsync<T, U>(this DbContext context, Func<T> createEntity, Func<T, U> mapper)
+    public static async Task<U> AddAndSaveAsync<T, U>(
+        this DbContext context, Func<T> createEntity, Func<T, U> mapper, CancellationToken token = default)
         where T : class
     {
         var entity = createEntity();
         context.Set<T>().Add(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(token);
         return mapper(entity);
     }
 
@@ -47,10 +51,12 @@ public static class EFCoreSavingExtensions
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="context">The DbContext.</param>
     /// <param name="entity">The entity to add.</param>
-    public static async Task<T> AddAndSaveAsync<T>(this DbContext context, T entity) where T : class
+    /// <param name="token">The cancellation token for saving changes.</param>
+    public static async Task<T> AddAndSaveAsync<T>(
+        this DbContext context, T entity, CancellationToken token = default) where T : class
     {
         context.Set<T>().Add(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(token);
         return entity;
     }
 
@@ -60,11 +66,13 @@ public static class EFCoreSavingExtensions
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="context">The DbContext.</param>
     /// <param name="createEntity">A function to create the entity.</param>
-    public static async Task<T> AddAndSaveAsync<T>(this DbContext context, Func<T> createEntity) where T : class
+    /// <param name="token">The cancellation token for saving changes.</param>
+    public static async Task<T> AddAndSaveAsync<T>(
+        this DbContext context, Func<T> createEntity, CancellationToken token = default) where T : class
     {
         var entity = createEntity();
         context.Set<T>().Add(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(token);
         return entity;
     }
 
@@ -74,10 +82,12 @@ public static class EFCoreSavingExtensions
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="context">The DbContext.</param>
     /// <param name="inputs">The entities to insert.</param>
-    public static async Task BulkInsertAsync<T>(this DbContext context, IEnumerable<T> inputs) where T : class
+    /// <param name="token">The cancellation token for saving changes.</param>
+    public static async Task BulkInsertAsync<T>(
+        this DbContext context, IEnumerable<T> inputs, CancellationToken token = default) where T : class
     {
         context.Set<T>().AddRange(inputs);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(token);
     }
 
     /// <summary>
@@ -86,10 +96,12 @@ public static class EFCoreSavingExtensions
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="context">The DbContext.</param>
     /// <param name="inputs">The arrays of entities to insert.</param>
-    public static async Task BulkInsertAsync<T>(this DbContext context, IEnumerable<T[]> inputs) where T : class
+    /// <param name="token">The cancellation token for saving changes.</param>
+    public static async Task BulkInsertAsync<T>(
+        this DbContext context, IEnumerable<T[]> inputs, CancellationToken token = default) where T : class
     {
         context.Set<T>().AddRange(inputs.SelectMany(x => x));
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(token);
     }
 
     /// <summary>
@@ -98,11 +110,13 @@ public static class EFCoreSavingExtensions
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="context">The DbContext.</param>
     /// <param name="inputs">The entities to insert.</param>
+    /// <param name="token">The cancellation token for saving changes.</param>
     /// <returns>The number of inserted entities.</returns>
-    public static async Task<int> BulkInsertAware<T>(this DbContext context, IEnumerable<T> inputs) where T : class
+    public static async Task<int> BulkInsertAware<T>(
+        this DbContext context, IEnumerable<T> inputs, CancellationToken token = default) where T : class
     {
         context.Set<T>().AddRange(inputs);
-        return await context.SaveChangesAsync();
+        return await context.SaveChangesAsync(token);
     }
 
     /// <summary>
@@ -111,11 +125,13 @@ public static class EFCoreSavingExtensions
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="context">The DbContext.</param>
     /// <param name="inputs">The arrays of entities to insert.</param>
+    /// <param name="token">The cancellation token for saving changes.</param>
     /// <returns>The number of inserted entities.</returns>
-    public static async Task<int> BulkInsertAware<T>(this DbContext context, IEnumerable<T[]> inputs) where T : class
+    public static async Task<int> BulkInsertAware<T>(
+        this DbContext context, IEnumerable<T[]> inputs, CancellationToken token = default) where T : class
     {
         context.Set<T>().AddRange(inputs.SelectMany(x => x));
-        return await context.SaveChangesAsync();
+        return await context.SaveChangesAsync(token);
     }
 
     /// <summary>
@@ -124,10 +140,12 @@ public static class EFCoreSavingExtensions
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="context">The DbContext.</param>
     /// <param name="inputs">The entities to update.</param>
-    public static async Task BulkInsertOrUpdateAsync<T>(this DbContext context, IEnumerable<T> inputs) where T : class
+    /// <param name="token">The cancellation token for saving changes.</param>
+    public static async Task BulkInsertOrUpdateAsync<T>(
+        this DbContext context, IEnumerable<T> inputs, CancellationToken token = default) where T : class
     {
         context.Set<T>().UpdateRange(inputs);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(token);
     }
 
     /// <summary>
@@ -138,12 +156,14 @@ public static class EFCoreSavingExtensions
     /// <param name="context">The DbContext.</param>
     /// <param name="entity">The entity to update.</param>
     /// <param name="mapper">A function to map the entity to the return value.</param>
+    /// <param name="token">The cancellation token for saving changes.</param>
     /// <returns>The mapped value from the updated entity.</returns>
-    public static async Task<U> UpdateAndSaveAsync<T, U>(this DbContext context, T entity, Func<T, U> mapper)
+    public static async Task<U> UpdateAndSaveAsync<T, U>(
+        this DbContext context, T entity, Func<T, U> mapper, CancellationToken token = default)
         where T : class
     {
         context.Set<T>().Update(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(token);
         return mapper(entity);
     }
 
@@ -155,15 +175,16 @@ public static class EFCoreSavingExtensions
     /// <param name="context">The DbContext.</param>
     /// <param name="createEntity">A function to create the entity.</param>
     /// <param name="mapper">A function to map the entity to the return value.</param>
+    /// <param name="token">The cancellation token for saving changes.</param>
     /// <returns>The mapped value from the updated entity.</returns>
     public static async Task<U> UpdateAndSaveAsync<T, U>(
         this DbContext context, Func<T> createEntity,
-        Func<T, U> mapper)
+        Func<T, U> mapper, CancellationToken token = default)
         where T : class
     {
         var entity = createEntity();
         context.Set<T>().Update(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(token);
         return mapper(entity);
     }
 
@@ -173,10 +194,12 @@ public static class EFCoreSavingExtensions
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="context">The DbContext.</param>
     /// <param name="entity">The entity to update.</param>
-    public static async Task<T> UpdateAndSaveAsync<T>(this DbContext context, T entity) where T : class
+    /// <param name="token">The cancellation token for saving changes.</param>
+    public static async Task<T> UpdateAndSaveAsync<T>(
+        this DbContext context, T entity, CancellationToken token = default) where T : class
     {
         context.Set<T>().Update(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(token);
         return entity;
     }
 
@@ -186,12 +209,14 @@ public static class EFCoreSavingExtensions
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="context">The DbContext.</param>
     /// <param name="createEntity">A function to create the entity.</param>
-    public static async Task<T> UpdateAndSaveAsync<T>(this DbContext context, Func<T> createEntity)
+    /// <param name="token">The cancellation token for saving changes.</param>
+    public static async Task<T> UpdateAndSaveAsync<T>(
+        this DbContext context, Func<T> createEntity, CancellationToken token = default)
         where T : class
     {
         var entity = createEntity();
         context.Set<T>().Update(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(token);
         return entity;
     }
 }

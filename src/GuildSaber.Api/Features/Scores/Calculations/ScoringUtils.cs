@@ -9,7 +9,7 @@ using GuildSaber.Database.Models.StrongTypes;
 using EModifiers = GuildSaber.Database.Models.Server.Scores.AbstractScore.EModifiers;
 using EInvalidReason = GuildSaber.Database.Models.Server.RankedScores.InvalidRankedScore.EInvalidReason;
 
-namespace GuildSaber.Api.Features.Scores;
+namespace GuildSaber.Api.Features.Scores.Calculations;
 
 /// <summary>
 /// Code part and magic numbers from https://github.com/BeatLeader/beatleader-server/
@@ -79,13 +79,14 @@ public static class ScoringUtils
         if (requirements.MaxPauseDurationSec is not null)
         {
             if (score.Statistics?.WinTracker.PauseStatistics is not { } pauses)
-                invalidReason |= EInvalidReason.MissingTrackers;
+                invalidReason |= EInvalidReason.MissingPauseStatistics;
             else if (pauses.TotalPauseDuration > requirements.MaxPauseDurationSec)
                 invalidReason |= EInvalidReason.PausedTooMuch;
         }
 
-        if (requirements.MinAccuracy is not null
-            && Accuracy.From(score.BaseScore, songDifficultyStats.MaxScore) < requirements.MinAccuracy)
+        if (requirements.MinAccuracy is { } minimumAccuracy
+            && (!Accuracy.From(score.BaseScore, songDifficultyStats.MaxScore).TryGetValue(out var accuracy)
+                || accuracy < minimumAccuracy))
             invalidReason |= EInvalidReason.MinAccuracyRequirements;
 
         if (requirements.MandatoryModifiers != EModifiers.None
@@ -103,17 +104,19 @@ public static class ScoringUtils
         EffectiveScore effectiveScore,
         MaxScore maxScore,
         Point point,
-        RankedMapRating rating)
+        RankedMapRating rating,
+        CustomCurve? mapAccuracyCurve = null)
     {
-        var accuracyPoints = rating.AccStar * point.CurveSettings.Accuracy.ProjectValue(
-            Accuracy.From(baseScore, maxScore)
-        );
+        var basePoints = point.CurveSettings.Difficulty.ProjectValue(rating.DiffStar);
 
-        var difficultyPoints = point.CurveSettings.Difficulty.ProjectValue(
-            rating.DiffStar
-        );
+        if (point.CurveSettings.AccuracyBonusRatio == 0 || !Accuracy.From(baseScore, maxScore)
+                .TryGetValue(out var accuracy))
+            return RawPoints.TryCreate((float)basePoints).Unwrap();
 
-        return RawPoints.TryCreate((float)(accuracyPoints + difficultyPoints)).Unwrap();
+        return AccuracyCurveMath.Calculate(
+                basePoints, point.CurveSettings.AccuracyBonusRatio, accuracy,
+                mapAccuracyCurve ?? point.CurveSettings.Accuracy)
+            .Unwrap();
     }
 
     /// <summary>
@@ -138,12 +141,15 @@ public static class ScoringUtils
         _ => exMachina.None
     };
 
-    public static RankedMapRating.AccuracyStar ToAccStar(this RatingResult rating, CustomCurve accCurve)
-        => new(Inflate(GetPP(AccRating(rating, accCurve), rating, accCurve)));
+    extension(RatingResult rating)
+    {
+        public RankedMapRating.AccuracyStar ToAccStar(CustomCurve accCurve)
+            => new(Inflate(GetPP(AccRating(rating, accCurve), rating, accCurve)));
 
-    public static RankedMapRating.DifficultyStar ToDiffStar(this RatingResult rating)
-        => new(Inflate(PassRating(rating.LackMapCalculation.PassRating) * (rating.LackMapCalculation.TechRating * 10)) /
-               13f);
+        public RankedMapRating.DifficultyStar ToDiffStar()
+            => new(Inflate(PassRating(rating.LackMapCalculation.PassRating)
+                           * (rating.LackMapCalculation.TechRating * 10)) / 13f);
+    }
 
     /// <summary>
     /// Original formula from BeatLeader

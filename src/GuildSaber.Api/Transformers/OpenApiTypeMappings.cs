@@ -1,5 +1,6 @@
 using System.Globalization;
 using GuildSaber.Api.Features.RankedMaps.Http;
+using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.OpenApi;
 
 namespace GuildSaber.Api.Transformers;
@@ -20,6 +21,10 @@ public static class OpenApiTypeMappings
             { Type = JsonSchemaType.Integer, Format = "int16" });
         OpenApiTypeTransformer.MapType<ControllerId>(new OpenApiSchema
             { Type = JsonSchemaType.Integer, Format = "int16" });
+        OpenApiTypeTransformer.MapType<BeatLeaderHmdId>(new OpenApiSchema
+            { Type = JsonSchemaType.Integer, Format = "int32" });
+        OpenApiTypeTransformer.MapType<BeatLeaderControllerId>(new OpenApiSchema
+            { Type = JsonSchemaType.Integer, Format = "int32" });
         OpenApiTypeTransformer.MapType<DiscordId>(new OpenApiSchema
             { Type = JsonSchemaType.String, Examples = ["123456789012345678"], Format = "int64" });
         OpenApiTypeTransformer.MapType<SteamId>(new OpenApiSchema
@@ -30,6 +35,8 @@ public static class OpenApiTypeMappings
             { Type = JsonSchemaType.String, Examples = ["123456789"], Format = "int64" });
         OpenApiTypeTransformer.MapType<ScoreSaberId>(new OpenApiSchema
             { Type = JsonSchemaType.String, Examples = ["12345678901234567"], Format = "int64" });
+        OpenApiTypeTransformer.MapType<BeatLeaderId>(new OpenApiSchema
+            { Type = JsonSchemaType.String, Examples = ["76561198000000000"], Format = "int64" });
         OpenApiTypeTransformer.MapType<DiscordGuildId>(new OpenApiSchema
             { Type = JsonSchemaType.String, Examples = ["987654321098765432"] });
         OpenApiTypeTransformer.MapType<DiscordChannelId>(new OpenApiSchema
@@ -38,6 +45,10 @@ public static class OpenApiTypeMappings
             { Type = JsonSchemaType.String, Examples = ["987654321098765432"] });
 
         OpenApiTypeTransformer.MapType<ScoreId>(new OpenApiSchema
+            { Type = JsonSchemaType.Integer, Format = "int32" });
+        OpenApiTypeTransformer.MapType<BeatLeaderScoreId>(new OpenApiSchema
+            { Type = JsonSchemaType.Integer, Format = "int32" });
+        OpenApiTypeTransformer.MapType<ScoreSaberScoreId>(new OpenApiSchema
             { Type = JsonSchemaType.Integer, Format = "int32" });
         OpenApiTypeTransformer.MapType<RankedScoreId>(new OpenApiSchema
             { Type = JsonSchemaType.String, Examples = ["123456789"] });
@@ -54,10 +65,24 @@ public static class OpenApiTypeMappings
             { Type = JsonSchemaType.String, Examples = ["ABCD1234EFGH5678IJKL9012MNOP3456QRST7890"] });
         OpenApiTypeTransformer.MapType<SSLeaderboardId>(new OpenApiSchema
             { Type = JsonSchemaType.Integer, Format = "int32" });
+        OpenApiTypeTransformer.MapType<SSGameMode>(new OpenApiSchema
+            { Type = JsonSchemaType.String, Examples = ["SoloStandard"] });
         OpenApiTypeTransformer.MapType<BLLeaderboardId>(new OpenApiSchema
             { Type = JsonSchemaType.String, Examples = ["a3c391"] });
         OpenApiTypeTransformer.MapType<RankedMapRequests.EModifiers>(new OpenApiSchema
             { Examples = [nameof(RankedMapRequests.EModifiers.None)] });
+        OpenApiTypeTransformer.MapType<MaxScore>(new OpenApiSchema
+            { Type = JsonSchemaType.Integer, Format = "int32", Minimum = "1" });
+        OpenApiTypeTransformer.MapType<NJS>(new OpenApiSchema
+            { Type = JsonSchemaType.Number, Format = "float" });
+        OpenApiTypeTransformer.MapType<Name_2_50>(new OpenApiSchema
+            { Type = JsonSchemaType.String, Examples = ["GuildSaber"] });
+        OpenApiTypeTransformer.MapType<Accuracy>(new OpenApiSchema
+        {
+            Type = JsonSchemaType.String,
+            Description = "Accuracy percentage from 0 to 100.",
+            Examples = ["95.5"]
+        });
         OpenApiTypeTransformer.MapType<Xp>(new OpenApiSchema
         {
             Type = JsonSchemaType.Number,
