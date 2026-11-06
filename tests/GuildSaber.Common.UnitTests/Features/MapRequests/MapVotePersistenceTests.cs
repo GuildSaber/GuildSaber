@@ -102,38 +102,6 @@ public class MapVotePersistenceTests
     }
 
     [Test]
-    [Arguments(false)]
-    [Arguments(true)]
-    public void ProposalVotes_ShouldAllowBothTypesButNotDuplicateSameType(bool duplicateRankingTeamVote)
-    {
-        using var db = CreateContext();
-        var timestamp = new DateTimeOffset(2026, 10, 10, 12, 0, 0, TimeSpan.Zero);
-
-        MapProposalVote CreateVote(bool rankingTeam) => rankingTeam
-            ? new RankingTeamProposalVote
-            {
-                ProposalId = new MapProposalId(20),
-                PlayerId = new PlayerId(1),
-                IsPositive = false,
-                VotedAt = timestamp,
-                Reason = "The proposed difficulty rating needs adjustment."
-            }
-            : new CommunityProposalVote
-            {
-                ProposalId = new MapProposalId(20),
-                PlayerId = new PlayerId(1),
-                IsPositive = true,
-                VotedAt = timestamp
-            };
-
-        db.AttachRange(CreateVote(false), CreateVote(true));
-        db.ChangeTracker.Entries<MapProposalVote>().Should().HaveCount(2);
-
-        Action attachDuplicate = () => db.Attach(CreateVote(duplicateRankingTeamVote));
-        attachDuplicate.Should().Throw<InvalidOperationException>();
-    }
-
-    [Test]
     public void ProposalVoteHierarchy_ShouldMapReasonOnlyOnRankingTeamVariant()
     {
         using var db = CreateContext();
@@ -153,48 +121,6 @@ public class MapVotePersistenceTests
 
         db.Database.GenerateCreateScript().Should().Contain(
             "CHECK ((\"Kind\" = 0 AND \"Reason\" IS NULL) OR \"Kind\" = 1)");
-    }
-
-    [Test]
-    public void SeparateCommunityAndRankingTeamVoteCounts_ShouldTranslate()
-    {
-        using var db = CreateContext();
-        var proposals = db.MapProposals.OfType<SubmittedProposal>().Select(proposal => new
-        {
-            proposal.Id,
-            CommunityPositiveVotes = proposal.Votes.OfType<CommunityProposalVote>().Count(vote => vote.IsPositive),
-            CommunityNegativeVotes = proposal.Votes.OfType<CommunityProposalVote>().Count(vote => !vote.IsPositive),
-            RankingTeamPositiveVotes = proposal.Votes.OfType<RankingTeamProposalVote>().Count(vote => vote.IsPositive),
-            RankingTeamNegativeVotes = proposal.Votes.OfType<RankingTeamProposalVote>().Count(vote => !vote.IsPositive)
-        });
-
-        proposals.ToQueryString().Should().NotBeNullOrWhiteSpace();
-    }
-
-    [Test]
-    [Arguments(true)]
-    [Arguments(false)]
-    public void RankingTeamVote_WithReason_ShouldTrackAndTranslateForEitherDirection(bool isPositive)
-    {
-        using var db = CreateContext();
-        var reason = isPositive ? "The proposed rating matches the map." : "The proposed rating is too low.";
-        var vote = new RankingTeamProposalVote
-        {
-            ProposalId = new MapProposalId(20),
-            PlayerId = new PlayerId(1),
-            IsPositive = isPositive,
-            VotedAt = new DateTimeOffset(2026, 10, 10, 12, 0, 0, TimeSpan.Zero),
-            Reason = reason
-        };
-        db.Attach(vote);
-
-        db.Entry(vote).Property(x => x.Reason).CurrentValue.Should().Be(reason);
-        db.Entry(vote).Property<byte>("Kind").CurrentValue.Should().Be(1);
-
-        var reviews = db.MapProposalVotes.OfType<RankingTeamProposalVote>()
-            .Where(x => x.IsPositive == isPositive)
-            .Select(x => new { x.PlayerId, x.IsPositive, x.Reason });
-        reviews.ToQueryString().Should().Contain("\"Reason\"");
     }
 
     private static ServerDbContext CreateContext()

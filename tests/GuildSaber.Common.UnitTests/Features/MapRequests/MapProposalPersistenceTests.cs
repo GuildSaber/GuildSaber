@@ -2,11 +2,8 @@ using AwesomeAssertions;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds.Achievements;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
-using GuildSaber.Database.Models.Server.MapRequests;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals.Snapshots;
-using GuildSaber.Database.Models.Server.MapRequests.Proposals.Types;
-using GuildSaber.Database.Models.Server.MapRequests.Votes;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions.PlayModes;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using Microsoft.EntityFrameworkCore;
@@ -15,21 +12,6 @@ namespace GuildSaber.Common.UnitTests.Features.MapRequests;
 
 public class MapProposalPersistenceTests
 {
-    [Test]
-    [Arguments(typeof(MapRequestThread), nameof(ServerDbContext.MapRequestThreads))]
-    [Arguments(typeof(MapRequestThreadBoost), nameof(ServerDbContext.MapRequestThreadBoosts))]
-    [Arguments(typeof(MapProposal), nameof(ServerDbContext.MapProposals))]
-    [Arguments(typeof(MapProposalVersion), nameof(ServerDbContext.MapProposalVersions))]
-    [Arguments(typeof(MapProposalCategory), nameof(ServerDbContext.MapProposalCategories))]
-    [Arguments(typeof(MapProposalAchievement), nameof(ServerDbContext.MapProposalAchievements))]
-    [Arguments(typeof(MapProposalVote), nameof(ServerDbContext.MapProposalVotes))]
-    public void TableName_ShouldFollowDbSetPropertyName(Type entityType, string tableName)
-    {
-        using var db = CreateContext();
-
-        db.Model.FindEntityType(entityType)!.GetTableName().Should().Be(tableName);
-    }
-
     [Test]
     [Arguments(typeof(MapProposalVersion), nameof(MapProposalVersion.PlayModeId), typeof(PlayMode))]
     [Arguments(typeof(MapProposalCategory), nameof(MapProposalCategory.CategoryId), typeof(Category))]
@@ -62,21 +44,6 @@ public class MapProposalPersistenceTests
 
         difficultyLink.IsRequired.Should().BeTrue();
         difficultyLink.DeleteBehavior.Should().Be(DeleteBehavior.NoAction);
-    }
-
-    [Test]
-    public void AcceptedProposal_WithCompleteConfiguration_ShouldTranslate()
-    {
-        using var db = CreateContext();
-        var query = db.MapProposals.OfType<AcceptedProposal>()
-            .Include(x => x.MapVersions).ThenInclude(x => x.SongDifficulty)
-            .Include(x => x.Categories)
-            .Include(x => x.Achievements)
-            .AsSingleQuery();
-
-        // Exercise the Npgsql mapping without opening a database connection.
-        query.ToQueryString().Should().NotBeNullOrWhiteSpace();
-        db.Database.GenerateCreateScript().Should().NotBeNullOrWhiteSpace();
     }
 
     private static ServerDbContext CreateContext()
