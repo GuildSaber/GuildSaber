@@ -39,10 +39,10 @@ public sealed class CategoryGrid(
 
         container.Row(row =>
         {
-            row.RelativeItem(30).AlignMiddle()
+            row.RelativeItem().AlignMiddle()
                 .Element(column => CategoryColumn(column, categoryAchievements.Where((_, index) => index % 2 == 0)));
 
-            row.RelativeItem(24).AlignMiddle().Column(summary =>
+            row.AutoItem().AlignMiddle().Column(summary =>
             {
                 summary.Item().AlignCenter().Text($"Avg {average:0.##}").FontSize(30).Bold().Italic()
                     .FontColor(averageColor);
@@ -59,7 +59,7 @@ public sealed class CategoryGrid(
                 summary.Item().AlignCenter().Text($"({equilibrium:0.##}%)").FontSize(24).FontColor(averageColor);
             });
 
-            row.RelativeItem(30).AlignMiddle()
+            row.RelativeItem().AlignMiddle()
                 .Element(column => CategoryColumn(column, categoryAchievements.Where((_, index) => index % 2 != 0)));
         });
     }

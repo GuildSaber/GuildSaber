@@ -42,16 +42,16 @@ public class PlayerCardView(
 
         document.Page(page =>
         {
-            page.Size(880, guildExtended.Categories.Length == 0 ? 380 : 470 + extraHeight);
+            page.Size(960, guildExtended.Categories.Length == 0 ? 380 : 470 + extraHeight);
             page.PageColor(Color.FromRGB(26, 28, 30));
             page.DefaultTextStyle(x => x.FontFamily("JetBrainsMonoNL NF").FontColor(Colors.White));
 
-            page.Content().Padding(10).Column(column =>
+            page.Content().PaddingBottom(10).Column(column =>
             {
-                column.Item().Height(220).Element(container
+                column.Item().PaddingHorizontal(10).PaddingVertical(15).Height(200).Element(container
                     => Header(container, achievement?.Info.Name ?? "No Level", accent));
-                column.Item().LineHorizontal(3).LineColor(accent);
-                column.Item().Height(70).PaddingTop(20).AlignMiddle()
+                column.Item().PaddingHorizontal(10).LineHorizontal(3).LineColor(accent);
+                column.Item().PaddingHorizontal(10).Height(70).PaddingTop(20).AlignMiddle()
                     .Component(new TrophyRow(achievementStats.CalculateTrophiesData()));
 
                 if (guildExtended.Categories.Length > 0)
