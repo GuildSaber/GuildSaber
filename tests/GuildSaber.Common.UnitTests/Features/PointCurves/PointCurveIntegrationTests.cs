@@ -11,11 +11,11 @@ using GuildSaber.Database.Models.Server.MapRequests.Proposals;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals.Types;
 using GuildSaber.Database.Models.Server.RankedScores;
 using GuildSaber.Database.Models.StrongTypes;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Caching.Hybrid;
-using Microsoft.Extensions.Logging.Abstractions;
 using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Sample = GuildSaber.Api.Features.PointCurves.Http.PointCurveRequests.Sample;
 
 namespace GuildSaber.Common.UnitTests.Features.PointCurves;
@@ -164,7 +164,7 @@ public class PointCurveIntegrationTests
         var scores = scope.ServiceProvider.GetRequiredService<ScoreAddOrUpdatePipeline>();
 
         (await curves.UpdateSettingsAsync(_guild, _point,
-            Settings(new PointCurveRequests.Policy.ScoreDerivedMapCurve([0.8, 0.6, 0.4])), CancellationToken.None))
+                Settings(new PointCurveRequests.Policy.ScoreDerivedMapCurve([0.8, 0.6, 0.4])), CancellationToken.None))
             .IsSuccess.Should().BeTrue();
 
         for (var player = 1; player <= 4; player++)
@@ -178,7 +178,7 @@ public class PointCurveIntegrationTests
 
         original.BenchmarkAccuracies.Should().Equal(0.6, 0.5, 0.4, 0.3);
         ((float)(await database.Context.PointGivingRankedScores
-            .SingleAsync(x => x.PlayerId == new PlayerId(1) && x.IsSelected))
+                .SingleAsync(x => x.PlayerId == new PlayerId(1) && x.IsSelected))
             .RawPoints).Should().Be(125);
         (await curves.PutAsync(_context, _map, _point,
                 new PointCurveRequests.PutCurve([new Sample(0, 0), new Sample(1, 1)]), CancellationToken.None))
@@ -191,7 +191,7 @@ public class PointCurveIntegrationTests
 
         // Ordinary ingestion used the existing curve. The other players are still at their previous values.
         ((float)(await database.Context.PointGivingRankedScores
-            .SingleAsync(x => x.PlayerId == new PlayerId(1) && x.IsSelected))
+                .SingleAsync(x => x.PlayerId == new PlayerId(1) && x.IsSelected))
             .RawPoints).Should().Be(125);
 
         await queue.DrainAsync();
@@ -199,12 +199,12 @@ public class PointCurveIntegrationTests
         (await database.Context.RankedMapPointCurves
             .SingleAsync()).BenchmarkAccuracies.Should().Equal(0.8, 0.6, 0.5, 0.4);
         ((float)(await database.Context.PointGivingRankedScores
-            .SingleAsync(x => x.PlayerId == new PlayerId(1) && x.IsSelected))
+                .SingleAsync(x => x.PlayerId == new PlayerId(1) && x.IsSelected))
             .RawPoints).Should().Be(120);
         (await database.Context.MemberPointStats
             .SingleAsync(x => x.PlayerId == new PlayerId(1))).Points.Should().Be(120);
         ((float)(await database.Context.PointGivingRankedScores
-            .SingleAsync(x => x.PlayerId == new PlayerId(5))).RawPoints)
+                .SingleAsync(x => x.PlayerId == new PlayerId(5))).RawPoints)
             .Should().Be(125);
 
         var updatedAt = (await database.Context.RankedMapPointCurves
@@ -411,10 +411,10 @@ public class PointCurveIntegrationTests
         }
 
         await database.Context.Database.ExecuteSqlRawAsync("""
-            UPDATE "RankedScores" SET "Type" = CASE WHEN "PlayerId" IN (1,2,5) THEN 3 WHEN "PlayerId" = 4 THEN 4 ELSE 2 END;
-            UPDATE "Points" SET "CurveSettings_MapCurvePolicy" = 2, "CurveSettings_RunnerUpRewardFractions" = ARRAY[0.8,0.6,0.4]::double precision[];
-            DELETE FROM "ContextMembers" WHERE "PlayerId" = 5;
-            """);
+                                                           UPDATE "RankedScores" SET "Type" = CASE WHEN "PlayerId" IN (1,2,5) THEN 3 WHEN "PlayerId" = 4 THEN 4 ELSE 2 END;
+                                                           UPDATE "Points" SET "CurveSettings_MapCurvePolicy" = 2, "CurveSettings_RunnerUpRewardFractions" = ARRAY[0.8,0.6,0.4]::double precision[];
+                                                           DELETE FROM "ContextMembers" WHERE "PlayerId" = 5;
+                                                           """);
 
         var curves = scope.ServiceProvider.GetRequiredService<PointCurveService>();
 

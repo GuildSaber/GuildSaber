@@ -54,10 +54,9 @@ public class PointCurveSelectionRegressionTests
 
     private sealed class RankCommands : DbCommandInterceptor
     {
-        public sealed record Update(int? PointId);
-
         public List<Update> Updates { get; } = [];
         public bool Capture { get; set; }
+        public sealed record Update(int? PointId);
 
         public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
             DbCommand command,
@@ -152,9 +151,9 @@ public class PointCurveSelectionRegressionTests
         await scores.RecalculatePlayerScoresForMapAsync(_map, _point, new PlayerId(1), token: CancellationToken.None);
 
         await db.Database.ExecuteSqlAsync($"""
-            UPDATE "RankedScores" SET "Type" = 3
-            WHERE "PointId" = {_point.Value} AND "ScoreId" = 1
-            """);
+                                           UPDATE "RankedScores" SET "Type" = 3
+                                           WHERE "PointId" = {_point.Value} AND "ScoreId" = 1
+                                           """);
 
         await scores.RecalculatePlayerScoresForMapAsync(_map, _point, new PlayerId(1), token: CancellationToken.None);
         await achievements.ExecuteAsync(new PlayerId(1), _guild, _context, _point);
@@ -203,20 +202,16 @@ public class PointCurveSelectionRegressionTests
         async Task PublishAsync(CurvePoint[] points)
         {
             if (pointwideSettings)
-            {
                 (await curves.UpdateSettingsAsync(_guild, _point,
                         new PointCurveRequests.UpdateSettings(
                             [new PointCurveRequests.Sample(0, 100), new PointCurveRequests.Sample(32, 100)],
                             Samples(points), 0.25,
                             new PointCurveRequests.Policy.EditableMapCurve()), CancellationToken.None))
                     .IsSuccess.Should().BeTrue();
-            }
             else
-            {
                 (await curves.PutAsync(_context, _map, _point,
                         new PointCurveRequests.PutCurve(Samples(points)), CancellationToken.None))
                     .IsSuccess.Should().BeTrue();
-            }
         }
     }
 

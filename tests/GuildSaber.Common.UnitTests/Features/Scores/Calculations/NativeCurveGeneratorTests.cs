@@ -59,6 +59,7 @@ public class NativeCurveGeneratorTests
             var actual = AccuracyCurveMath.EvaluateFraction(generated.Curve, a.X + h * t);
             maximumError = Math.Max(maximumError, Math.Abs(actual - reference));
         }
+
         maximumError.Should().BeLessThanOrEqualTo(0.0001 + 1e-12);
         generated.MaximumError.Should().BeGreaterThanOrEqualTo(maximumError - 1e-12);
         NativeCurveGenerator.Generate([0.999, 0.9989, 0.7, 0.1], [0.95, 0.4, 0.01], 0.0001)
@@ -82,7 +83,8 @@ public class NativeCurveGeneratorTests
     [UsedImplicitly(Reason = "TUnit invokes this method on a test instance.")]
     public void CloseBenchmarks_ShouldCertifyTheActualRoundedSampleCoordinates()
     {
-        var (curve, anchors, certifiedError) = NativeCurveGenerator.Generate([0.98000000000001, 0.98], [0.5], 0.001).Value;
+        var (curve, anchors, certifiedError) =
+            NativeCurveGenerator.Generate([0.98000000000001, 0.98], [0.5], 0.001).Value;
         var derivatives = ReferenceDerivatives(anchors);
         var lower = anchors[1];
         var upper = anchors[2];
@@ -98,6 +100,7 @@ public class NativeCurveGeneratorTests
             maximumError = Math.Max(maximumError,
                 Math.Abs(AccuracyCurveMath.EvaluateFraction(curve, accuracy) - reference));
         }
+
         maximumError.Should().BeLessThanOrEqualTo(0.001 + 1e-12);
         maximumError.Should().BeLessThanOrEqualTo(certifiedError + 1e-12);
     }
@@ -164,6 +167,7 @@ public class NativeCurveGeneratorTests
             var weight = (2 * h[i] + h[i - 1]) / (3 * (h[i] + h[i - 1]));
             m[i] = 1 / (weight / d[i - 1] + (1 - weight) / d[i]);
         }
+
         return m;
 
         static double End(double a, double b, double p, double q)

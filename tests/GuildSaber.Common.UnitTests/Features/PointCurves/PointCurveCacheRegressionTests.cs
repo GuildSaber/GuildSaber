@@ -158,12 +158,13 @@ public class PointCurveCacheRegressionTests
         await scores.ExecuteAsync(score, token: CancellationToken.None);
         await curves.PutAsync(new ContextId(2), new RankedMapId(1), new Point.PointId(3),
             new PointCurveRequests.PutCurve(
-                [new PointCurveRequests.Sample(0, 0), new PointCurveRequests.Sample(0.6, 0.4),
-                    new PointCurveRequests.Sample(1, 1)]), CancellationToken.None);
+            [
+                new PointCurveRequests.Sample(0, 0), new PointCurveRequests.Sample(0.6, 0.4),
+                new PointCurveRequests.Sample(1, 1)
+            ]), CancellationToken.None);
         await scores.ExecuteAsync(score, token: CancellationToken.None);
 
         counter.Count.Should().Be(1);
         ((float)(await database.Context.PointGivingRankedScores.SingleAsync()).RawPoints).Should().Be(110);
     }
-
 }

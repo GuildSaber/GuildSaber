@@ -9,6 +9,7 @@ public interface IHeavyBackgroundTaskQueue
 {
     ValueTask QueueBackgroundWorkItemAsync(
         Func<CancellationToken, ValueTask> workItem, CancellationToken token = default);
+
     ValueTask<Func<CancellationToken, ValueTask>> DequeueAsync(CancellationToken cancellationToken);
 }
 

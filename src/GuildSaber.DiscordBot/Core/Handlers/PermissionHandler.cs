@@ -50,7 +50,7 @@ public static class PermissionHandler
                             when userPermFromDiscordGuild.TryGetValue(context.Guild.DiscordId, out var permission)
                                  && permission.HasFlag(permissions)
                             => await ValidateGuildIdAndContextIdOwnership(context.Interaction.Data, services, context,
-                                false),
+                                bypassIfMissingGuild: false),
                         _ => await Error("You don't have the required permissions to execute this command.", context)
                     },
                 _ => await Error("You are not a valid user.", context)

@@ -47,14 +47,14 @@ public sealed class ScoreAddOrUpdatePipeline(
     private static readonly Func<ServerDbContext, PlayerId, SongDifficultyId, DateTimeOffset, BaseScore,
         CancellationToken, Task<BeatLeaderScore?>> _findExistingBeatLeaderScoreIgnoringBLScoreIdQuery =
         EF.CompileAsyncQuery((
-            ServerDbContext dbContext, PlayerId playerId,
-            SongDifficultyId songDifficultyId,
-            DateTimeOffset setAt, BaseScore baseScore, CancellationToken token)
-        => dbContext.BeatLeaderScores.FirstOrDefault(x =>
-            x.PlayerId == playerId
-            && x.SongDifficultyId == songDifficultyId
-            && x.SetAt - setAt < TimeSpan.FromSeconds(2)
-            && x.BaseScore == baseScore));
+                ServerDbContext dbContext, PlayerId playerId,
+                SongDifficultyId songDifficultyId,
+                DateTimeOffset setAt, BaseScore baseScore, CancellationToken token)
+            => dbContext.BeatLeaderScores.FirstOrDefault(x =>
+                x.PlayerId == playerId
+                && x.SongDifficultyId == songDifficultyId
+                && x.SetAt - setAt < TimeSpan.FromSeconds(2)
+                && x.BaseScore == baseScore));
 
     private static readonly Func<ServerDbContext, PlayerId, SongDifficultyId, DateTimeOffset, BaseScore,
         CancellationToken, Task<ScoreSaberScore?>> _findExistingScoreSaberScoreQuery = EF.CompileAsyncQuery((

@@ -1,6 +1,6 @@
 using GuildSaber.Api.Features.Guilds.Members.Pipelines;
-using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Api.Features.RankedScores.Pipelines;
+using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using Microsoft.EntityFrameworkCore;

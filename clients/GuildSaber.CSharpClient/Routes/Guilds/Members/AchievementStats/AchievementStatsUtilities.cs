@@ -10,8 +10,8 @@ public static class AchievementStatsUtilities
     extension(IEnumerable<MemberAchievementStat> self)
     {
         public Achievement? GetGlobalAchievement() => self
-            .Where(x => x.Achievement.CategoryId is null &&
-                        x is { IsLocked: false, Achievement.Progression: AchievementProgression.Ordered })
+            .Where(x => x.Achievement.CategoryId is null
+                        && x is { IsLocked: false, Achievement.Progression: AchievementProgression.Ordered })
             .LastOrDefault(x => x.IsCompleted)
             ?.Achievement;
 
@@ -33,6 +33,7 @@ public static class AchievementStatsUtilities
                     Achievement.AccStarAchievement achievement => achievement.TotalCount,
                     _ => 0
                 };
+
                 var completionPercent = totalCount > 0 && stat.PassCount.HasValue
                     ? stat.PassCount.Value / (float)totalCount
                     : 0f;

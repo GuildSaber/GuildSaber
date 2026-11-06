@@ -193,8 +193,11 @@ public sealed class MapProposalReviewService(
 
                 var previousDifficulties = map?.MapVersions.Select(x => x.SongDifficultyId).Distinct().ToArray() ?? [];
                 map = await ApplyAsync(map, guildId, contextId, submitted, now, token);
-                addedDifficulties = [.. submitted.MapVersions.Select(x => x.SongDifficultyId).Distinct()
-                    .Except(previousDifficulties)];
+                addedDifficulties =
+                [
+                    .. submitted.MapVersions.Select(x => x.SongDifficultyId).Distinct()
+                        .Except(previousDifficulties)
+                ];
             }
 
             if (await dbContext.Database.ExecuteSqlAsync(FormattableStringFactory.Create(

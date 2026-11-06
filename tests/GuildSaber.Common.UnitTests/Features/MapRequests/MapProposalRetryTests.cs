@@ -11,8 +11,8 @@ using GuildSaber.Common.Services.BeatSaver;
 using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.StrongTypes;
-using GuildSaber.Database.Models.Server.MapRequests.Proposals.Types;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals;
+using GuildSaber.Database.Models.Server.MapRequests.Proposals.Types;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.Scores;
 using JetBrains.Annotations;
@@ -26,59 +26,6 @@ namespace GuildSaber.Common.UnitTests.Features.MapRequests;
 
 public partial class MapProposalServiceTests
 {
-    [Test]
-    [Arguments(PostgresErrorCodes.SerializationFailure)]
-    [Arguments(PostgresErrorCodes.DeadlockDetected)]
-    [UsedImplicitly(Reason = "TUnit invokes this method on a test instance.")]
-    public async Task Submission_ShouldResolveRatingOutsideTheTransactionAndReuseItOnRetry(string sqlState)
-    {
-        await using var database = await TestDatabase.CreateAsync(new MapProposalRating
-        {
-            AccStar = new RankedMapRating.AccuracyStar(2)
-        });
-        var failure = new TransientCommandFailure("UPDATE \"MapProposals\" AS proposal", sqlState);
-        await using var db = database.CreateRetryingContext(failure);
-        using var handler = new RatingHandler(_ =>
-        {
-            db.Database.CurrentTransaction.Should().BeNull();
-            return JsonResponse(JsonSerializer.Serialize(CreateExMachinaResponse()));
-        });
-        using var client = new HttpClient(handler);
-
-        (await CreateService(db, new BeatLeaderApi(client)).SubmitAsync(
-                new ContextId(1), new MapProposalId(1), new PlayerId(1), CancellationToken.None))
-            .Should().BeOfType<MapProposalService.TransitionResponse.Success>();
-
-        failure.Attempts.Should().Be(2);
-        handler.RequestCount.Should().Be(1);
-    }
-
-    [Test]
-    [UsedImplicitly(Reason = "TUnit invokes this method on a test instance.")]
-    public async Task Submission_ShouldRejectRatingInputsChangedWhileExMachinaWasRunning()
-    {
-        await using var database = await TestDatabase.CreateAsync(new MapProposalRating
-        {
-            AccStar = new RankedMapRating.AccuracyStar(2)
-        });
-        using var handler = new RatingHandler(_ =>
-        {
-            database.Context.Database.CurrentTransaction.Should().BeNull();
-            using var other = database.CreateContext();
-            other.MapProposals.ExecuteUpdate(setters => setters.SetProperty(
-                x => x.Requirements.MandatoryModifiers, AbstractScore.EModifiers.FasterSong));
-
-            return JsonResponse(JsonSerializer.Serialize(CreateExMachinaResponse()));
-        });
-        using var client = new HttpClient(handler);
-
-        (await CreateService(database.Context, new BeatLeaderApi(client)).SubmitAsync(
-                new ContextId(1), new MapProposalId(1), new PlayerId(1), CancellationToken.None))
-            .Should().BeOfType<MapProposalService.TransitionResponse.Conflict>();
-
-        (await database.Context.MapProposals.SingleAsync()).Should().BeOfType<DraftProposal>();
-    }
-
     private sealed class ProposalQuotaQueryCounter : DbCommandInterceptor
     {
         public int Count { get; private set; }
@@ -132,6 +79,59 @@ public partial class MapProposalServiceTests
 
             await failure.ExecuteNonQueryAsync(token);
         }
+    }
+
+    [Test]
+    [Arguments(PostgresErrorCodes.SerializationFailure)]
+    [Arguments(PostgresErrorCodes.DeadlockDetected)]
+    [UsedImplicitly(Reason = "TUnit invokes this method on a test instance.")]
+    public async Task Submission_ShouldResolveRatingOutsideTheTransactionAndReuseItOnRetry(string sqlState)
+    {
+        await using var database = await TestDatabase.CreateAsync(new MapProposalRating
+        {
+            AccStar = new RankedMapRating.AccuracyStar(2)
+        });
+        var failure = new TransientCommandFailure("UPDATE \"MapProposals\" AS proposal", sqlState);
+        await using var db = database.CreateRetryingContext(failure);
+        using var handler = new RatingHandler(_ =>
+        {
+            db.Database.CurrentTransaction.Should().BeNull();
+            return JsonResponse(JsonSerializer.Serialize(CreateExMachinaResponse()));
+        });
+        using var client = new HttpClient(handler);
+
+        (await CreateService(db, new BeatLeaderApi(client)).SubmitAsync(
+                new ContextId(1), new MapProposalId(1), new PlayerId(1), CancellationToken.None))
+            .Should().BeOfType<MapProposalService.TransitionResponse.Success>();
+
+        failure.Attempts.Should().Be(2);
+        handler.RequestCount.Should().Be(1);
+    }
+
+    [Test]
+    [UsedImplicitly(Reason = "TUnit invokes this method on a test instance.")]
+    public async Task Submission_ShouldRejectRatingInputsChangedWhileExMachinaWasRunning()
+    {
+        await using var database = await TestDatabase.CreateAsync(new MapProposalRating
+        {
+            AccStar = new RankedMapRating.AccuracyStar(2)
+        });
+        using var handler = new RatingHandler(_ =>
+        {
+            database.Context.Database.CurrentTransaction.Should().BeNull();
+            using var other = database.CreateContext();
+            other.MapProposals.ExecuteUpdate(setters => setters.SetProperty(
+                x => x.Requirements.MandatoryModifiers, AbstractScore.EModifiers.FasterSong));
+
+            return JsonResponse(JsonSerializer.Serialize(CreateExMachinaResponse()));
+        });
+        using var client = new HttpClient(handler);
+
+        (await CreateService(database.Context, new BeatLeaderApi(client)).SubmitAsync(
+                new ContextId(1), new MapProposalId(1), new PlayerId(1), CancellationToken.None))
+            .Should().BeOfType<MapProposalService.TransitionResponse.Conflict>();
+
+        (await database.Context.MapProposals.SingleAsync()).Should().BeOfType<DraftProposal>();
     }
 
     [Test]

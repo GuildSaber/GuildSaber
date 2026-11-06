@@ -1,8 +1,5 @@
 using System.Net;
 using System.Net.Http.Headers;
-#if NETSTANDARD2_1
-using System.Net.Http.Json;
-#endif
 using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.PointCurves.Http;

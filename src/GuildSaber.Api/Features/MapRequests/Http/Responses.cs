@@ -1,8 +1,8 @@
+using System.Text.Json.Serialization;
+using GuildSaber.Api.Features.RankedMaps.Http;
 #if NET10_0_OR_GREATER
 using System.ComponentModel.DataAnnotations;
 #endif
-using System.Text.Json.Serialization;
-using GuildSaber.Api.Features.RankedMaps.Http;
 
 namespace GuildSaber.Api.Features.MapRequests.Http;
 

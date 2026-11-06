@@ -34,7 +34,8 @@ public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manag
         => DownloadPlaylistsAsync(-1, int.MaxValue, categoryId, filter, includeUnordered: true);
 
     public Task DownloadPlaylistsAsync(PlaylistFilter filter)
-        => DownloadPlaylistsAsync(rangeMin: -1, rangeMax: int.MaxValue, categoryId: null, filter, includeUnordered: true);
+        => DownloadPlaylistsAsync(rangeMin: -1, rangeMax: int.MaxValue, categoryId: null, filter,
+            includeUnordered: true);
 
     public Task DownloadPlaylistsAsync(int rangeMin, int rangeMax, CategoryId? categoryId, PlaylistFilter filter)
         => DownloadPlaylistsAsync(rangeMin, rangeMax, categoryId, filter, includeUnordered: false);

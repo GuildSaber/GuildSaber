@@ -13,10 +13,10 @@ using GuildSaber.Database.Models.Server.RankedMaps.MapVersions;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions.PlayModes;
 using GuildSaber.Database.Models.Server.Songs;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
+using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using EModifiers = GuildSaber.Database.Models.Server.Scores.AbstractScore.EModifiers;
-using JetBrains.Annotations;
 using Sample = GuildSaber.Api.Features.PointCurves.Http.PointCurveRequests.Sample;
 
 namespace GuildSaber.Common.UnitTests.Features.PointCurves;

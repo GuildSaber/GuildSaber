@@ -112,7 +112,10 @@ internal ref struct PchipSampler(Span<CurvePoint> samples, double tolerance)
                 var root = Math.Sqrt(discriminant);
                 // The q form avoids subtracting almost equal values for one root.
                 var q = -b - Math.CopySign(root / 2, b);
-                if (q == 0) Include(-b / (3 * a));
+                if (q == 0)
+                {
+                    Include(-b / (3 * a));
+                }
                 else
                 {
                     Include(q / (3 * a));
@@ -192,7 +195,10 @@ internal ref struct PchipSampler(Span<CurvePoint> samples, double tolerance)
         }
 
         // Assign every tangent: stack storage is uninitialized, including the entries for flat intervals.
-        if (count == 2) tangents[0] = tangents[1] = slopes[0];
+        if (count == 2)
+        {
+            tangents[0] = tangents[1] = slopes[0];
+        }
         else
         {
             tangents[0] = Endpoint(widths[0], widths[1], slopes[0], slopes[1]);
@@ -212,10 +218,8 @@ internal ref struct PchipSampler(Span<CurvePoint> samples, double tolerance)
         }
 
         foreach (var tangent in tangents)
-        {
             if (!double.IsFinite(tangent))
                 return Failure("Generation derivatives are outside the finite numerical range.");
-        }
 
         return Success();
     }

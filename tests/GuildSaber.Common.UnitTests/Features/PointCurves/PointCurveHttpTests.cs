@@ -2,8 +2,8 @@ extern alias Client;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
-using System.Text.Json;
 using System.Text.Encodings.Web;
+using System.Text.Json;
 using AwesomeAssertions;
 using GuildSaber.Api.Features.Auth;
 using GuildSaber.Api.Features.Auth.Authorization;
@@ -18,6 +18,7 @@ using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Members;
 using GuildSaber.Database.Models.Server.Guilds.Points;
+using JetBrains.Annotations;
 using LinqKit;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -30,9 +31,6 @@ using Microsoft.Extensions.Options;
 using ClientRequests = Client::GuildSaber.Api.Features.PointCurves.Http.PointCurveRequests;
 using ClientPolicy = Client::GuildSaber.Api.Features.PointCurves.Http.PointCurveRequests.Policy;
 using Context = GuildSaber.Database.Models.Server.Guilds.Context;
-
-using JetBrains.Annotations;
-
 using Sample = Client::GuildSaber.Api.Features.PointCurves.Http.PointCurveRequests.Sample;
 
 namespace GuildSaber.Common.UnitTests.Features.PointCurves;
@@ -72,6 +70,12 @@ public class PointCurveHttpTests
     private sealed class Host(WebApplication app, RecordingQueue queue) : IAsyncDisposable
     {
         public RecordingQueue Queue { get; } = queue;
+
+        public async ValueTask DisposeAsync()
+        {
+            await app.StopAsync();
+            await app.DisposeAsync();
+        }
 
         public HttpClient CreateClient() => new() { BaseAddress = new Uri(app.Urls.Single()) };
 
@@ -142,12 +146,6 @@ public class PointCurveHttpTests
 
                 throw;
             }
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await app.StopAsync();
-            await app.DisposeAsync();
         }
     }
 

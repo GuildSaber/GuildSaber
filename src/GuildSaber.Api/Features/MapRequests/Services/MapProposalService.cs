@@ -27,16 +27,6 @@ public sealed class MapProposalService(
     BeatLeaderApi beatLeaderApi,
     IOptions<MapRequestSettings> settings)
 {
-    private sealed record RatingInput(
-        MapProposalRating Rating, RankedMapRequirements Requirements, SongDifficultyId SourceId)
-    {
-        public static RatingInput From(DraftProposal proposal)
-            => new(proposal.Rating, proposal.Requirements,
-                proposal.MapVersions.MinBy(x => x.Order)!.SongDifficultyId);
-    }
-
-    private sealed record PreparedRating(RatingInput Input, MapProposalRating Rating);
-
     private static readonly string _updateProposalStateFormattableString =
         $$"""
           UPDATE "{{nameof(ServerDbContext.MapProposals)}}" AS proposal
@@ -61,6 +51,18 @@ public sealed class MapProposalService(
                   WHERE thread."{{nameof(MapRequestThread.Id)}}" = proposal."{{nameof(MapProposal.ThreadId)}}"
                       AND thread."{{nameof(MapRequestThread.ContextId)}}" = {6})
           """;
+
+    private sealed record RatingInput(
+        MapProposalRating Rating,
+        RankedMapRequirements Requirements,
+        SongDifficultyId SourceId)
+    {
+        public static RatingInput From(DraftProposal proposal)
+            => new(proposal.Rating, proposal.Requirements,
+                proposal.MapVersions.MinBy(x => x.Order)!.SongDifficultyId);
+    }
+
+    private sealed record PreparedRating(RatingInput Input, MapProposalRating Rating);
 
     public closed record TransitionResponse
     {

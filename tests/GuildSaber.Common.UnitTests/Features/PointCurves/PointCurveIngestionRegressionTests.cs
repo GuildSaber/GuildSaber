@@ -106,10 +106,10 @@ public class PointCurveIngestionRegressionTests
     private static async Task SeedAsync(PointCurveTestDatabase database, IServiceProvider services)
     {
         await database.Context.Database.ExecuteSqlRawAsync("""
-            UPDATE "Points"
-            SET "CurveSettings_MapCurvePolicy" = 2,
-                "CurveSettings_RunnerUpRewardFractions" = ARRAY[0.8,0.6,0.4]::double precision[]
-            """);
+                                                           UPDATE "Points"
+                                                           SET "CurveSettings_MapCurvePolicy" = 2,
+                                                               "CurveSettings_RunnerUpRewardFractions" = ARRAY[0.8,0.6,0.4]::double precision[]
+                                                           """);
 
         var scores = services.GetRequiredService<ScoreAddOrUpdatePipeline>();
 
@@ -196,10 +196,10 @@ public class PointCurveIngestionRegressionTests
         await database.Context.SongDifficulties
             .ExecuteUpdateAsync(x => x.SetProperty(d => d.Stats.MaxScore, maximum));
         await database.Context.Database.ExecuteSqlRawAsync("""
-            UPDATE "Points"
-            SET "CurveSettings_MapCurvePolicy" = 2,
-                "CurveSettings_RunnerUpRewardFractions" = ARRAY[0.8]::double precision[]
-            """);
+                                                           UPDATE "Points"
+                                                           SET "CurveSettings_MapCurvePolicy" = 2,
+                                                               "CurveSettings_RunnerUpRewardFractions" = ARRAY[0.8]::double precision[]
+                                                           """);
 
         var queue = new Queue();
         var commands = new Commands();
@@ -498,8 +498,8 @@ public class PointCurveIngestionRegressionTests
             .SingleAsync(x => x.PlayerId == new PlayerId(1))).Id;
 
         await database.Context.Database.ExecuteSqlAsync($"""
-            UPDATE "RankedScores" SET "Type" = {(accepted ? 3 : 4)} WHERE "PlayerId" = 1
-            """);
+                                                         UPDATE "RankedScores" SET "Type" = {(accepted ? 3 : 4)} WHERE "PlayerId" = 1
+                                                         """);
         await scope.ServiceProvider.GetRequiredService<RankedScoreConfirmationPipeline>()
             .ExecuteAsync(new ContextId(2), rankedScoreId, CancellationToken.None);
 

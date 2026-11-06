@@ -1,6 +1,6 @@
 using CSharpFunctionalExtensions;
-using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Extensions;
+using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Database.Models.Server.Guilds.Points;
 using IResult = Microsoft.AspNetCore.Http.IResult;
 

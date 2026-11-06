@@ -1,9 +1,12 @@
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
+using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
+using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.Common.UnitTests.Utils;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
-using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.Guilds.Members;
+using GuildSaber.Database.Models.Server.Guilds.Points;
 using GuildSaber.Database.Models.Server.MapRequests;
 using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.Server.RankedMaps;
@@ -14,9 +17,6 @@ using GuildSaber.Database.Models.Server.Songs;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties.GameModes;
 using GuildSaber.Database.Models.StrongTypes;
-using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
-using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
-using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using LinqKit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -30,6 +30,18 @@ namespace GuildSaber.Common.UnitTests.Features.PointCurves;
 internal sealed class PointCurveTestDatabase(DbContextOptions<ServerDbContext> options) : IAsyncDisposable
 {
     public ServerDbContext Context { get; } = new(options);
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await Context.Database.EnsureDeletedAsync();
+        }
+        finally
+        {
+            await Context.DisposeAsync();
+        }
+    }
 
     public ServerDbContext CreateContext(DbCommandInterceptor? interceptor = null, bool retry = false)
     {
@@ -250,64 +262,56 @@ internal sealed class PointCurveTestDatabase(DbContextOptions<ServerDbContext> o
         int playerId = 1,
         bool? isWin = null)
     {
-        var statistics = isWin is null ? null : new ScoreStatistics
-        {
-            WinTracker = new WinTracker(isWin.Value, 1, null, 1, baseScore, 1000)
+        var statistics = isWin is null
+            ? null
+            : new ScoreStatistics
             {
-                PauseStatistics = null,
-                AverageHeadPosition = null
-            },
-            HitTracker = new HitTracker(null, 0, 0, 0, 0, 0, 0, 0, 0),
-            AccuracyTracker = new AccuracyTracker(0, 0, 0, 0, 0, 0, 0, 0, [], [], []),
-            ScoreGraphTracker = new ScoreGraphTracker([])
-        };
+                WinTracker = new WinTracker(isWin.Value, 1, null, 1, baseScore, 1000)
+                {
+                    PauseStatistics = null,
+                    AverageHeadPosition = null
+                },
+                HitTracker = new HitTracker(null, 0, 0, 0, 0, 0, 0, 0, 0),
+                AccuracyTracker = new AccuracyTracker(0, 0, 0, 0, 0, 0, 0, 0, [], [], []),
+                ScoreGraphTracker = new ScoreGraphTracker([])
+            };
 
-        AbstractScore score = beatLeader ? new BeatLeaderScore
-        {
-            Id = new ScoreId(id),
-            BeatLeaderScoreId = BeatLeaderScoreId.CreateUnsafe(id),
-            PlayerId = new PlayerId(playerId),
-            SongDifficultyId = new SongDifficulty.SongDifficultyId(1),
-            BaseScore = BaseScore.TryCreate(baseScore).Value,
-            Modifiers = modifiers,
-            SetAt = DateTimeOffset.UtcNow.AddSeconds(id),
-            MaxCombo = null,
-            IsFullCombo = false,
-            MissedNotes = 0,
-            BadCuts = 0,
-            Statistics = statistics
-        } : new ScoreSaberScore
-        {
-            Id = new ScoreId(id),
-            ScoreSaberScoreId = ScoreSaberScoreId.CreateUnsafe(id).Value,
-            PlayerId = new PlayerId(playerId),
-            SongDifficultyId = new SongDifficulty.SongDifficultyId(1),
-            BaseScore = BaseScore.TryCreate(baseScore).Value,
-            Modifiers = modifiers,
-            SetAt = DateTimeOffset.UtcNow.AddSeconds(id),
-            MaxCombo = null,
-            IsFullCombo = false,
-            MissedNotes = 0,
-            BadCuts = 0,
-            Statistics = statistics
-        };
+        AbstractScore score = beatLeader
+            ? new BeatLeaderScore
+            {
+                Id = new ScoreId(id),
+                BeatLeaderScoreId = BeatLeaderScoreId.CreateUnsafe(id),
+                PlayerId = new PlayerId(playerId),
+                SongDifficultyId = new SongDifficulty.SongDifficultyId(1),
+                BaseScore = BaseScore.TryCreate(baseScore).Value,
+                Modifiers = modifiers,
+                SetAt = DateTimeOffset.UtcNow.AddSeconds(id),
+                MaxCombo = null,
+                IsFullCombo = false,
+                MissedNotes = 0,
+                BadCuts = 0,
+                Statistics = statistics
+            }
+            : new ScoreSaberScore
+            {
+                Id = new ScoreId(id),
+                ScoreSaberScoreId = ScoreSaberScoreId.CreateUnsafe(id).Value,
+                PlayerId = new PlayerId(playerId),
+                SongDifficultyId = new SongDifficulty.SongDifficultyId(1),
+                BaseScore = BaseScore.TryCreate(baseScore).Value,
+                Modifiers = modifiers,
+                SetAt = DateTimeOffset.UtcNow.AddSeconds(id),
+                MaxCombo = null,
+                IsFullCombo = false,
+                MissedNotes = 0,
+                BadCuts = 0,
+                Statistics = statistics
+            };
 
         Context.Scores.Add(score);
         await Context.SaveChangesAsync();
         Context.ChangeTracker.Clear();
 
         return score;
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        try
-        {
-            await Context.Database.EnsureDeletedAsync();
-        }
-        finally
-        {
-            await Context.DisposeAsync();
-        }
     }
 }

@@ -1,5 +1,5 @@
-using System.Net;
 using System.Data.Common;
+using System.Net;
 using System.Text.Json;
 using AwesomeAssertions;
 using GuildSaber.Api.Features.MapRequests.Http;
@@ -28,8 +28,8 @@ using GuildSaber.Database.Models.Server.RankedMaps.MapVersions.PlayModes;
 using GuildSaber.Database.Models.Server.Songs;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties.GameModes;
-using LinqKit;
 using JetBrains.Annotations;
+using LinqKit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Options;
@@ -46,8 +46,14 @@ namespace GuildSaber.Common.UnitTests.Features.Songs;
 
 public class SongDifficultyResolutionTests
 {
+    private static readonly SongHash _hash = SongHash.TryCreate(new string('a', 40)).Value;
+    private static readonly SSLeaderboardId _leaderboardId = SSLeaderboardId.TryCreate(123).Value;
+    private static readonly DateTimeOffset _createdAt = new(2026, 10, 11, 12, 0, 0, TimeSpan.Zero);
+
     private sealed class CheckedHandler(
-        ServerDbContext db, HttpStatusCode statusCode, string body) : HttpMessageHandler
+        ServerDbContext db,
+        HttpStatusCode statusCode,
+        string body) : HttpMessageHandler
     {
         public int Requests { get; private set; }
 
@@ -78,10 +84,6 @@ public class SongDifficultyResolutionTests
             return result;
         }
     }
-
-    private static readonly SongHash _hash = SongHash.TryCreate(new string('a', 40)).Value;
-    private static readonly SSLeaderboardId _leaderboardId = SSLeaderboardId.TryCreate(123).Value;
-    private static readonly DateTimeOffset _createdAt = new(2026, 10, 11, 12, 0, 0, TimeSpan.Zero);
 
     private sealed class ResponseHandler(HttpStatusCode statusCode, string body) : HttpMessageHandler
     {

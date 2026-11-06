@@ -33,8 +33,6 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
     private XUIToggle _rangeDownloadToggle = null!;
     private XUIText _uniquePlaylistDownloadedText = null!;
 
-    public event Action OnResultsModalClosed = null!;
-
 
     private PlaylistFilter SelectedPlaylistFilter => _playlistType.Element.GetActiveText() switch
     {
@@ -43,6 +41,8 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
         2 => PlaylistFilter.NoneWithPassedNorPendingScores,
         _ => throw new ArgumentOutOfRangeException()
     };
+
+    public event Action OnResultsModalClosed = null!;
 
     protected override void OnViewCreation()
     {

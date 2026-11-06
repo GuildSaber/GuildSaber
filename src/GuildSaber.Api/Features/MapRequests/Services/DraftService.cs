@@ -152,11 +152,11 @@ public sealed class MapProposalDraftService(
                                    && (playerId == null
                                        ? x.IsLegacyImport
                                        : x.AuthorId == playerId
-                                       || x.Proposals.Any(proposal =>
-                                           proposal is SubmittedProposal
-                                           || proposal is AcceptedProposal
-                                           || proposal is ClosedProposal
-                                           && ((ClosedProposal)proposal).SubmittedAt != null)), token))
+                                         || x.Proposals.Any(proposal =>
+                                             proposal is SubmittedProposal
+                                             || proposal is AcceptedProposal
+                                             || proposal is ClosedProposal
+                                             && ((ClosedProposal)proposal).SubmittedAt != null)), token))
                 return new CreateResponse.ThreadNotFound();
 
 

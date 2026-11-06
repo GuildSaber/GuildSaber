@@ -11,8 +11,8 @@ using GuildSaber.Database.Models.Server.Guilds.Points;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GuildSaber.Common.UnitTests.Features.PointCurves;
 
@@ -43,10 +43,10 @@ public class PointCurvePublicationRegressionTests
 
     private sealed class OverrideReadGate(int expectedReaders) : DbCommandInterceptor
     {
-        private readonly TaskCompletionSource _readsCompleted =
+        private readonly TaskCompletionSource _continue =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        private readonly TaskCompletionSource _continue =
+        private readonly TaskCompletionSource _readsCompleted =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         private int _readers;

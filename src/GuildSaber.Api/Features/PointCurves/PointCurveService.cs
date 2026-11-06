@@ -22,8 +22,8 @@ public sealed class PointCurveService(
     HybridCache cache)
 {
     private const int RankedMapBatchSize = 128;
-    internal sealed record Scope(Point Point, RankedMap Map, RankedMapPointCurve? Override);
     public const double SamplingTolerance = 0.001;
+    internal sealed record Scope(Point Point, RankedMap Map, RankedMapPointCurve? Override);
 
     public async Task<Result<PointCurveResponses.Settings, PointCurveError>> GetSettingsAsync(
         GuildId guildId, Point.PointId pointId, CancellationToken token)
