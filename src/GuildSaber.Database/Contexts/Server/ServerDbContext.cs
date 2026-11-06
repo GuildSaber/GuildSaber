@@ -24,8 +24,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using TickerQ.EntityFrameworkCore.Configurations;
-using TickerQ.Utilities.Entities;
 
 namespace GuildSaber.Database.Contexts.Server;
 
@@ -98,11 +96,6 @@ public class ServerDbContext : DbContext
         builder.ApplyConfigurationsFromAssembly(typeof(ServerDbContext).Assembly, x =>
             x.Namespace is { } ns
             && (ns == serverModelsNamespace || ns.StartsWith(serverModelsNamespace + ".", StringComparison.Ordinal)));
-
-        // TickerQ Configurations
-        builder.ApplyConfiguration(new TimeTickerConfigurations<TimeTickerEntity>());
-        builder.ApplyConfiguration(new CronTickerConfigurations<CronTickerEntity>());
-        builder.ApplyConfiguration(new CronTickerOccurrenceConfigurations<CronTickerEntity>());
 
         base.OnModelCreating(builder);
     }

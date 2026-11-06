@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using GuildSaber.Api.Features.LegacyGS.Pipelines;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.EntityFrameworkCore;
-using TickerQ.Utilities.Base;
 
 namespace GuildSaber.Api.Features.LegacyGS.Jobs;
 
@@ -12,7 +11,6 @@ public class ImportLegacyGuildSaberMapsJob(
 {
     private readonly record struct GuildIdWithContextIds(GuildId GuildId, ContextId[] ContextIds);
 
-    [TickerFunction("ImportLegacyGSMap", cronExpression: "0 0 5 * * *")]
     [SuppressMessage("ReSharper", "LoopCanBeConvertedToQuery")]
     public async Task DoWorkAsync(CancellationToken token)
     {

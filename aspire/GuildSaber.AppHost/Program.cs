@@ -121,8 +121,6 @@ if (builder.ExecutionContext.IsPublishMode)
             builder.AddParameter("AuthSettings-Redirect-AllowedOriginUrls-2"))
         .WithEnvironment("AuthSettings:Redirect:AllowedOriginUrls:3",
             builder.AddParameter("AuthSettings-Redirect-AllowedOriginUrls-3"))
-        .WithEnvironment("AuthSettings:TickerQ:ApiKey",
-            builder.AddParameter("AuthSettings-TickerQ-ApiKey", secret: true))
         .WithEnvironment("GuildSettings:Creation:RequiredSubscriptionTier",
             builder.AddParameter("GuildSettings-Creation-RequiredSubscriptionTier"))
         .WithEnvironment("GuildSettings:Creation:MaxGuildCountPerUser",

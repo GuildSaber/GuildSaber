@@ -9,6 +9,7 @@
     <ItemGroup>
         <PackageReference Include="AwesomeAssertions" />
         <PackageReference Include="TUnit" />
+        <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
         <PackageReference Include="CSharpFunctionalExtensions.AwesomeAssertions" />
     </ItemGroup>
 

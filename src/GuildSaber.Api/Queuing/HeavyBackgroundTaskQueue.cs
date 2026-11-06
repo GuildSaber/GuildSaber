@@ -7,7 +7,8 @@ namespace GuildSaber.Api.Queuing;
 /// </summary>
 public interface IHeavyBackgroundTaskQueue
 {
-    ValueTask QueueBackgroundWorkItemAsync(Func<CancellationToken, ValueTask> workItem);
+    ValueTask QueueBackgroundWorkItemAsync(
+        Func<CancellationToken, ValueTask> workItem, CancellationToken token = default);
     ValueTask<Func<CancellationToken, ValueTask>> DequeueAsync(CancellationToken cancellationToken);
 }
 
@@ -20,8 +21,9 @@ public sealed class HeavyBackgroundTaskQueue(int capacity) : IHeavyBackgroundTas
                 FullMode = BoundedChannelFullMode.Wait
             });
 
-    public async ValueTask QueueBackgroundWorkItemAsync(Func<CancellationToken, ValueTask> workItem)
-        => await _queue.Writer.WriteAsync(workItem);
+    public async ValueTask QueueBackgroundWorkItemAsync(
+        Func<CancellationToken, ValueTask> workItem, CancellationToken token = default)
+        => await _queue.Writer.WriteAsync(workItem, token);
 
     public async ValueTask<Func<CancellationToken, ValueTask>> DequeueAsync(CancellationToken cancellationToken)
         => await _queue.Reader.ReadAsync(cancellationToken);

@@ -3,7 +3,6 @@ using GuildSaber.Api.Features.LegacyGS.Pipelines;
 using GuildSaber.Api.Features.Players.Pipelines;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.EntityFrameworkCore;
-using TickerQ.Utilities.Base;
 
 namespace GuildSaber.Api.Features.LegacyGS.Jobs;
 
@@ -13,9 +12,8 @@ public class ImportLegacyGuildSaberAdminConfirmationsJob(
 {
     private readonly record struct PlayerIdWithGuildIds(PlayerId PlayerId, GuildId[] GuildIds);
 
-    [TickerFunction("ImportLegacyGSAdminConfirmation", cronExpression: "0 0 10 * * *")]
     [SuppressMessage("ReSharper", "LoopCanBeConvertedToQuery")]
-    public async Task DoWorkAsync(TickerFunctionContext context, CancellationToken token)
+    public async Task DoWorkAsync(CancellationToken token)
     {
         logger.LogInformation("Starting legacy GuildSaber admin confirmation import job.");
 

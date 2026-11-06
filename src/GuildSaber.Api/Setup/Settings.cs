@@ -35,9 +35,6 @@ public static class SettingsSetup
         builder.Services
             .AddOptionsWithValidateOnStart<RedirectSettings>()
             .Bind(authSettings.GetSection(nameof(AuthSettings.Redirect))).ValidateDataAnnotations();
-        builder.Services
-            .AddOptionsWithValidateOnStart<TickerQAuthSettings>()
-            .Bind(authSettings.GetSection(nameof(AuthSettings.TickerQ))).ValidateDataAnnotations();
 
         var guildSettings = builder.Configuration.GetSection(GuildSettings.GuildSettingsSectionKey);
         builder.Services

@@ -13,7 +13,6 @@ public class AuthSettings
     [Required] public required RedirectSettings Redirect { get; init; }
     [Required] public required ManagerSettings Manager { get; init; }
     [Required] public required ApiKeyAuthSettings ApiKey { get; init; }
-    [Required] public required TickerQAuthSettings TickerQ { get; init; }
 }
 
 public class ManagerSettings
@@ -54,9 +53,4 @@ public class DiscordAuthSettings
 public class ApiKeyAuthSettings
 {
     [Required] public required string Key { get; init; }
-}
-
-public class TickerQAuthSettings
-{
-    [Required] public required string ApiKey { get; init; }
 }

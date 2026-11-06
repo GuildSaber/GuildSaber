@@ -1,4 +1,3 @@
-using System.Reflection;
 using GuildSaber.Api;
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth;
@@ -17,7 +16,6 @@ using GuildSaber.Api.Setup;
 using MyCSharp.HttpUserAgentParser.AspNetCore.DependencyInjection;
 using MyCSharp.HttpUserAgentParser.DependencyInjection;
 using Scalar.AspNetCore;
-using TickerQ.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -29,7 +27,6 @@ builder
     .AddSettings()
     .AddAuthFeature()
     .AddDatabase()
-    .AddTickerQ()
     .AddExternalApis()
     .AddBackgroundQueues()
     .AddApiDefaults();
@@ -39,10 +36,12 @@ builder.Services
     .AddHttpUserAgentParser()
     .AddHttpUserAgentParserAccessor();
 
-var configuredWebsiteOrigins = builder.Configuration
-                                   .GetSection($"{AuthSettings.AuthSettingsSectionKey}:{nameof(AuthSettings.Redirect)}")
-                                   .Get<RedirectSettings>()?.AllowedOriginUrls
-                               ?? [];
+var configuredWebsiteOrigins =
+    builder
+        .Configuration
+        .GetSection($"{AuthSettings.AuthSettingsSectionKey}:{nameof(AuthSettings.Redirect)}")
+        .Get<RedirectSettings>()?.AllowedOriginUrls
+    ?? [];
 
 builder.Services.AddCors(options => options
     .AddDefaultPolicy(policy => policy
@@ -73,10 +72,6 @@ app.UseCors()
     .UseMiddleware<SessionCookieRequestVerificationMiddleware>()
     .UseAuthorization()
     .UseOutputCache();
-
-// https://github.com/Arcenox-co/TickerQ/issues/788
-if (Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider")
-    app.UseTickerQ();
 
 app.UseWebsiteFeature()
     .UseFileServer("/website");
