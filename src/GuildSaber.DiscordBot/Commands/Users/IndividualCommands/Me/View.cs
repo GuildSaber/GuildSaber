@@ -63,6 +63,10 @@ public class PlayerCardView(
 
     private void Header(IContainer container, string achievementName, Color accent) => container.Row(row =>
     {
+        var pointCount = contextStat.SimplePointsWithRank.Count(x => x.CategoryId is null);
+        var statsFontSize = pointCount > 1 ? 26 : 30;
+        var statsRowHeight = pointCount > 1 ? 36 : 42;
+
         var avatar = row.ConstantItem(210).AlignMiddle().Width(200).Height(200).CornerRadius(16);
         if (avatarBytes.Length > 0)
             avatar.Image(avatarBytes).FitArea();
@@ -88,18 +92,17 @@ public class PlayerCardView(
             {
                 stats.RelativeItem(5).AlignMiddle().Column(points =>
                 {
-                    points.Item().Height(42).ScaleToFit().Row(values =>
-                    {
-                        values.Spacing(10);
-                        foreach (var point in contextStat.SimplePointsWithRank.Where(x => x.CategoryId is null))
+                    foreach (var point in contextStat.SimplePointsWithRank.Where(x => x.CategoryId is null))
+                        points.Item().Height(statsRowHeight).AlignMiddle().ScaleToFit().Row(values =>
+                        {
                             values.AutoItem().Text($" {point.Points:0.##} {point.Name} (#{point.Rank})")
-                                .FontSize(30).FontColor(Color.FromRGB(255, 215, 0));
-                    });
+                                .FontSize(statsFontSize).FontColor(Color.FromRGB(255, 215, 0));
+                        });
 
                     var passes = contextStat.PassCountsWithRank.FirstOrDefault(x => x.CategoryId is null);
-                    points.Item().Height(42).ScaleToFit()
+                    points.Item().Height(statsRowHeight).AlignMiddle().ScaleToFit()
                         .Text($" {passes.PassCount} passes (#{passes.Rank})")
-                        .FontSize(30).FontColor(Color.FromRGB(255, 215, 0));
+                        .FontSize(statsFontSize).FontColor(Color.FromRGB(255, 215, 0));
                 });
 
                 stats.RelativeItem(4).AlignMiddle().ScaleToFit()
