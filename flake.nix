@@ -1,9 +1,7 @@
 {
   description = "GuildSaber development environment";
 
-  # Temporary SDK update from https://github.com/NixOS/nixpkgs/pull/574338.
-  # Switch to github:NixOS/nixpkgs/nixos-unstable once it includes .NET 11 RC2.
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/659c15701f113dea6828bf1953d2b3dc44e34550";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
   outputs = { nixpkgs, ... }:
     let
