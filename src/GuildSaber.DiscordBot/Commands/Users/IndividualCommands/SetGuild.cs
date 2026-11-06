@@ -11,7 +11,8 @@ public partial class UserModuleSlash
     [CommandContextType(InteractionContextType.Guild)]
     [SlashCommand("setguild", "Sets this discord guild as the MainDiscordGuildId of a guild")]
     public async Task SetGuild(
-        [Summary("guildId", "The guildId of the guild you want this discordGuild to be set as MainDiscordGuildId")]
+        // Not named "guildId" because we need to bypass the guildId ownership permission check
+        [Summary("newGuildId", "The guildId of the guild you want this discordGuild to be set as MainDiscordGuildId")]
         GuildId guildId)
     {
         await DeferAsync(ephemeral: true);
