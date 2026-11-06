@@ -5,6 +5,7 @@ using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.MapRequests;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals.Types;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
@@ -115,15 +116,16 @@ public sealed class MapRequestBoostService(ServerDbContext dbContext, IOptions<M
             return new BoostResponse.Success();
         }
         catch (PostgresException exception)
-            when (exception.SqlState is PostgresErrorCodes.SerializationFailure
-                                        or PostgresErrorCodes.DeadlockDetected
-                                        or PostgresErrorCodes.UniqueViolation
-                                        or PostgresErrorCodes.ForeignKeyViolation)
+            when (exception.SqlState is PostgresErrorCodes.UniqueViolation or PostgresErrorCodes.ForeignKeyViolation
+                  || ExecutionStrategy.Current?.RetriesOnFailure is not true
+                  && exception.SqlState is PostgresErrorCodes.SerializationFailure
+                                           or PostgresErrorCodes.DeadlockDetected)
         {
             return new BoostResponse.Conflict();
         }
         catch (InvalidOperationException exception)
-            when (exception.InnerException is PostgresException
+            when (ExecutionStrategy.Current?.RetriesOnFailure is not true
+                  && exception.InnerException is PostgresException
                   {
                       SqlState: PostgresErrorCodes.SerializationFailure
                                 or PostgresErrorCodes.DeadlockDetected

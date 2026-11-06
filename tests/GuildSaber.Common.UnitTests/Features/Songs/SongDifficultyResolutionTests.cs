@@ -1,4 +1,5 @@
 using System.Net;
+using System.Data.Common;
 using System.Text.Json;
 using AwesomeAssertions;
 using GuildSaber.Api.Features.MapRequests.Http;
@@ -16,6 +17,7 @@ using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.Services.ScoreSaber.Models.Responses;
 using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
+using GuildSaber.Common.UnitTests.Utils;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Achievements;
@@ -27,7 +29,9 @@ using GuildSaber.Database.Models.Server.Songs;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties;
 using GuildSaber.Database.Models.Server.Songs.SongDifficulties.GameModes;
 using LinqKit;
+using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using Color = System.Drawing.Color;
@@ -42,6 +46,39 @@ namespace GuildSaber.Common.UnitTests.Features.Songs;
 
 public class SongDifficultyResolutionTests
 {
+    private sealed class CheckedHandler(
+        ServerDbContext db, HttpStatusCode statusCode, string body) : HttpMessageHandler
+    {
+        public int Requests { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
+        {
+            Requests++;
+            db.Database.CurrentTransaction.Should().BeNull();
+            return Task.FromResult(new HttpResponseMessage(statusCode) { Content = new StringContent(body) });
+        }
+    }
+
+    private sealed class DraftInsertFailure : DbCommandInterceptor
+    {
+        public int Attempts { get; private set; }
+
+        public override async ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+            DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (!command.CommandText.Contains("INSERT INTO \"MapRequestThreads\"", StringComparison.Ordinal)
+                || ++Attempts != 1)
+                return result;
+
+            await using var failure = command.Connection!.CreateCommand();
+            failure.Transaction = command.Transaction;
+            failure.CommandText = "DO $$ BEGIN RAISE EXCEPTION 'Retry draft' USING ERRCODE = '40001'; END $$;";
+            await failure.ExecuteNonQueryAsync(cancellationToken);
+            return result;
+        }
+    }
+
     private static readonly SongHash _hash = SongHash.TryCreate(new string('a', 40)).Value;
     private static readonly SSLeaderboardId _leaderboardId = SSLeaderboardId.TryCreate(123).Value;
     private static readonly DateTimeOffset _createdAt = new(2026, 10, 11, 12, 0, 0, TimeSpan.Zero);
@@ -71,11 +108,15 @@ public class SongDifficultyResolutionTests
 
         public ServerDbContext CreateContext() => new(options);
 
+        public ServerDbContext CreateRetryingContext(DbCommandInterceptor interceptor)
+            => new(new DbContextOptionsBuilder<ServerDbContext>(options)
+                .UseNpgsql(npgsql => npgsql.EnableRetryOnFailure(2, TimeSpan.Zero, null))
+                .AddInterceptors(interceptor)
+                .Options);
+
         public static async Task<TestDatabase> CreateAsync(bool seedDifficulties = true)
         {
-            var connectionString = Environment.GetEnvironmentVariable("GUILDSABER_TEST_POSTGRES");
-            Skip.Unless(!string.IsNullOrWhiteSpace(connectionString),
-                "Set GUILDSABER_TEST_POSTGRES to an isolated PostgreSQL server to run persistence tests.");
+            var connectionString = await PostgresTestServer.GetConnectionStringAsync();
             var connection = new NpgsqlConnectionStringBuilder(connectionString)
             {
                 Database = $"guildsaber_song_test_{Guid.NewGuid():N}", Pooling = false
@@ -116,6 +157,44 @@ public class SongDifficultyResolutionTests
                 throw;
             }
         }
+    }
+
+    [Test]
+    [UsedImplicitly(Reason = "TUnit invokes this method on a test instance.")]
+    public async Task DraftCreation_ShouldResolveRemoteMetadataOnceOutsideRetriedTransactions()
+    {
+        await using var database = await TestDatabase.CreateAsync(seedDifficulties: false);
+        await SeedRequestParentsAsync(database.Context);
+        var failure = new DraftInsertFailure();
+        await using var db = database.CreateRetryingContext(failure);
+        var beatMap = CreateBeatMap();
+        using var beatSaver = new CheckedHandler(db, HttpStatusCode.OK, JsonSerializer.Serialize(beatMap));
+        using var beatLeader = new CheckedHandler(db, HttpStatusCode.OK,
+            JsonSerializer.Serialize(CreateBeatLeaderResponse()));
+        using var scoreSaber = new CheckedHandler(db, HttpStatusCode.NotFound, "");
+        using var beatSaverClient = new HttpClient(beatSaver);
+        using var beatLeaderClient = new HttpClient(beatLeader);
+        using var scoreSaberClient = new HttpClient(scoreSaber);
+        beatSaverClient.BaseAddress = new Uri("https://test.invalid");
+        beatLeaderClient.BaseAddress = new Uri("https://test.invalid");
+        scoreSaberClient.BaseAddress = new Uri("https://test.invalid");
+        var service = new MapProposalDraftService(db, new BeatSaverApi(beatSaverClient),
+            new SongService(db, new BeatLeaderApi(beatLeaderClient), new ScoreSaberApi(scoreSaberClient)),
+            TimeProvider.System, Options.Create(new MapRequestSettings()));
+
+        (await service.CreateAsync(new ContextId(1), null, new PlayerId(1), CreateDraftRequest(
+                new MapProposalRequests.MapVersionInput(new MapProposalRequests.SongReference.ByKey(beatMap.Id),
+                    "Standard", EDifficulty.Expert, "Standard", 0)), CancellationToken.None))
+            .Should().BeOfType<DraftResponse.Success>();
+
+        failure.Attempts.Should().Be(2);
+        beatSaver.Requests.Should().Be(1);
+        beatLeader.Requests.Should().Be(1);
+        scoreSaber.Requests.Should().Be(1);
+        (await db.Songs.CountAsync()).Should().Be(1);
+        (await db.SongDifficulties.CountAsync()).Should().Be(1);
+        (await db.MapProposals.CountAsync()).Should().Be(1);
+        db.ChangeTracker.HasChanges().Should().BeFalse();
     }
 
     [Test]

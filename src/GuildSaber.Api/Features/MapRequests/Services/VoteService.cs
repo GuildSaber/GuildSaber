@@ -4,6 +4,7 @@ using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals.Types;
 using GuildSaber.Database.Models.Server.MapRequests.Votes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
 
 namespace GuildSaber.Api.Features.MapRequests.Services;
@@ -100,11 +101,10 @@ public sealed class MapProposalVoteService(ServerDbContext dbContext, TimeProvid
         }
         catch (Exception exception)
             when ((exception as PostgresException ??
-                   exception.InnerException as PostgresException)
-                  ?.SqlState is PostgresErrorCodes.SerializationFailure
-                                or PostgresErrorCodes.DeadlockDetected
-                                or PostgresErrorCodes.UniqueViolation
-                                or PostgresErrorCodes.ForeignKeyViolation)
+                   exception.InnerException as PostgresException) is { SqlState: var sqlState }
+                  && (sqlState is PostgresErrorCodes.UniqueViolation or PostgresErrorCodes.ForeignKeyViolation
+                      || ExecutionStrategy.Current?.RetriesOnFailure is not true
+                      && sqlState is PostgresErrorCodes.SerializationFailure or PostgresErrorCodes.DeadlockDetected))
         {
             return new VoteResponse.Conflict();
         }

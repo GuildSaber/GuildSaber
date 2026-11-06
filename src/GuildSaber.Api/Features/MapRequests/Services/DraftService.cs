@@ -14,6 +14,7 @@ using GuildSaber.Database.Models.Server.MapRequests.Proposals.Types;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.Server.Songs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using AchievementId = GuildSaber.Database.Models.Server.Guilds.Achievements.Achievement.AchievementId;
@@ -48,49 +49,92 @@ public sealed class MapProposalDraftService(
     public Task<CreateResponse> CreateAsync(
         ContextId contextId, MapRequestThreadId? threadId, PlayerId playerId, CreateDraft request,
         CancellationToken token)
-        => dbContext.Database.CreateExecutionStrategy().ExecuteAsync(
-            (service: this, contextId, threadId, playerId, request),
-            static (state, cancellationToken) => state.service.CreateCoreAsync(
-                state.contextId, state.threadId, state.playerId, state.request, cancellationToken), token);
+        => CreatePreparedAsync(contextId, threadId, playerId, request, token);
 
     /// <summary>Trusted legacy import only. No player is impersonated for automated history.</summary>
     internal Task<CreateResponse> CreateImportedAsync(
         ContextId contextId, MapRequestThreadId? threadId, CreateDraft request, CancellationToken token)
-        => dbContext.Database.CreateExecutionStrategy().ExecuteAsync((service: this, contextId, threadId, request),
-            static (state, cancellationToken) => state.service.CreateCoreAsync(state.contextId, state.threadId,
-                null, state.request, cancellationToken), token);
+        => CreatePreparedAsync(contextId, threadId, null, request, token);
 
-    private async Task<CreateResponse> CreateCoreAsync(
+    private async Task<CreateResponse> CreatePreparedAsync(
         ContextId contextId, MapRequestThreadId? threadId, PlayerId? playerId, CreateDraft request,
         CancellationToken token)
     {
         if (dbContext.ChangeTracker.HasChanges())
             throw new InvalidOperationException("Save or discard pending changes before creating a draft.");
 
+        var errors = GetInputErrors(request);
+        if (errors.Count > 0)
+            return new CreateResponse.ValidationFailure(errors);
+
+        if (!request.Requirements.Map().TryGetValue(out var requirements, out var requirementErrors))
+            return new CreateResponse.ValidationFailure(requirementErrors);
+
+        var rating = new MapProposalRating
+        {
+            AccStar = request.Rating.AccuracyStar is { } accStar ? new RankedMapRating.AccuracyStar(accStar) : null,
+            DiffStar = request.Rating.DifficultyStar is { } diffStar
+                ? new RankedMapRating.DifficultyStar(diffStar)
+                : null
+        };
+
+        errors = MapProposalService.GetRequirementsAndRatingErrors(requirements, rating);
+        if (errors.Count > 0)
+            return new CreateResponse.ValidationFailure(errors);
+
+        // Resolve once, outside the transaction and its retry delegate. No imported entities are staged here.
+        if (!await dbContext.Contexts.AnyAsync(x => x.Id == contextId, token))
+            return new CreateResponse.ContextNotFound();
+
+        var resolved = new SongService.ResolvedDifficulty[request.MapVersions.Length];
+
+        for (var index = 0; index < request.MapVersions.Length; index++)
+        {
+            var input = request.MapVersions[index];
+            var gameMode = await dbContext.GameModes
+                .SingleOrDefaultAsync(x => x.Name == input.Characteristic, token);
+
+            if (gameMode is null || !await dbContext.PlayModes.AnyAsync(x => x.Name == input.PlayMode, token))
+                return new CreateResponse.ValidationFailure([
+                    new KeyValuePair<string, string[]>($"MapVersions[{index}]",
+                        ["The characteristic and play mode must both be supported."])
+                ]);
+
+            if (!(await ResolveBeatMapAsync(input.Song, token)).TryGetValue(out var beatMap, out var beatMapError))
+                return beatMapError;
+
+            var selector = input.Song switch
+            {
+                SongReference.ByKey => BeatSaverApi.SelectLatestBeatMapVersion,
+                SongReference.ByHash(var hash) => BeatSaverApi.SelectBeatMapVersionByHash(hash)
+            };
+
+            if (!(await songService.ResolveDifficultyAsync(beatMap, selector, gameMode, input.Difficulty, token))
+                .TryGetValue(out var difficulty, out var resolutionError))
+                return new CreateResponse.ResolutionFailure(index, resolutionError);
+
+            resolved[index] = difficulty;
+        }
+
+        return await dbContext.Database.CreateExecutionStrategy().ExecuteAsync(
+            (service: this, contextId, threadId, playerId, request, requirements, rating, resolved),
+            static (state, cancellationToken) => state.service.CreateCoreAsync(
+                state.contextId, state.threadId, state.playerId, state.request, state.requirements,
+                state.rating, state.resolved, cancellationToken), token);
+    }
+
+    private async Task<CreateResponse> CreateCoreAsync(
+        ContextId contextId, MapRequestThreadId? threadId, PlayerId? playerId, CreateDraft request,
+        RankedMapRequirements requirements, MapProposalRating rating,
+        SongService.ResolvedDifficulty[] resolvedVersions, CancellationToken token)
+    {
         var committed = false;
         try
         {
-            var errors = GetInputErrors(request);
-            if (errors.Count > 0)
-                return new CreateResponse.ValidationFailure(errors);
-
-            if (!request.Requirements.Map().TryGetValue(out var requirements, out var requirementErrors))
-                return new CreateResponse.ValidationFailure(requirementErrors);
-
-            var rating = new MapProposalRating
-            {
-                AccStar = request.Rating.AccuracyStar is { } accStar ? new RankedMapRating.AccuracyStar(accStar) : null,
-                DiffStar = request.Rating.DifficultyStar is { } diffStar
-                    ? new RankedMapRating.DifficultyStar(diffStar)
-                    : null
-            };
-
-            errors = MapProposalService.GetRequirementsAndRatingErrors(requirements, rating);
-            if (errors.Count > 0)
-                return new CreateResponse.ValidationFailure(errors);
-
             await using var transaction = await dbContext.Database
                 .BeginTransactionAsync(IsolationLevel.Serializable, token);
+
+            List<KeyValuePair<string, string[]>> errors = [];
 
             var context = await dbContext.Contexts.Where(x => x.Id == contextId)
                 .Select(x => new { x.GuildId })
@@ -106,7 +150,8 @@ public sealed class MapProposalDraftService(
                     .AnyAsync(x => x.Id == existing
                                    && x.ContextId == contextId
                                    && (playerId == null
-                                       || x.AuthorId == playerId
+                                       ? x.IsLegacyImport
+                                       : x.AuthorId == playerId
                                        || x.Proposals.Any(proposal =>
                                            proposal is SubmittedProposal
                                            || proposal is AcceptedProposal
@@ -114,10 +159,6 @@ public sealed class MapProposalDraftService(
                                            && ((ClosedProposal)proposal).SubmittedAt != null)), token))
                 return new CreateResponse.ThreadNotFound();
 
-
-            if (playerId is null && threadId is { } importedThread && !await dbContext.MapRequestThreads
-                    .AnyAsync(x => x.Id == importedThread && x.IsLegacyImport, token))
-                return new CreateResponse.ThreadNotFound();
 
             if (playerId is not null && await dbContext.MapProposals.OfType<DraftProposal>()
                     .CountAsync(x => x.AuthorId == playerId && x.Thread.ContextId == contextId, token)
@@ -154,25 +195,13 @@ public sealed class MapProposalDraftService(
                     .SingleOrDefaultAsync(x => x.Name == input.Characteristic, token);
 
                 var playMode = await dbContext.PlayModes.SingleOrDefaultAsync(x => x.Name == input.PlayMode, token);
-                if (gameMode is null || playMode is null)
+                if (gameMode is null || playMode is null || gameMode.Id != resolvedVersions[index].GameMode.Id)
                     return new CreateResponse.ValidationFailure([
                         new KeyValuePair<string, string[]>($"MapVersions[{index}]",
                             ["The characteristic and play mode must both be supported."])
                     ]);
 
-                if (!(await ResolveBeatMapAsync(input.Song, token)).TryGetValue(out var beatMap, out var beatMapError))
-                    return beatMapError;
-
-                var selector = input.Song switch
-                {
-                    SongReference.ByKey => BeatSaverApi.SelectLatestBeatMapVersion,
-                    SongReference.ByHash(var hash) => BeatSaverApi.SelectBeatMapVersionByHash(hash)
-                };
-
-                if (!(await songService.GetOrCreateDifficultyAsync(
-                        beatMap, selector, gameMode, input.Difficulty, token))
-                    .TryGetValue(out var resolved, out var resolutionError))
-                    return new CreateResponse.ResolutionFailure(index, resolutionError);
+                var resolved = await songService.StageDifficultyAsync(resolvedVersions[index], token);
 
                 if (versions.Any(x => ReferenceEquals(x.SongDifficulty, resolved.difficulty)
                                       && x.PlayModeId == playMode.Id))
@@ -221,11 +250,10 @@ public sealed class MapProposalDraftService(
         }
         catch (Exception exception)
             when ((exception as PostgresException ??
-                   exception.InnerException as PostgresException)
-                  ?.SqlState is PostgresErrorCodes.SerializationFailure
-                                or PostgresErrorCodes.DeadlockDetected
-                                or PostgresErrorCodes.UniqueViolation
-                                or PostgresErrorCodes.ForeignKeyViolation)
+                   exception.InnerException as PostgresException) is { SqlState: var sqlState }
+                  && (sqlState is PostgresErrorCodes.UniqueViolation or PostgresErrorCodes.ForeignKeyViolation
+                      || ExecutionStrategy.Current?.RetriesOnFailure is not true
+                      && sqlState is PostgresErrorCodes.SerializationFailure or PostgresErrorCodes.DeadlockDetected))
         {
             return new CreateResponse.Conflict();
         }
@@ -305,6 +333,8 @@ public sealed class MapProposalDraftService(
                 case EntityState.Modified:
                     entry.CurrentValues.SetValues(entry.OriginalValues);
                     entry.State = EntityState.Unchanged;
+                    break;
+                case EntityState.Detached or EntityState.Unchanged or EntityState.Deleted:
                     break;
             }
     }
