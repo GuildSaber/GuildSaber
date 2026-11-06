@@ -17,7 +17,9 @@ public static class ContextPointSeeder
 
         foreach (var guildContext in guildContexts)
         {
-            var points = await dbContext.Points.Where(x => x.GuildId == guildContext.GuildId)
+            var points = await dbContext.Points
+                .AsTracking()
+                .Where(x => x.GuildId == guildContext.GuildId)
                 .ToArrayAsync(cancellationToken);
 
             guildContext.Points = points;

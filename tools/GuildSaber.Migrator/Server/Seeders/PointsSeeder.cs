@@ -8,7 +8,7 @@ namespace GuildSaber.Migrator.Server.Seeders;
 
 public static class PointsSeeder
 {
-    public static CustomCurve DefaultDiffCurve = new([
+    public static readonly CustomCurve DefaultDiffCurve = new([
         (32.0, 1746.000),
         (31.0, 1352.000),
         (30.0, 1131.250),
@@ -44,40 +44,7 @@ public static class PointsSeeder
         (0.0, 0.0)
     ]);
 
-    public static CustomCurve DefaultAccCurve = new([
-        (1.0, 7.424),
-        (0.999, 6.241),
-        (0.9975, 5.158),
-        (0.995, 4.010),
-        (0.9925, 3.241),
-        (0.99, 2.700),
-        (0.9875, 2.303),
-        (0.985, 2.007),
-        (0.9825, 1.786),
-        (0.98, 1.618),
-        (0.9775, 1.490),
-        (0.975, 1.392),
-        (0.9725, 1.315),
-        (0.97, 1.256),
-        (0.965, 1.167),
-        (0.96, 1.094),
-        (0.955, 1.039),
-        (0.95, 1.000),
-        (0.94, 0.931),
-        (0.93, 0.867),
-        (0.92, 0.813),
-        (0.91, 0.768),
-        (0.9, 0.729),
-        (0.875, 0.650),
-        (0.85, 0.581),
-        (0.825, 0.522),
-        (0.8, 0.473),
-        (0.75, 0.404),
-        (0.7, 0.345),
-        (0.65, 0.296),
-        (0.6, 0.256),
-        (0.0, 0.000)
-    ]);
+    public static readonly CustomCurve DefaultAccCurve = new([(1, 1), (0, 0)]);
 
     public static async Task SeedAsync(ServerDbContext dbContext, CancellationToken cancellationToken)
     {
@@ -96,12 +63,31 @@ public static class PointsSeeder
             CurveSettings = new CurveSettings
             {
                 Difficulty = DefaultDiffCurve,
-                Accuracy = DefaultAccCurve
+                Accuracy = new CustomCurve([]),
+                AccuracyBonusRatio = 0
             },
             WeightingSettings = WeightingSettings.Default
         }, new Point
         {
             Id = new Point.PointId(2),
+            GuildId = new GuildId(1),
+            Info = PointInfo.TryCreate(
+                name: "CAP",
+                description: "Challenge Accuracy points. Difficulty points plus an accuracy bonus "
+                             + "calibrated from the best passes on each map."
+            ).Unwrap(),
+            CurveSettings = new CurveSettings
+            {
+                Difficulty = DefaultDiffCurve,
+                Accuracy = DefaultAccCurve,
+                AccuracyBonusRatio = 0.25,
+                MapCurvePolicy = PointCurvePolicy.ScoreDerivedMapCurve,
+                RunnerUpRewardFractions = [0.8, 0.6]
+            },
+            WeightingSettings = WeightingSettings.Default
+        }, new Point
+        {
+            Id = new Point.PointId(3),
             GuildId = new GuildId(2),
             Info = PointInfo.TryCreate(
                 name: "RPL",
@@ -112,7 +98,8 @@ public static class PointsSeeder
             CurveSettings = new CurveSettings
             {
                 Difficulty = DefaultDiffCurve,
-                Accuracy = DefaultAccCurve
+                Accuracy = new CustomCurve([]),
+                AccuracyBonusRatio = 0
             },
             WeightingSettings = WeightingSettings.Default
         });
