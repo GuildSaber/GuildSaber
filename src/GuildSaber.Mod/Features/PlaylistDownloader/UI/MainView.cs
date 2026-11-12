@@ -4,11 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CP_SDK_BS.UI;
+using CP_SDK.UI.Components;
 using CP_SDK.XUI;
 using GuildSaber.Mod.Features.GuildSaber.Runtime;
 using GuildSaber.Mod.Features.PlaylistDownloader.UI.Components;
 using GuildSaber.Mod.Helpers;
 using SongCore;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
@@ -56,47 +58,70 @@ public class PlaylistDownloaderViewController : ViewController<PlaylistDownloade
                             .OnClick(DeleteGuildsPlaylists)
                     ).SetBackground(true, Color.black.WithAlpha(0.80f)),
                     XUIVLayout.Make(
-                        XUIText.Make("Download or update [Insert guild name] playlists:")
-                            .Bind(ref _guildNameText),
-                        XUIHLayout.Make(
-                            XUIText.Make("Range download:"),
-                            XUIToggle.Make()
-                                .OnValueChanged(RangeDownloadToggleChanged)
-                                .Bind(ref _rangeDownloadToggle)
-                        ),
-                        XUIHLayout.Make(
-                            XUIText.Make("Minimum level:"),
-                            XUISlider.Make()
-                                .OnValueChanged(RangeDownloadValueChanged)
-                                .SetInteger(true)
-                                .SetColor(Color.black)
-                                .SetInteractable(false)
-                                .Bind(ref _rangeDownloadMinSlider)
-                        ),
-                        XUIHLayout.Make(
-                            XUIText.Make("Maximum level:"),
-                            XUISlider.Make()
-                                .OnValueChanged(RangeDownloadValueChanged)
-                                .SetInteger(true)
-                                .SetColor(Color.black)
-                                .SetInteractable(false)
-                                .Bind(ref _rangeDownloadMaxSlider)
-                        ),
-                        XUITextSegmentedControl.Make("Type", "All", "Hide passed", "Hide passed & pending")
-                            .Bind(ref _playlistType)
-                            .SetActiveText(0, false),
-                        XUISecondaryButton.Make("Download all")
-                            .Bind(ref _downloadAllButton)
-                            .SetWidth(30)
-                            .SetHeight(5)
-                            .OnClick(DownloadAllClicked),
-                        XUIText.Make(string.Empty)
-                            .Bind(ref _uniquePlaylistDownloadedText)
-                    ).SetBackground(true, Color.black.WithAlpha(0.8f)),
+                            XUIText.Make("Download or update [Insert guild name] playlists:")
+                                .Bind(ref _guildNameText),
+                            XUIHLayout.Make(
+                                XUIText.Make("Range download:"),
+                                XUIToggle.Make()
+                                    .OnValueChanged(RangeDownloadToggleChanged)
+                                    .Bind(ref _rangeDownloadToggle)
+                            ),
+                            XUIHLayout.Make(
+                                XUIText.Make("Minimum level:"),
+                                XUISlider.Make()
+                                    .OnValueChanged(RangeDownloadValueChanged)
+                                    .SetInteger(true)
+                                    .SetColor(Color.black)
+                                    .SetInteractable(false)
+                                    .Bind(ref _rangeDownloadMinSlider)
+                            ),
+                            XUIHLayout.Make(
+                                XUIText.Make("Maximum level:"),
+                                XUISlider.Make()
+                                    .OnValueChanged(RangeDownloadValueChanged)
+                                    .SetInteger(true)
+                                    .SetColor(Color.black)
+                                    .SetInteractable(false)
+                                    .Bind(ref _rangeDownloadMaxSlider)
+                            ),
+                            XUITextSegmentedControl.Make("Type", "All", "Hide passed", "Hide passed & pending")
+                                .Bind(ref _playlistType)
+                                .SetActiveText(0, false)
+                                .OnReady(x =>
+                                {
+                                    x.LElement.preferredWidth = 66;
+                                    x.LElement.flexibleWidth = 0;
+                                    x.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = false;
+                                    x.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
+
+                                    foreach (var label in x.GetComponentsInChildren<CText>())
+                                    {
+                                        var cell = label.transform.parent.GetComponent<LayoutElement>()
+                                                   ?? label.transform.parent.gameObject.AddComponent<LayoutElement>();
+                                        cell.preferredWidth = label.TMProUGUI.preferredWidth + 4;
+                                        label.SetWrapping(false).SetOverflowMode(TextOverflowModes.Ellipsis);
+                                        label.TMProUGUI.fontSizeMin = label.TMProUGUI.fontSize * 0.7f;
+                                        label.TMProUGUI.fontSizeMax = label.TMProUGUI.fontSize;
+                                        label.TMProUGUI.enableAutoSizing = true;
+                                    }
+                                }),
+                            XUISecondaryButton.Make("Download all")
+                                .Bind(ref _downloadAllButton)
+                                .SetWidth(30)
+                                .SetHeight(5)
+                                .OnClick(DownloadAllClicked),
+                            XUIText.Make(string.Empty)
+                                .Bind(ref _uniquePlaylistDownloadedText)
+                        )
+                        .SetWidth(70)
+                        .SetBackground(true, Color.black.WithAlpha(0.8f))
+                        .OnReady(x => x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained),
                     XUIVLayout.Make()
+                        .SetWidth(48)
                         .SetBackground(true, Color.black.WithAlpha(0.8f))
                         .Bind(ref _categoriesListLayout)
-                ))
+                        .OnReady(x => x.CSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained)
+                ).SetPadding(0))
             .SetSpacing(2)
             .OnReady(x => x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.MinSize)
             .BuildUI(transform);

@@ -28,7 +28,7 @@ internal sealed class PlayerCardTrophies : XUIHLayout
 
         public Trophy(Texture2D texture) : base("PlayerCardTrophy")
         {
-            SetWidth(15.6f);
+            SetWidth(14);
             SetPadding(0);
             OnReady(layout =>
             {
@@ -51,18 +51,24 @@ internal sealed class PlayerCardTrophies : XUIHLayout
             });
         }
 
-        public void Render(int value) => _value.SetText(value.ToString("0"));
+        public void Render(int value, float width)
+        {
+            SetWidth(width);
+            _value.SetText(value.ToString("0"));
+        }
     }
 
     public static PlayerCardTrophies Make(PlayerCardResources resources) => new(resources);
 
-    public void Render(TrophiesData data)
+    public void Render(TrophiesData data, float width)
     {
-        _plastic.Render(data.Plastic);
-        _silver.Render(data.Silver);
-        _gold.Render(data.Gold);
-        _diamond.Render(data.Diamond);
-        _ruby.Render(data.Ruby);
+        SetWidth(width);
+        var trophyWidth = (width - 8) / 5;
+        _plastic.Render(data.Plastic, trophyWidth);
+        _silver.Render(data.Silver, trophyWidth);
+        _gold.Render(data.Gold, trophyWidth);
+        _diamond.Render(data.Diamond, trophyWidth);
+        _ruby.Render(data.Ruby, trophyWidth);
     }
 
     private void Build(CHOrVLayout layout)

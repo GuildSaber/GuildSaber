@@ -7,69 +7,26 @@ using CP_SDK.XUI;
 using GuildSaber.Mod.Helpers;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace GuildSaber.Mod.Features.PlayerCard.UI.Components;
-
-internal sealed class PlayerCardBalance : XUIVLayout
-{
-    private XUIText _dots = null!;
-    private XUIText _value = null!;
-
-    private PlayerCardBalance() : base("PlayerCardBalance")
-    {
-        SetPadding(0);
-        SetSpacing(-1.5f);
-        OnReady(Build);
-    }
-
-    public static PlayerCardBalance Make() => new();
-
-    public void Render(double equilibrium, Color accent)
-    {
-        var filledDots = Mathf.Clamp((int)Math.Round(equilibrium / 20), 0, 5);
-        var filledColor = ColorUtility.ToHtmlStringRGBA(accent);
-        var emptyColor = ColorUtility.ToHtmlStringRGBA(new Color(1, 1, 1, 0.25f));
-        var dots = string.Join(" ", Enumerable.Range(0, 5)
-            .Select(x => $"<color=#{(x < filledDots ? filledColor : emptyColor)}>●</color>"));
-
-        _dots.SetText(dots);
-        _value.SetText($"({equilibrium:0.##}%)").SetColor(accent);
-    }
-
-    private void Build(CHOrVLayout layout)
-    {
-        layout.LElement.flexibleHeight = 0;
-        layout.HOrVLayoutGroup.childForceExpandHeight = false;
-        layout.HOrVLayoutGroup.childForceExpandWidth = false;
-        layout.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
-
-        XUIText.Make(string.Empty)
-            .Bind(ref _dots)
-            .SetFontSize(3.2f)
-            .SetAlign(TextAlignmentOptions.Midline)
-            .SetWrapping(false)
-            .BuildUI(layout.transform);
-        XUIText.Make(string.Empty)
-            .Bind(ref _value)
-            .SetFontSize(3.2f)
-            .SetAlign(TextAlignmentOptions.Midline)
-            .SetWrapping(false)
-            .BuildUI(layout.transform);
-    }
-}
 
 internal sealed class PlayerCardCategories : XUIVLayout
 {
     private const int CategoriesPerPage = 6;
+    private const float ContentHeight = 14;
+    private const float PagerHeight = 3;
     private readonly List<CategoryCell> _categoryCells = [];
-    private XUIText _averageAchievement = null!;
-    private PlayerCardBalance _balance = null!;
+    private readonly List<CHOrVLayout> _categoryColumns = [];
     private ImmutableArray<PlayerCardCategoryAchievement> _categories = [];
     private Color _categoryAccent;
+    private float _columnWidth = 28;
     private int _page;
     private XUISecondaryButton _pageLeft = null!;
     private XUISecondaryButton _pageRight = null!;
     private XUIHLayout _pager = null!;
+    private XUIHLayout _row = null!;
+    private XUIText _summary = null!;
 
     private PlayerCardCategories() : base("PlayerCardCategories")
     {
@@ -78,50 +35,63 @@ internal sealed class PlayerCardCategories : XUIVLayout
         OnReady(Build);
     }
 
+    public float Height => ContentHeight + (_categories.Length > CategoriesPerPage ? PagerHeight : 0);
+    public float Width => _columnWidth * 2 + 22;
+
     private sealed class CategoryCell : XUIHLayout
     {
-        private XUIText _achievement = null!;
-        private XUIText _name = null!;
+        private XUIText _text = null!;
 
         public CategoryCell() : base("PlayerCardCategory")
         {
-            SetWidth(30);
+            SetWidth(28);
+            SetHeight(4.5f);
             SetPadding(0);
-            SetSpacing(0.6f);
+            SetSpacing(0);
             OnReady(Build);
         }
 
-        public void Render(PlayerCardCategoryAchievement? category)
-        {
-            if (category is not { } value)
-            {
-                _name.SetText(string.Empty);
-                _achievement.SetText(string.Empty);
-                return;
-            }
+        public float Measure(PlayerCardCategoryAchievement category)
+            => _text.Element.TMProUGUI.GetPreferredValues(GetText(category)).x;
 
-            _name.SetText($"{value.CategoryName}:");
-            _achievement.SetText(value.AchievementName).SetColor(value.Color);
+        public void Render(PlayerCardCategoryAchievement? category, float width)
+        {
+            SetWidth(width);
+            _text.Element.LElement.preferredWidth = width;
+            SetActive(category.HasValue);
+            if (category is not { } value) return;
+
+            _text.SetText(GetText(value));
         }
+
+        private static string GetText(PlayerCardCategoryAchievement category)
+            => $"{category.CategoryName}: <b><color=#{ColorUtility.ToHtmlStringRGBA(category.Color)}>"
+               + $"{category.AchievementName}</color></b>";
 
         private void Build(CHOrVLayout layout)
         {
+            layout.CSizeFitter.horizontalFit = layout.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+            layout.LElement.flexibleHeight = 0;
             layout.HOrVLayoutGroup.childForceExpandHeight = false;
             layout.HOrVLayoutGroup.childForceExpandWidth = false;
             layout.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
 
             XUIText.Make(string.Empty)
-                .Bind(ref _name)
+                .Bind(ref _text)
                 .SetFontSize(3.6f)
-                .SetAlign(TextAlignmentOptions.MidlineRight)
+                .SetFontSizes(2.3f, 3.6f)
+                .SetAlign(TextAlignmentOptions.Midline)
                 .SetWrapping(false)
-                .BuildUI(layout.transform);
-            XUIText.Make(string.Empty)
-                .Bind(ref _achievement)
-                .SetFontSize(3.6f)
-                .SetStyle(FontStyles.Bold)
-                .SetAlign(TextAlignmentOptions.MidlineLeft)
-                .SetWrapping(false)
+                .SetColor(Color.white)
+                .SetOverflowMode(TextOverflowModes.Ellipsis)
+                .OnReady(x =>
+                {
+                    x.TMProUGUI.enableAutoSizing = true;
+                    x.LElement.minHeight = 0;
+                    x.LElement.preferredWidth = 28;
+                    x.LElement.preferredHeight = 4.5f;
+                    x.LElement.flexibleWidth = 0;
+                })
                 .BuildUI(layout.transform);
         }
     }
@@ -132,50 +102,68 @@ internal sealed class PlayerCardCategories : XUIVLayout
     {
         _categories = progress.Categories;
         _categoryAccent = accent;
-        _averageAchievement
-            .SetText($"Avg {progress.AverageCategoryAchievement:0.##}")
+        _columnWidth = _categories.IsEmpty ? 0 : Mathf.Min(32, _categories.Max(_categoryCells[0].Measure) + 2);
+
+        foreach (var column in _categoryColumns)
+            column.SetWidth(_columnWidth);
+
+        SetWidth(Width);
+        _row.SetWidth(Width);
+        _pager.SetWidth(Width);
+        _summary
+            .SetText(GetSummaryText(progress))
             .SetColor(progress.AverageCategoryAchievementColor);
-        _balance.Render(progress.Equilibrium, progress.AverageCategoryAchievementColor);
         RenderPage();
+    }
+
+    private static string GetSummaryText(PlayerCardProgress progress)
+    {
+        var filledDots = Mathf.Clamp((int)Math.Round(progress.Equilibrium / 20), 0, 5);
+        var dots = string.Join(" ", Enumerable.Range(0, 5)
+            .Select(index => index < filledDots ? "●" : "<color=#FFFFFF40>●</color>"));
+
+        return $"<line-height=80%><b><i>Avg {progress.AverageCategoryAchievement:0.##}</i></b>\n"
+               + $"<size=84%>{dots}\n({progress.Equilibrium:0.##}%)</size></line-height>";
     }
 
     private void Build(CHOrVLayout layout)
     {
+        layout.CSizeFitter.horizontalFit = layout.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
         layout.LElement.flexibleHeight = 0;
         layout.HOrVLayoutGroup.childForceExpandHeight = false;
         layout.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
 
-        _balance = PlayerCardBalance.Make();
         XUIHLayout.Make(
                 MakeCategoryColumn(),
-                XUIVLayout.Make(
-                        XUIText.Make(string.Empty)
-                            .Bind(ref _averageAchievement)
-                            .SetFontSize(3.8f)
-                            .SetStyle(FontStyles.Bold | FontStyles.Italic)
-                            .SetWrapping(false),
-                        _balance)
+                XUIText.Make(string.Empty)
+                    .Bind(ref _summary)
+                    .SetFontSize(3.8f)
+                    .SetFontSizes(2.5f, 3.8f)
+                    .SetAlign(TextAlignmentOptions.Midline)
+                    .SetWrapping(false)
                     .OnReady(x =>
                     {
+                        x.TMProUGUI.enableAutoSizing = true;
+                        x.LElement.minHeight = 0;
+                        x.LElement.preferredWidth = 20;
+                        x.LElement.preferredHeight = ContentHeight;
+                        x.LElement.flexibleWidth = 0;
                         x.LElement.flexibleHeight = 0;
-                        x.HOrVLayoutGroup.childForceExpandHeight = false;
-                        x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
-                    })
-                    .SetWidth(24)
-                    .SetPadding(0)
-                    .SetSpacing(-1f),
+                    }),
                 MakeCategoryColumn())
             .OnReady(x =>
             {
+                x.CSizeFitter.horizontalFit = x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
                 x.LElement.flexibleHeight = 0;
                 x.HOrVLayoutGroup.childForceExpandHeight = false;
                 x.HOrVLayoutGroup.childForceExpandWidth = false;
                 x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
             })
-            .SetWidth(86)
-            .SetHeight(16.5f)
+            .SetWidth(78)
+            .SetHeight(ContentHeight)
             .SetPadding(0)
             .SetSpacing(1)
+            .Bind(ref _row)
             .BuildUI(layout.transform);
 
         XUIHLayout.Make(
@@ -184,8 +172,13 @@ internal sealed class PlayerCardCategories : XUIVLayout
                 XUISecondaryButton.Make(">", PageRight)
                     .Bind(ref _pageRight).SetColor(Color.white).SetWidth(5).SetHeight(3))
             .Bind(ref _pager)
-            .OnReady(x => x.LElement.flexibleHeight = 0)
-            .SetHeight(3)
+            .OnReady(x =>
+            {
+                x.CSizeFitter.horizontalFit = x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+                x.LElement.flexibleHeight = 0;
+            })
+            .SetWidth(78)
+            .SetHeight(PagerHeight)
             .SetPadding(0)
             .SetSpacing(16)
             .BuildUI(layout.transform);
@@ -195,6 +188,9 @@ internal sealed class PlayerCardCategories : XUIVLayout
         => XUIVLayout.Make()
             .OnReady(column =>
             {
+                _categoryColumns.Add(column);
+                column.CSizeFitter.horizontalFit =
+                    column.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
                 column.LElement.flexibleHeight = 0;
                 column.HOrVLayoutGroup.childForceExpandHeight = false;
                 column.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
@@ -206,8 +202,10 @@ internal sealed class PlayerCardCategories : XUIVLayout
                     _categoryCells.Add(category);
                 }
             })
+            .SetWidth(28)
+            .SetHeight(ContentHeight)
             .SetPadding(0)
-            .SetSpacing(-1f);
+            .SetSpacing(0.25f);
 
     private void RenderPage()
     {
@@ -222,7 +220,8 @@ internal sealed class PlayerCardCategories : XUIVLayout
         for (var i = 0; i < _categoryCells.Count; i++)
         {
             var categoryIndex = displayOrder[i];
-            _categoryCells[i].Render(categoryIndex < categories.Length ? categories[categoryIndex] : null);
+            _categoryCells[i].Render(categoryIndex < categories.Length ? categories[categoryIndex] : null,
+                _columnWidth);
         }
 
         _pager.SetActive(lastPage > 0);

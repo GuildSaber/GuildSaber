@@ -4,6 +4,7 @@ using CP_SDK_BS.UI;
 using CP_SDK.XUI;
 using GuildSaber.Mod.Features.PlayerCard.UI.Components;
 using GuildSaber.Mod.Features.PlayerCard.UI.Layouts;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Zenject;
@@ -12,6 +13,8 @@ namespace GuildSaber.Mod.Features.PlayerCard.UI;
 
 public sealed class PlayerCardView : ViewController<PlayerCardView>, IInitializable, IDisposable
 {
+    private const float MessageWidth = 60;
+
     [Inject] private readonly PlayerCardGuildPicker _guildPicker = null!;
     [Inject] private readonly PlayerCardResources _resources = null!;
     [Inject(Id = Constants.CardFloatingPanelId)] private readonly FloatingScreen _screen = null!;
@@ -67,7 +70,10 @@ public sealed class PlayerCardView : ViewController<PlayerCardView>, IInitializa
             case PlayerCardState.Unavailable(var reason, var canRetry):
                 _messageText.SetText(reason);
                 _retry.SetActive(canRetry);
-                _screen.ScreenSize = new Vector2(55, 36);
+                var messageHeight = _messageText.Element.TMProUGUI
+                    .GetPreferredValues(reason, MessageWidth - 4, float.PositiveInfinity).y;
+                _messageText.Element.LElement.preferredHeight = messageHeight;
+                _screen.ScreenSize = new Vector2(MessageWidth, Mathf.Max(20, messageHeight + 11));
                 break;
             case PlayerCardState.Ready(var summary):
                 _layout.Render(summary);
@@ -122,15 +128,36 @@ public sealed class PlayerCardView : ViewController<PlayerCardView>, IInitializa
 
     private void BuildMessageLayout()
         => XUIVLayout.Make(
-                XUIText.Make(string.Empty).Bind(ref _messageText).SetColor(new Color(1, 0.5f, 0)),
+                XUIText.Make(string.Empty)
+                    .Bind(ref _messageText)
+                    .SetColor(new Color(1, 0.5f, 0))
+                    .SetAlign(TextAlignmentOptions.Center)
+                    .SetWrapping(true)
+                    .OnReady(x =>
+                    {
+                        x.LElement.minHeight = 0;
+                        x.LElement.preferredWidth = MessageWidth - 4;
+                        x.LElement.flexibleWidth = 0;
+                    }),
                 XUIHLayout.Make(
-                    XUISecondaryButton.Make("Open in browser")
-                        .SetWidth(30).SetHeight(4)
-                        .OnClick(() => Send(new PlayerCardActionMessage.OpenWebsite())),
-                    XUISecondaryButton.Make("Retry")
-                        .Bind(ref _retry)
-                        .SetWidth(20).SetHeight(4)
-                        .OnClick(() => Send(new PlayerCardActionMessage.Retry()))))
+                        XUISecondaryButton.Make("Open in browser")
+                            .SetWidth(30).SetHeight(4)
+                            .OnClick(() => Send(new PlayerCardActionMessage.OpenWebsite())),
+                        XUISecondaryButton.Make("Retry")
+                            .Bind(ref _retry)
+                            .SetWidth(20).SetHeight(4)
+                            .OnClick(() => Send(new PlayerCardActionMessage.Retry())))
+                    .SetHeight(5)
+                    .SetPadding(0)
+                    .SetSpacing(2)
+                    .OnReady(x =>
+                    {
+                        x.HOrVLayoutGroup.childForceExpandWidth = false;
+                        x.HOrVLayoutGroup.childForceExpandHeight = false;
+                        x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
+                    }))
+            .SetPadding(2)
+            .SetSpacing(2)
             .Bind(ref _message)
             .BuildUI(transform);
 

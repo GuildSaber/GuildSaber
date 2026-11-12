@@ -17,9 +17,11 @@ internal sealed class ClassicPlayerCardLayout(
     PlayerCardResources resources,
     Action<PlayerCardActionMessage> send) : IPlayerCardLayout
 {
-    private const float ContentWidth = 86;
-    private const float Height = 45;
-    private const float Width = 88;
+    private const float BaseHeight = 32;
+    private const float ContentWidth = 78;
+    private const float HeaderWidth = ContentWidth - 22;
+    private const float StatsHeight = 11;
+    private const float StatsWidth = 32;
 
     private static readonly Color _botGold = new(1, 215f / 255, 0);
     private readonly List<XUIText> _pointTexts = [];
@@ -33,10 +35,11 @@ internal sealed class ClassicPlayerCardLayout(
     private Texture2D? _guildIcon;
     private XUIIconButton _guildImage = null!;
     private Sprite? _guildSprite;
+    private XUIHLayout _header = null!;
     private XUIIconButton _playerImage = null!;
     private XUIText _playerName = null!;
     private XUIText _playerPasses = null!;
-    private XUIHLayout _points = null!;
+    private XUIVLayout _points = null!;
     private XUIVLayout _root = null!;
     private XUIText _time = null!;
     private PlayerCardTrophies _trophies = null!;
@@ -45,6 +48,7 @@ internal sealed class ClassicPlayerCardLayout(
     {
         _categories = PlayerCardCategories.Make();
         _trophies = PlayerCardTrophies.Make(resources);
+        _trophies.SetHeight(7).SetPadding(2, 0, 0, 0);
 
         XUIVLayout.Make(
                 BuildHeader(),
@@ -96,7 +100,10 @@ internal sealed class ClassicPlayerCardLayout(
         RenderPoints(ready.Points);
         _categories.SetActive(ready.ShowOrderedAchievements);
         _categories.Render(ready.Progress, ready.Palette.Accent);
-        _trophies.Render(ready.Trophies);
+        var width = GetContentWidth(ready);
+        _header.SetWidth(width);
+        _divider.GetComponent<LayoutElement>().preferredWidth = width;
+        _trophies.Render(ready.Trophies, width);
         ApplyPalette(ready.Palette);
     }
 
@@ -117,13 +124,16 @@ internal sealed class ClassicPlayerCardLayout(
     }
 
     public Vector2 GetSize(PlayerCardReady ready)
-        => new(Width, ready.ShowOrderedAchievements ? Height : 36);
+        => new(GetContentWidth(ready) + 2, BaseHeight + (ready.ShowOrderedAchievements ? _categories.Height : 0));
 
     public void Dispose()
     {
         if (_avatarSprite != null) Object.Destroy(_avatarSprite);
         if (_guildSprite != null) Object.Destroy(_guildSprite);
     }
+
+    private float GetContentWidth(PlayerCardReady ready)
+        => ready.ShowOrderedAchievements ? Mathf.Max(ContentWidth, _categories.Width) : ContentWidth;
 
     private XUIHLayout BuildHeader()
         => XUIHLayout.Make(
@@ -139,144 +149,175 @@ internal sealed class ClassicPlayerCardLayout(
                             .SetWrapping(false)
                             .OnReady(x =>
                             {
+                                x.LElement.minHeight = 0;
                                 x.LElement.preferredWidth = 16;
-                                x.LElement.preferredHeight = 5.5f;
+                                x.LElement.preferredHeight = 3.5f;
                             }))
-                    .SetSpacing(-0.5f)
+                    .SetSpacing(0.5f)
                     .OnReady(x =>
                     {
+                        x.CSizeFitter.horizontalFit =
+                            x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
                         x.LElement.flexibleHeight = 0;
-                        x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleLeft;
+                        x.HOrVLayoutGroup.childAlignment = TextAnchor.UpperLeft;
                     })
-                    .SetPadding(2, 0, 0, 1)
-                    .SetWidth(21),
+                    .SetPadding(1, 0, 0, 1)
+                    .SetWidth(20)
+                    .SetHeight(22),
                 XUIVLayout.Make(
                         XUIHLayout.Make(
                                 XUIText.Make(string.Empty)
                                     .Bind(ref _playerName)
                                     .SetStyle(FontStyles.Bold)
                                     .SetFontSize(6.5f)
+                                    .SetFontSizes(3.5f, 6.5f)
                                     .SetAlign(TextAlignmentOptions.MidlineLeft)
                                     .SetWrapping(false)
-                                    .SetMargins(0, 2, 0, 0)
+                                    .SetOverflowMode(TextOverflowModes.Ellipsis)
                                     .OnReady(x =>
                                     {
-                                        x.LElement.preferredWidth = 53;
-                                        x.LElement.flexibleWidth = 0;
+                                        x.TMProUGUI.enableAutoSizing = true;
+                                        x.LElement.minHeight = 0;
+                                        x.LElement.preferredWidth = HeaderWidth - 10;
+                                        x.LElement.preferredHeight = 9;
+                                        x.LElement.flexibleWidth = 1;
                                     }),
-                                XUIVLayout.Make(
-                                        XUIIconButton.Make(() => send(new PlayerCardActionMessage.OpenActions()))
-                                            .Bind(ref _guildImage)
-                                            .SetWidth(9)
-                                            .SetHeight(9))
-                                    .OnReady(x =>
-                                    {
-                                        x.LElement.flexibleHeight = 0;
-                                        x.HOrVLayoutGroup.childAlignment = TextAnchor.UpperRight;
-                                    })
-                                    .SetWidth(10)
-                                    .SetHeight(9)
-                                    .SetPadding(1, 0, 0, 0))
+                                XUIIconButton.Make(() => send(new PlayerCardActionMessage.OpenActions()))
+                                    .Bind(ref _guildImage)
+                                    .SetWidth(8)
+                                    .SetHeight(8))
                             .OnReady(x =>
                             {
+                                x.CSizeFitter.horizontalFit =
+                                    x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
                                 x.LElement.flexibleHeight = 0;
                                 x.HOrVLayoutGroup.childForceExpandWidth = false;
-                                x.HOrVLayoutGroup.childAlignment = TextAnchor.UpperLeft;
+                                x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleLeft;
                             })
-                            .SetWidth(64)
+                            .SetWidth(HeaderWidth)
                             .SetHeight(9)
                             .SetPadding(0)
-                            .SetSpacing(1),
-                        XUIHLayout.Make(
-                                XUIVLayout.Make(
-                                        XUIHLayout.Make()
-                                            .Bind(ref _points)
-                                            .OnReady(x =>
-                                            {
-                                                x.LElement.flexibleHeight = 0;
-                                                x.HOrVLayoutGroup.childForceExpandWidth = false;
-                                                x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleLeft;
-                                            })
-                                            .SetWidth(45)
-                                            .SetHeight(5.5f)
-                                            .SetPadding(0)
-                                            .SetSpacing(1),
-                                        XUIText.Make(string.Empty)
-                                            .Bind(ref _playerPasses)
-                                            .SetFontSize(4)
-                                            .SetAlign(TextAlignmentOptions.MidlineLeft)
-                                            .SetWrapping(false)
-                                            .OnReady(x =>
-                                            {
-                                                x.LElement.preferredWidth = 45;
-                                                x.LElement.preferredHeight = 6.5f;
-                                                x.LElement.flexibleWidth = 0;
-                                                x.LElement.flexibleHeight = 0;
-                                            }))
-                                    .OnReady(x =>
-                                    {
-                                        x.LElement.flexibleHeight = 0;
-                                        x.HOrVLayoutGroup.childForceExpandHeight = false;
-                                        x.HOrVLayoutGroup.childAlignment = TextAnchor.UpperLeft;
-                                    })
-                                    .SetWidth(45)
-                                    .SetHeight(10.9f)
-                                    .SetPadding(0)
-                                    .SetSpacing(-1.1f),
-                                XUIVLayout.Make(
-                                        XUIText.Make(string.Empty)
-                                            .Bind(ref _achievement)
-                                            .SetStyle(FontStyles.Bold | FontStyles.Italic)
-                                            .SetFontSize(7.4f)
-                                            .SetAlign(TextAlignmentOptions.Center)
-                                            .SetMargins(0, 3, 0, 0)
-                                            .SetWrapping(false))
-                                    .OnReady(x =>
-                                    {
-                                        x.LElement.flexibleHeight = 0;
-                                        x.HOrVLayoutGroup.childForceExpandHeight = false;
-                                        x.HOrVLayoutGroup.childAlignment = TextAnchor.UpperRight;
-                                    }))
-                            .OnReady(x =>
-                            {
-                                x.LElement.flexibleHeight = 0;
-                                x.HOrVLayoutGroup.childForceExpandWidth = false;
-                                x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
-                            })
-                            .SetWidth(64)
-                            .SetHeight(10.9f)
-                            .SetPadding(0, 2, 0, 0)
-                            .SetSpacing(1))
+                            .SetSpacing(2),
+                        BuildStats())
                     .OnReady(x =>
                     {
+                        x.CSizeFitter.horizontalFit =
+                            x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
                         x.LElement.flexibleHeight = 0;
+                        x.LElement.flexibleWidth = 1;
                         x.HOrVLayoutGroup.childForceExpandHeight = false;
-                        x.HOrVLayoutGroup.childAlignment = TextAnchor.UpperLeft;
+                        x.HOrVLayoutGroup.childForceExpandWidth = true;
+                        x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleLeft;
                     })
-                    .SetWidth(64)
-                    .SetHeight(23)
+                    .SetWidth(HeaderWidth)
+                    .SetHeight(22)
                     .SetPadding(0)
-                    .SetSpacing(0.75f))
+                    .SetSpacing(0))
             .OnReady(x =>
             {
+                x.CSizeFitter.horizontalFit = x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
                 x.LElement.flexibleHeight = 0;
                 x.HOrVLayoutGroup.childForceExpandHeight = false;
                 x.HOrVLayoutGroup.childForceExpandWidth = false;
-                x.HOrVLayoutGroup.childAlignment = TextAnchor.UpperLeft;
+                x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleLeft;
             })
             .SetWidth(ContentWidth)
-            .SetHeight(23)
+            .SetHeight(22)
+            .SetPadding(0)
+            .SetSpacing(2)
+            .Bind(ref _header);
+
+    private XUIHLayout BuildStats()
+        => XUIHLayout.Make(
+                XUIVLayout.Make(
+                        XUIVLayout.Make()
+                            .Bind(ref _points)
+                            .OnReady(x =>
+                            {
+                                x.CSizeFitter.horizontalFit =
+                                    x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+                                x.LElement.flexibleHeight = 0;
+                                x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleLeft;
+                            })
+                            .SetWidth(StatsWidth)
+                            .SetPadding(0)
+                            .SetSpacing(0),
+                        XUIText.Make(string.Empty)
+                            .Bind(ref _playerPasses)
+                            .SetFontSize(4)
+                            .SetFontSizes(2, 4)
+                            .SetAlign(TextAlignmentOptions.MidlineLeft)
+                            .SetWrapping(false)
+                            .SetOverflowMode(TextOverflowModes.Ellipsis)
+                            .OnReady(x =>
+                            {
+                                x.TMProUGUI.enableAutoSizing = true;
+                                x.LElement.minHeight = 0;
+                                x.LElement.preferredWidth = StatsWidth;
+                                x.LElement.flexibleWidth = 0;
+                                x.LElement.flexibleHeight = 0;
+                            }))
+                    .OnReady(x =>
+                    {
+                        x.CSizeFitter.horizontalFit =
+                            x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+                        x.LElement.flexibleHeight = 0;
+                        x.HOrVLayoutGroup.childAlignment = TextAnchor.MiddleLeft;
+                    })
+                    .SetWidth(StatsWidth)
+                    .SetHeight(StatsHeight)
+                    .SetPadding(0)
+                    .SetSpacing(0),
+                XUIText.Make(string.Empty)
+                    .Bind(ref _achievement)
+                    .SetStyle(FontStyles.Bold | FontStyles.Italic)
+                    .SetFontSize(7.4f)
+                    .SetFontSizes(3.5f, 7.4f)
+                    .SetAlign(TextAlignmentOptions.Midline)
+                    .SetWrapping(false)
+                    .SetOverflowMode(TextOverflowModes.Ellipsis)
+                    .OnReady(x =>
+                    {
+                        x.TMProUGUI.enableAutoSizing = true;
+                        x.LElement.minHeight = 0;
+                        x.LElement.preferredWidth = HeaderWidth - StatsWidth - 2;
+                        x.LElement.preferredHeight = StatsHeight + 2;
+                        x.LElement.flexibleWidth = 1;
+                    }))
+            .OnReady(x =>
+            {
+                x.CSizeFitter.horizontalFit = x.CSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+                x.LElement.flexibleHeight = 0;
+                x.HOrVLayoutGroup.childForceExpandWidth = false;
+                x.HOrVLayoutGroup.childAlignment = TextAnchor.UpperLeft;
+            })
+            .SetWidth(HeaderWidth)
+            .SetHeight(StatsHeight + 2)
             .SetPadding(0)
             .SetSpacing(2);
 
     private void RenderPoints(ImmutableArray<PlayerCardPoint> points)
     {
+        var rowHeight = StatsHeight / (points.Length + 1);
+        _points.SetHeight(rowHeight * points.Length);
+        _playerPasses.Element.LElement.preferredHeight = rowHeight;
+
         while (_pointTexts.Count < points.Length)
         {
             var text = XUIText.Make(string.Empty);
             text.SetFontSize(4);
+            text.SetFontSizes(2, 4);
             text.SetAlign(TextAlignmentOptions.MidlineLeft);
             text.SetWrapping(false);
+            text.SetOverflowMode(TextOverflowModes.Ellipsis);
+            text.OnReady(x =>
+            {
+                x.TMProUGUI.enableAutoSizing = true;
+                x.LElement.minHeight = 0;
+                x.LElement.preferredWidth = StatsWidth;
+                x.LElement.flexibleWidth = 0;
+                x.LElement.flexibleHeight = 0;
+            });
             text.BuildUI(_points.Element.transform);
             _pointTexts.Add(text);
         }
@@ -286,10 +327,8 @@ internal sealed class ClassicPlayerCardLayout(
             _pointTexts[i].SetActive(i < points.Length);
             if (i < points.Length)
             {
-                _pointTexts[i].Element.LElement.preferredWidth = points.Length > 1 ? 22 : 45;
-                _pointTexts[i].Element.LElement.flexibleWidth = 0;
+                _pointTexts[i].Element.LElement.preferredHeight = rowHeight;
                 _pointTexts[i]
-                    .SetFontSize(points.Length > 1 ? 3.3f : 4)
                     .SetText(points[i].Text)
                     .SetColor(_botGold);
             }
