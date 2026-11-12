@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net11.0;netstandard2.1</TargetFrameworks>
-        <LangVersion>preview</LangVersion>
+        <LangVersion>15</LangVersion>
         <Nullable>enable</Nullable>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>

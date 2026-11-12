@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net11.0</TargetFramework>
-        <LangVersion>preview</LangVersion>
+        <LangVersion>15</LangVersion>
         <NoDefaultLaunchSettingsFile>True</NoDefaultLaunchSettingsFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>CS1591</NoWarn>

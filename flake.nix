@@ -1,7 +1,8 @@
 {
   description = "GuildSaber development environment";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  # TODO: Switch to nixos-unstable once SDK 11.0.100 reaches the channel.
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/refs/pull/586420/head";
 
   outputs = { nixpkgs, ... }:
     let
