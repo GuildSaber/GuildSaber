@@ -1,3 +1,4 @@
+using System;
 using BeatSaberMarkupLanguage.FloatingScreen;
 using GuildSaber.CSharpClient;
 using GuildSaber.Mod.Features.PlayerCard.Patches;
@@ -10,7 +11,7 @@ using Zenject;
 
 namespace GuildSaber.Mod.Features.PlayerCard;
 
-public class PlayerCardInstaller(GuildSaberClient client, Logger logger) : Installer
+public class PlayerCardInstaller(Func<GuildSaberClient> getClient, Logger logger) : Installer
 {
     internal class PlayerCardResourcesFactory(
         [Inject(Id = ResourceMap.DownArrow)] Texture2D downArrowTexture,
@@ -39,6 +40,7 @@ public class PlayerCardInstaller(GuildSaberClient client, Logger logger) : Insta
 
     public override void InstallBindings()
     {
+        var client = getClient();
         logger.Info($"Client base api uri: {client.HttpClient.BaseAddress}");
         logger.Info($"Client user agent: {client.HttpClient.DefaultRequestHeaders.UserAgent}");
 

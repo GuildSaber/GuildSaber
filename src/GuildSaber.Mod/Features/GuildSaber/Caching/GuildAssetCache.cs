@@ -14,7 +14,7 @@ namespace GuildSaber.Mod.Features.GuildSaber.Caching;
 
 public sealed class GuildAssetCache(
     GuildSaberCacheStore cacheStore,
-    GuildSaberClient client,
+    Func<GuildSaberClient> getClient,
     Logger logger) : IDisposable
 {
     private const string RoundedGuildIconCacheKeyPrefix = "rounded-guild-icon:";
@@ -40,10 +40,10 @@ public sealed class GuildAssetCache(
     }
 
     public Task<Texture2D?> GetOrFetchRoundedGuildIcon(GuildId guildId) => GetOrFetchCachedTextureAsync(
-        $"{RoundedGuildIconCacheKeyPrefix}{guildId}", client.Guilds.GetLogoUrl(guildId));
+        $"{RoundedGuildIconCacheKeyPrefix}{guildId}", getClient().Guilds.GetLogoUrl(guildId));
 
     public Task<Texture2D?> GetOrFetchRoundedCategoryIcon(CategoryId categoryId) => GetOrFetchCachedTextureAsync(
-        $"{RoundedCategoryIconCacheKeyPrefix}{categoryId}", client.Categories.GetLogoUrl(categoryId), round: true);
+        $"{RoundedCategoryIconCacheKeyPrefix}{categoryId}", getClient().Categories.GetLogoUrl(categoryId), round: true);
 
     public Task<Texture2D?> GetOrFetchPlayerAvatar(PlayerId playerId, string avatarUrl)
         => GetOrFetchCachedTextureAsync(
@@ -53,8 +53,9 @@ public sealed class GuildAssetCache(
 
     private async Task<Texture2D?> GetOrFetchCachedTextureAsync(string key, Uri uri, bool round = true)
     {
-        var texture = await cacheStore.GetOrCreateAsync(key, () => FetchTextureAsync(uri, round));
-        if (texture == null) cacheStore.Remove(key);
+        var cacheKey = $"{key}:{uri}";
+        var texture = await cacheStore.GetOrCreateAsync(cacheKey, () => FetchTextureAsync(uri, round));
+        if (texture == null) cacheStore.Remove(cacheKey);
 
         return texture;
     }
@@ -64,7 +65,7 @@ public sealed class GuildAssetCache(
         Texture2D? texture = null;
         try
         {
-            var bytes = await client.HttpClient.GetByteArrayAsync(uri);
+            var bytes = await getClient().HttpClient.GetByteArrayAsync(uri);
             texture = IsGif(bytes) ? LoadGif(bytes) : LoadImage(bytes);
 
             if (texture is null)

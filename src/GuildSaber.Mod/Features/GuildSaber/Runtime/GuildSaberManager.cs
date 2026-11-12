@@ -18,7 +18,7 @@ using static GuildSaber.Mod.Features.GuildSaber.Runtime.GuildSaberRuntimeState;
 namespace GuildSaber.Mod.Features.GuildSaber.Runtime;
 
 public sealed class GuildSaberManager(
-    GuildSaberClient client,
+    Func<GuildSaberClient> getClient,
     GuildSaberConfig config,
     IPlatform platform,
     Logger logger
@@ -48,14 +48,17 @@ public sealed class GuildSaberManager(
         _lifetime.Dispose();
     }
 
-    public Task ReInitializeAsync() => RunTransitionAsync(LoadInitialStateAsync);
+    public Task ReInitializeAsync() => RunTransitionAsync(token => LoadInitialStateAsync(getClient(), token));
 
-    private async Task LoadInitialStateAsync(CancellationToken token)
+    private async Task LoadInitialStateAsync(GuildSaberClient client, CancellationToken token)
     {
         logger.Info("Initializing GuildSaber runtime...");
 
         // Throw if cancellation requested manually because the underlying GetUserInfo API doesn't use the token.
         token.ThrowIfCancellationRequested();
+
+        _playerExtended = null;
+        _availableGuilds = [];
 
         if (!BeatLeaderId.TryCreate(platform.user.userId)
                 .TryGetValue(out var beatLeaderId, out var parseError))
@@ -118,12 +121,15 @@ public sealed class GuildSaberManager(
             ? config.ContextId
             : selectedGuild.Contexts[0].Id;
 
-        await LoadGuildContextSelectionAsync(selectedGuild.Guild.Id, selectedContextId, token);
+        await LoadGuildContextSelectionAsync(client, selectedGuild.Guild.Id, selectedContextId, token);
     }
 
-    private async Task LoadGuildContextSelectionAsync(GuildId guildId, ContextId contextId, CancellationToken token)
+    private async Task LoadGuildContextSelectionAsync(
+        GuildSaberClient client, GuildId guildId, ContextId contextId, CancellationToken token)
     {
-        if (_playerExtended is null)
+        // Await points could get it modified (env change), we save it to a variable to keep the proper ref.
+        var player = _playerExtended;
+        if (player is null)
         {
             Publish(new Failed("The local player has not been loaded."));
             return;
@@ -142,7 +148,7 @@ public sealed class GuildSaberManager(
             return;
         }
 
-        var stats = await FetchMemberStatsAsync(_playerExtended.Player.Id, contextId, token);
+        var stats = await FetchMemberStatsAsync(client, player.Player.Id, contextId, token);
         if (stats is not { } memberStats)
         {
             Publish(new Failed("Failed to load the player's guild statistics."));
@@ -150,7 +156,7 @@ public sealed class GuildSaberManager(
         }
 
         var snapshot = new GuildSaberSnapshot(
-            _playerExtended,
+            player,
             _availableGuilds,
             guildExtended,
             contextId,
@@ -177,7 +183,7 @@ public sealed class GuildSaberManager(
     }
 
     public Task SelectGuildAsync(GuildId guildId, ContextId contextId)
-        => RunTransitionAsync(token => LoadGuildContextSelectionAsync(guildId, contextId, token));
+        => RunTransitionAsync(token => LoadGuildContextSelectionAsync(getClient(), guildId, contextId, token));
 
     public async Task<bool> RefreshCurrentMemberStatsAsync()
     {
@@ -187,6 +193,7 @@ public sealed class GuildSaberManager(
         try
         {
             var stats = await FetchMemberStatsAsync(
+                getClient(),
                 readySnapshot.PlayerId,
                 readySnapshot.CurrentContextId,
                 _lifetime.Token);
@@ -194,10 +201,7 @@ public sealed class GuildSaberManager(
             if (stats is not { } memberStats)
                 return false;
 
-            if (State is not Ready(var currentSnapshot)
-                || currentSnapshot.PlayerId != readySnapshot.PlayerId
-                || currentSnapshot.CurrentGuildExtended.Guild.Id != readySnapshot.CurrentGuildExtended.Guild.Id
-                || currentSnapshot.CurrentContextId != readySnapshot.CurrentContextId)
+            if (State is not Ready(var currentSnapshot) || !ReferenceEquals(currentSnapshot, readySnapshot))
                 return false;
 
             var refreshedSnapshot = currentSnapshot with
@@ -221,6 +225,7 @@ public sealed class GuildSaberManager(
     }
 
     private async Task<MemberStats?> FetchMemberStatsAsync(
+        GuildSaberClient client,
         PlayerId playerId,
         ContextId contextId,
         CancellationToken token)

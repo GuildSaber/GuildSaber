@@ -26,5 +26,6 @@ public class GuildSaberConfig
 public enum ApiEnv
 {
     Prod,
-    Dev
+    Dev,
+    Local
 }

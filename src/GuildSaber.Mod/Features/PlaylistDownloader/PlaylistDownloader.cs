@@ -14,7 +14,7 @@ using static GuildSaber.Api.Features.Guilds.Achievements.Playlists.Http.Playlist
 
 namespace GuildSaber.Mod.Features.PlaylistDownloader;
 
-public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manager, Logger logger)
+public class PlaylistDownloader(Func<GuildSaberClient> getClient, GuildSaberManager manager, Logger logger)
 {
     private const string CoverFileName = "cover.png";
 
@@ -47,6 +47,7 @@ public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manag
         if (manager.State is not GuildSaberRuntimeState.Ready(var snapshot))
             throw new InvalidOperationException("GuildSaber is not ready to download playlists.");
 
+        var client = getClient();
         IsDownloading = true;
 
         try
@@ -58,6 +59,7 @@ public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manag
 
             Directory.CreateDirectory(guildPlaylistsPath);
             await DownloadCoverAsync(
+                client,
                 client.Guilds.GetLogoUrl(currentGuildExtended.Guild.Id),
                 guildPlaylistsPath
             );
@@ -69,7 +71,7 @@ public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manag
                     PlaylistUtilities.SanitizeFileName(category.Info.Name));
 
                 Directory.CreateDirectory(playlistsPath);
-                await DownloadCoverAsync(client.Categories.GetLogoUrl(category.Id), playlistsPath);
+                await DownloadCoverAsync(client, client.Categories.GetLogoUrl(category.Id), playlistsPath);
 
                 foreach (var achievementStat in achievements.Where(x => x.Achievement.CategoryId == category.Id))
                 {
@@ -130,7 +132,7 @@ public class PlaylistDownloader(GuildSaberClient client, GuildSaberManager manag
     public string GetGuildPlaylistsPath(GuildResponses.Guild guild)
         => Path.Combine(".", "Playlists", PlaylistUtilities.SanitizeFileName(guild.Info.Name));
 
-    private async Task DownloadCoverAsync(Uri coverUri, string directoryPath)
+    private async Task DownloadCoverAsync(GuildSaberClient client, Uri coverUri, string directoryPath)
     {
         try
         {

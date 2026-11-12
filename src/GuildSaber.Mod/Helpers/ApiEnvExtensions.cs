@@ -11,6 +11,7 @@ public static class ApiEnvExtensions
         {
             ApiEnv.Prod => Constants.ProdApiBaseUrl,
             ApiEnv.Dev => Constants.DevApiBaseUrl,
+            ApiEnv.Local => Constants.LocalApiBaseUrl,
             _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
         };
 
@@ -18,6 +19,7 @@ public static class ApiEnvExtensions
         {
             ApiEnv.Prod => Constants.ProdCdnBaseUrl,
             ApiEnv.Dev => Constants.DevCdnBaseUrl,
+            ApiEnv.Local => Constants.LocalCdnBaseUrl,
             _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
         };
 
@@ -26,6 +28,7 @@ public static class ApiEnvExtensions
         {
             ApiEnv.Prod => Constants.ProdWebsiteBaseUrl,
             ApiEnv.Dev => Constants.DevWebsiteBaseUrl,
+            ApiEnv.Local => Constants.LocalWebsiteBaseUrl,
             _ => throw new ArgumentOutOfRangeException(nameof(self), self, null)
         };
     }

@@ -13,7 +13,8 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
     /// <remarks>
     /// Order must be retained as it is used to set the dropdown value based on the enum index.
     /// </remarks>
-    private readonly List<string> _apiEnvironments = [nameof(ApiEnv.Prod), nameof(ApiEnv.Dev)];
+    private readonly List<string> _apiEnvironments =
+        [nameof(ApiEnv.Prod), nameof(ApiEnv.Dev) + " (Default)", nameof(ApiEnv.Local)];
 
     [Inject] private readonly GuildSaberConfig _config = null!;
     [Inject] private readonly GuildSaberManager _guildSaberManager = null!;
@@ -43,13 +44,13 @@ public class GuildSaberSettingsView : ViewController<GuildSaberSettingsView>
     public void UpdateValues()
     {
         _displayMapRankedStatsToggle.SetValue(_config.RankedMapStats.Enabled, false);
-        _apiDropdown.SetValue(_apiEnvironments[(int)_config.ApiEnv]);
+        _apiDropdown.SetValue(_apiEnvironments[(int)_config.ApiEnv], false);
     }
 
     private void OnApiEnvChanged(int index, string value)
     {
         _config.ApiEnv = (ApiEnv)index;
-        _ = _guildSaberManager.SelectGuildAsync(_config.GuildId, _config.ContextId);
+        _ = _guildSaberManager.ReInitializeAsync();
     }
 
     private void OnDisplayMapRankedStatsChanged(bool value)

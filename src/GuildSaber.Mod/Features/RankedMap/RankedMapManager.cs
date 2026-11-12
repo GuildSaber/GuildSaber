@@ -17,7 +17,7 @@ namespace GuildSaber.Mod.Features.RankedMap;
 public sealed class RankedMapManager(
     GuildSaberManager guildSaberManager,
     GuildSaberCacheStore cacheStore,
-    GuildSaberClient client,
+    Func<GuildSaberClient> getClient,
     StandardLevelDetailViewController levelDetailViewController,
     StandardLevelScenesTransitionSetupDataSO standardLevelScenesTransitionSetupData,
     Logger logger) : IInitializable, IDisposable
@@ -81,7 +81,7 @@ public sealed class RankedMapManager(
     }
 
     public void RemoveCachedRankedMaps(ContextId contextId, SongHash hash)
-        => cacheStore.Remove(GetRankedMapsCacheKey(contextId, hash));
+        => cacheStore.Remove(GetRankedMapsCacheKey(getClient(), contextId, hash));
 
     private void OnDifficultyChanged(StandardLevelDetailViewController controller)
         => _ = UpdateSelection(controller.beatmapKey, controller.beatmapLevel);
@@ -193,19 +193,17 @@ public sealed class RankedMapManager(
 
     private Task<RankedMapWithScores[]> FetchRankedMaps(ContextId contextId, PlayerId playerId, SongHash hash)
         => cacheStore.GetOrCreateAsync(
-            GetRankedMapsCacheKey(contextId, hash),
-            async () =>
-            {
-                var searchResult = await client.RankedMaps.GetWithScoresAsync(
-                    contextId,
-                    playerId,
-                    new RankedMapRequests.Filters(Search: hash),
-                    new PaginatedRequestOptions<RankedMapRequests.ERankedMapSorter>(Page: 1, PageSize: 8)
-                );
+            GetRankedMapsCacheKey(getClient(), contextId, hash), async () => (await getClient()
+                    .RankedMaps
+                    .GetWithScoresAsync(
+                        contextId,
+                        playerId,
+                        new RankedMapRequests.Filters(Search: hash),
+                        new PaginatedRequestOptions<RankedMapRequests.ERankedMapSorter>(Page: 1, PageSize: 8)))
+                .TryGetValue(out var mapList) && mapList.TotalCount != 0
+                    ? mapList.Data
+                    : [], _rankedMapsCacheDuration);
 
-                return searchResult.TryGetValue(out var mapList) && mapList.TotalCount != 0 ? mapList.Data : [];
-            }, _rankedMapsCacheDuration);
-
-    private static string GetRankedMapsCacheKey(ContextId contextId, SongHash hash)
-        => $"ranked-maps:{contextId.Value}:{hash}";
+    private static string GetRankedMapsCacheKey(GuildSaberClient client, ContextId contextId, SongHash hash)
+        => $"ranked-maps:{client.HttpClient.BaseAddress}:{contextId.Value}:{hash}";
 }
