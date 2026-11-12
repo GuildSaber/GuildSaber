@@ -42,10 +42,10 @@ public sealed class MapRequestQueries(
         => dbContext.MapRequestThreads.AsExpandable().AsSplitQuery()
             .Where(x => x.Id == threadId && x.ContextId == contextId)
             .Where(x => x.Proposals.AsQueryable().Any(VisibleTo(viewer)) || viewer != null && x.AuthorId == viewer)
-            .Select(MapRequestMappers.MapThreadExpression(viewer))
+            .Select(x => x.Map(viewer))
             .SingleOrDefaultAsync(token);
 
-    public Task<PagedList<ThreadResponse>> GetQueueAsync(
+    public Task<PagedList<MapRequestResponses.ThreadPreview>> GetQueueAsync(
         ContextId contextId,
         PlayerId? viewer,
         Filters filters,
@@ -57,7 +57,7 @@ public sealed class MapRequestQueries(
     {
         var now = timeProvider.GetUtcNow();
         var bonus = settings.Value.PriorityBonusPerBoost;
-        var proposals = dbContext.MapProposals.OfType<SubmittedProposal>().ApplyFilters(filters);
+        var proposals = dbContext.MapProposals.OfType<SubmittedProposal>().ApplyFilters(filters, viewer);
         var query = dbContext.MapRequestThreads.AsExpandable().AsSplitQuery()
             .Where(x => x.ContextId == contextId && proposals.Any(proposal => proposal.ThreadId == x.Id))
             .Select(x => new
@@ -79,7 +79,7 @@ public sealed class MapRequestQueries(
                 _ => query.OrderBy(order, x => (now - x.WaitingSince).TotalSeconds * (1 + x.BoostCount * bonus))
             })
             .ThenBy(x => x.Thread.Id)
-            .Select(x => MapRequestMappers.MapThreadExpression(viewer, true).Invoke(x.Thread))
+            .Select(x => x.Thread.MapPreview(viewer))
             .ToPagedListAsync(page, pageSize, token);
     }
 
@@ -94,10 +94,56 @@ public sealed class MapRequestQueries(
         CancellationToken token)
         => dbContext.MapProposals.AsExpandable().AsSplitQuery()
             .Where(x => x.Thread.ContextId == contextId && x.AuthorId == playerId)
-            .ApplyFilters(filters)
+            .ApplyFilters(filters, playerId)
             .ApplySortOrder(sortBy, order)
             .Select(x => x.Map())
             .ToPagedListAsync(page, pageSize, token);
+
+    public Task<PagedList<MapRequestResponses.ThreadMatch>> GetMatchesAsync(
+        ContextId contextId, PlayerId? viewer, MatchFilters filters, EMapThreadSorter sortBy, EOrder order,
+        int page, int pageSize, CancellationToken token)
+    {
+        var proposals = dbContext.MapProposals.Where(VisibleTo(viewer))
+            .Where(x => x.MapVersions.Any(version => version.SongDifficulty.Song.Hash == filters.Hash
+                                                     && version.SongDifficulty.GameMode.Name == filters.Characteristic
+                                                     && version.SongDifficulty.Difficulty == filters.Difficulty));
+        var maps = dbContext.RankedMaps.Where(x => x.ContextId == contextId
+                                                   && x.MapVersions.Any(version
+                                                       => version.SongDifficulty.Song.Hash == filters.Hash
+                                                          && version.SongDifficulty.GameMode.Name ==
+                                                          filters.Characteristic
+                                                          && version.SongDifficulty.Difficulty == filters.Difficulty));
+        var query = dbContext.MapRequestThreads.Where(x => x.ContextId == contextId)
+            .Select(x => new
+            {
+                Thread = x,
+                RankedMapId = maps.Where(map => map.ThreadId == x.Id).Select(map => (RankedMapId?)map.Id)
+                    .FirstOrDefault(),
+                Proposal = proposals.Where(proposal => proposal.ThreadId == x.Id)
+                    .OrderByDescending(proposal => proposal is SubmittedProposal)
+                    .ThenByDescending(proposal => proposal is DraftProposal)
+                    .ThenByDescending(proposal => proposal.Id)
+                    .Select(proposal => new
+                    {
+                        proposal.Id,
+                        IsSubmitted = proposal is SubmittedProposal,
+                        IsDraft = proposal is DraftProposal
+                    }).FirstOrDefault()
+            }).Where(x => x.RankedMapId != null || x.Proposal != null);
+
+        return (sortBy == EMapThreadSorter.Id
+                ? query.OrderBy(order, x => x.Thread.Id)
+                : query.OrderBy(order, x => x.Thread.CreatedAt).ThenBy(order, x => x.Thread.Id))
+            .Select(x => x.RankedMapId != null
+                ? (MapRequestResponses.ThreadMatch)new MapRequestResponses.ThreadMatch.Ranked(x.Thread.Id,
+                    x.RankedMapId.Value)
+                : x.Proposal!.IsSubmitted
+                    ? new MapRequestResponses.ThreadMatch.Open(x.Thread.Id, x.Proposal.Id)
+                    : x.Proposal.IsDraft
+                        ? new MapRequestResponses.ThreadMatch.Draft(x.Thread.Id, x.Proposal.Id)
+                        : new MapRequestResponses.ThreadMatch.History(x.Thread.Id, x.Proposal.Id))
+            .ToPagedListAsync(page, pageSize, token);
+    }
 
     public Task<MapRequestResponses.BoostAllowance?> GetBoostsAsync(PlayerId playerId, CancellationToken token)
         => dbContext.Players.Where(x => x.Id == playerId)
@@ -143,10 +189,17 @@ public static class MapRequestQueryExtensions
 {
     extension(IQueryable<MapProposal> query)
     {
-        public IQueryable<MapProposal> ApplyFilters(Filters filters)
+        public IQueryable<MapProposal> ApplyFilters(Filters filters, PlayerId? viewer = null)
         {
             if (filters.IsRevision is { } isRevision)
                 query = query.Where(x => x.Thread.RankedMap != null == isRevision);
+
+            if (filters.IsDraft is { } isDraft)
+                query = query.Where(x => x is DraftProposal == isDraft);
+
+            if (filters.IsBoostedByMe is { } isBoostedByMe)
+                query = query.Where(x => (viewer != null && x.Thread.Boosts.Any(boost => boost.PlayerId == viewer))
+                                         == isBoostedByMe);
 
             return query.ApplyMapSearch(filters.Search);
         }

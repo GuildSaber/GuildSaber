@@ -118,7 +118,7 @@ public static class RankedMapRequests
     /// <param name="NeedFullCombo">Require a full-combo score.</param>
     /// <param name="MaxPauseDurationSec">
     /// Maximum total pause duration in seconds. Must be finite and non-negative. Null imposes no pause limit.
-    /// Setting a limit excludes ScoreSaber scores, which lack the required pause tracking.
+    /// Setting a limit requires pause statistics on the score.
     /// </param>
     /// <param name="ProhibitedModifiers">
     /// Any matching modifier invalidates the score. Must not overlap mandatory modifiers.

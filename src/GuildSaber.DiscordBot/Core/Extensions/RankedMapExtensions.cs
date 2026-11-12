@@ -16,7 +16,7 @@ public static class RankedMapExtensions
     extension(RankedMapResponses.RankedMap self)
     {
         public ContainerBuilder ToContainerBuilder(
-            RankedScoreResponses.RankedScore[] rankedScores,
+            IEnumerable<RankedScoreResponses.RankedScore> rankedScores,
             CategoryResponses.Category[] categories,
             IOptions<EmojiSettings> emojiSettings)
         {

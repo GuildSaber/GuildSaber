@@ -10,5 +10,6 @@ public static class MapRequestsInstaller
         .AddScoped<MapProposalReviewService>()
         .AddScoped<MapProposalVoteService>()
         .AddScoped<MapRequestQueries>()
+        .AddScoped<MapRequestLookupService>()
         .AddScoped<MapRequestBoostService>();
 }

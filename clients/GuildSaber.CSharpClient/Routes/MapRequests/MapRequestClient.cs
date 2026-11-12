@@ -24,6 +24,26 @@ public sealed class MapRequestClient(
     private static string ProposalUrl(ContextId contextId, MapRequestThreadId threadId, MapProposalId proposalId)
         => $"{ThreadUrl(contextId, threadId)}/proposals/{proposalId}";
 
+    /// <summary>Looks up BeatSaver metadata and supported difficulties.</summary>
+    public Task<Result<SongLookup, Error>> LookupSongAsync(
+        ContextId contextId, SongReference song, CancellationToken token = default)
+        => SendAsync<SongLookup>(HttpMethod.Post, $"contexts/{contextId}/map-requests/lookup",
+            JsonContent.Create(song, options: jsonOptions), token);
+
+    /// <summary>Finds visible threads using an exact song difficulty, including your drafts and published history.</summary>
+    /// <param name="contextId">The context identifier.</param>
+    /// <param name="requestFilters">Exact song version, characteristic and difficulty to match.</param>
+    /// <param name="requestOptions">Pagination, sorting and ordering settings.</param>
+    /// <param name="token">Cancellation token.</param>
+    public Task<Result<PagedList<ThreadMatch>, Error>> GetMatchesAsync(
+        ContextId contextId, MatchFilters requestFilters, PaginatedRequestOptions<EMapThreadSorter> requestOptions,
+        CancellationToken token = default)
+        => SendAsync<PagedList<ThreadMatch>>(HttpMethod.Get,
+            $"contexts/{contextId}/map-requests/matches?hash={requestFilters.Hash}" +
+            $"&characteristic={Uri.EscapeDataString(requestFilters.Characteristic)}&difficulty={requestFilters.Difficulty}" +
+            $"&page={requestOptions.Page}&pageSize={requestOptions.PageSize}" +
+            $"&sortBy={requestOptions.SortBy}&order={requestOptions.Order}", null, token);
+
     private static string GetQueueUrl(
         ContextId contextId,
         Filters requestFilters,
@@ -31,7 +51,9 @@ public sealed class MapRequestClient(
         => $"contexts/{contextId}/map-requests?page={requestOptions.Page}&pageSize={requestOptions.PageSize}" +
            $"&order={requestOptions.Order}&sortBy={requestOptions.SortBy}" +
            $"{(requestFilters.Search is null ? "" : $"&search={Uri.EscapeDataString(requestFilters.Search)}")}" +
-           $"{(requestFilters.IsRevision is null ? "" : $"&isRevision={requestFilters.IsRevision}")}";
+           $"{(requestFilters.IsRevision is null ? "" : $"&isRevision={requestFilters.IsRevision}")}" +
+           $"{(requestFilters.IsDraft is null ? "" : $"&isDraft={requestFilters.IsDraft}")}" +
+           $"{(requestFilters.IsBoostedByMe is null ? "" : $"&isBoostedByMe={requestFilters.IsBoostedByMe}")}";
 
     private static string GetMineUrl(
         ContextId contextId,
@@ -40,21 +62,23 @@ public sealed class MapRequestClient(
         => $"contexts/{contextId}/map-requests/proposals/@me?page={requestOptions.Page}&pageSize={requestOptions.PageSize}" +
            $"&order={requestOptions.Order}&sortBy={requestOptions.SortBy}" +
            $"{(requestFilters.Search is null ? "" : $"&search={Uri.EscapeDataString(requestFilters.Search)}")}" +
-           $"{(requestFilters.IsRevision is null ? "" : $"&isRevision={requestFilters.IsRevision}")}";
+           $"{(requestFilters.IsRevision is null ? "" : $"&isRevision={requestFilters.IsRevision}")}" +
+           $"{(requestFilters.IsDraft is null ? "" : $"&isDraft={requestFilters.IsDraft}")}" +
+           $"{(requestFilters.IsBoostedByMe is null ? "" : $"&isBoostedByMe={requestFilters.IsBoostedByMe}")}";
 
     /// <summary>
-    /// Gets a paginated ranking queue of threads containing submitted proposals.
+    /// Gets a paginated ranking queue of thread previews with submitted proposal metadata and vote counts.
     /// </summary>
     /// <param name="contextId">The context identifier.</param>
     /// <param name="requestFilters">Filters to apply to the ranking queue.</param>
     /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
     /// <param name="token">Cancellation token.</param>
-    public Task<Result<PagedList<ThreadResponse>, Error>> GetQueueAsync(
+    public Task<Result<PagedList<ThreadPreview>, Error>> GetQueueAsync(
         ContextId contextId,
         Filters requestFilters,
         PaginatedRequestOptions<EMapRequestSorter> requestOptions,
         CancellationToken token = default)
-        => SendAsync<PagedList<ThreadResponse>>(HttpMethod.Get, GetQueueUrl(contextId, requestFilters, requestOptions),
+        => SendAsync<PagedList<ThreadPreview>>(HttpMethod.Get, GetQueueUrl(contextId, requestFilters, requestOptions),
             null, token);
 
     /// <summary>
@@ -65,7 +89,7 @@ public sealed class MapRequestClient(
     /// <param name="requestOptions">Pagination, sorting, and ordering settings for the request.</param>
     /// <param name="token">Cancellation token.</param>
     /// <remarks>Enumeration stops at MaxPage, an empty page, or an error. Queue positions may change between pages.</remarks>
-    public async IAsyncEnumerable<Result<ThreadResponse[], Error>> GetQueueAsyncEnumerable(
+    public async IAsyncEnumerable<Result<ThreadPreview[], Error>> GetQueueAsyncEnumerable(
         ContextId contextId,
         Filters requestFilters,
         PaginatedRequestOptions<EMapRequestSorter> requestOptions,
@@ -144,6 +168,14 @@ public sealed class MapRequestClient(
     public Task<Result<Proposal, Error>> CreateProposalAsync(
         ContextId contextId, MapRequestThreadId threadId, CreateDraft request, CancellationToken token = default)
         => SendAsync<Proposal>(HttpMethod.Post, $"{ThreadUrl(contextId, threadId)}/proposals",
+            JsonContent.Create(request, options: jsonOptions), token);
+
+    /// <summary>Saves a replacement private draft and deletes the original only when the transaction succeeds.</summary>
+    /// <remarks>Returns a new proposal ID. Does not require another free draft slot.</remarks>
+    public Task<Result<Proposal, Error>> ReplaceDraftAsync(
+        ContextId contextId, MapRequestThreadId threadId, MapProposalId proposalId, CreateDraft request,
+        CancellationToken token = default)
+        => SendAsync<Proposal>(HttpMethod.Post, $"{ProposalUrl(contextId, threadId, proposalId)}/replace",
             JsonContent.Create(request, options: jsonOptions), token);
 
     /// <summary>Publishes a draft. Only set force after reviewing a duplicate_maps error's Duplicates.</summary>

@@ -2884,8 +2884,8 @@
         "tags": [
           "Context.MapRequests"
         ],
-        "summary": "Gets a paginated ranking queue of threads containing submitted proposals.",
-        "description": "Get threads containing submitted proposals only. Ordering is calculated for each request, so positions may change between pages. Use sortBy and order to select the sort field and direction. Priority defaults to descending. WaitingSince ascending shows the oldest requests first. BoostCount and CommunityVotes ties use oldest waiting time. Final ties use thread ID ascending. Ranking-team votes do not affect ordering. Use the thread endpoint to read proposal history.",
+        "summary": "Gets a paginated ranking queue of thread previews with submitted proposal metadata.",
+        "description": "Get map previews, submitted proposal metadata and vote counts without full definitions or individual votes. The preview uses the creator's latest submitted proposal, falling back to the latest submitted proposal by another author. Private drafts and historical proposals are excluded, including from vote counts. Community and ranking-team votes are counted separately across all submitted proposals. Ranked threads include current ratings, minimum accuracy and category names for comparison. Ordering is calculated for each request, so positions may change between pages. Use sortBy and order to select the sort field and direction. Priority defaults to descending. WaitingSince ascending shows the oldest requests first. BoostCount and CommunityVotes ties use oldest waiting time. Final ties use thread ID ascending. Ranking-team votes do not affect ordering. Use the thread endpoint to read proposal history.",
         "operationId": "GetMapRequestQueue",
         "parameters": [
           {
@@ -2909,6 +2909,22 @@
             "name": "isRevision",
             "in": "query",
             "description": "If true, only returns requests for threads with a current ranked map. If false, only returns new-ranking\nrequests. If omitted, returns both. This reflects the thread's current state, not its state at proposal creation.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "isDraft",
+            "in": "query",
+            "description": "If true, only returns private drafts. If false, excludes drafts. If omitted, returns all visible states.\nThe ranking queue only contains submitted proposals, so true returns an empty queue.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "isBoostedByMe",
+            "in": "query",
+            "description": "If true, only returns requests in threads boosted by the authenticated player. If false, excludes them.\nIf omitted, ignores boosts. Anonymous callers have no active boosts.",
             "schema": {
               "type": "boolean"
             }
@@ -2970,7 +2986,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PagedListOfThread"
+                  "$ref": "#/components/schemas/PagedListOfThreadPreview"
                 }
               }
             }
@@ -3214,6 +3230,224 @@
         ]
       }
     },
+    "/contexts/{contextId}/map-requests/lookup": {
+      "post": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Look up a BeatSaver song version and its available difficulties before creating a request.",
+        "description": "Use a Key or Hash song reference. Keys select BeatSaver's current last-listed version. Hashes select that exact version. Returns song metadata, playable difficulties with supported characteristics and available play modes through a read-only lookup. Use the returned hash to keep the previewed version when creating a draft. Draft creation still validates the selected difficulty and requires a BeatLeader leaderboard.",
+        "operationId": "LookupMapRequestSong",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SongReference"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SongLookup"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/lookup",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/lookup",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.6.3",
+                  "title": "Bad Gateway",
+                  "status": 502,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/lookup",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/map-requests/matches": {
+      "get": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Find visible threads for an exact song difficulty before starting a separate request.",
+        "description": "Returns one match per thread in this context. Within each thread, current ranked maps take precedence, followed by open proposals, your private drafts and published history. Private drafts are visible to their author. Sorts by thread creation time descending by default. Matches are advisory. Submission checks current ranked maps and submitted proposals again and may require force=true.",
+        "operationId": "GetMatchingMapRequestThreads",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hash",
+            "in": "query",
+            "description": "Exact song version hash, including older BeatSaver versions.",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SongHash"
+            }
+          },
+          {
+            "name": "characteristic",
+            "in": "query",
+            "description": "BeatSaver characteristic name, such as Standard.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "difficulty",
+            "in": "query",
+            "description": "Difficulty within the selected version and characteristic.",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EDifficulty"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "default": "CreatedAt",
+              "$ref": "#/components/schemas/EMapThreadSorter"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "default": "Desc",
+              "$ref": "#/components/schemas/EOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedListOfThreadMatch"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          { },
+          {
+            "SessionCookie": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
     "/contexts/{contextId}/map-requests/proposals/@me": {
       "get": {
         "tags": [
@@ -3244,6 +3478,22 @@
             "name": "isRevision",
             "in": "query",
             "description": "If true, only returns requests for threads with a current ranked map. If false, only returns new-ranking\nrequests. If omitted, returns both. This reflects the thread's current state, not its state at proposal creation.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "isDraft",
+            "in": "query",
+            "description": "If true, only returns private drafts. If false, excludes drafts. If omitted, returns all visible states.\nThe ranking queue only contains submitted proposals, so true returns an empty queue.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "isBoostedByMe",
+            "in": "query",
+            "description": "If true, only returns requests in threads boosted by the authenticated player. If false, excludes them.\nIf omitted, ignores boosts. Anonymous callers have no active boosts.",
             "schema": {
               "type": "boolean"
             }
@@ -3366,8 +3616,8 @@
         "tags": [
           "Context.MapRequests"
         ],
-        "summary": "Create a private draft with a complete alternative configuration in an existing thread.",
-        "description": "Supply a complete configuration, not a patch, whether the thread already has a ranked map or not. The draft remains private until submitted. Competing with another author's submitted proposal may require a configured subscription tier. Ranking-team members, guild leaders and managers bypass that restriction.",
+        "summary": "Create a private draft with a complete alternative definition in an existing thread.",
+        "description": "Supply a complete definition, not a patch, whether the thread already has a ranked map or not. The draft remains private until submitted. Competing with another author's submitted proposal may require a configured subscription tier. Ranking-team members, guild leaders and managers bypass that restriction.",
         "operationId": "CreateMapProposal",
         "parameters": [
           {
@@ -3903,6 +4153,185 @@
         ]
       }
     },
+    "/contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/replace": {
+      "post": {
+        "tags": [
+          "Context.MapRequests"
+        ],
+        "summary": "Revise your private draft by saving a replacement and deleting the original.",
+        "description": "Supply a complete definition. Creates a new private draft with a new ID in the same thread, then deletes the author's original draft in one transaction. A failed replacement leaves the original intact. Does not consume another draft allowance slot. Submitted and historical proposals cannot be replaced. Missing drafts and other authors' drafts return 404.",
+        "operationId": "ReplaceMapProposalDraft",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/replace",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/replace",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/replace",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+                  "title": "Conflict",
+                  "status": 409,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/replace",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/replace",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.6.3",
+                  "title": "Bad Gateway",
+                  "status": 502,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/replace",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
     "/contexts/{contextId}/map-requests/{threadId}/proposals/{proposalId}/submit": {
       "post": {
         "tags": [
@@ -4086,8 +4515,8 @@
         "tags": [
           "Context.MapRequests"
         ],
-        "summary": "Withdraw your submitted proposal, retaining its configuration and votes in history.",
-        "description": "Only the author can withdraw a submitted proposal. Its configuration and votes remain in history. It cannot be reopened. Boosts are released when no submitted proposals remain. Use DELETE to discard a private draft.",
+        "summary": "Withdraw your submitted proposal, retaining its definition and votes in history.",
+        "description": "Only the author can withdraw a submitted proposal. Its definition and votes remain in history. It cannot be reopened. Boosts are released when no submitted proposals remain. Use DELETE to discard a private draft.",
         "operationId": "CloseMapProposal",
         "parameters": [
           {
@@ -4207,7 +4636,7 @@
         "tags": [
           "Context.MapRequests"
         ],
-        "summary": "Explicitly accept a submitted proposal and apply its complete configuration to the ranked map.",
+        "summary": "Explicitly accept a submitted proposal and apply its complete definition to the ranked map.",
         "description": "Requires ranking-team, guild-leader or manager permissions. Ranking-team vote requirements apply unless a guild leader or manager accepts. Community votes do not count. Acceptance creates or updates the ranked map, closes competing submitted proposals and releases boosts. Private drafts remain open. Score/stat refresh is queued afterwards. Unmet vote requirements return 409 with code 'vote_requirements', positiveVotes, negativeVotes, requiredPositiveVotes and requireNoNegativeVotes.",
         "operationId": "AcceptMapProposal",
         "parameters": [
@@ -4341,7 +4770,7 @@
         "tags": [
           "Context.MapRequests"
         ],
-        "summary": "Deny a submitted proposal as a reviewer, retaining its configuration and votes in history.",
+        "summary": "Deny a submitted proposal as a reviewer, retaining its definition and votes in history.",
         "description": "Requires ranking-team, guild-leader or manager permissions. Retains the proposal and its votes without changing the ranked map. Boosts are released when no submitted proposals remain.",
         "operationId": "DenyMapProposal",
         "parameters": [
@@ -7883,7 +8312,7 @@
         "type": "object",
         "properties": {
           "proposal": {
-            "description": "Accepted configuration snapshot, including its acceptance timestamp and reviewer.",
+            "description": "Accepted definition snapshot, including its acceptance timestamp and reviewer.",
             "$ref": "#/components/schemas/Accepted"
           },
           "rankedMapId": {
@@ -7901,8 +8330,9 @@
           "id",
           "threadId",
           "authorId",
+          "author",
           "createdAt",
-          "configuration",
+          "definition",
           "votes"
         ],
         "type": "object",
@@ -7944,14 +8374,25 @@
               }
             ]
           },
+          "author": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Proposal author profile. Absent for imports or when the player was deleted.",
+                "$ref": "#/components/schemas/Player"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "description": "Draft creation time, not submission or acceptance time.",
             "format": "date-time"
           },
-          "configuration": {
-            "description": "Entire desired configuration, not a patch against an earlier proposal.",
-            "$ref": "#/components/schemas/Configuration"
+          "definition": {
+            "description": "Entire desired definition, not a patch against an earlier proposal.",
+            "$ref": "#/components/schemas/Definition"
           },
           "votes": {
             "type": "array",
@@ -7961,7 +8402,7 @@
             "description": "Community and ranking-team votes. These cannot be changed once the proposal is accepted or closed."
           }
         },
-        "description": "Historical configuration applied to the ranked map at 'acceptedAt'. Order accepted proposals by 'acceptedAt'\nto reconstruct revisions. An older accepted proposal need not match the current ranked map.\nThe 'acceptedById' field is absent for imports or a deleted reviewer. Accepted proposals cannot be applied again."
+        "description": "Historical definition applied to the ranked map at 'acceptedAt'. Order accepted proposals by 'acceptedAt'\nto reconstruct revisions. An older accepted proposal need not match the current ranked map.\nThe 'acceptedById' field is absent for imports or a deleted reviewer. Accepted proposals cannot be applied again."
       },
       "AccuracyTracker": {
         "required": [
@@ -8759,57 +9200,6 @@
         "additionalProperties": false,
         "description": "A community vote on a submitted proposal. Does not count towards the ranking-team votes required for acceptance."
       },
-      "Configuration": {
-        "required": [
-          "requirements",
-          "rating",
-          "mapVersions",
-          "categories",
-          "achievements",
-          "comment"
-        ],
-        "type": "object",
-        "properties": {
-          "requirements": {
-            "description": "Score eligibility requirements that acceptance applies to the ranked map.",
-            "$ref": "#/components/schemas/RankedMapRequirements"
-          },
-          "rating": {
-            "description": "Proposed ratings and whether they were calculated automatically during submission.",
-            "$ref": "#/components/schemas/Rating"
-          },
-          "mapVersions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ProposalVersion"
-            },
-            "description": "Resolved song difficulties and play modes, in ascending display order."
-          },
-          "categories": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CategorySnapshot"
-            },
-            "description": "Explicit category associations, with names captured when the draft was created."
-          },
-          "achievements": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AchievementSnapshot"
-            },
-            "description": "Explicit ranked-map-list associations, not dynamically matched star achievements."
-          },
-          "comment": {
-            "maxLength": 2000,
-            "type": [
-              "null",
-              "string"
-            ],
-            "description": "Optional original author comment, up to 2000 characters."
-          }
-        },
-        "description": "Complete proposed configuration retained independently of the current ranked map."
-      },
       "ContextId": {
         "type": "integer",
         "format": "int32"
@@ -8894,7 +9284,7 @@
             "description": "Optional author comment retained with the proposal, up to 2000 characters."
           }
         },
-        "description": "Complete proposed configuration, not a patch. Creates a private draft without publishing it to the queue.\nDrafts cannot be edited: delete and recreate them, or withdraw submitted proposals and create another variant."
+        "description": "Complete proposed definition, not a patch. Creates a private draft without publishing it to the queue.\nRevising a private draft saves a replacement through the replace endpoint and deletes the original atomically.\nWithdraw submitted proposals and create another variant to change a published definition."
       },
       "CreateGuild": {
         "required": [
@@ -8953,6 +9343,57 @@
           }
         }
       },
+      "Definition": {
+        "required": [
+          "requirements",
+          "rating",
+          "mapVersions",
+          "categories",
+          "achievements",
+          "comment"
+        ],
+        "type": "object",
+        "properties": {
+          "requirements": {
+            "description": "Score eligibility requirements that acceptance applies to the ranked map.",
+            "$ref": "#/components/schemas/RankedMapRequirements"
+          },
+          "rating": {
+            "description": "Proposed ratings and whether they were calculated automatically during submission.",
+            "$ref": "#/components/schemas/Rating"
+          },
+          "mapVersions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MapPreview"
+            },
+            "description": "Resolved song difficulties and play modes, in ascending display order."
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategorySnapshot"
+            },
+            "description": "Explicit category associations, with names captured when the draft was created."
+          },
+          "achievements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AchievementSnapshot"
+            },
+            "description": "Explicit ranked-map-list associations, not dynamically matched star achievements."
+          },
+          "comment": {
+            "maxLength": 2000,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional original author comment, up to 2000 characters."
+          }
+        },
+        "description": "Complete proposed definition retained independently of the current ranked map."
+      },
       "Devices": {
         "required": [
           "hmd",
@@ -8992,6 +9433,26 @@
             ]
           }
         }
+      },
+      "DifficultyOption": {
+        "required": [
+          "difficulty",
+          "characteristic",
+          "stats"
+        ],
+        "type": "object",
+        "properties": {
+          "difficulty": {
+            "$ref": "#/components/schemas/EDifficulty"
+          },
+          "characteristic": {
+            "type": "string"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/SongDifficultyStats"
+          }
+        },
+        "description": "A playable difficulty offered when choosing a new ranking request's map."
       },
       "DiscordChannelId": {
         "examples": [
@@ -9079,6 +9540,12 @@
           "CommunityVotes"
         ],
         "description": "Available sorting methods for the ranking queue. Ordering is calculated at request time."
+      },
+      "EMapThreadSorter": {
+        "enum": [
+          "CreatedAt",
+          "Id"
+        ]
       },
       "EMemberSorters": {
         "enum": [
@@ -9695,6 +10162,49 @@
           }
         },
         "description": "Optional manual star ratings. Missing values are resolved before a proposal can be submitted."
+      },
+      "MapPreview": {
+        "required": [
+          "song",
+          "difficulty",
+          "playModeId",
+          "playModeName",
+          "order"
+        ],
+        "type": "object",
+        "properties": {
+          "song": {
+            "description": "Exact proposed song version and its stored information, not the latest BeatSaver version.",
+            "$ref": "#/components/schemas/Song"
+          },
+          "difficulty": {
+            "description": "Resolved song difficulty, characteristic, leaderboards and statistics.",
+            "$ref": "#/components/schemas/SongDifficulty"
+          },
+          "playModeId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Historical play-mode identity.",
+            "format": "int32"
+          },
+          "playModeName": {
+            "type": "string",
+            "description": "Play-mode name captured when the proposal was created."
+          },
+          "order": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Ascending display order within the proposal.",
+            "format": "uint8"
+          }
+        },
+        "description": "Resolved song, difficulty and play mode retained by a proposal or displayed in the queue."
       },
       "MapProposalId": {
         "examples": [
@@ -10446,13 +10956,62 @@
           }
         }
       },
-      "PagedListOfThread": {
+      "PagedListOfThreadMatch": {
         "type": "object",
         "properties": {
           "data": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Thread"
+              "$ref": "#/components/schemas/ThreadMatch"
+            }
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPages": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PagedListOfThreadPreview": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThreadPreview"
             }
           },
           "page": {
@@ -11010,7 +11569,7 @@
             "$ref": "#/components/schemas/ProposalClosed"
           }
         ],
-        "description": "Complete configuration with a lifecycle discriminator: Draft, Submitted, Accepted or Closed.\nThere is no edit-proposal subtype. A thread with a current ranked map applies accepted proposals as revisions.",
+        "description": "Complete definition with a lifecycle discriminator: Draft, Submitted, Accepted or Closed.\nThere is no edit-proposal subtype. A thread with a current ranked map applies accepted proposals as revisions.",
         "discriminator": {
           "propertyName": "type",
           "mapping": {
@@ -11029,8 +11588,9 @@
           "id",
           "threadId",
           "authorId",
+          "author",
           "createdAt",
-          "configuration",
+          "definition",
           "votes"
         ],
         "type": "object",
@@ -11078,14 +11638,25 @@
               }
             ]
           },
+          "author": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Proposal author profile. Absent for imports or when the player was deleted.",
+                "$ref": "#/components/schemas/Player"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "description": "Draft creation time, not submission or acceptance time.",
             "format": "date-time"
           },
-          "configuration": {
-            "description": "Entire desired configuration, not a patch against an earlier proposal.",
-            "$ref": "#/components/schemas/Configuration"
+          "definition": {
+            "description": "Entire desired definition, not a patch against an earlier proposal.",
+            "$ref": "#/components/schemas/Definition"
           },
           "votes": {
             "type": "array",
@@ -11095,7 +11666,7 @@
             "description": "Community and ranking-team votes. These cannot be changed once the proposal is accepted or closed."
           }
         },
-        "description": "Historical configuration applied to the ranked map at 'acceptedAt'. Order accepted proposals by 'acceptedAt'\nto reconstruct revisions. An older accepted proposal need not match the current ranked map.\nThe 'acceptedById' field is absent for imports or a deleted reviewer. Accepted proposals cannot be applied again."
+        "description": "Historical definition applied to the ranked map at 'acceptedAt'. Order accepted proposals by 'acceptedAt'\nto reconstruct revisions. An older accepted proposal need not match the current ranked map.\nThe 'acceptedById' field is absent for imports or a deleted reviewer. Accepted proposals cannot be applied again."
       },
       "ProposalClosed": {
         "required": [
@@ -11106,8 +11677,9 @@
           "id",
           "threadId",
           "authorId",
+          "author",
           "createdAt",
-          "configuration",
+          "definition",
           "votes"
         ],
         "type": "object",
@@ -11164,14 +11736,25 @@
               }
             ]
           },
+          "author": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Proposal author profile. Absent for imports or when the player was deleted.",
+                "$ref": "#/components/schemas/Player"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "description": "Draft creation time, not submission or acceptance time.",
             "format": "date-time"
           },
-          "configuration": {
-            "description": "Entire desired configuration, not a patch against an earlier proposal.",
-            "$ref": "#/components/schemas/Configuration"
+          "definition": {
+            "description": "Entire desired definition, not a patch against an earlier proposal.",
+            "$ref": "#/components/schemas/Definition"
           },
           "votes": {
             "type": "array",
@@ -11181,15 +11764,16 @@
             "description": "Community and ranking-team votes. These cannot be changed once the proposal is accepted or closed."
           }
         },
-        "description": "Proposal withdrawn by its author, denied by a reviewer or superseded by another accepted proposal.\nConfiguration and votes remain in history. It cannot be reopened. A missing 'submittedAt' means it was never\npublished and remains private. The 'closedById' field may be absent for imports or a deleted player.\nThe reason is optional."
+        "description": "Proposal withdrawn by its author, denied by a reviewer or superseded by another accepted proposal.\nDefinition and votes remain in history. It cannot be reopened. A missing 'submittedAt' means it was never\npublished and remains private. The 'closedById' field may be absent for imports or a deleted player.\nThe reason is optional."
       },
       "ProposalDraft": {
         "required": [
           "id",
           "threadId",
           "authorId",
+          "author",
           "createdAt",
-          "configuration",
+          "definition",
           "votes"
         ],
         "type": "object",
@@ -11219,14 +11803,25 @@
               }
             ]
           },
+          "author": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Proposal author profile. Absent for imports or when the player was deleted.",
+                "$ref": "#/components/schemas/Player"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "description": "Draft creation time, not submission or acceptance time.",
             "format": "date-time"
           },
-          "configuration": {
-            "description": "Entire desired configuration, not a patch against an earlier proposal.",
-            "$ref": "#/components/schemas/Configuration"
+          "definition": {
+            "description": "Entire desired definition, not a patch against an earlier proposal.",
+            "$ref": "#/components/schemas/Definition"
           },
           "votes": {
             "type": "array",
@@ -11236,7 +11831,68 @@
             "description": "Community and ranking-team votes. These cannot be changed once the proposal is accepted or closed."
           }
         },
-        "description": "Private draft visible only to its author. Delete and recreate it to change its configuration."
+        "description": "Private draft visible only to its author. Revising it creates a replacement and deletes this draft atomically."
+      },
+      "ProposalMetadata": {
+        "required": [
+          "id",
+          "author",
+          "createdAt",
+          "submittedAt",
+          "rating",
+          "minAccuracy",
+          "categories"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Proposal identity, used to open its details.",
+            "$ref": "#/components/schemas/MapProposalId"
+          },
+          "author": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Proposal author. Absent for imports or when the player was deleted.",
+                "$ref": "#/components/schemas/Player"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Proposal creation time.",
+            "format": "date-time"
+          },
+          "submittedAt": {
+            "type": "string",
+            "description": "Time the proposal was published to the queue.",
+            "format": "date-time"
+          },
+          "rating": {
+            "description": "Resolved ratings and whether they were calculated automatically.",
+            "$ref": "#/components/schemas/Rating"
+          },
+          "minAccuracy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "Minimum qualifying score accuracy in percent. Null imposes no minimum.",
+            "format": "double"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategorySnapshot"
+            },
+            "description": "Category names and identities captured when the proposal was created."
+          }
+        },
+        "description": "Submitted proposal information needed to compare ratings and categories in the queue."
       },
       "ProposalSubmitted": {
         "required": [
@@ -11244,8 +11900,9 @@
           "id",
           "threadId",
           "authorId",
+          "author",
           "createdAt",
-          "configuration",
+          "definition",
           "votes"
         ],
         "type": "object",
@@ -11279,14 +11936,25 @@
               }
             ]
           },
+          "author": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Proposal author profile. Absent for imports or when the player was deleted.",
+                "$ref": "#/components/schemas/Player"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "description": "Draft creation time, not submission or acceptance time.",
             "format": "date-time"
           },
-          "configuration": {
-            "description": "Entire desired configuration, not a patch against an earlier proposal.",
-            "$ref": "#/components/schemas/Configuration"
+          "definition": {
+            "description": "Entire desired definition, not a patch against an earlier proposal.",
+            "$ref": "#/components/schemas/Definition"
           },
           "votes": {
             "type": "array",
@@ -11296,67 +11964,7 @@
             "description": "Community and ranking-team votes. These cannot be changed once the proposal is accepted or closed."
           }
         },
-        "description": "Published, immutable configuration awaiting explicit review. Votes may change while it is submitted."
-      },
-      "ProposalVersion": {
-        "required": [
-          "hash",
-          "key",
-          "characteristic",
-          "difficulty",
-          "playModeId",
-          "playModeName",
-          "order"
-        ],
-        "type": "object",
-        "properties": {
-          "hash": {
-            "description": "Exact resolved song version. Does not follow later BeatSaver updates.",
-            "$ref": "#/components/schemas/SongHash"
-          },
-          "key": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "description": "BeatSaver map key when known. The hash identifies the actual proposed version.",
-                "$ref": "#/components/schemas/BeatSaverKey"
-              }
-            ]
-          },
-          "characteristic": {
-            "type": "string",
-            "description": "Song characteristic, such as Standard."
-          },
-          "difficulty": {
-            "description": "Difficulty within the resolved song version and characteristic.",
-            "$ref": "#/components/schemas/EDifficulty"
-          },
-          "playModeId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "description": "Historical play-mode ID. The referenced play mode may no longer exist.",
-            "format": "int32"
-          },
-          "playModeName": {
-            "type": "string",
-            "description": "Play-mode name captured when the draft was created."
-          },
-          "order": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "description": "Ascending display order. The lowest-order difficulty supplies automatic ratings.",
-            "format": "uint8"
-          }
-        },
-        "description": "Resolved song version and play mode retained by the proposal."
+        "description": "Published, immutable definition awaiting explicit review. Votes may change while it is submitted."
       },
       "PutCurve": {
         "required": [
@@ -11461,6 +12069,38 @@
           }
         }
       },
+      "RankedMapMetadata": {
+        "required": [
+          "rating",
+          "minAccuracy",
+          "categories"
+        ],
+        "type": "object",
+        "properties": {
+          "rating": {
+            "description": "Current ranked-map ratings.",
+            "$ref": "#/components/schemas/RankedMapRating"
+          },
+          "minAccuracy": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "Current minimum qualifying score accuracy in percent. Null imposes no minimum.",
+            "format": "double"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Current category names, ordered by category ID."
+          }
+        },
+        "description": "Current ranked-map values shown before the proposed changes in the queue.\nThese come from the live ranked map, not a historical accepted proposal."
+      },
       "RankedMapRating": {
         "required": [
           "accStar",
@@ -11506,7 +12146,7 @@
               "number",
               "string"
             ],
-            "description": "Maximum total pause duration in seconds. Must be finite and non-negative. Null imposes no pause limit.\nSetting a limit excludes ScoreSaber scores, which lack the required pause tracking.",
+            "description": "Maximum total pause duration in seconds. Must be finite and non-negative. Null imposes no pause limit.\nSetting a limit requires pause statistics on the score.",
             "format": "float"
           },
           "prohibitedModifiers": {
@@ -12729,6 +13369,35 @@
           }
         }
       },
+      "SongLookup": {
+        "required": [
+          "song",
+          "difficulties",
+          "playModes"
+        ],
+        "type": "object",
+        "properties": {
+          "song": {
+            "description": "Selected song version. Use its hash to retain the version shown in the preview.",
+            "$ref": "#/components/schemas/SongSource"
+          },
+          "difficulties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DifficultyOption"
+            },
+            "description": "Difficulties with supported characteristics and a positive maximum score."
+          },
+          "playModes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Supported GuildSaber play-mode names."
+          }
+        },
+        "description": "Read-only BeatSaver metadata for choosing the first difficulty of a new request."
+      },
       "SongReference": {
         "required": [
           "type"
@@ -12788,6 +13457,30 @@
           }
         },
         "description": "Resolve a BeatSaver key using the last entry in BeatSaver's versions array."
+      },
+      "SongSource": {
+        "required": [
+          "key",
+          "hash",
+          "info",
+          "stats"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/BeatSaverKey"
+          },
+          "hash": {
+            "$ref": "#/components/schemas/SongHash"
+          },
+          "info": {
+            "$ref": "#/components/schemas/SongInfo"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/SongStats"
+          }
+        },
+        "description": "Song metadata before a song or difficulty has been imported."
       },
       "SongStats": {
         "required": [
@@ -12900,10 +13593,255 @@
             "items": {
               "$ref": "#/components/schemas/Proposal"
             },
-            "description": "Queue results contain submitted proposals only. Thread detail includes visible history and the viewer's own\nprivate drafts. Ordered by creation time, then proposal ID, ascending. Not by acceptance time."
+            "description": "Visible history and the viewer's own private drafts. Ordered by creation time, then proposal ID, ascending.\nNot by acceptance time. Queue results use ThreadPreview instead."
           }
         },
         "description": "A persistent ranking thread in one context, with at most one current ranked map."
+      },
+      "ThreadMatch": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ThreadMatchRanked"
+          },
+          {
+            "$ref": "#/components/schemas/ThreadMatchOpen"
+          },
+          {
+            "$ref": "#/components/schemas/ThreadMatchDraft"
+          },
+          {
+            "$ref": "#/components/schemas/ThreadMatchHistory"
+          }
+        ],
+        "description": "A thread using the requested difficulty. Includes current rankings, submitted proposals, your private drafts\nand published history. Private draft matches are visible to their author.",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Ranked": "#/components/schemas/ThreadMatchRanked",
+            "Open": "#/components/schemas/ThreadMatchOpen",
+            "Draft": "#/components/schemas/ThreadMatchDraft",
+            "History": "#/components/schemas/ThreadMatchHistory"
+          }
+        }
+      },
+      "ThreadMatchDraft": {
+        "required": [
+          "proposalId",
+          "threadId"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Draft"
+            ],
+            "type": "string"
+          },
+          "proposalId": {
+            "$ref": "#/components/schemas/MapProposalId"
+          },
+          "threadId": {
+            "description": "Thread to open when proposing changes to the existing request or ranked map.",
+            "$ref": "#/components/schemas/MapRequestThreadId"
+          }
+        },
+        "description": "Your private draft containing the requested difficulty."
+      },
+      "ThreadMatchHistory": {
+        "required": [
+          "proposalId",
+          "threadId"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "History"
+            ],
+            "type": "string"
+          },
+          "proposalId": {
+            "$ref": "#/components/schemas/MapProposalId"
+          },
+          "threadId": {
+            "description": "Thread to open when proposing changes to the existing request or ranked map.",
+            "$ref": "#/components/schemas/MapRequestThreadId"
+          }
+        },
+        "description": "A previously published proposal containing the requested difficulty."
+      },
+      "ThreadMatchOpen": {
+        "required": [
+          "proposalId",
+          "threadId"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Open"
+            ],
+            "type": "string"
+          },
+          "proposalId": {
+            "$ref": "#/components/schemas/MapProposalId"
+          },
+          "threadId": {
+            "description": "Thread to open when proposing changes to the existing request or ranked map.",
+            "$ref": "#/components/schemas/MapRequestThreadId"
+          }
+        },
+        "description": "A submitted proposal containing the requested difficulty."
+      },
+      "ThreadMatchRanked": {
+        "required": [
+          "rankedMapId",
+          "threadId"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Ranked"
+            ],
+            "type": "string"
+          },
+          "rankedMapId": {
+            "$ref": "#/components/schemas/RankedMapId"
+          },
+          "threadId": {
+            "description": "Thread to open when proposing changes to the existing request or ranked map.",
+            "$ref": "#/components/schemas/MapRequestThreadId"
+          }
+        },
+        "description": "A current ranked map containing the requested difficulty."
+      },
+      "ThreadPreview": {
+        "required": [
+          "id",
+          "contextId",
+          "authorId",
+          "createdAt",
+          "rankedMapId",
+          "boostCount",
+          "isBoostedByMe",
+          "isLegacyImport",
+          "previewProposalId",
+          "previewAuthor",
+          "mapVersions",
+          "proposals",
+          "communityVotes",
+          "rankingTeamVotes",
+          "rankedMap"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Thread identity, used to open the full thread.",
+            "$ref": "#/components/schemas/MapRequestThreadId"
+          },
+          "contextId": {
+            "description": "Context to which the thread permanently belongs.",
+            "$ref": "#/components/schemas/ContextId"
+          },
+          "authorId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Original thread creator. Absent for imports or when the player was deleted.",
+                "$ref": "#/components/schemas/PlayerId"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Thread creation time, not the waiting-time origin used to sort the queue.",
+            "format": "date-time"
+          },
+          "rankedMapId": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Current ranked map. Absent for a new ranking or when the ranked map was deleted.",
+                "$ref": "#/components/schemas/RankedMapId"
+              }
+            ]
+          },
+          "boostCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Number of active thread boosts.",
+            "format": "int32"
+          },
+          "isBoostedByMe": {
+            "type": "boolean",
+            "description": "Whether the authenticated viewer boosts this thread. False for anonymous viewers."
+          },
+          "isLegacyImport": {
+            "type": "boolean",
+            "description": "Whether the thread belongs to the legacy-import synchronization path."
+          },
+          "previewProposalId": {
+            "description": "Latest submitted proposal by the thread creator, or the latest submitted proposal when none matches.\nCreation time and proposal ID determine which is latest. Private drafts and historical proposals are excluded.",
+            "$ref": "#/components/schemas/MapProposalId"
+          },
+          "previewAuthor": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Author of the selected preview proposal. Absent for imports or a deleted player.",
+                "$ref": "#/components/schemas/Player"
+              }
+            ]
+          },
+          "mapVersions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MapPreview"
+            },
+            "description": "Map previews from the selected proposal, in ascending display order."
+          },
+          "proposals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalMetadata"
+            },
+            "description": "Submitted proposal metadata in creation order. Its length is the submitted proposal count."
+          },
+          "communityVotes": {
+            "description": "Community vote counts across all submitted proposals in the thread.",
+            "$ref": "#/components/schemas/VoteCounts"
+          },
+          "rankingTeamVotes": {
+            "description": "Ranking-team vote counts across all submitted proposals in the thread.",
+            "$ref": "#/components/schemas/VoteCounts"
+          },
+          "rankedMap": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Current ranked-map values to compare proposals against. Absent for unranked threads.",
+                "$ref": "#/components/schemas/RankedMapMetadata"
+              }
+            ]
+          }
+        },
+        "description": "A queued thread with map previews, submitted proposal metadata and vote counts.\nFull definitions and individual votes are omitted."
       },
       "UpdateCategory": {
         "type": "object",
@@ -13001,6 +13939,30 @@
           }
         },
         "description": "Community feedback. Contributes to CommunityVotes queue sorting, not the acceptance gate."
+      },
+      "VoteCounts": {
+        "type": "object",
+        "properties": {
+          "positive": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Number of positive votes.",
+            "format": "int32"
+          },
+          "negative": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Number of negative votes.",
+            "format": "int32"
+          }
+        },
+        "description": "Positive and negative votes on currently submitted proposals. Drafts and historical proposals are excluded.\nThe same player voting on different proposals contributes one vote for each proposal."
       },
       "VoteRankingTeam": {
         "required": [

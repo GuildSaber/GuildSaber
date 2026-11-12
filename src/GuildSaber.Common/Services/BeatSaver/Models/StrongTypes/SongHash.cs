@@ -17,6 +17,9 @@ public readonly record struct SongHash
     public static implicit operator string(SongHash id)
         => id._value;
 
+    public static bool TryParse(string? value, out SongHash hash)
+        => TryCreate(value).TryGetValue(out hash, out _);
+
     public static Result<SongHash> TryCreate(string? value) => value switch
     {
         null => Failure<SongHash>("Song hash must not be null."),

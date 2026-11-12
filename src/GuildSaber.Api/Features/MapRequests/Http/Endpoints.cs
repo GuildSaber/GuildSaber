@@ -6,6 +6,7 @@ using GuildSaber.Api.Features.MapRequests.Services;
 using GuildSaber.Api.Features.MapRequests.Settings;
 using GuildSaber.Api.Shared;
 using GuildSaber.Api.Transformers;
+using GuildSaber.Common.Services.BeatSaver;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals.Types;
 using Microsoft.AspNetCore.Authorization;
@@ -28,9 +29,14 @@ public sealed class MapRequestEndpoints : IEndpoints
         group.MapGet("/", GetQueueAsync)
             .WithOptionalAuthentication()
             .WithName("GetMapRequestQueue")
-            .WithSummary("Get the ranking queue as threads containing submitted proposals only.")
+            .WithSummary("Get the ranking queue as thread previews with submitted proposal metadata.")
             .WithDescription(
-                "Get threads containing submitted proposals only. Ordering is calculated for each request, so "
+                "Get map previews, submitted proposal metadata and vote counts without full definitions or individual votes. "
+                + "The preview uses the creator's latest submitted proposal, falling back to the latest submitted "
+                + "proposal by another author. Private drafts and historical proposals are excluded, including from vote counts. "
+                + "Community and ranking-team votes are counted separately across all submitted proposals. "
+                + "Ranked threads include current ratings, minimum accuracy and category names for comparison. "
+                + "Ordering is calculated for each request, so "
                 + "positions may change between pages. Use sortBy and order to select the sort field and direction. "
                 + "Priority defaults to descending. WaitingSince ascending shows the oldest requests first. "
                 + "BoostCount and CommunityVotes ties use oldest waiting time. Final ties use thread ID ascending. "
@@ -43,6 +49,31 @@ public sealed class MapRequestEndpoints : IEndpoints
             .WithDescription(
                 "Get published proposals in creation order, including the current player's private drafts. "
                 + "Other players' drafts are hidden, including from reviewers.");
+
+        group.MapPost("/lookup", LookupSongAsync)
+            .RequireAuthorization()
+            .WithName("LookupMapRequestSong")
+            .WithSummary("Look up a BeatSaver song version and its available difficulties before creating a request.")
+            .WithDescription(
+                "Use a Key or Hash song reference. Keys select BeatSaver's current last-listed version. "
+                + "Hashes select that exact version. Returns song metadata, playable difficulties with supported "
+                + "characteristics and available play modes through a read-only lookup. "
+                + "Use the returned hash to keep the previewed version when creating a draft. "
+                + "Draft creation still validates the selected difficulty and requires a BeatLeader leaderboard.")
+            .Produces<SongLookup>()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
+            .ProducesProblem(StatusCodes.Status502BadGateway);
+
+        group.MapGet("/matches", GetMatchesAsync)
+            .WithOptionalAuthentication()
+            .WithName("GetMatchingMapRequestThreads")
+            .WithSummary("Find visible threads for an exact song difficulty before starting a separate request.")
+            .WithDescription(
+                "Returns one match per thread in this context. Within each thread, current ranked maps take precedence, followed by "
+                + "open proposals, your private drafts and published history. Private drafts are visible to their author. "
+                + "Sorts by thread creation time descending by default. Matches are advisory. Submission "
+                + "checks current ranked maps and submitted proposals again and may require force=true.");
 
         group.MapGet("/proposals/@me", GetMineAsync)
             .RequireAuthorization()
@@ -82,9 +113,9 @@ public sealed class MapRequestEndpoints : IEndpoints
             .AddEndpointFilter(ValidateAmendmentPermissionAsync)
             .RequireAuthorization()
             .WithName("CreateMapProposal")
-            .WithSummary("Create a private draft with a complete alternative configuration in an existing thread.")
+            .WithSummary("Create a private draft with a complete alternative definition in an existing thread.")
             .WithDescription(
-                "Supply a complete configuration, not a patch, whether the thread already has a ranked map or "
+                "Supply a complete definition, not a patch, whether the thread already has a ranked map or "
                 + "not. The draft remains private until submitted. Competing with another author's submitted "
                 + "proposal may require a configured subscription tier. Ranking-team members, guild leaders and "
                 + "managers bypass that restriction.")
@@ -103,6 +134,24 @@ public sealed class MapRequestEndpoints : IEndpoints
 
         var proposals = group.MapGroup("/{threadId}/proposals/{proposalId}")
             .AddEndpointFilter(ValidateProposalRouteAsync);
+
+        proposals.MapPost("/replace", ReplaceDraftAsync)
+            .AddEndpointFilter(ValidateAmendmentPermissionAsync)
+            .RequireAuthorization()
+            .WithName("ReplaceMapProposalDraft")
+            .WithSummary("Revise your private draft by saving a replacement and deleting the original.")
+            .WithDescription(
+                "Supply a complete definition. Creates a new private draft with a new ID in the same thread, "
+                + "then deletes the author's original draft in one transaction. A failed replacement leaves the "
+                + "original intact. Does not consume another draft allowance slot. Submitted and historical proposals "
+                + "cannot be replaced. Missing drafts and other authors' drafts return 404.")
+            .Produces<Proposal>(StatusCodes.Status201Created)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
+            .ProducesProblem(StatusCodes.Status502BadGateway);
 
         proposals.MapPost("/submit", SubmitAsync)
             .RequireAuthorization()
@@ -126,9 +175,9 @@ public sealed class MapRequestEndpoints : IEndpoints
         proposals.MapPost("/close", CloseAsync)
             .RequireAuthorization()
             .WithName("CloseMapProposal")
-            .WithSummary("Withdraw your submitted proposal, retaining its configuration and votes in history.")
+            .WithSummary("Withdraw your submitted proposal, retaining its definition and votes in history.")
             .WithDescription(
-                "Only the author can withdraw a submitted proposal. Its configuration and votes remain in "
+                "Only the author can withdraw a submitted proposal. Its definition and votes remain in "
                 + "history. It cannot be reopened. Boosts are released when no submitted proposals remain. Use "
                 + "DELETE to discard a private draft.")
             .Produces<Proposal>()
@@ -150,7 +199,7 @@ public sealed class MapRequestEndpoints : IEndpoints
             .RequireAnyGuildPermission(EPermission.RankingTeam | EPermission.GuildLeader)
             .WithName("AcceptMapProposal")
             .WithSummary(
-                "Explicitly accept a submitted proposal and apply its complete configuration to the ranked "
+                "Explicitly accept a submitted proposal and apply its complete definition to the ranked "
                 + "map.")
             .WithDescription(
                 "Requires ranking-team, guild-leader or manager permissions. Ranking-team vote requirements "
@@ -168,7 +217,7 @@ public sealed class MapRequestEndpoints : IEndpoints
         proposals.MapPost("/deny", DenyAsync)
             .RequireAnyGuildPermission(EPermission.RankingTeam | EPermission.GuildLeader)
             .WithName("DenyMapProposal")
-            .WithSummary("Deny a submitted proposal as a reviewer, retaining its configuration and votes in history.")
+            .WithSummary("Deny a submitted proposal as a reviewer, retaining its definition and votes in history.")
             .WithDescription(
                 "Requires ranking-team, guild-leader or manager permissions. Retains the proposal and its "
                 + "votes without changing the ranked map. Boosts are released when no submitted proposals "
@@ -333,7 +382,7 @@ public sealed class MapRequestEndpoints : IEndpoints
     }
 
     /// <summary>
-    /// Gets a paginated ranking queue of threads containing submitted proposals.
+    /// Gets a paginated ranking queue of thread previews with submitted proposal metadata.
     /// </summary>
     /// <param name="contextId">The context identifier.</param>
     /// <param name="queries">Ranking request queries.</param>
@@ -353,7 +402,7 @@ public sealed class MapRequestEndpoints : IEndpoints
     /// Sort direction. Descending Priority shows highest priority first. Ascending WaitingSince shows
     /// oldest first.
     /// </param>
-    public static async Task<Ok<PagedList<MapRequestResponses.Thread>>> GetQueueAsync(
+    public static async Task<Ok<PagedList<ThreadPreview>>> GetQueueAsync(
         ContextId contextId,
         MapRequestQueries queries,
         ClaimsPrincipal user,
@@ -372,6 +421,50 @@ public sealed class MapRequestEndpoints : IEndpoints
         => await queries.GetThreadAsync(contextId, threadId, user.GetPlayerId(), token) is { } thread
             ? TypedResults.Ok(thread)
             : TypedResults.NotFound();
+
+    private static async Task<IResult> LookupSongAsync(
+        ContextId contextId, SongReference request, MapRequestLookupService service, ServerDbContext dbContext,
+        CancellationToken token)
+    {
+        if (!await dbContext.Contexts.AnyAsync(x => x.Id == contextId, token))
+            return Problem(StatusCodes.Status404NotFound, "context_not_found", "The context does not exist.");
+
+        if (!(await service.LookupAsync(request, token)).TryGetValue(out var song, out var error))
+            return error switch
+            {
+                BeatSaverApi.Error.RateLimitExceeded(var retryAfter) => Problem(StatusCodes.Status429TooManyRequests,
+                    "upstream_rate_limit", "BeatSaver is rate limiting requests.",
+                    new Dictionary<string, object?> { ["retryAfterSeconds"] = retryAfter.TotalSeconds }),
+                BeatSaverApi.Error.Other(var message) => Problem(StatusCodes.Status502BadGateway,
+                    "beatsaver", message),
+                _ => throw new ArgumentOutOfRangeException(nameof(error))
+            };
+
+        return song is not null
+            ? TypedResults.Ok(song)
+            : Problem(StatusCodes.Status404NotFound, "not_on_beatsaver",
+                "The song version was not found on BeatSaver.");
+    }
+
+    /// <summary>Gets matching threads for an exact song version, characteristic and difficulty.</summary>
+    /// <param name="contextId">Context in which to look for matching threads.</param>
+    /// <param name="queries">Ranking request queries.</param>
+    /// <param name="user">The current viewer, when authenticated.</param>
+    /// <param name="filters">Exact song difficulty to match.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <param name="page">The page number to retrieve.</param>
+    /// <param name="pageSize">The number of matching threads per page.</param>
+    /// <param name="sortBy">Sort by thread creation time or ID. Creation-time ties use thread ID in the same direction.</param>
+    /// <param name="order">Sort direction. Descending CreatedAt shows newest threads first.</param>
+    private static async Task<Ok<PagedList<ThreadMatch>>> GetMatchesAsync(
+        ContextId contextId, MapRequestQueries queries, ClaimsPrincipal user, [AsParameters] MatchFilters filters,
+        CancellationToken token,
+        [Range(1, int.MaxValue)] int page = 1,
+        [Range(1, 100)] int pageSize = 10,
+        EMapThreadSorter sortBy = EMapThreadSorter.CreatedAt,
+        EOrder order = EOrder.Desc)
+        => TypedResults.Ok(await queries.GetMatchesAsync(contextId, user.GetPlayerId(), filters, sortBy, order,
+            page, pageSize, token));
 
     /// <summary>
     /// Gets your proposals in a context, including drafts and published history.
@@ -419,18 +512,29 @@ public sealed class MapRequestEndpoints : IEndpoints
         MapRequestQueries queries, ClaimsPrincipal user, CancellationToken token)
         => CreateAsync(contextId, threadId, request, service, queries, user, token);
 
-    private static async Task<IResult> CreateAsync(
+    private static Task<IResult> ReplaceDraftAsync(
+        ContextId contextId, MapRequestThreadId threadId, MapProposalId proposalId, CreateDraft request,
+        MapProposalDraftService service, MapRequestQueries queries, ClaimsPrincipal user, CancellationToken token)
+        => CreateResultAsync(service.ReplaceAsync(contextId, threadId, proposalId, user.GetPlayerId()!.Value,
+            request, token), contextId, queries, user.GetPlayerId()!.Value, token);
+
+    private static Task<IResult> CreateAsync(
         ContextId contextId, MapRequestThreadId? threadId, CreateDraft request, MapProposalDraftService service,
         MapRequestQueries queries, ClaimsPrincipal user, CancellationToken token)
-    {
-        var playerId = user.GetPlayerId()!.Value;
-        return await service.CreateAsync(contextId, threadId, playerId, request, token) switch
+        => CreateResultAsync(service.CreateAsync(contextId, threadId, user.GetPlayerId()!.Value, request, token),
+            contextId, queries, user.GetPlayerId()!.Value, token);
+
+    private static async Task<IResult> CreateResultAsync(
+        Task<MapProposalDraftService.CreateResponse> response, ContextId contextId, MapRequestQueries queries,
+        PlayerId playerId, CancellationToken token)
+        => await response switch
         {
             MapProposalDraftService.CreateResponse.Success(var proposal) => TypedResults.Created(
                 $"/contexts/{contextId}/map-requests/{proposal.ThreadId}/proposals/{proposal.Id}",
                 await queries.GetProposalAsync(contextId, proposal.ThreadId, proposal.Id, playerId, token)),
             MapProposalDraftService.CreateResponse.ContextNotFound
                 or MapProposalDraftService.CreateResponse.ThreadNotFound
+                or MapProposalDraftService.CreateResponse.DraftNotFound
                 or MapProposalDraftService.CreateResponse.PlayerNotFound => TypedResults.NotFound(),
             MapProposalDraftService.CreateResponse.LimitReached(var limit) =>
                 Problem(StatusCodes.Status429TooManyRequests, "draft_limit",
@@ -452,7 +556,6 @@ public sealed class MapRequestEndpoints : IEndpoints
                     new Dictionary<string, object?> { ["retryAfterSeconds"] = retryAfter.TotalSeconds }),
             MapProposalDraftService.CreateResponse.Conflict => Conflict()
         };
-    }
 
     private static async Task<IResult> SubmitAsync(
         ContextId contextId, MapRequestThreadId threadId, MapProposalId proposalId,

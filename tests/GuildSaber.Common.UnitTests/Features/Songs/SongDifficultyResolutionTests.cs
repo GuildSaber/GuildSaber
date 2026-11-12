@@ -200,6 +200,82 @@ public class SongDifficultyResolutionTests
     }
 
     [Test]
+    [Arguments("success")]
+    [Arguments("validation")]
+    [Arguments("delete_failure")]
+    public async Task ReplaceDraft_ShouldPreserveOriginalUntilReplacementCommits(string outcome)
+    {
+        await using var database = await TestDatabase.CreateAsync(seedDifficulties: false);
+        var db = database.Context;
+        await SeedRequestParentsAsync(db);
+        using var beatSaverClient = CreateClient(HttpStatusCode.OK, JsonSerializer.Serialize(CreateBeatMap()));
+        using var beatLeaderClient =
+            CreateClient(HttpStatusCode.OK, JsonSerializer.Serialize(CreateBeatLeaderResponse()));
+        using var scoreSaberClient = CreateClient(HttpStatusCode.NotFound);
+        var settings = Options.Create(new MapRequestSettings { MaxDraftsPerPlayer = 1 });
+        var service = new MapProposalDraftService(db, new BeatSaverApi(beatSaverClient),
+            new SongService(db, new BeatLeaderApi(beatLeaderClient), new ScoreSaberApi(scoreSaberClient)),
+            TimeProvider.System, settings);
+        var request = CreateDraftRequest(new MapProposalRequests.MapVersionInput(
+                new MapProposalRequests.SongReference.ByHash(_hash), "Standard", EDifficulty.Expert, "Standard",
+                0)) with
+            {
+                Rating = new RankedMapRequests.ManualRating(1, .5f), Comment = "Original draft"
+            };
+        var original =
+            (await service.CreateAsync(new ContextId(1), null, new PlayerId(1), request, CancellationToken.None))
+            .Should().BeOfType<DraftResponse.Success>().Which.Proposal;
+
+        (await service.ReplaceAsync(new ContextId(1), original.ThreadId, original.Id, new PlayerId(2), request,
+            CancellationToken.None)).Should().BeOfType<DraftResponse.DraftNotFound>();
+        (await service.ReplaceAsync(new ContextId(2), original.ThreadId, original.Id, new PlayerId(1), request,
+            CancellationToken.None)).Should().BeOfType<DraftResponse.DraftNotFound>();
+
+        if (outcome == "delete_failure")
+            await db.Database.ExecuteSqlRawAsync("""
+                                                 CREATE FUNCTION reject_draft_delete() RETURNS trigger LANGUAGE plpgsql AS $$
+                                                 BEGIN RAISE EXCEPTION 'Simulated delete failure' USING ERRCODE = '23503'; END $$;
+                                                 CREATE TRIGGER reject_draft_delete BEFORE DELETE ON "MapProposals"
+                                                 FOR EACH ROW EXECUTE FUNCTION reject_draft_delete();
+                                                 """);
+
+        var result = await service.ReplaceAsync(new ContextId(1), original.ThreadId, original.Id, new PlayerId(1),
+            request with
+            {
+                Comment = "Revised draft",
+                CategoryIds = outcome == "validation" ? [new CategoryId(999)] : request.CategoryIds
+            }, CancellationToken.None);
+
+        if (outcome == "success")
+        {
+            var replacement = result.Should().BeOfType<DraftResponse.Success>().Which.Proposal;
+            replacement.Id.Should().NotBe(original.Id);
+            replacement.ThreadId.Should().Be(original.ThreadId);
+            replacement.Comment.Should().Be("Revised draft");
+            (await db.MapProposals.AnyAsync(x => x.Id == original.Id)).Should().BeFalse();
+            db.ChangeTracker.Entries().Should().NotContain(x => ReferenceEquals(x.Entity, original));
+
+            var submission =
+                new MapProposalService(db, TimeProvider.System, new BeatLeaderApi(beatLeaderClient), settings);
+            (await submission.SubmitAsync(new ContextId(1), replacement.Id, new PlayerId(1), CancellationToken.None))
+                .Should().BeOfType<MapProposalService.TransitionResponse.Success>();
+            (await service.ReplaceAsync(new ContextId(1), replacement.ThreadId, replacement.Id, new PlayerId(1),
+                request, CancellationToken.None)).Should().BeOfType<DraftResponse.DraftNotFound>();
+        }
+        else
+        {
+            if (outcome == "validation") result.Should().BeOfType<DraftResponse.ValidationFailure>();
+            else result.Should().BeOfType<DraftResponse.Conflict>();
+            (await db.MapProposals.SingleAsync()).Comment.Should().Be("Original draft");
+            (await db.MapProposals.SingleAsync()).Id.Should().Be(original.Id);
+        }
+
+        (await db.MapProposals.CountAsync()).Should().Be(1);
+        (await db.MapRequestThreads.CountAsync()).Should().Be(1);
+        db.ChangeTracker.HasChanges().Should().BeFalse();
+    }
+
+    [Test]
     public async Task CreateDraft_ShouldResolveKeyAndHistoricalHashAndKeepProposalsInTheSameContext()
     {
         await using var database = await TestDatabase.CreateAsync(seedDifficulties: false);
@@ -218,6 +294,16 @@ public class SongDifficultyResolutionTests
         using var beatLeaderClient =
             CreateClient(HttpStatusCode.OK, JsonSerializer.Serialize(CreateBeatLeaderResponse()));
         using var scoreSaberClient = CreateClient(HttpStatusCode.NotFound);
+        var lookupService = new MapRequestLookupService(db, new BeatSaverApi(beatSaverClient));
+        var lookup = (await lookupService.LookupAsync(new MapProposalRequests.SongReference.ByKey(beatMap.Id),
+            CancellationToken.None)).Value!;
+        lookup.Song.Hash.Should().Be(_hash);
+        lookup.Difficulties.Should().ContainSingle().Which.Difficulty.Should().Be(EDifficulty.Expert);
+        (await lookupService.LookupAsync(new MapProposalRequests.SongReference.ByHash(historical.Hash),
+            CancellationToken.None)).Value!.Song.Hash.Should().Be(historical.Hash);
+        (await db.Songs.CountAsync()).Should().Be(0);
+        (await db.MapRequestThreads.CountAsync()).Should().Be(0);
+        db.ChangeTracker.HasChanges().Should().BeFalse();
         var service = new MapProposalDraftService(db, new BeatSaverApi(beatSaverClient),
             new SongService(db, new BeatLeaderApi(beatLeaderClient), new ScoreSaberApi(scoreSaberClient)),
             TimeProvider.System, Options.Create(new MapRequestSettings()));

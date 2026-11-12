@@ -633,6 +633,15 @@ public partial class MapProposalServiceTests : IDisposable
         (await db.MapRequestThreadBoosts.CountAsync()).Should().Be(0);
         var original = await db.RankedMaps.Include(x => x.Categories).Include(x => x.Achievements)
             .Include(x => x.MapVersions).SingleAsync();
+        var matchingThreads = await new MapRequestQueries(db, new FixedTimeProvider(),
+                Options.Create(new MapRequestSettings()), Options.Create(new MapRequestBoostSettings()),
+                Options.Create(new MapProposalReviewSettings()))
+            .GetMatchesAsync(new ContextId(1), null,
+                new MapProposalRequests.MatchFilters(SongHash.CreateUnsafe(new string('a', 40)).Value, "Standard",
+                    EDifficulty.ExpertPlus), MapProposalRequests.EMapThreadSorter.CreatedAt, EOrder.Desc, 1, 1,
+                CancellationToken.None);
+        matchingThreads.Data.Should().ContainSingle().Which.Should()
+            .BeOfType<MapRequestResponses.ThreadMatch.Ranked>().Which.RankedMapId.Should().Be(original.Id);
         original.Categories.Should().ContainSingle();
         original.Achievements.Should().ContainSingle();
         original.MapVersions.Should().HaveCount(2);
@@ -812,6 +821,14 @@ public partial class MapProposalServiceTests : IDisposable
         var db = database.Context;
         var queries = new MapRequestQueries(db, new FixedTimeProvider(), Options.Create(new MapRequestSettings()),
             Options.Create(new MapRequestBoostSettings()), Options.Create(new MapProposalReviewSettings()));
+        var matchFilters = new MapProposalRequests.MatchFilters(SongHash.CreateUnsafe(new string('a', 40)).Value,
+            "Standard", EDifficulty.ExpertPlus);
+        (await queries.GetMatchesAsync(new ContextId(1), null, matchFilters,
+                MapProposalRequests.EMapThreadSorter.CreatedAt, EOrder.Desc, 1, 1, CancellationToken.None))
+            .TotalCount.Should().Be(0);
+        (await queries.GetMatchesAsync(new ContextId(1), new PlayerId(1), matchFilters,
+                MapProposalRequests.EMapThreadSorter.CreatedAt, EOrder.Desc, 1, 1, CancellationToken.None))
+            .Data.Should().ContainSingle().Which.Should().BeOfType<MapRequestResponses.ThreadMatch.Draft>();
         (await queries.GetThreadAsync(new ContextId(1), new MapRequestThreadId(1), null, CancellationToken.None))
             .Should().BeNull();
         (await queries.GetThreadAsync(new ContextId(1), new MapRequestThreadId(1), new PlayerId(1),
@@ -826,13 +843,22 @@ public partial class MapProposalServiceTests : IDisposable
         (await votes.SetCommunityAsync(new ContextId(1), new MapProposalId(1), new PlayerId(1), true,
                 CancellationToken.None))
             .Should().BeOfType<MapProposalVoteService.VoteResponse.Success>();
+        db.MapRequestThreadBoosts.Add(new MapRequestThreadBoost
+        {
+            ThreadId = new MapRequestThreadId(1), PlayerId = new PlayerId(1)
+        });
+        await db.SaveChangesAsync();
+        (await queries.GetMatchesAsync(new ContextId(1), null, matchFilters,
+                MapProposalRequests.EMapThreadSorter.Id, EOrder.Asc, 1, 1, CancellationToken.None))
+            .Data.Should().ContainSingle().Which.Should().BeOfType<MapRequestResponses.ThreadMatch.Open>()
+            .Which.ProposalId.Should().Be(new MapProposalId(1));
         foreach (var sort in Enum.GetValues<MapProposalRequests.EMapRequestSorter>())
         foreach (var order in Enum.GetValues<EOrder>())
         {
             var queue = await queries.GetQueueAsync(new ContextId(1), new PlayerId(1),
                 new MapProposalRequests.Filters(), sort, order, 1, 10, CancellationToken.None);
             queue.Data.Should().ContainSingle().Which.Proposals.Should().ContainSingle()
-                .Which.Should().BeOfType<MapRequestResponses.Proposal.Submitted>();
+                .Which.Id.Should().Be(new MapProposalId(1));
         }
 
         foreach (var sort in Enum.GetValues<MapProposalRequests.EMapProposalSorter>())
@@ -844,6 +870,20 @@ public partial class MapProposalServiceTests : IDisposable
             mine.Data.Select(x => x.Id.Value).Should()
                 .Equal(order == EOrder.Asc ? [1L, 2L] : [2L, 1L]);
         }
+
+        foreach (var isDraft in new[] { true, false })
+            (await queries.GetMineAsync(new ContextId(1), new PlayerId(1),
+                    new MapProposalRequests.Filters(IsDraft: isDraft), MapProposalRequests.EMapProposalSorter.CreatedAt,
+                    EOrder.Desc, 1, 1, CancellationToken.None)).Data.Should().ContainSingle()
+                .Which.Id.Should().Be(new MapProposalId(isDraft ? 2 : 1));
+
+        foreach (var viewer in new PlayerId?[] { new(1), new(2), null })
+        foreach (var boosted in new[] { true, false })
+            (await queries.GetQueueAsync(new ContextId(1), viewer,
+                    new MapProposalRequests.Filters(IsBoostedByMe: boosted),
+                    MapProposalRequests.EMapRequestSorter.Priority,
+                    EOrder.Desc, 1, 1, CancellationToken.None)).TotalCount.Should()
+                .Be(viewer == new PlayerId(1) == boosted ? 1 : 0);
 
         (await queries.GetQueueAsync(new ContextId(1), null,
             new MapProposalRequests.Filters(Search: new string('a', 40)),
@@ -863,6 +903,9 @@ public partial class MapProposalServiceTests : IDisposable
 
         await CreateService(db).CloseAsync(new ContextId(1), new MapProposalId(1), new PlayerId(1), "Revise",
             CancellationToken.None);
+        (await queries.GetMatchesAsync(new ContextId(1), null, matchFilters,
+                MapProposalRequests.EMapThreadSorter.CreatedAt, EOrder.Desc, 1, 1, CancellationToken.None))
+            .Data.Should().ContainSingle().Which.Should().BeOfType<MapRequestResponses.ThreadMatch.History>();
         (await votes.RemoveCommunityAsync(new ContextId(1), new MapProposalId(1), new PlayerId(1),
                 CancellationToken.None))
             .Should().BeOfType<MapProposalVoteService.VoteResponse.InvalidState>();

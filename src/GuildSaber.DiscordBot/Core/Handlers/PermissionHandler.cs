@@ -36,7 +36,7 @@ public static class PermissionHandler
             => context switch
             {
                 _ when !requireManager && permissions == MemberResponses.EPermission.None
-                    => await ValidateGuildIdAndContextIdOwnership(context.Interaction.Data, services, context, true),
+                    => await ValidateGuildIdAndContextIdOwnership(services, context, true),
                 { User: SocketUser user } => await GetCachedCache(services)
                         .GetUserPermissionsOnDiscordGuildsAsync(user.DiscordId, services) switch
                     {
@@ -49,7 +49,7 @@ public static class PermissionHandler
                             }
                             when userPermFromDiscordGuild.TryGetValue(context.Guild.DiscordId, out var permission)
                                  && permission.HasFlag(permissions)
-                            => await ValidateGuildIdAndContextIdOwnership(context.Interaction.Data, services, context,
+                            => await ValidateGuildIdAndContextIdOwnership(services, context,
                                 bypassIfMissingGuild: false),
                         _ => await Error("You don't have the required permissions to execute this command.", context)
                     },
@@ -57,10 +57,9 @@ public static class PermissionHandler
             };
 
         private async Task<PreconditionResult> ValidateGuildIdAndContextIdOwnership(
-            IDiscordInteractionData interactionData, IServiceProvider services, IInteractionContext context,
-            bool bypassIfMissingGuild)
+            IServiceProvider services, IInteractionContext context, bool bypassIfMissingGuild)
         {
-            if (!TryGetOwnershipOptions(interactionData, out var hasOwnershipOptions, out var guildId,
+            if (!TryGetOwnershipOptions(context.Interaction, out var hasOwnershipOptions, out var guildId,
                     out var contextId))
                 return await Error(
                     "You attempted to execute this command with an invalid guild and/or context.",
@@ -115,16 +114,16 @@ public static class PermissionHandler
         }
 
         private static bool TryGetOwnershipOptions(
-            IDiscordInteractionData interactionData, out bool hasOwnershipOptions, out int? guildId, out int? contextId)
+            IDiscordInteraction interaction, out bool hasOwnershipOptions, out int? guildId, out int? contextId)
         {
             guildId = null;
             contextId = null;
 
-            var options = interactionData switch
+            var options = interaction switch
             {
-                SocketSlashCommandData data => data.Options,
-                SocketMessageComponentData => null,
-                _ => throw new UnauthorizedAccessException("Unknown Interaction Data type")
+                SocketSlashCommand command => command.Data.Options,
+                SocketMessageComponent or SocketModal => null,
+                _ => throw new UnauthorizedAccessException($"Unknown Interaction type: {interaction.GetType().Name}")
             };
 
             var guildIdOption = options?.FirstOrDefault(x => x.Name == "guild-id");

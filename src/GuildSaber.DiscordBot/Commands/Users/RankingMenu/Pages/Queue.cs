@@ -1,110 +1,98 @@
-﻿namespace GuildSaber.DiscordBot.Commands.Users;
+using Discord;
+using Discord.Interactions;
+using GuildSaber.Api.Features.MapRequests.Http;
+using GuildSaber.Api.Shared;
+using GuildSaber.DiscordBot.Core.Extensions;
+using static GuildSaber.Api.Features.MapRequests.Http.MapProposalRequests;
 
-/*public partial class UserModuleSlash
+namespace GuildSaber.DiscordBot.Commands.Users;
+
+public partial class UserModuleSlash
 {
-    [ComponentInteraction("ranking_menu_queue:*,*")]
-    public async Task UpdateCurrentMessageToRankingQueuePagedMenu(ContextId contextId, int page)
+    [ComponentInteraction("ranking_menu_queue:*,*,*,*")]
+    public async Task UpdateCurrentMessageToRankingQueuePagedMenu(
+        ContextId contextId, int page, EMapRequestSorter sortBy, ERankingThreadOrigin origin)
     {
-        var guildId = await GetGuildIdAsync();
-        var categories = await Cache.GetGuildCategoriesAsync(guildId, Client.Value);
+        await DeferRankingInteractionAsync();
 
-        var filter = new Filters();
+        var filter = new Filters(IsBoostedByMe: origin == ERankingThreadOrigin.Boosts ? true : null);
         var sorter = new PaginatedRequestOptions<EMapRequestSorter>
         {
-            Page = page,
-            PageSize = 3,
-            SortBy = EMapRequestSorter.Priority,
-            Order = EOrder.Asc
+            Page = Math.Max(1, page),
+            PageSize = 2,
+            SortBy = sortBy,
+            Order = EOrder.Desc
         };
 
-        var submittedThreads = await Client.Value.MapRequests
-            .GetQueueAsync(contextId, filter, sorter)
-            .Unwrap();
+        if (!(await Client.Value.MapRequests.GetQueueAsync(contextId, filter, sorter))
+            .TryGetValue(out var submittedThreads, out var error))
+        {
+            await ReportRankingErrorAsync(error);
+            return;
+        }
 
-        var component = (await RankingMenuView
-                .BuildComponent(guildId, contextId, submittedThreads.Data, categories, EmojiSettings, Client.Value, Cache))
+        if (submittedThreads.Page > Math.Max(1, submittedThreads.TotalPages))
+        {
+            await UpdateCurrentMessageToRankingQueuePagedMenu(contextId, Math.Max(1, submittedThreads.TotalPages),
+                sortBy, origin);
+            return;
+        }
+
+        var component = RankingMenuView.BuildComponent(submittedThreads.Data, submittedThreads.Page, sortBy, origin)
+            .WithTextDisplay(
+                $"Page: **{submittedThreads.Page}**/{Math.Max(1, submittedThreads.TotalPages)} " +
+                $"(**{submittedThreads.TotalCount}** Threads)")
+            .WithActionRow(x => x.WithSelectMenu(new SelectMenuBuilder()
+                .WithCustomId($"ranking_menu_queue_sort:{contextId},{(int)origin}")
+                .WithPlaceholder(sortBy == EMapRequestSorter.BoostCount ? "Most boosted" : "Priority")
+                .AddOption("Priority", nameof(EMapRequestSorter.Priority),
+                    emote: new Emoji("👀"), isDefault: sortBy == EMapRequestSorter.Priority)
+                .AddOption("Most boosted", nameof(EMapRequestSorter.BoostCount),
+                    emote: new Emoji("🪙"), isDefault: sortBy == EMapRequestSorter.BoostCount)))
             .WithActionRow(x => x
-                .WithButton(label: "Back to menu", customId: $"scoring:{contextId}", style: ButtonStyle.Secondary)
+                .WithButton(label: "Back to menu", customId: $"ranking:{contextId}", style: ButtonStyle.Secondary)
                 .WithButton(
                     label: "Prev",
                     disabled: !submittedThreads.HasPreviousPage,
-                    customId: $"scoring_admin_conf:{contextId},{submittedThreads.Page - 1}",
+                    customId: $"ranking_menu_queue:{contextId},{submittedThreads.Page - 1},{(int)sortBy},{(int)origin}",
                     style: ButtonStyle.Primary)
                 .WithButton(
-                    label:
-                    $"Next ({(submittedThreads.Page - 1) * submittedThreads.PageSize}/{submittedThreads.TotalCount} scores)",
+                    label: "Next",
                     disabled: !submittedThreads.HasNextPage,
-                    customId: $"scoring_admin_conf:{contextId},{submittedThreads.Page + 1}",
+                    customId: $"ranking_menu_queue:{contextId},{submittedThreads.Page + 1},{(int)sortBy},{(int)origin}",
                     style: ButtonStyle.Primary))
             .Build();
 
-        await ((SocketMessageComponent)Context.Interaction).UpdateAsync(x => x.Components = component);
+        await ModifyOriginalResponseAsync(x =>
+        {
+            x.Flags = MessageFlags.ComponentsV2;
+            x.Components = component;
+            x.AllowedMentions = AllowedMentions.None;
+        });
     }
+
+    [ComponentInteraction("ranking_menu_queue_sort:*,*")]
+    public Task SortRankingQueue(ContextId contextId, ERankingThreadOrigin origin, string[] values)
+        => UpdateCurrentMessageToRankingQueuePagedMenu(contextId, 1, Enum.Parse<EMapRequestSorter>(values[0]), origin);
 }
 
 file static class RankingMenuView
 {
-    public static async Task<ComponentBuilderV2> MakeThreadComponent(
-        GuildId guildId, MapRequestResponses.Thread thread, CategoryResponses.Category[] categories, GuildSaberClient client, HybridCache cache,
-        IOptions<EmojiSettings> emojiSettings)
+    public static ComponentBuilderV2 BuildComponent(
+        MapRequestResponses.ThreadPreview[] submittedThreads, int page, EMapRequestSorter sortBy,
+        UserModuleSlash.ERankingThreadOrigin origin)
     {
-        var player = await cache.GetPlayerByIdAsync(thread.AuthorId, client);
-
-        return new ComponentBuilderV2()
-            .WithContainer(rankedMap.ToContainerBuilder([], categories, emojiSettings))
-            .WithSection(rankedScore.ToSection(player, rankedMap, scoreStatistics, rankedScore.EditedAt, emojiSettings))
-            .WithActionRow(x => x.WithButton(
-                label: "View Replay",
-                url: $"https://replay.beatleader.com/?scoreId={blScoreId}",
-                disabled: blScoreId is null,
-                style: ButtonStyle.Link));
-    }
-
-    public static async Task<ComponentBuilderV2> BuildComponent(
-        GuildId guildId,
-        ContextId contextId,
-        MapRequestResponses.Thread[] submittedThreads,
-        CategoryResponses.Category[] categories,
-        IOptions<EmojiSettings> emojiSettings,
-        GuildSaberClient client,
-        HybridCache cache)
-    {
-        var builder = new ComponentBuilderV2();
+        var builder = new ComponentBuilderV2().WithTextDisplay(
+            origin == UserModuleSlash.ERankingThreadOrigin.Boosts ? "### My boosted threads" : "### Ranking queue");
 
         if (submittedThreads.Length == 0)
-            return builder.WithTextDisplay("No pending scores found.");
+            return builder.WithTextDisplay(origin == UserModuleSlash.ERankingThreadOrigin.Boosts
+                ? "You have no boosted threads in this context. Boost an open thread from the queue to find it here."
+                : "No open proposals in the queue.");
 
-        foreach (var data in submittedThreads)
-        {
-            var (player, scoreStatistics) = await (
-                cache.GetPlayerByIdAsync(data.RankedScore.PlayerId, client).AsTask(),
-                client.Scores.GetStatisticsAsync(data.RankedScore.Score.Id).Unwrap()
-            ).WhenAll();
-
-            if (player is null)
-                throw new InvalidOperationException("Player not found.");
-
-            var blScoreId = (data.RankedScore.Score as ScoreResponses.Score.BeatLeaderScore)?.BeatLeaderScoreId;
-            builder.WithContainer(data.RankedMap.ToContainerBuilder([], categories, emojiSettings)
-                .WithSeparator()
-                .WithSection(data.RankedScore.ToSection(player, data.RankedMap, scoreStatistics,
-                    data.RankedScore.EditedAt, emojiSettings))
-                .WithActionRow(y => y
-                    .WithButton(
-                        label: "Accept",
-                        customId: $"scoring-team-menu:score:accept:{contextId},{data.RankedScore.Score.Id}",
-                        style: ButtonStyle.Success)
-                    .WithButton(
-                        label: "Refuse",
-                        customId: $"scoring-team-menu:score:refuse:{contextId},{data.RankedScore.Score.Id}",
-                        style: ButtonStyle.Danger)
-                    .WithButton(
-                        label: "View Replay",
-                        url: $"https://replay.beatleader.com/?scoreId={blScoreId}",
-                        disabled: blScoreId is null,
-                        style: ButtonStyle.Link)));
-        }
+        foreach (var thread in submittedThreads)
+            builder.WithContainer(thread.ToContainerBuilder(page, sortBy, origin));
 
         return builder;
     }
-}*/
+}

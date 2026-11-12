@@ -20,10 +20,34 @@ public static class MapProposalRequests
     /// If true, only returns requests for threads with a current ranked map. If false, only returns new-ranking
     /// requests. If omitted, returns both. This reflects the thread's current state, not its state at proposal creation.
     /// </param>
+    /// <param name="IsDraft">
+    /// If true, only returns private drafts. If false, excludes drafts. If omitted, returns all visible states.
+    /// The ranking queue only contains submitted proposals, so true returns an empty queue.
+    /// </param>
+    /// <param name="IsBoostedByMe">
+    /// If true, only returns requests in threads boosted by the authenticated player. If false, excludes them.
+    /// If omitted, ignores boosts. Anonymous callers have no active boosts.
+    /// </param>
     public record struct Filters(
         [property: FromQuery(Name = "search")] string? Search = null,
-        [property: FromQuery(Name = "isRevision")] bool? IsRevision = null
+        [property: FromQuery(Name = "isRevision")] bool? IsRevision = null,
+        [property: FromQuery(Name = "isDraft")] bool? IsDraft = null,
+        [property: FromQuery(Name = "isBoostedByMe")] bool? IsBoostedByMe = null
     );
+
+    /// <summary>
+    /// Find visible threads that have used the same song difficulty in this context.
+    /// </summary>
+    /// <param name="Hash">Exact song version hash, including older BeatSaver versions.</param>
+    /// <param name="Characteristic">BeatSaver characteristic name, such as Standard.</param>
+    /// <param name="Difficulty">Difficulty within the selected version and characteristic.</param>
+    public record struct MatchFilters(
+        [property: FromQuery(Name = "hash")] SongHash Hash,
+        [property: FromQuery(Name = "characteristic")] string Characteristic,
+        [property: FromQuery(Name = "difficulty")] EDifficulty Difficulty
+    );
+
+    public enum EMapThreadSorter { CreatedAt, Id }
 
     /// <summary>
     /// Duplicate acknowledgement when publishing a draft.
@@ -100,8 +124,9 @@ public static class MapProposalRequests
     public sealed record RankingTeamVote([property: JsonRequired] bool IsPositive, string? Reason);
 
     /// <summary>
-    /// Complete proposed configuration, not a patch. Creates a private draft without publishing it to the queue.
-    /// Drafts cannot be edited: delete and recreate them, or withdraw submitted proposals and create another variant.
+    /// Complete proposed definition, not a patch. Creates a private draft without publishing it to the queue.
+    /// Revising a private draft saves a replacement through the replace endpoint and deletes the original atomically.
+    /// Withdraw submitted proposals and create another variant to change a published definition.
     /// </summary>
     /// <param name="MapVersions">
     /// At least one map version. Each resolved song difficulty and play-mode combination must be unique.

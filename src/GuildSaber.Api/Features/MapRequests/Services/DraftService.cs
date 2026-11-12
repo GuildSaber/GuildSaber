@@ -34,6 +34,7 @@ public sealed class MapProposalDraftService(
         public sealed record Success(DraftProposal Proposal) : CreateResponse;
         public sealed record ContextNotFound : CreateResponse;
         public sealed record ThreadNotFound : CreateResponse;
+        public sealed record DraftNotFound : CreateResponse;
         public sealed record PlayerNotFound : CreateResponse;
         public sealed record ValidationFailure(IEnumerable<KeyValuePair<string, string[]>> Errors) : CreateResponse;
         public sealed record NotOnBeatSaver(SongReference Song) : CreateResponse;
@@ -51,6 +52,12 @@ public sealed class MapProposalDraftService(
         CancellationToken token)
         => CreatePreparedAsync(contextId, threadId, playerId, request, token);
 
+    /// <summary>Saves a new private draft and deletes the author's original draft in the same transaction.</summary>
+    public Task<CreateResponse> ReplaceAsync(
+        ContextId contextId, MapRequestThreadId threadId, MapProposalId proposalId, PlayerId playerId,
+        CreateDraft request, CancellationToken token)
+        => CreatePreparedAsync(contextId, threadId, playerId, request, token, proposalId);
+
     /// <summary>Trusted legacy import only. No player is impersonated for automated history.</summary>
     internal Task<CreateResponse> CreateImportedAsync(
         ContextId contextId, MapRequestThreadId? threadId, CreateDraft request, CancellationToken token)
@@ -58,10 +65,15 @@ public sealed class MapProposalDraftService(
 
     private async Task<CreateResponse> CreatePreparedAsync(
         ContextId contextId, MapRequestThreadId? threadId, PlayerId? playerId, CreateDraft request,
-        CancellationToken token)
+        CancellationToken token, MapProposalId? replacedDraftId = null)
     {
         if (dbContext.ChangeTracker.HasChanges())
             throw new InvalidOperationException("Save or discard pending changes before creating a draft.");
+
+        if (replacedDraftId is { } original && !await dbContext.MapProposals.OfType<DraftProposal>()
+                .AnyAsync(x => x.Id == original && x.AuthorId == playerId && x.ThreadId == threadId
+                               && x.Thread.ContextId == contextId, token))
+            return new CreateResponse.DraftNotFound();
 
         var errors = GetInputErrors(request);
         if (errors.Count > 0)
@@ -117,16 +129,16 @@ public sealed class MapProposalDraftService(
         }
 
         return await dbContext.Database.CreateExecutionStrategy().ExecuteAsync(
-            (service: this, contextId, threadId, playerId, request, requirements, rating, resolved),
+            (service: this, contextId, threadId, playerId, request, requirements, rating, resolved, replacedDraftId),
             static (state, cancellationToken) => state.service.CreateCoreAsync(
                 state.contextId, state.threadId, state.playerId, state.request, state.requirements,
-                state.rating, state.resolved, cancellationToken), token);
+                state.rating, state.resolved, cancellationToken, state.replacedDraftId), token);
     }
 
     private async Task<CreateResponse> CreateCoreAsync(
         ContextId contextId, MapRequestThreadId? threadId, PlayerId? playerId, CreateDraft request,
         RankedMapRequirements requirements, MapProposalRating rating,
-        SongService.ResolvedDifficulty[] resolvedVersions, CancellationToken token)
+        SongService.ResolvedDifficulty[] resolvedVersions, CancellationToken token, MapProposalId? replacedDraftId)
     {
         var committed = false;
         try
@@ -146,6 +158,13 @@ public sealed class MapProposalDraftService(
             if (playerId is not null && !await dbContext.Players.AnyAsync(x => x.Id == playerId, token))
                 return new CreateResponse.PlayerNotFound();
 
+            var replacedDraft = dbContext.MapProposals.OfType<DraftProposal>()
+                .Where(x => x.Id == replacedDraftId && x.AuthorId == playerId && x.ThreadId == threadId
+                            && x.Thread.ContextId == contextId);
+
+            if (replacedDraftId is not null && !await replacedDraft.AnyAsync(token))
+                return new CreateResponse.DraftNotFound();
+
             if (threadId is { } existing && !await dbContext.MapRequestThreads
                     .AnyAsync(x => x.Id == existing
                                    && x.ContextId == contextId
@@ -161,26 +180,28 @@ public sealed class MapProposalDraftService(
 
 
             if (playerId is not null && await dbContext.MapProposals.OfType<DraftProposal>()
-                    .CountAsync(x => x.AuthorId == playerId && x.Thread.ContextId == contextId, token)
+                    .CountAsync(x => x.AuthorId == playerId && x.Thread.ContextId == contextId
+                                                            && (replacedDraftId == null || x.Id != replacedDraftId),
+                        token)
                 >= settings.Value.MaxDraftsPerPlayer)
                 return new CreateResponse.LimitReached(settings.Value.MaxDraftsPerPlayer);
 
             var categoryIds = request.CategoryIds;
             var categories = await dbContext.Categories
                 .Where(x => ((IEnumerable<CategoryId>)categoryIds).Contains(x.Id) && x.GuildId == context.GuildId)
-                .Select(x => new MapProposalCategory { CategoryId = x.Id, Name = x.Info.Name }).ToArrayAsync(token);
+                .Select(x => new MapProposalCategory { CategoryId = x.Id, Name = x.Info.Name }).ToListAsync(token);
             var achievementIds = request.AchievementIds.Select(x => new AchievementId(x)).ToArray();
             var achievements = await dbContext.Achievements.OfType<RankedMapListAchievement>()
                 .Where(x => ((IEnumerable<AchievementId>)achievementIds).Contains(x.Id)
                             && x.GuildId == context.GuildId && x.ContextId == contextId)
                 .Select(x => new MapProposalAchievement { AchievementId = x.Id, Name = x.Info.Name })
-                .ToArrayAsync(token);
+                .ToListAsync(token);
 
-            if (categories.Length != categoryIds.Length)
+            if (categories.Count != categoryIds.Length)
                 errors.Add(new KeyValuePair<string, string[]>(nameof(request.CategoryIds),
                     ["Each category must exist in the thread's guild."]));
 
-            if (achievements.Length != achievementIds.Length)
+            if (achievements.Count != achievementIds.Length)
                 errors.Add(new KeyValuePair<string, string[]>(nameof(request.AchievementIds),
                     ["Each achievement must be a ranked-map-list achievement in the thread's context."]));
 
@@ -241,10 +262,25 @@ public sealed class MapProposalDraftService(
                 return new CreateResponse.ValidationFailure(errors);
 
             await dbContext.SaveChangesAsync(acceptAllChangesOnSuccess: false, token);
+
+            if (replacedDraftId is not null && await replacedDraft.ExecuteDeleteAsync(token) != 1)
+                return new CreateResponse.Conflict();
+
             await transaction.CommitAsync(token);
 
             dbContext.ChangeTracker.AcceptAllChanges();
             committed = true;
+
+            if (replacedDraftId is { } removed)
+                foreach (var entry in dbContext.ChangeTracker.Entries().Where(entry => entry.Entity switch
+                         {
+                             MapProposal tracked => tracked.Id == removed,
+                             MapProposalVersion version => version.ProposalId == removed,
+                             MapProposalCategory category => category.ProposalId == removed,
+                             MapProposalAchievement achievement => achievement.ProposalId == removed,
+                             _ => false
+                         }).ToArray())
+                    entry.State = EntityState.Detached;
 
             return new CreateResponse.Success(proposal);
         }

@@ -65,7 +65,7 @@ file static class SearchCommand
         var pageOption = new PaginatedRequestOptions<RankedMapRequests.ERankedMapSorter>
         {
             Page = Math.Max(1, page),
-            PageSize = 4,
+            PageSize = 3,
             MaxPage = int.MaxValue,
             Order = EOrder.Desc,
             SortBy = RankedMapRequests.ERankedMapSorter.Name
@@ -106,7 +106,17 @@ file static class SearchCommand
                   "You can also write the __bsr key__, the __mapper name__, the __map hash__, and so on..");
 
         foreach (var data in pagedRankedMapsWithScores.Data)
-            builder.WithContainer(data.RankedMap.ToContainerBuilder(data.RankedScores, categories, emojiSettings));
+            builder.WithContainer((data.RankedMap with { Versions = [data.RankedMap.Versions[0]] })
+                .ToContainerBuilder(data.RankedScores
+                    .Where(x => x.Score.SongDifficultyId == data.RankedMap.Versions[0].Difficulty.Id)
+                    .Take(2), categories, emojiSettings)
+                .WithSection(section => section.WithTextDisplay(
+                        data.RankedMap.Versions.Length > 1
+                            ? $"-# {data.RankedMap.Versions.Length} map versions · Open the thread to see the full definition"
+                            : "-# View proposals or suggest a change")
+                    .WithAccessory(new ButtonBuilder().WithLabel("Open thread")
+                        .WithCustomId($"ranking_map_thread:{contextId},{data.RankedMap.ThreadId}")
+                        .WithStyle(ButtonStyle.Secondary))));
 
         if (pagedRankedMapsWithScores.TotalCount == pagedRankedMapsWithScores.Data.Length)
             return builder.WithTextDisplay(

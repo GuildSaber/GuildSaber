@@ -19,6 +19,7 @@ using GuildSaber.Api.Features.Songs;
 using GuildSaber.Api.Setup;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatSaver;
+using GuildSaber.Common.Services.BeatSaver.Models.StrongTypes;
 using GuildSaber.Common.Services.ScoreSaber;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.Database.Contexts.Server;
@@ -123,6 +124,12 @@ public partial class MapProposalServiceTests
             var uri = new Uri(app.Urls.Single());
             using var client = new Client::GuildSaber.CSharpClient.GuildSaberClient(uri, uri, null);
             var api = client.MapRequests;
+            var matchFilters = new ClientRequests.MatchFilters(SongHash.CreateUnsafe(new string('a', 40)).Value,
+                "Standard", EDifficulty.ExpertPlus);
+            (await api.GetMatchesAsync(new ContextId(1), matchFilters,
+                new PaginatedRequestOptions<ClientRequests.EMapThreadSorter>())).Value.TotalCount.Should().Be(0);
+            (await api.LookupSongAsync(new ContextId(1),
+                new ClientRequests.SongReference.ByHash(matchFilters.Hash))).Error.Status.Should().Be(401);
             var hidden = await api.GetThreadAsync(new ContextId(1), new MapRequestThreadId(1));
             hidden.IsSuccess.Should().BeTrue();
             hidden.Value.Should().BeNull();
@@ -138,6 +145,12 @@ public partial class MapProposalServiceTests
             client.HttpClient.DefaultRequestHeaders.Remove("X-Test-Player");
             client.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                 Convert.ToBase64String(Encoding.UTF8.GetBytes("1:test-key")));
+            (await api.GetMatchesAsync(new ContextId(1), matchFilters,
+                    new PaginatedRequestOptions<ClientRequests.EMapThreadSorter>())).Value.Data.Should()
+                .ContainSingle().Which.Should().BeOfType<ClientResponses.ThreadMatch.Draft>();
+            (await client.HttpClient.GetAsync(
+                    "contexts/1/map-requests/matches?hash=invalid&characteristic=Standard&difficulty=ExpertPlus"))
+                .StatusCode.Should().Be(HttpStatusCode.BadRequest);
             (await api.GetThreadAsync(new ContextId(1), new MapRequestThreadId(1))).Value!.Proposals.Should()
                 .ContainSingle();
             (await api.GetProposalAsync(new ContextId(1), new MapRequestThreadId(1), new MapProposalId(1))).Value

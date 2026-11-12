@@ -50,6 +50,8 @@ public class InteractionHandler(
         commands.AddTypeReader<ContextId>(new ContextIdTypeReader());
         commands.AddTypeReader<ScoreId>(new ScoreIdTypeReader());
         commands.AddTypeReader<CategoryId>(new CategoryIdTypeReader());
+        commands.AddTypeReader<MapRequestThreadId>(new MapRequestThreadIdTypeReader());
+        commands.AddTypeReader<MapProposalId>(new MapProposalIdTypeReader());
         commands.AddComponentTypeConverter<ContextId>(new ContextIdComponentTypeConverter());
         commands.AddComponentTypeConverter<ScoreId>(new ScoreIdComponentTypeConverter());
         await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
