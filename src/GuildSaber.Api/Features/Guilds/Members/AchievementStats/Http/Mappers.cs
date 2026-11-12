@@ -9,7 +9,7 @@ public static class AchievementStatMappers
     public static Expression<Func<MemberAchievementStat, AchievementStatResponses.MemberAchievementStat>>
         MapMemberAchievementStatExpression
         => self => new AchievementStatResponses.MemberAchievementStat(
-            AchievementMappers.MapAchievementExpression.Invoke(self.Achievement),
+            self.Achievement.Map(),
             self.IsCompleted,
             self.IsLocked,
             self.PassCount

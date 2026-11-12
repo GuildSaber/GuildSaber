@@ -35,7 +35,7 @@ public class AchievementEndpoints : IEndpoints
         ServerDbContext dbContext)
         => await dbContext.Achievements
                 .Where(x => x.Id == achievementId)
-                .Select(AchievementMappers.MapAchievementExpression)
+                .Select(x => x.Map())
                 .FirstOrDefaultAsync() switch
             {
                 null => TypedResults.NotFound(),
@@ -57,7 +57,7 @@ public class AchievementEndpoints : IEndpoints
 
         return TypedResults.Ok(await query
             .OrderBy(x => x.Id)
-            .Select(AchievementMappers.MapAchievementExpression)
+            .Select(x => x.Map())
             .ToArrayAsync());
     }
 }

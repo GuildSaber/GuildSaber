@@ -4,9 +4,15 @@ using GuildSaber.Database.Models.Server.Guilds.Achievements.Types;
 
 namespace GuildSaber.Api.Features.Guilds.Achievements.Http;
 
-public class AchievementMappers
+public static class AchievementMappers
 {
-    public static Expression<Func<Achievement, AchievementResponses.Achievement>> MapAchievementExpression
+    private static Func<Achievement, AchievementResponses.Achievement>? _mapAchievementImpl;
+
+    [Expandable(nameof(MapAchievementExpression))]
+    public static AchievementResponses.Achievement Map(this Achievement self)
+        => (_mapAchievementImpl ??= MapAchievementExpression().Compile())(self);
+
+    public static Expression<Func<Achievement, AchievementResponses.Achievement>> MapAchievementExpression()
         => achievement => achievement is RankedMapListAchievement
             ? new AchievementResponses.Achievement.RankedMapListAchievement(
                 achievement.Id.Value,

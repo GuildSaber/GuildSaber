@@ -11,30 +11,6 @@ public static class PlayerMappers
 {
     private static Func<Player, PlayerResponses.Player>? _mapPlayerImpl;
 
-    public static Expression<Func<Player, PlayerResponses.Player>> MapPlayerExpression
-        => self => new PlayerResponses.Player(
-            self.Id,
-            new PlayerResponses.PlayerInfo(
-                self.Info.Username,
-                self.Info.AvatarUrl,
-                self.Info.Country,
-                self.Info.CreatedAt
-            ),
-            new PlayerResponses.PlayerLinkedAccounts(
-                self.LinkedAccounts.SteamId,
-                self.LinkedAccounts.MetaPCId,
-                self.LinkedAccounts.BLNativeId,
-                self.LinkedAccounts.ScoreSaberId,
-                self.LinkedAccounts.DiscordId
-            ),
-            new PlayerResponses.PlayerSubscriptionInfo(
-                self.SubscriptionInfo.Tier.Map()
-            ),
-            self.Hmd.Map(),
-            self.Platform.ToString(),
-            self.IsManager
-        );
-
     public static Expression<Func<Player, PlayerResponses.PlayerExtended>> MapPlayerExtendedExpression
         => self => new PlayerResponses.PlayerExtended(new PlayerResponses.Player(
                 self.Id,
@@ -67,6 +43,30 @@ public static class PlayerMappers
                 x.Priority
             )).ToArray());
 
+    public static Expression<Func<Player, PlayerResponses.Player>> MapPlayerExpression()
+        => self => new PlayerResponses.Player(
+            self.Id,
+            new PlayerResponses.PlayerInfo(
+                self.Info.Username,
+                self.Info.AvatarUrl,
+                self.Info.Country,
+                self.Info.CreatedAt
+            ),
+            new PlayerResponses.PlayerLinkedAccounts(
+                self.LinkedAccounts.SteamId,
+                self.LinkedAccounts.MetaPCId,
+                self.LinkedAccounts.BLNativeId,
+                self.LinkedAccounts.ScoreSaberId,
+                self.LinkedAccounts.DiscordId
+            ),
+            new PlayerResponses.PlayerSubscriptionInfo(
+                self.SubscriptionInfo.Tier.Map()
+            ),
+            self.Hmd.Map(),
+            self.Platform.ToString(),
+            self.IsManager
+        );
+
     extension(Player)
     {
         public static Expression<Func<Player, bool>> BeatLeaderIdEquals(BeatLeaderId id) => self =>
@@ -74,8 +74,9 @@ public static class PlayerMappers
             self.LinkedAccounts.BLNativeId == id;
     }
 
+    [Expandable(nameof(MapPlayerExpression))]
     public static PlayerResponses.Player Map(this Player self)
-        => (_mapPlayerImpl ??= MapPlayerExpression.Compile())(self);
+        => (_mapPlayerImpl ??= MapPlayerExpression().Compile())(self);
 
     public static PlayerResponses.ESubscriptionTier Map(this PlayerSubscriptionInfo.ESubscriptionTier self) =>
         self switch

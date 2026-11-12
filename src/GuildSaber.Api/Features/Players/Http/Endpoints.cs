@@ -68,7 +68,7 @@ public class PlayerEndpoints : IEndpoints
     private static async Task<Results<Ok<Player>, NotFound>> GetPlayerAsync(
         PlayerId playerId, ServerDbContext dbContext)
         => await dbContext.Players.Where(x => x.Id == playerId)
-                .Select(PlayerMappers.MapPlayerExpression)
+                .Select(x => x.Map())
                 .FirstOrDefaultAsync() switch
             {
                 null => TypedResults.NotFound(),
@@ -108,7 +108,7 @@ public class PlayerEndpoints : IEndpoints
 
         return TypedResults.Ok(await query
             .ApplySortOrder(sortBy, order)
-            .Select(PlayerMappers.MapPlayerExpression)
+            .Select(x => x.Map())
             .ToPagedListAsync(page, pageSize));
     }
 

@@ -17,6 +17,9 @@ public static class RankedMapMappers
 {
     private static Func<RankedMap, RankedMapResponses.RankedMapSimple>? _mapRankedMapSimpleImpl;
     private static Func<RankedMap, RankedMapResponses.RankedMap>? _mapRankedMapImpl;
+    private static Func<Song, RankedMapResponses.Song>? _mapSongImpl;
+    private static Func<SongDifficulty, RankedMapResponses.SongDifficulty>? _mapSongDifficultyImpl;
+    private static Func<MapVersion, RankedMapResponses.MapVersion>? _mapVersionImpl;
 
     [Expandable(nameof(MapRankedMapSimpleExpression))]
     public static RankedMapResponses.RankedMapSimple MapSimple(this RankedMap self)
@@ -35,41 +38,7 @@ public static class RankedMapMappers
             self.Info.Map(),
             self.Requirements.Map(),
             self.Rating.Map(),
-            self.MapVersions.Select(x => new RankedMapResponses.MapVersion(
-                x.AddedAt,
-                x.Order,
-                new RankedMapResponses.Song(
-                    x.Song.Id,
-                    x.Song.Hash,
-                    x.Song.BeatSaverKey,
-                    x.Song.UploadedAt,
-                    new RankedMapResponses.SongInfo(
-                        x.Song.Info.BeatSaverName,
-                        x.Song.Info.SongName,
-                        x.Song.Info.SongSubName,
-                        x.Song.Info.SongAuthorName,
-                        x.Song.Info.MapperName
-                    ),
-                    new RankedMapResponses.SongStats(
-                        x.Song.Stats.BPM,
-                        x.Song.Stats.DurationSec,
-                        x.Song.Stats.IsAutoMapped
-                    )),
-                new RankedMapResponses.SongDifficulty(
-                    x.SongDifficultyId,
-                    x.SongDifficulty.BLLeaderboardId,
-                    x.SongDifficulty.SSLeaderboardId,
-                    x.SongDifficulty.Difficulty,
-                    x.SongDifficulty.GameMode.Name,
-                    new RankedMapResponses.SongDifficultyStats(
-                        x.SongDifficulty.Stats.MaxScore,
-                        x.SongDifficulty.Stats.NoteJumpSpeed,
-                        x.SongDifficulty.Stats.NoteCount,
-                        x.SongDifficulty.Stats.BombCount,
-                        x.SongDifficulty.Stats.ObstacleCount,
-                        x.SongDifficulty.Stats.NotesPerSecond,
-                        x.SongDifficulty.Stats.Duration
-                    )))).ToArray(),
+            self.MapVersions.Select(x => x.Map()).ToArray(),
             self.Categories.Select(x => (int)x.Id).ToArray());
 
     /// <warning>.AsExpandable() must be called with this expression</warning>
@@ -82,41 +51,7 @@ public static class RankedMapMappers
             self.Info.Map(),
             self.Requirements.Map(),
             self.Rating.Map(),
-            self.MapVersions.Select(x => new RankedMapResponses.MapVersion(
-                x.AddedAt,
-                x.Order,
-                new RankedMapResponses.Song(
-                    x.Song.Id,
-                    x.Song.Hash,
-                    x.Song.BeatSaverKey,
-                    x.Song.UploadedAt,
-                    new RankedMapResponses.SongInfo(
-                        x.Song.Info.BeatSaverName,
-                        x.Song.Info.SongName,
-                        x.Song.Info.SongSubName,
-                        x.Song.Info.SongAuthorName,
-                        x.Song.Info.MapperName
-                    ),
-                    new RankedMapResponses.SongStats(
-                        x.Song.Stats.BPM,
-                        x.Song.Stats.DurationSec,
-                        x.Song.Stats.IsAutoMapped
-                    )),
-                new RankedMapResponses.SongDifficulty(
-                    x.SongDifficultyId,
-                    x.SongDifficulty.BLLeaderboardId,
-                    x.SongDifficulty.SSLeaderboardId,
-                    x.SongDifficulty.Difficulty,
-                    x.SongDifficulty.GameMode.Name,
-                    new RankedMapResponses.SongDifficultyStats(
-                        x.SongDifficulty.Stats.MaxScore,
-                        x.SongDifficulty.Stats.NoteJumpSpeed,
-                        x.SongDifficulty.Stats.NoteCount,
-                        x.SongDifficulty.Stats.BombCount,
-                        x.SongDifficulty.Stats.ObstacleCount,
-                        x.SongDifficulty.Stats.NotesPerSecond,
-                        x.SongDifficulty.Stats.Duration
-                    )))).ToArray(),
+            self.MapVersions.Select(x => x.Map()).ToArray(),
             self.Categories.Select(x => (int)x.Id).ToArray(),
             self.Context.Achievements
                 .Where(achievement =>
@@ -135,7 +70,7 @@ public static class RankedMapMappers
                 .OrderBy(achievement => achievement.ProgressionOrder == null)
                 .ThenBy(achievement => achievement.ProgressionOrder)
                 .ThenBy(achievement => achievement.Id)
-                .Select(achievement => AchievementMappers.MapAchievementExpression.Invoke(achievement))
+                .Select(achievement => achievement.Map())
                 .ToArray());
 
     /// <warning>.AsExpandable() must be called with this expression</warning>
@@ -167,24 +102,49 @@ public static class RankedMapMappers
         MinAccuracy: self.MinAccuracy
     );
 
-    public static RankedMapResponses.Song Map(this Song self) => new(
-        Id: self.Id,
-        Hash: self.Hash,
-        Key: self.BeatSaverKey,
-        UploadedAt: self.UploadedAt,
-        Info: new RankedMapResponses.SongInfo(
-            BeatSaverName: self.Info.BeatSaverName,
-            Name: self.Info.SongName,
-            SubName: self.Info.SongSubName,
-            AuthorName: self.Info.SongAuthorName,
-            MapperName: self.Info.MapperName
-        ),
-        Stats: new RankedMapResponses.SongStats(
-            BPM: self.Stats.BPM,
-            DurationSec: self.Stats.DurationSec,
-            IsAutoMapped: self.Stats.IsAutoMapped
-        )
-    );
+    [Expandable(nameof(MapSongExpression))]
+    public static RankedMapResponses.Song Map(this Song self)
+        => (_mapSongImpl ??= MapSongExpression().Compile())(self);
+
+    public static Expression<Func<Song, RankedMapResponses.Song>> MapSongExpression() => self
+        => new RankedMapResponses.Song(
+            Id: self.Id,
+            Hash: self.Hash,
+            Key: self.BeatSaverKey,
+            UploadedAt: self.UploadedAt,
+            Info: new RankedMapResponses.SongInfo(
+                BeatSaverName: self.Info.BeatSaverName,
+                Name: self.Info.SongName,
+                SubName: self.Info.SongSubName,
+                AuthorName: self.Info.SongAuthorName,
+                MapperName: self.Info.MapperName
+            ),
+            Stats: new RankedMapResponses.SongStats(
+                BPM: self.Stats.BPM,
+                DurationSec: self.Stats.DurationSec,
+                IsAutoMapped: self.Stats.IsAutoMapped
+            )
+        );
+
+    [Expandable(nameof(MapSongDifficultyExpression))]
+    public static RankedMapResponses.SongDifficulty Map(this SongDifficulty self)
+        => (_mapSongDifficultyImpl ??= MapSongDifficultyExpression().Compile())(self);
+
+    public static Expression<Func<SongDifficulty, RankedMapResponses.SongDifficulty>> MapSongDifficultyExpression()
+        => self => new RankedMapResponses.SongDifficulty(
+            self.Id,
+            self.BLLeaderboardId,
+            self.SSLeaderboardId,
+            self.Difficulty,
+            self.GameMode.Name,
+            new RankedMapResponses.SongDifficultyStats(
+                self.Stats.MaxScore,
+                self.Stats.NoteJumpSpeed,
+                self.Stats.NoteCount,
+                self.Stats.BombCount,
+                self.Stats.ObstacleCount,
+                self.Stats.NotesPerSecond,
+                self.Stats.Duration));
 
     public static RankedMapResponses.SongDifficulty Map(this SongDifficulty self, GameMode gameMode) => new(
         Id: self.Id,
@@ -209,6 +169,17 @@ public static class RankedMapMappers
         Song: song.Map(),
         Difficulty: songDifficulty.Map(gameMode)
     );
+
+    [Expandable(nameof(MapVersionExpression))]
+    public static RankedMapResponses.MapVersion Map(this MapVersion self)
+        => (_mapVersionImpl ??= MapVersionExpression().Compile())(self);
+
+    public static Expression<Func<MapVersion, RankedMapResponses.MapVersion>> MapVersionExpression()
+        => self => new RankedMapResponses.MapVersion(
+            self.AddedAt,
+            self.Order,
+            self.Song.Map(),
+            self.SongDifficulty.Map());
 
     public static Result<RankedMapRequirements, List<KeyValuePair<string, string[]>>> Map(
         this RankedMapRequests.RankedMapRequirements self)
