@@ -27,9 +27,10 @@ public class PointCurveCacheRegressionTests
             DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result,
             CancellationToken cancellationToken = default)
         {
-            if (command.CommandText.Contains("FROM \"ContextMembers\"")
-                && command.CommandText.Contains("\"Contexts\"")
-                && command.CommandText.Contains("\"Points\""))
+            if (command.CommandText.Contains("\"Points\"")
+                && (command.CommandText.Contains("FROM \"Contexts\"")
+                    || command.CommandText.Contains("FROM \"ContextMembers\"")
+                    && command.CommandText.Contains("\"Contexts\"")))
                 Count++;
 
             return ValueTask.FromResult(result);

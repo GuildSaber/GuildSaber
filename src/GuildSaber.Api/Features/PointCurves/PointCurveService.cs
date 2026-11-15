@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.PointCurves.Http;
@@ -23,7 +24,13 @@ public sealed class PointCurveService(
 {
     private const int RankedMapBatchSize = 128;
     public const double SamplingTolerance = 0.001;
+    private static readonly ConditionalWeakTable<HybridCache, StrongBox<long>> _settingsVersions = new();
+    private readonly StrongBox<long> _settingsVersion =
+        _settingsVersions.GetValue(cache, static _ => new StrongBox<long>());
+
     internal sealed record Scope(Point Point, RankedMap Map, RankedMapPointCurve? Override);
+
+    internal long SettingsVersion => Volatile.Read(ref _settingsVersion.Value);
 
     public async Task<Result<PointCurveResponses.Settings, PointCurveError>> GetSettingsAsync(
         GuildId guildId, Point.PointId pointId, CancellationToken token)
@@ -51,6 +58,7 @@ public sealed class PointCurveService(
 
         // Shared settings are cached with player contexts; individual map curves are loaded separately.
         await cache.RemoveByTagAsync(ScoreAddOrUpdatePipeline.PlayerContextsCacheTag, token);
+        Interlocked.Increment(ref _settingsVersion.Value);
 
         await QueueAsync(async cancellationToken =>
         {

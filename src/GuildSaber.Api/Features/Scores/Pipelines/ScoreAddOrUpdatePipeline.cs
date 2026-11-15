@@ -103,7 +103,8 @@ public sealed class ScoreAddOrUpdatePipeline(
     public readonly record struct PipelineResult(Context[] ImpactedContextsWithPoints);
 
     public ValueTask ClearPlayerCacheAsync(PlayerId playerId, CancellationToken token = default)
-        => cache.RemoveAsync($"{ContextWithPointsForPlayerCacheKeyPrefix}{playerId}", token);
+        => cache.RemoveAsync(
+            $"{ContextWithPointsForPlayerCacheKeyPrefix}{playerId}_{pointCurves.SettingsVersion}", token);
 
     /// <remarks>
     /// There is codebase assumption that all scores going in are stored and updated by default, don't change this behavior.
@@ -116,8 +117,9 @@ public sealed class ScoreAddOrUpdatePipeline(
 
         var (rankingContext, rankedScores) = await dbContext.Database
             .CreateExecutionStrategy()
-            .ExecuteAsync((score, dbContext, scopeFactory, cache), static (state, token) =>
-                    RecalculateRankedScoresAsync(state.score, state.dbContext, state.scopeFactory, state.cache, token),
+            .ExecuteAsync((score, dbContext, scopeFactory, cache, pointCurves), static (state, token) =>
+                    RecalculateRankedScoresAsync(state.score, state.dbContext, state.scopeFactory, state.cache,
+                        state.pointCurves, token),
                 token);
 
         await MaybeQueueCurveRefreshesAsync(rankingContext, rankedScores, refreshCurveBenchmarks, pointCurves, token);
@@ -128,10 +130,12 @@ public sealed class ScoreAddOrUpdatePipeline(
     private static async Task<(ScoreRankingContext rankingContext, RankedScore[] rankedScores)>
         RecalculateRankedScoresAsync(
             ScoreUpdate update, ServerDbContext dbContext,
-            IServiceScopeFactory scopeFactory, HybridCache cache, CancellationToken token)
+            IServiceScopeFactory scopeFactory, HybridCache cache,
+            PointCurveService pointCurves, CancellationToken token)
     {
+        var settingsVersion = pointCurves.SettingsVersion;
         var (contextsWithPoints, rankedMapIds) = await GetScoreRankingTargetsAsync(
-            update.Score, dbContext, scopeFactory, cache, token
+            update.Score, settingsVersion, dbContext, scopeFactory, cache, token
         );
 
         if (rankedMapIds.Length == 0)
@@ -147,6 +151,12 @@ public sealed class ScoreAddOrUpdatePipeline(
         try
         {
             await RankedScoreUpdateRankPipeline.LockMapsAsync(rankedMapIds, dbContext, token);
+
+            // A settings update may have invalidated the snapshot while we waited for the locks.
+            var currentSettingsVersion = pointCurves.SettingsVersion;
+            if (settingsVersion != currentSettingsVersion)
+                contextsWithPoints = await GetContextWithPointsForPlayerAsync(
+                    update.Score.PlayerId, currentSettingsVersion, cache, scopeFactory, token);
 
             var rankingContext = await PrepareScoreRankingContextAsync(
                 update, rankedMapIds, contextsWithPoints, dbContext, token);
@@ -184,10 +194,11 @@ public sealed class ScoreAddOrUpdatePipeline(
     }
 
     private static async Task<(Context[] ContextsWithPoints, RankedMapId[] RankedMapIds)> GetScoreRankingTargetsAsync(
-        AbstractScore score, ServerDbContext dbContext, IServiceScopeFactory scopeFactory,
+        AbstractScore score, long settingsVersion, ServerDbContext dbContext, IServiceScopeFactory scopeFactory,
         HybridCache cache, CancellationToken token)
     {
-        var contextsWithPoints = await GetContextWithPointsForPlayerAsync(score.PlayerId, cache, scopeFactory, token);
+        var contextsWithPoints = await GetContextWithPointsForPlayerAsync(
+            score.PlayerId, settingsVersion, cache, scopeFactory, token);
 
         if (contextsWithPoints.Length == 0)
             return (contextsWithPoints, []);
@@ -782,9 +793,12 @@ public sealed class ScoreAddOrUpdatePipeline(
         return rankedScore;
     }
 
+    // Versioned keys keep late cache fills isolated from current settings.
     private static ValueTask<Context[]> GetContextWithPointsForPlayerAsync(
-        PlayerId playerId, HybridCache cache, IServiceScopeFactory scopeFactory, CancellationToken token)
-        => cache.GetOrCreateAsync($"{ContextWithPointsForPlayerCacheKeyPrefix}{playerId}", (scopeFactory, playerId),
+        PlayerId playerId, long settingsVersion, HybridCache cache, IServiceScopeFactory scopeFactory,
+        CancellationToken token)
+        => cache.GetOrCreateAsync($"{ContextWithPointsForPlayerCacheKeyPrefix}{playerId}_{settingsVersion}",
+            (scopeFactory, playerId),
             async static (state, cancellationToken) =>
             {
                 await using var scope = state.scopeFactory.CreateAsyncScope();

@@ -1,6 +1,8 @@
 using System.Data.Common;
 using AwesomeAssertions;
+using GuildSaber.Api.Features.Guilds.Members.Pipelines;
 using GuildSaber.Api.Features.PointCurves;
+using GuildSaber.Api.Features.PointCurves.Http;
 using GuildSaber.Api.Features.RankedScores;
 using GuildSaber.Api.Features.RankedScores.Pipelines;
 using GuildSaber.Api.Features.Scores.Pipelines;
@@ -33,6 +35,16 @@ public class ScoreWriteConcurrencyTests
             => throw new NotSupportedException();
     }
 
+    private sealed class InlineQueue : IHeavyBackgroundTaskQueue
+    {
+        public ValueTask QueueBackgroundWorkItemAsync(
+            Func<CancellationToken, ValueTask> workItem, CancellationToken token = default)
+            => workItem(token);
+
+        public ValueTask<Func<CancellationToken, ValueTask>> DequeueAsync(CancellationToken token)
+            => throw new NotSupportedException();
+    }
+
     private sealed class WritePause : DbCommandInterceptor
     {
         public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -53,20 +65,22 @@ public class ScoreWriteConcurrencyTests
     private sealed class LockProbe : DbCommandInterceptor
     {
         public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource? Release { get; init; }
         public int CandidateReads { get; private set; }
         public int RankWrites { get; private set; }
         public bool UsedTransaction { get; private set; }
 
-        public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
+        public override async ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
             DbCommand command, CommandEventData eventData, InterceptionResult<int> result,
             CancellationToken cancellationToken = default)
         {
             UsedTransaction |= eventData.Context?.Database.CurrentTransaction is not null;
 
-            if (command.CommandText.Contains("pg_advisory_xact_lock", StringComparison.Ordinal))
-                Entered.TrySetResult();
+            if (command.CommandText.Contains("pg_advisory_xact_lock", StringComparison.Ordinal)
+                && Entered.TrySetResult() && Release is { } release)
+                await release.Task.WaitAsync(cancellationToken);
 
-            return ValueTask.FromResult(result);
+            return result;
         }
 
         public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
@@ -87,6 +101,24 @@ public class ScoreWriteConcurrencyTests
         {
             if (command.CommandText.Contains("DENSE_RANK()", StringComparison.Ordinal)) RankWrites += result;
             return ValueTask.FromResult(result);
+        }
+    }
+
+    private sealed class ContextReadPause : DbCommandInterceptor
+    {
+        public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public override async ValueTask<DbDataReader> ReaderExecutedAsync(
+            DbCommand command, CommandExecutedEventData eventData, DbDataReader result,
+            CancellationToken cancellationToken = default)
+        {
+            if (command.CommandText.Contains("FROM \"ContextMembers\"", StringComparison.Ordinal)
+                && command.CommandText.Contains("\"Points\"", StringComparison.Ordinal)
+                && Entered.TrySetResult())
+                await Release.Task.WaitAsync(cancellationToken);
+
+            return result;
         }
     }
 
@@ -111,16 +143,21 @@ public class ScoreWriteConcurrencyTests
     }
 
     private static ServiceProvider Services(
-        PointCurveTestDatabase database, DbCommandInterceptor? interceptor = null, bool retry = false)
+        PointCurveTestDatabase database, DbCommandInterceptor? interceptor = null, bool retry = false,
+        IHeavyBackgroundTaskQueue? queue = null)
         => new ServiceCollection()
             .AddLogging()
             .AddHybridCache()
             .Services
             .AddSingleton(TimeProvider.System)
-            .AddSingleton<IHeavyBackgroundTaskQueue>(new UnusedQueue())
+            .AddSingleton<IHeavyBackgroundTaskQueue>(queue ?? new UnusedQueue())
             .AddScoped(_ => database.CreateContext(interceptor, retry))
             .AddScoped<PointCurveService>()
             .AddTransient<ScoreAddOrUpdatePipeline>()
+            .AddTransient<MapPointCurvePipeline>()
+            .AddTransient<MemberPointStatsPipeline>()
+            .AddTransient<MemberStatsPipeline>()
+            .AddTransient<MemberAchievementStatsPipeline>()
             .BuildServiceProvider();
 
     [Test]
@@ -286,6 +323,98 @@ public class ScoreWriteConcurrencyTests
         selected.Rank.Should().Be(1);
         (await database.Context.Scores.CountAsync()).Should().Be(1);
         scope.ServiceProvider.GetRequiredService<ServerDbContext>().ChangeTracker.HasChanges().Should().BeFalse();
+    }
+
+    [Test]
+    [Arguments(PointCurvePolicy.Shared)]
+    [Arguments(PointCurvePolicy.EditableMapCurve)]
+    [UsedImplicitly(Reason = "TUnit invokes this method on a test instance.")]
+    public async Task WaitingScore_ShouldPreserveACompletedSettingsRecalculation(PointCurvePolicy policy)
+    {
+        await using var database = await PointCurveTestDatabase.CreateAsync();
+        var raw = await database.AddScoreAsync(1, 600);
+        var probe = new LockProbe
+        {
+            Release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)
+        };
+        await using var provider = Services(database, probe, queue: new InlineQueue());
+        await using var scope = provider.CreateAsyncScope();
+        await using var settingsScope = provider.CreateAsyncScope();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        var waiting = scope.ServiceProvider.GetRequiredService<ScoreAddOrUpdatePipeline>()
+            .ExecuteAsync(raw, token: timeout.Token);
+
+        try
+        {
+            await probe.Entered.Task.WaitAsync(timeout.Token);
+
+            (await settingsScope.ServiceProvider.GetRequiredService<PointCurveService>()
+                .UpdateSettingsAsync(new GuildId(2), _point,
+                    new PointCurveRequests.UpdateSettings(
+                        [new(0, 200), new(32, 200)], [new(0, 0), new(1, 1)], 0.5,
+                        policy == PointCurvePolicy.Shared
+                            ? new PointCurveRequests.Policy.Shared()
+                            : new PointCurveRequests.Policy.EditableMapCurve()), timeout.Token))
+                .IsSuccess.Should().BeTrue();
+
+            ((float)(await database.Context.PointGivingRankedScores.SingleAsync(timeout.Token)).RawPoints)
+                .Should().Be(260);
+        }
+        finally
+        {
+            probe.Release.TrySetResult();
+            await waiting;
+        }
+
+        ((float)(await database.Context.PointGivingRankedScores.SingleAsync(timeout.Token)).RawPoints)
+            .Should().Be(260);
+        (await waiting).ImpactedContextsWithPoints.Single().Points.Single().CurveSettings.AccuracyBonusRatio
+            .Should().Be(0.5);
+    }
+
+    [Test]
+    [Arguments(PointCurvePolicy.Shared)]
+    [Arguments(PointCurvePolicy.EditableMapCurve)]
+    [UsedImplicitly(Reason = "TUnit invokes this method on a test instance.")]
+    public async Task LateCacheFill_ShouldPreserveACompletedSettingsRecalculation(PointCurvePolicy policy)
+    {
+        await using var database = await PointCurveTestDatabase.CreateAsync();
+        var raw = await database.AddScoreAsync(1, 600);
+        var pause = new ContextReadPause();
+        await using var provider = Services(database, pause, queue: new InlineQueue());
+        await using var scope = provider.CreateAsyncScope();
+        await using var settingsScope = provider.CreateAsyncScope();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        var scores = scope.ServiceProvider.GetRequiredService<ScoreAddOrUpdatePipeline>();
+        var waiting = scores.ExecuteAsync(raw, token: timeout.Token);
+
+        try
+        {
+            await pause.Entered.Task.WaitAsync(timeout.Token);
+
+            (await settingsScope.ServiceProvider.GetRequiredService<PointCurveService>()
+                .UpdateSettingsAsync(new GuildId(2), _point,
+                    new PointCurveRequests.UpdateSettings(
+                        [new(0, 200), new(32, 200)], [new(0, 0), new(1, 1)], 0.5,
+                        policy == PointCurvePolicy.Shared
+                            ? new PointCurveRequests.Policy.Shared()
+                            : new PointCurveRequests.Policy.EditableMapCurve()), timeout.Token))
+                .IsSuccess.Should().BeTrue();
+
+            ((float)(await database.Context.PointGivingRankedScores.SingleAsync(timeout.Token)).RawPoints)
+                .Should().Be(260);
+        }
+        finally
+        {
+            pause.Release.TrySetResult();
+            await waiting;
+        }
+
+        ((float)(await database.Context.PointGivingRankedScores.SingleAsync(timeout.Token)).RawPoints)
+            .Should().Be(260);
+        await scores.ExecuteAsync(raw, token: timeout.Token);
+        ((float)(await database.Context.PointGivingRankedScores.SingleAsync(timeout.Token)).RawPoints)
+            .Should().Be(260);
     }
 
     [Test]
