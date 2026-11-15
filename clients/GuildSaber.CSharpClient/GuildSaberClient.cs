@@ -165,7 +165,7 @@ public class GuildSaberClient : IDisposable
     /// Gets the achievement client for interacting with achievement endpoints.
     /// </summary>
     public AchievementClient Achievements
-        => field ??= new AchievementClient(HttpClient, _cdnBaseUri, _jsonOptions);
+        => field ??= new AchievementClient(HttpClient, _cdnBaseUri, _authenticationHeader, _jsonOptions);
 
     /// <inheritdoc />
     public void Dispose()

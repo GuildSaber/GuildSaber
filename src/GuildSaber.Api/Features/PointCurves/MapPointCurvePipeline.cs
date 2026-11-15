@@ -52,7 +52,7 @@ public sealed class MapPointCurvePipeline(
         }
 
         if (refreshMemberStats)
-            await memberStatsPipeline.ExecuteAsync(context, Players(), refreshAchievements: false, token);
+            await memberStatsPipeline.ExecuteAsync(context, Players(), refreshAchievements: false, token: token);
 
         return;
 

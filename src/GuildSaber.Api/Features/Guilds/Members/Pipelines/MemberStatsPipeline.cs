@@ -14,7 +14,7 @@ public sealed class MemberStatsPipeline(
     private const int ContextBatchSize = 128;
 
     public async Task ExecuteAsync(
-        Context context, IQueryable<PlayerId> candidates, bool refreshAchievements = true,
+        Context context, IQueryable<PlayerId> candidates, bool refreshAchievements = true, bool refreshPoints = true,
         CancellationToken token = default)
     {
         var cursor = 0;
@@ -34,7 +34,8 @@ public sealed class MemberStatsPipeline(
 
             foreach (var player in players)
             {
-                await pointStatsPipeline.ExecuteAsync(player, context, token);
+                if (refreshPoints)
+                    await pointStatsPipeline.ExecuteAsync(player, context, token);
 
                 if (refreshAchievements)
                     foreach (var point in context.Points)

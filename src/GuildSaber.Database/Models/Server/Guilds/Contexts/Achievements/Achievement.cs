@@ -23,7 +23,7 @@ public closed class Achievement(
     public AchievementId Id { get; init; } = id;
     public GuildId GuildId { get; init; } = guildId;
     public ContextId ContextId { get; init; } = contextId;
-    public CategoryId? CategoryId { get; init; } = categoryId;
+    public CategoryId? CategoryId { get; set; } = categoryId;
 
     public AchievementInfo Info { get; set; } = info;
     public AchievementDiscordBindings DiscordBindings { get; set; } = discordBindings;

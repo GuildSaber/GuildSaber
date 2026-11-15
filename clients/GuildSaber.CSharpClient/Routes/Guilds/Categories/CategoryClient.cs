@@ -4,6 +4,7 @@ using System.Text.Json;
 using CSharpFunctionalExtensions;
 using GuildSaber.Api.Features.Guilds.Categories.Http;
 using GuildSaber.Api.Shared;
+using GuildSaber.CSharpClient.Models;
 using static GuildSaber.Api.Features.Guilds.Categories.Http.CategoryResponses;
 
 namespace GuildSaber.CSharpClient.Routes.Guilds.Categories;
@@ -79,20 +80,9 @@ public sealed class CategoryClient(
     /// <param name="request">The category creation request.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing the created category.</returns>
-    public async Task<Result<Category>> CreateAsync(
+    public Task<Result<Category>> CreateAsync(
         GuildId guildId, CategoryRequests.CreateCategory request, CancellationToken token = default)
-        => await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Post, $"guilds/{guildId}/categories")
-            {
-                Headers = { Authorization = authenticationHeader },
-                Content = JsonContent.Create(request, options: jsonOptions)
-            }, token).ConfigureAwait(false) switch
-            {
-                { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
-                    => Failure<Category>(
-                        $"Failed to create category for guild {guildId}: {(int)statusCode} ({reasonPhrase})"),
-                var response => await TryAsync(() => response.Content
-                    .ReadFromJsonAsync<Category>(jsonOptions, cancellationToken: token), token).ConfigureAwait(false)
-            };
+        => SaveAsync(HttpMethod.Post, $"guilds/{guildId}/categories", request, token);
 
     /// <summary>
     /// Updates an existing category for a guild.
@@ -102,26 +92,44 @@ public sealed class CategoryClient(
     /// <param name="request">The category update request.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A result containing the updated category.</returns>
-    public async Task<Result<Category>> UpdateAsync(
+    public Task<Result<Category>> UpdateAsync(
         GuildId guildId, CategoryId categoryId, CategoryRequests.UpdateCategory request,
         CancellationToken token = default)
-        => await httpClient.SendAsync(
-                new HttpRequestMessage(HttpMethod.Put, $"guilds/{guildId}/categories/{categoryId}")
-                {
-                    Headers = { Authorization = authenticationHeader },
-                    Content = JsonContent.Create(request, options: jsonOptions)
-                }, token).ConfigureAwait(false) switch
-            {
-                { IsSuccessStatusCode: false, StatusCode: var statusCode, ReasonPhrase: var reasonPhrase }
-                    => Failure<Category>(
-                        $"Failed to update category {categoryId} for guild {guildId}: {(int)statusCode} ({reasonPhrase})"),
-                var response => await TryAsync(() => response.Content
-                    .ReadFromJsonAsync<Category>(jsonOptions, cancellationToken: token), token).ConfigureAwait(false)
-            };
+        => SaveAsync(HttpMethod.Put, $"guilds/{guildId}/categories/{categoryId}", request, token);
+
+    private async Task<Result<Category>> SaveAsync<T>(
+        HttpMethod method, string path, T request, CancellationToken token)
+    {
+        using var message = new HttpRequestMessage(method, path);
+        message.Headers.Authorization = authenticationHeader;
+        message.Content = JsonContent.Create(request, options: jsonOptions);
+        using var response = await httpClient.SendAsync(message, token).ConfigureAwait(false);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return Failure<Category>("This category or its guild no longer exists.");
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>(jsonOptions, token)
+                .ConfigureAwait(false);
+            return Failure<Category>(problem?.GetMessage() ?? "The category name or description is invalid.");
+        }
+
+        return response.IsSuccessStatusCode
+            ? await ReadCategoryAsync(response.Content, token).ConfigureAwait(false)
+            : Failure<Category>($"Failed to save category: {(int)response.StatusCode} ({response.ReasonPhrase})");
+    }
+
+    private Task<Result<Category>> ReadCategoryAsync(HttpContent content, CancellationToken token)
+        => TryAsync(() => content.ReadFromJsonAsync<Category>(jsonOptions, token), token);
 
     /// <summary>
     /// Deletes a category from a guild.
     /// </summary>
+    /// <remarks>
+    /// Also deletes its achievements across the guild's contexts and removes category associations and member stats.
+    /// Proposal history retains its category and achievement snapshots.
+    /// </remarks>
     /// <param name="guildId">The ID of the guild the category belongs to.</param>
     /// <param name="categoryId">The ID of the category to delete.</param>
     /// <param name="token">Cancellation token.</param>

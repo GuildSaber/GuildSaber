@@ -48,20 +48,23 @@ public class CategoryEndpoints : IEndpoints
             .WithSummary("Create a category for a guild.")
             .WithDescription("Create a category for a guild by its Id.")
             .ProducesProblem(statusCode: StatusCodes.Status400BadRequest)
-            .RequireGuildPermission(EPermission.RankingTeam);
+            .RequireAnyGuildPermission(EPermission.RankingTeam | EPermission.GuildLeader);
 
         guildsGroup.MapPut("/{categoryId}", UpdateCategoryAsync)
             .WithName("UpdateCategory")
             .WithSummary("Update a category of a guild.")
             .WithDescription("Update a category of a guild by its Id.")
             .ProducesProblem(statusCode: StatusCodes.Status400BadRequest)
-            .RequireGuildPermission(EPermission.RankingTeam);
+            .RequireAnyGuildPermission(EPermission.RankingTeam | EPermission.GuildLeader);
 
         guildsGroup.MapDelete("/{categoryId}", DeleteCategoryAsync)
             .WithName("DeleteCategory")
             .WithSummary("Delete a category of a guild.")
-            .WithDescription("Delete a category of a guild by its Id.")
-            .RequireGuildPermission(EPermission.RankingTeam);
+            .WithDescription(
+                "Delete a category and its achievements across the guild's contexts. " +
+                "Ranked-map category associations and category-specific member stats are removed. " +
+                "Proposal history retains its category and achievement snapshots.")
+            .RequireAnyGuildPermission(EPermission.RankingTeam | EPermission.GuildLeader);
     }
 
     /* For later cover and banner image upload. Perhaps FileUploadCollection could also be investigated..

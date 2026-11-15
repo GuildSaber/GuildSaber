@@ -28,7 +28,8 @@ public static class AchievementMappers
                         achievement.IsLocking),
                 achievement.UnlockXp,
                 ((RankedMapListAchievement)achievement).RequiredPassCount,
-                ((RankedMapListAchievement)achievement).RankedMaps.Count)
+                ((RankedMapListAchievement)achievement).RankedMaps.Count(map => achievement.CategoryId == null ||
+                    map.Categories.Any(category => category.Id == achievement.CategoryId.Value)))
             : achievement is DiffStarAchievement
                 ? new AchievementResponses.Achievement.DiffStarAchievement(
                     achievement.Id.Value,

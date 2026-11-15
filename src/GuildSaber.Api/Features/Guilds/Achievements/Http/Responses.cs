@@ -7,7 +7,7 @@ public static class AchievementResponses
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
     [JsonDerivedType(typeof(Ordered), "Ordered")]
     [JsonDerivedType(typeof(Unordered), "Unordered")]
-    public abstract record AchievementProgression
+    public closed record AchievementProgression
     {
         public sealed record Ordered(
             uint Order,
@@ -19,6 +19,7 @@ public static class AchievementResponses
             public Unordered() { }
 
             // Keeps EF Core from treating this parameterless response variant as a captured projection constant.
+            // ReSharper disable once UnusedParameter.Local
             internal Unordered(int _) { }
         }
     }
@@ -27,7 +28,7 @@ public static class AchievementResponses
     [JsonDerivedType(typeof(RankedMapListAchievement), "RankedMapList")]
     [JsonDerivedType(typeof(DiffStarAchievement), "DiffStar")]
     [JsonDerivedType(typeof(AccStarAchievement), "AccStar")]
-    public abstract record Achievement(
+    public closed record Achievement(
         int Id,
         GuildId GuildId,
         ContextId ContextId,
