@@ -57,6 +57,7 @@ public class ServerDbContext : DbContext
     public DbSet<MapRequestThreadBoost> MapRequestThreadBoosts { get; set; }
 
     public DbSet<MapProposal> MapProposals { get; set; }
+    public DbSet<MapProposalChange> MapProposalChanges { get; set; }
     public DbSet<MapProposalVersion> MapProposalVersions { get; set; }
     public DbSet<MapProposalCategory> MapProposalCategories { get; set; }
     public DbSet<MapProposalAchievement> MapProposalAchievements { get; set; }

@@ -1,8 +1,6 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using GuildSaber.Api.Features.RankedMaps.Http;
-#if NET10_0_OR_GREATER
-using System.ComponentModel.DataAnnotations;
-#endif
 
 namespace GuildSaber.Api.Features.MapRequests.Http;
 
@@ -30,9 +28,12 @@ public static class MapProposalRequests
     /// </param>
     public record struct Filters(
         [property: FromQuery(Name = "search")] string? Search = null,
-        [property: FromQuery(Name = "isRevision")] bool? IsRevision = null,
-        [property: FromQuery(Name = "isDraft")] bool? IsDraft = null,
-        [property: FromQuery(Name = "isBoostedByMe")] bool? IsBoostedByMe = null
+        [property: FromQuery(Name = "isRevision")]
+        bool? IsRevision = null,
+        [property: FromQuery(Name = "isDraft")]
+        bool? IsDraft = null,
+        [property: FromQuery(Name = "isBoostedByMe")]
+        bool? IsBoostedByMe = null
     );
 
     /// <summary>
@@ -43,11 +44,17 @@ public static class MapProposalRequests
     /// <param name="Difficulty">Difficulty within the selected version and characteristic.</param>
     public record struct MatchFilters(
         [property: FromQuery(Name = "hash")] SongHash Hash,
-        [property: FromQuery(Name = "characteristic")] string Characteristic,
-        [property: FromQuery(Name = "difficulty")] EDifficulty Difficulty
+        [property: FromQuery(Name = "characteristic")]
+        string Characteristic,
+        [property: FromQuery(Name = "difficulty")]
+        EDifficulty Difficulty
     );
 
-    public enum EMapThreadSorter { CreatedAt, Id }
+    public enum EMapThreadSorter
+    {
+        CreatedAt,
+        Id
+    }
 
     /// <summary>
     /// Duplicate acknowledgement when publishing a draft.
@@ -123,40 +130,48 @@ public static class MapProposalRequests
     [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
     public sealed record RankingTeamVote([property: JsonRequired] bool IsPositive, string? Reason);
 
-    /// <summary>
-    /// Complete proposed definition, not a patch. Creates a private draft without publishing it to the queue.
-    /// Revising a private draft saves a replacement through the replace endpoint and deletes the original atomically.
-    /// Withdraw submitted proposals and create another variant to change a published definition.
-    /// </summary>
-    /// <param name="MapVersions">
-    /// At least one map version. Each resolved song difficulty and play-mode combination must be unique.
-    /// Song versions and leaderboard IDs are resolved during draft creation: a BeatLeader leaderboard is required,
-    /// but a missing ScoreSaber leaderboard does not prevent creation.
-    /// </param>
-    /// <param name="Requirements">Complete score requirements. Send an empty object to use their defaults.</param>
-    /// <param name="Rating">
-    /// Required rating object. Either star rating may be null or omitted to calculate it when the draft is submitted.
-    /// Calculation failure prevents submission. No zero-value fallback is used.
-    /// </param>
-    /// <param name="CategoryIds">
-    /// Distinct category IDs from the thread's guild. Required even when empty. An empty array proposes no categories.
-    /// </param>
-    /// <param name="AchievementIds">
-    /// Distinct ranked-map-list achievement IDs from the thread's context. Required even when empty.
-    /// Star-based achievements are matched dynamically and must not be supplied here.
-    /// </param>
-    /// <param name="Comment">Optional author comment retained with the proposal, up to 2000 characters.</param>
-    public sealed record CreateDraft(
-        [property: JsonRequired] MapVersionInput[] MapVersions,
-        [property: JsonRequired] RankedMapRequests.RankedMapRequirements Requirements,
-        [property: JsonRequired] RankedMapRequests.ManualRating Rating,
-        [property: JsonRequired] CategoryId[] CategoryIds,
-        [property: JsonRequired] int[] AchievementIds,
-#if NET10_0_OR_GREATER
-        [property: MaxLength(2000)]
-#endif
-        string? Comment = null
-    );
+    /// <summary>A ranking definition or an unranking request to save as a private draft.</summary>
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
+    [JsonDerivedType(typeof(Rank), "Rank")]
+    [JsonDerivedType(typeof(Unrank), "Unrank")]
+    public closed record CreateDraft
+    {
+        /// <summary>
+        /// Complete proposed definition, not a patch. Creates a private draft without publishing it to the queue.
+        /// Revising a private draft saves a replacement through the replace endpoint and deletes the original atomically.
+        /// Withdraw submitted proposals and create another variant to change a published definition.
+        /// </summary>
+        /// <param name="MapVersions">
+        /// At least one map version. Each resolved song difficulty and play-mode combination must be unique.
+        /// Song versions and leaderboard IDs are resolved during draft creation: a BeatLeader leaderboard is required,
+        /// but a missing ScoreSaber leaderboard does not prevent creation.
+        /// </param>
+        /// <param name="Requirements">Complete score requirements. Send an empty object to use their defaults.</param>
+        /// <param name="Rating">
+        /// Required rating object. Either star rating may be null or omitted to calculate it when the draft is submitted.
+        /// Calculation failure prevents submission. No zero-value fallback is used.
+        /// </param>
+        /// <param name="CategoryIds">
+        /// Distinct category IDs from the thread's guild. Required even when empty. An empty array proposes no categories.
+        /// </param>
+        /// <param name="AchievementIds">
+        /// Distinct ranked-map-list achievement IDs from the thread's context. Required even when empty.
+        /// Star-based achievements are matched dynamically and must not be supplied here.
+        /// </param>
+        /// <param name="Comment">Optional author comment retained with the proposal, up to 2000 characters.</param>
+        public sealed record Rank(
+            [property: JsonRequired] MapVersionInput[] MapVersions,
+            [property: JsonRequired] RankedMapRequests.RankedMapRequirements Requirements,
+            [property: JsonRequired] RankedMapRequests.ManualRating Rating,
+            [property: JsonRequired] CategoryId[] CategoryIds,
+            [property: JsonRequired] int[] AchievementIds,
+            [property: MaxLength(2000)] string? Comment = null
+        ) : CreateDraft;
+
+        /// <summary>Request removal of the current ranked map in an existing thread.</summary>
+        /// <param name="Reason">Explanation retained with the proposal, up to 2000 characters.</param>
+        public sealed record Unrank([property: Required, MaxLength(2000)] string Reason) : CreateDraft;
+    }
 
     /// <summary>
     /// A song difficulty and play mode to include in the proposed ranked map.

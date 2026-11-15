@@ -5,6 +5,7 @@ using GuildSaber.Api.Features.MapRequests.Settings;
 using GuildSaber.Api.Shared;
 using GuildSaber.Database.Contexts.Server;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals;
+using GuildSaber.Database.Models.Server.MapRequests.Proposals.Snapshots;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals.Types;
 using GuildSaber.Database.Models.Server.MapRequests.Votes;
 using Microsoft.EntityFrameworkCore;
@@ -103,17 +104,17 @@ public sealed class MapRequestQueries(
         ContextId contextId, PlayerId? viewer, MatchFilters filters, EMapThreadSorter sortBy, EOrder order,
         int page, int pageSize, CancellationToken token)
     {
-        var proposals = dbContext.MapProposals.Where(VisibleTo(viewer))
-            .Where(x => x.MapVersions.Any(version => version.SongDifficulty.Song.Hash == filters.Hash
-                                                     && version.SongDifficulty.GameMode.Name == filters.Characteristic
-                                                     && version.SongDifficulty.Difficulty == filters.Difficulty));
+        var proposals = dbContext.MapProposals.AsExpandable().Where(VisibleTo(viewer))
+            .WhereVersionMatches(version => version.SongDifficulty.Song.Hash == filters.Hash
+                                            && version.SongDifficulty.GameMode.Name == filters.Characteristic
+                                            && version.SongDifficulty.Difficulty == filters.Difficulty);
         var maps = dbContext.RankedMaps.Where(x => x.ContextId == contextId
                                                    && x.MapVersions.Any(version
                                                        => version.SongDifficulty.Song.Hash == filters.Hash
                                                           && version.SongDifficulty.GameMode.Name ==
                                                           filters.Characteristic
                                                           && version.SongDifficulty.Difficulty == filters.Difficulty));
-        var query = dbContext.MapRequestThreads.Where(x => x.ContextId == contextId)
+        var query = dbContext.MapRequestThreads.AsExpandable().Where(x => x.ContextId == contextId)
             .Select(x => new
             {
                 Thread = x,
@@ -165,9 +166,11 @@ public sealed class MapRequestQueries(
             {
                 Drafts = x.Count(proposal => proposal is DraftProposal),
                 RankingRequests =
-                    x.Count(proposal => proposal is SubmittedProposal && proposal.Thread.RankedMap == null),
+                    x.Count(proposal => proposal is SubmittedProposal && proposal.Change is MapProposalChange.Rank
+                                                                      && proposal.Thread.RankedMap == null),
                 RevisionRequests = x.Count(proposal
-                    => proposal is SubmittedProposal && proposal.Thread.RankedMap != null)
+                    => proposal is SubmittedProposal
+                       && (proposal.Change is MapProposalChange.Unrank || proposal.Thread.RankedMap != null))
             })
             .SingleOrDefaultAsync(token);
 
@@ -201,8 +204,16 @@ public static class MapRequestQueryExtensions
                 query = query.Where(x => (viewer != null && x.Thread.Boosts.Any(boost => boost.PlayerId == viewer))
                                          == isBoostedByMe);
 
-            return query.ApplyMapSearch(filters.Search);
+            return query.AsExpandable().ApplyMapSearch(filters.Search);
         }
+
+        public IQueryable<MapProposal> WhereVersionMatches(Expression<Func<MapProposalVersion, bool>> matches)
+            => query.Where(proposal =>
+                proposal.Change is MapProposalChange.Rank
+                && ((MapProposalChange.Rank)proposal.Change).MapVersions.AsQueryable().Any(matches)
+                || proposal.Change is MapProposalChange.Unrank
+                && ((MapProposalChange.Rank)((MapProposalChange.Unrank)proposal.Change).TargetAcceptedProposal.Change)
+                .MapVersions.AsQueryable().Any(matches));
 
         private IQueryable<MapProposal> ApplyMapSearch(string? search)
         {
@@ -213,20 +224,19 @@ public static class MapRequestQueryExtensions
             {
                 case SongHash.ExactLength:
                     search = search.ToLowerInvariant();
-                    return query.Where(x => x.MapVersions.Any(version => version.SongDifficulty.Song.Hash == search));
+                    return query.WhereVersionMatches(version => version.SongDifficulty.Song.Hash == search);
                 case >= BeatSaverKey.BsrPrefixLength and <= BeatSaverKey.BsrPrefixLength + BeatSaverKey.MaxLength
                     when search.StartsWith("!bsr "):
                     search = search[5..];
-                    return query.Where(x => x.MapVersions
-                        .Any(version => version.SongDifficulty.Song.BeatSaverKey == search));
+                    return query.WhereVersionMatches(version => version.SongDifficulty.Song.BeatSaverKey == search);
                 default:
-                    return query.Where(x => x.MapVersions.Any(version =>
+                    return query.WhereVersionMatches(version =>
                         EF.Functions.ILike(version.SongDifficulty.Song.Info.SongName, $"%{search}%") ||
                         EF.Functions.ILike(version.SongDifficulty.Song.Info.SongAuthorName, $"%{search}%") ||
                         EF.Functions.ILike(version.SongDifficulty.Song.Info.MapperName, $"%{search}%") ||
                         search.Length <= BeatSaverKey.MaxLength
                         && version.SongDifficulty.Song.BeatSaverKey != null
-                        && EF.Functions.ILike(version.SongDifficulty.Song.BeatSaverKey, $"%{search}%")));
+                        && EF.Functions.ILike(version.SongDifficulty.Song.BeatSaverKey, $"%{search}%"));
             }
         }
 

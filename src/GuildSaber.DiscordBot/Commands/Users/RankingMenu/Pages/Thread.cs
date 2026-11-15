@@ -12,29 +12,43 @@ namespace GuildSaber.DiscordBot.Commands.Users;
 
 public partial class UserModuleSlash
 {
-    public enum ERankingThreadTab { Open, History, Drafts, Current }
+    public enum ERankingThreadTab
+    {
+        Open,
+        History,
+        Drafts,
+        Current
+    }
 
-    public enum ERankingThreadOrigin { Queue, Drafts, Boosts, Search, Matches }
+    public enum ERankingThreadOrigin
+    {
+        Queue,
+        Drafts,
+        Boosts,
+        Search,
+        Matches
+    }
 
     [ComponentInteraction("ranking_map_thread:*,*")]
-    public async Task OpenRankedMapThread(ContextId contextId, MapRequestThreadId threadId)
-    {
-        await ((SocketMessageComponent)Context.Interaction).DeferLoadingAsync(ephemeral: true);
-        await ShowRankingThreadAsync(contextId, threadId,
+    public Task OpenRankedMapThread(ContextId contextId, MapRequestThreadId threadId)
+        => ShowRankingThreadAsync(contextId, threadId,
             new RankingThreadNavigation(ERankingThreadTab.Current, 1, 1, 1, EMapRequestSorter.Priority,
-                ERankingThreadOrigin.Search));
-    }
+                ERankingThreadOrigin.Search), newMessage: true);
 
     [ComponentInteraction("ranking_back:*,*,*,*")]
     public async Task ReturnToRankingListAsync(
         ContextId contextId, int page, EMapRequestSorter sortBy, ERankingThreadOrigin origin)
     {
-        await DeferRankingInteractionAsync();
+        if (origin is ERankingThreadOrigin.Search or ERankingThreadOrigin.Matches)
+        {
+            await DeferRankingInteractionAsync();
+            await DeleteOriginalResponseAsync();
+            return;
+        }
 
         await (origin switch
         {
             ERankingThreadOrigin.Drafts => ShowMyRankingDraftsAsync(contextId, page),
-            ERankingThreadOrigin.Search or ERankingThreadOrigin.Matches => DeleteOriginalResponseAsync(),
             _ => UpdateCurrentMessageToRankingQueuePagedMenu(contextId, page, sortBy, origin)
         });
     }
@@ -62,15 +76,18 @@ public partial class UserModuleSlash
 
     private async Task ShowRankingThreadAsync(
         ContextId contextId, MapRequestThreadId threadId, RankingThreadNavigation navigation,
-        MapProposalId? selectedProposalId = null)
+        MapProposalId? selectedProposalId = null, bool newMessage = false)
     {
-        await DeferRankingInteractionAsync();
-
-        var guildId = await GetGuildIdAsync();
-        var (threadResult, viewerResult, allowanceResult) = await (
-            Client.Value.MapRequests.GetThreadAsync(contextId, threadId),
-            Client.Value.Players.GetExtendedAtMeAsync(),
-            Client.Value.MapRequests.GetAllowanceAsync(contextId)
+        var (guildId, (threadResult, viewerResult, allowanceResult)) = await (
+            newMessage
+                ? ((SocketMessageComponent)Context.Interaction).DeferLoadingAsync(ephemeral: true)
+                : DeferRankingInteractionAsync(),
+            GetGuildIdAsync().AsTask(),
+            (
+                Client.Value.MapRequests.GetThreadAsync(contextId, threadId),
+                Client.Value.Players.GetExtendedAtMeAsync(),
+                Client.Value.MapRequests.GetAllowanceAsync(contextId)
+            ).WhenAll()
         ).WhenAll();
 
         if (threadResult.TryGetError(out var error))
@@ -117,7 +134,7 @@ public partial class UserModuleSlash
         navigation = navigation with
         {
             VersionPage = Math.Clamp(navigation.VersionPage, 1,
-                proposals.Length == 0 ? 1 : proposals[navigation.Page - 1].Definition.MapVersions.Length)
+                proposals.Length == 0 ? 1 : proposals[navigation.Page - 1].GetPreviewDefinition().MapVersions.Length)
         };
 
         var reviewers = proposals.Length == 0
@@ -149,6 +166,8 @@ public partial class UserModuleSlash
                 "vote_requirements" => $"Acceptance needs **{error.RequiredPositiveVotes}** positive RT votes" +
                                        (error.RequireNoNegativeVotes is true ? " and no negative RT votes" : "") +
                                        $". Currently **{error.PositiveVotes}** positive and **{error.NegativeVotes}** negative.",
+                "unranking_target_changed" =>
+                    "The ranked map changed or was removed. Create a fresh unranking draft to review its current definition.",
                 "invalid_state" => "This proposal has already changed state. Its current state is shown below.",
                 _ => error.Detail ?? error.Title ?? "The request could not be completed. Please try again."
             }, ephemeral: true, allowedMentions: AllowedMentions.None);
@@ -163,16 +182,15 @@ public readonly record struct RankingThreadNavigation(
     UserModuleSlash.ERankingThreadOrigin Origin = UserModuleSlash.ERankingThreadOrigin.Queue)
 {
     public string CustomId(ContextId contextId, MapRequestThreadId threadId)
-        => $"ranking_thread:{contextId},{threadId},{(int)Tab},{Page},{VersionPage},{ListPage},{(int)SortBy},{(int)Origin}";
+        =>
+            $"ranking_thread:{contextId},{threadId},{(int)Tab},{Page},{VersionPage},{ListPage},{(int)SortBy},{(int)Origin}";
 }
 
 file static class RankingThreadView
 {
     public static Proposal.Accepted? GetCurrentProposal(ThreadResponse thread)
-        => thread.RankedMapId is null
-            ? null
-            : thread.Proposals.OfType<Proposal.Accepted>()
-                .OrderByDescending(x => x.AcceptedAt).ThenByDescending(x => x.Id.Value).FirstOrDefault();
+        => thread.Proposals.OfType<Proposal.Accepted>()
+            .OrderByDescending(x => x.AcceptedAt).ThenByDescending(x => x.Id.Value).FirstOrDefault();
 
     public static IEnumerable<Proposal> GetProposals(ThreadResponse thread, UserModuleSlash.ERankingThreadTab tab)
         => thread.Proposals.Where(x => tab switch
@@ -196,7 +214,8 @@ file static class RankingThreadView
             .WithContainer(container => container.WithAccentColor(Color.Red)
                 .WithSection(section => section
                     .WithTextDisplay(
-                        $"### {(thread.RankedMapId is null ? "New ranking" : "Ranked-map changes")} · Thread #{thread.Id}\n" +
+                        $"### {(thread.RankedMapId is not null ? "Ranked-map changes"
+                            : GetCurrentProposal(thread)?.Change is ProposalChange.Unrank ? "Unranked map" : "New ranking")} · Thread #{thread.Id}\n" +
                         $"**{thread.Proposals.OfType<Proposal.Submitted>().Count()}** open proposals · **{thread.BoostCount}** boosts")
                     .WithAccessory(new ButtonBuilder()
                         .WithLabel(thread.IsBoostedByMe ? "Release my boost" : "Boost thread")
@@ -213,7 +232,8 @@ file static class RankingThreadView
                         .WithPlaceholder("Choose proposals to view");
 
                     if (GetCurrentProposal(thread) is not null)
-                        menu.AddOption("Current ranked map", "Current",
+                        menu.AddOption(thread.RankedMapId is null ? "Current unranked status" : "Current ranked map",
+                            "Current",
                             isDefault: navigation.Tab == UserModuleSlash.ERankingThreadTab.Current);
 
                     menu.AddOption($"Open proposals ({thread.Proposals.OfType<Proposal.Submitted>().Count()})", "Open",
@@ -236,7 +256,7 @@ file static class RankingThreadView
                 UserModuleSlash.ERankingThreadTab.History => "No proposals have been accepted or closed yet.",
                 UserModuleSlash.ERankingThreadTab.Current => "There is no current accepted proposal.",
                 _ => GetCurrentProposal(thread) is not null
-                    ? "There are no open proposals. Choose Current ranked map to fork its accepted definition."
+                    ? "There are no open proposals. Choose the current status to prepare a ranking draft."
                     : "There are no open proposals. Choose History to fork a previous definition."
             });
         }
@@ -247,19 +267,25 @@ file static class RankingThreadView
 
             builder.WithContainer(proposal.ToContainerBuilder(current, navigation.VersionPage))
                 .WithTextDisplay($"Proposal **{navigation.Page}**/{proposals.Length} · " +
-                                 $"Map version **{navigation.VersionPage}**/{proposal.Definition.MapVersions.Length}");
+                                 $"Map version **{navigation.VersionPage}**/{proposal.GetPreviewDefinition().MapVersions.Length}");
 
-            if (proposal.Definition.MapVersions.Length > 1)
+            if (proposal.GetPreviewDefinition().MapVersions.Length > 1)
                 builder.WithActionRow(row => row
                     .WithButton("Previous map", (navigation with { VersionPage = navigation.VersionPage - 1 })
                         .CustomId(thread.ContextId, thread.Id), ButtonStyle.Secondary,
                         disabled: navigation.VersionPage == 1)
                     .WithButton("Next map", (navigation with { VersionPage = navigation.VersionPage + 1 })
                         .CustomId(thread.ContextId, thread.Id), ButtonStyle.Secondary,
-                        disabled: navigation.VersionPage == proposal.Definition.MapVersions.Length));
+                        disabled: navigation.VersionPage == proposal.GetPreviewDefinition().MapVersions.Length));
 
             RankingProposalActions.AddComponents(builder, thread, proposal, viewer, reviewers, guildId, allowance,
                 navigation);
+
+            if (navigation.Tab == UserModuleSlash.ERankingThreadTab.Current
+                && thread.RankedMapId is not null && viewer is not null)
+                builder.WithActionRow(row => row.WithButton("Request unranking",
+                    $"ranking_unrank:{thread.ContextId},{thread.Id},0,{navigation.ListPage},{(int)navigation.SortBy},{(int)navigation.Origin}",
+                    ButtonStyle.Danger));
         }
 
         return builder.WithActionRow(row => row

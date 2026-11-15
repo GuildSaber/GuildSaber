@@ -29,7 +29,7 @@ public class MapProposalPersistenceTests
         identity.GetTypeMapping().Converter!.ProviderClrType.Should().Be(typeof(int));
 
         var proposalLink = snapshot.GetForeignKeys()
-            .Single(x => x.PrincipalEntityType.ClrType == typeof(MapProposal));
+            .Single(x => x.PrincipalEntityType.ClrType == typeof(MapProposalChange.Rank));
         proposalLink.IsRequired.Should().BeTrue();
         proposalLink.DeleteBehavior.Should().Be(DeleteBehavior.Cascade);
     }

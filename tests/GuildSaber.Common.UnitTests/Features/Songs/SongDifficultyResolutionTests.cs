@@ -23,6 +23,7 @@ using GuildSaber.Database.Models.Server.Guilds;
 using GuildSaber.Database.Models.Server.Guilds.Achievements;
 using GuildSaber.Database.Models.Server.Guilds.Achievements.Types;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
+using GuildSaber.Database.Models.Server.MapRequests.Proposals;
 using GuildSaber.Database.Models.Server.Players;
 using GuildSaber.Database.Models.Server.RankedMaps.MapVersions.PlayModes;
 using GuildSaber.Database.Models.Server.Songs;
@@ -266,8 +267,8 @@ public class SongDifficultyResolutionTests
         {
             if (outcome == "validation") result.Should().BeOfType<DraftResponse.ValidationFailure>();
             else result.Should().BeOfType<DraftResponse.Conflict>();
-            (await db.MapProposals.SingleAsync()).Comment.Should().Be("Original draft");
-            (await db.MapProposals.SingleAsync()).Id.Should().Be(original.Id);
+            (await db.MapProposals.Include(x => x.Change).SingleAsync()).Comment.Should().Be("Original draft");
+            (await db.MapProposals.Include(x => x.Change).SingleAsync()).Id.Should().Be(original.Id);
         }
 
         (await db.MapProposals.CountAsync()).Should().Be(1);
@@ -320,13 +321,15 @@ public class SongDifficultyResolutionTests
 
         draft.Id.Value.Should().BeGreaterThan(0);
         draft.ThreadId.Value.Should().BeGreaterThan(0);
-        draft.Rating.AccStar.Should().BeNull();
-        draft.Rating.DiffStar!.Value.Value.Should().Be(5);
-        draft.Rating.IsAccStarAutoCalculated.Should().BeFalse();
-        draft.MapVersions.Should().HaveCount(2).And.OnlyContain(x => x.SongDifficultyId.Value > 0);
-        draft.MapVersions.Single(x => x.Order == 0).PlayModeName.Should().Be("Standard");
-        draft.Categories.Single().Name.Should().Be("Category");
-        draft.Achievements.Single().Name.Should().Be("Achievement");
+        ((MapProposalChange.Rank)draft.Change).Rating.AccStar.Should().BeNull();
+        ((MapProposalChange.Rank)draft.Change).Rating.DiffStar!.Value.Value.Should().Be(5);
+        ((MapProposalChange.Rank)draft.Change).Rating.IsAccStarAutoCalculated.Should().BeFalse();
+        ((MapProposalChange.Rank)draft.Change).MapVersions.Should().HaveCount(2).And
+            .OnlyContain(x => x.SongDifficultyId.Value > 0);
+        ((MapProposalChange.Rank)draft.Change).MapVersions.Single(x => x.Order == 0).PlayModeName.Should()
+            .Be("Standard");
+        ((MapProposalChange.Rank)draft.Change).Categories.Single().Name.Should().Be("Category");
+        ((MapProposalChange.Rank)draft.Change).Achievements.Single().Name.Should().Be("Achievement");
         var hashes = await db.MapProposalVersions.Where(x => x.ProposalId == draft.Id).OrderBy(x => x.Order)
             .Select(x => db.Songs.Single(song => song.Id == x.SongDifficulty.SongId).Hash).ToArrayAsync();
         hashes.Should().Equal(historical.Hash, _hash);
@@ -387,7 +390,7 @@ public class SongDifficultyResolutionTests
         (await db.SongDifficulties.AnyAsync(x => x.BLLeaderboardId != null)).Should().BeFalse();
     }
 
-    private static MapProposalRequests.CreateDraft CreateDraftRequest(
+    private static MapProposalRequests.CreateDraft.Rank CreateDraftRequest(
         params MapProposalRequests.MapVersionInput[] versions)
         => new(versions, new RankedMapRequests.RankedMapRequirements(),
             new RankedMapRequests.ManualRating(DifficultyStar: 5), [new CategoryId(1)], [1]);

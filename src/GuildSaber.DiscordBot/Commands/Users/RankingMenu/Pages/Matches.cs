@@ -1,9 +1,10 @@
 using Discord;
 using Discord.Interactions;
-using Discord.WebSocket;
 using GuildSaber.Api.Features.RankedMaps.Http;
 using GuildSaber.Api.Shared;
+using GuildSaber.Common.Helpers;
 using GuildSaber.DiscordBot.Core.Extensions;
+using RankDraft = GuildSaber.Api.Features.MapRequests.Http.MapProposalRequests.CreateDraft.Rank;
 using static GuildSaber.Api.Features.MapRequests.Http.MapProposalRequests;
 using static GuildSaber.Api.Features.MapRequests.Http.MapRequestResponses;
 
@@ -21,13 +22,15 @@ public partial class UserModuleSlash
 
     private async Task ShowNewRankingMatchesAsync(string sessionId, int page, bool prepareIfEmpty)
     {
-        await DeferRankingInteractionAsync();
         if (await GetRankingMapSelectionAsync(sessionId) is not { } selection) return;
 
         var difficulty = selection.Lookup.Difficulties[selection.DifficultyIndex];
-        if (!(await Client.Value.MapRequests.GetMatchesAsync(selection.ContextId,
-                new MatchFilters(selection.Lookup.Song.Hash, difficulty.Characteristic, difficulty.Difficulty),
-                new PaginatedRequestOptions<EMapThreadSorter>(Page: Math.Max(1, page), PageSize: 3)))
+        if (!(await (
+                DeferRankingInteractionAsync(),
+                Client.Value.MapRequests.GetMatchesAsync(selection.ContextId,
+                    new MatchFilters(selection.Lookup.Song.Hash, difficulty.Characteristic, difficulty.Difficulty),
+                    new PaginatedRequestOptions<EMapThreadSorter>(Page: Math.Max(1, page), PageSize: 3))
+            ).WhenAll())
             .TryGetValue(out var matches, out var error))
         {
             await ReportRankingErrorAsync(error);
@@ -56,19 +59,16 @@ public partial class UserModuleSlash
     }
 
     [ComponentInteraction("ranking_match_open:*,*,*")]
-    public async Task OpenMatchingRankingThreadAsync(ContextId contextId, MapRequestThreadId threadId, long proposalId)
-    {
-        await ((SocketMessageComponent)Context.Interaction).DeferLoadingAsync(ephemeral: true);
-        await ShowRankingThreadAsync(contextId, threadId,
+    public Task OpenMatchingRankingThreadAsync(ContextId contextId, MapRequestThreadId threadId, long proposalId)
+        => ShowRankingThreadAsync(contextId, threadId,
             new RankingThreadNavigation(ERankingThreadTab.Current, 1, 1, 1, EMapRequestSorter.Priority,
-                ERankingThreadOrigin.Matches), proposalId == 0 ? null : new MapProposalId(proposalId));
-    }
+                ERankingThreadOrigin.Matches), proposalId == 0 ? null : new MapProposalId(proposalId),
+            newMessage: true);
 
     [ComponentInteraction("ranking_new_draft:*")]
     public async Task StartNewRankingDraftAsync(string sessionId)
     {
-        await DeferRankingInteractionAsync();
-        if (await GetRankingMapSelectionAsync(sessionId) is not { } selection) return;
+        if (await GetRankingMapSelectionAsync(sessionId, defer: true) is not { } selection) return;
 
         if (selection.EditorId is { } previousEditorId &&
             await Cache.GetOrCreateAsync<RankingDraftEditor?>($"RankingDraftEditor_{previousEditorId}",
@@ -83,7 +83,7 @@ public partial class UserModuleSlash
         var editorId = Guid.NewGuid().ToString("N");
         await StoreDraftEditorAsync(editorId, new RankingDraftEditor(Context.User.DiscordId, selection.ContextId,
             new RankingDraftTarget.NewThread(sessionId),
-            new CreateDraft([
+            new RankDraft([
                     new MapVersionInput(new SongReference.ByHash(selection.Lookup.Song.Hash),
                         difficulty.Characteristic, difficulty.Difficulty,
                         selection.Lookup.PlayModes[selection.PlayModeIndex], 0)

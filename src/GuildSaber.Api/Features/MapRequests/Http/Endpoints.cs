@@ -24,7 +24,7 @@ public sealed class MapRequestEndpoints : IEndpoints
     {
         var group = endpoints.MapGroup("contexts/{contextId}/map-requests")
             .WithTag("Context.MapRequests",
-                description: "Thread-based ranking requests, immutable proposals, votes and boosts.");
+                description: "Thread-based ranking and unranking requests, immutable proposals, votes and boosts.");
 
         group.MapGet("/", GetQueueAsync)
             .WithOptionalAuthentication()
@@ -33,7 +33,7 @@ public sealed class MapRequestEndpoints : IEndpoints
             .WithDescription(
                 "Get map previews, submitted proposal metadata and vote counts without full definitions or individual votes. "
                 + "The preview uses the creator's latest submitted proposal, falling back to the latest submitted "
-                + "proposal by another author. Private drafts and historical proposals are excluded, including from vote counts. "
+                + "proposal by another author. Unrank previews use the targeted accepted definition. Private drafts and historical proposals are excluded, including from vote counts. "
                 + "Community and ranking-team votes are counted separately across all submitted proposals. "
                 + "Ranked threads include current ratings, minimum accuracy and category names for comparison. "
                 + "Ordering is calculated for each request, so "
@@ -88,7 +88,7 @@ public sealed class MapRequestEndpoints : IEndpoints
             .WithSummary("Get your per-context proposal usage and the configured submission, review and queue rules.")
             .WithDescription(
                 "Limits count proposals per player and context, not threads. New-ranking and revision "
-                + "proposals have separate limits. Boost allowances are global and returned by GET "
+                + "proposals have separate limits. Unranking uses the revision-request allowance. Boost allowances are global and returned by GET "
                 + "/players/@me/map-request-boosts.");
 
         group.MapPost("/", CreateThreadAsync)
@@ -96,7 +96,7 @@ public sealed class MapRequestEndpoints : IEndpoints
             .WithName("CreateMapRequest")
             .WithSummary("Create a ranking-request thread and its first private draft.")
             .WithDescription(
-                "Create a thread in this context without publishing it or ranking a map. Song versions and "
+                "Create a thread from a Rank draft. Unrank drafts require an existing ranked thread. Song versions and "
                 + "leaderboard IDs are resolved now and missing ratings are calculated on submission. The draft "
                 + "will need to be submitted and explicitly accepted before a ranked map can be created. Exceeding the "
                 + "maximum allowed draft count returns 429 with code 'draft_limit' and limit. BeatSaver rate limits return "
@@ -113,10 +113,12 @@ public sealed class MapRequestEndpoints : IEndpoints
             .AddEndpointFilter(ValidateAmendmentPermissionAsync)
             .RequireAuthorization()
             .WithName("CreateMapProposal")
-            .WithSummary("Create a private draft with a complete alternative definition in an existing thread.")
+            .WithSummary("Create a private Rank or Unrank draft in an existing thread.")
             .WithDescription(
-                "Supply a complete definition, not a patch, whether the thread already has a ranked map or "
-                + "not. The draft remains private until submitted. Competing with another author's submitted "
+                "Rank supplies a complete proposed definition. Unrank requires a currently ranked thread and a reason. "
+                + "Its target is the latest accepted Rank proposal captured at creation. Submission and acceptance "
+                + "return 409 with code 'unranking_target_changed' if that revision changes or the map is removed. "
+                + "Drafts are private until submitted. Competing with another author's submitted "
                 + "proposal may require a configured subscription tier. Ranking-team members, guild leaders and "
                 + "managers bypass that restriction.")
             .Produces<Proposal>(StatusCodes.Status201Created)
@@ -141,7 +143,8 @@ public sealed class MapRequestEndpoints : IEndpoints
             .WithName("ReplaceMapProposalDraft")
             .WithSummary("Revise your private draft by saving a replacement and deleting the original.")
             .WithDescription(
-                "Supply a complete definition. Creates a new private draft with a new ID in the same thread, "
+                "Supply a Rank definition or an Unrank reason. Unrank captures the current accepted ranking as its target. "
+                + "Creates a new private draft with a new ID in the same thread, "
                 + "then deletes the author's original draft in one transaction. A failed replacement leaves the "
                 + "original intact. Does not consume another draft allowance slot. Submitted and historical proposals "
                 + "cannot be replaced. Missing drafts and other authors' drafts return 404.")
@@ -199,15 +202,15 @@ public sealed class MapRequestEndpoints : IEndpoints
             .RequireAnyGuildPermission(EPermission.RankingTeam | EPermission.GuildLeader)
             .WithName("AcceptMapProposal")
             .WithSummary(
-                "Explicitly accept a submitted proposal and apply its complete definition to the ranked "
-                + "map.")
+                "Explicitly accept a submitted ranking change or unranking request.")
             .WithDescription(
                 "Requires ranking-team, guild-leader or manager permissions. Ranking-team vote requirements "
                 + "apply unless a guild leader or manager accepts. Community votes do not count. Acceptance "
-                + "creates or updates the ranked map, closes competing submitted proposals and releases boosts. "
+                + "applies a Rank definition or removes the Unrank target, closes competing submitted proposals and releases boosts. "
                 + "Private drafts remain open. Score/stat refresh is queued afterwards. Unmet vote requirements "
                 + "return 409 with code 'vote_requirements', positiveVotes, negativeVotes, requiredPositiveVotes "
-                + "and requireNoNegativeVotes.")
+                + "and requireNoNegativeVotes. An outdated Unrank target returns 409 with code "
+                + "'unranking_target_changed'.")
             .Produces<Acceptance>()
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -554,7 +557,8 @@ public sealed class MapRequestEndpoints : IEndpoints
                 Problem(StatusCodes.Status429TooManyRequests, "upstream_rate_limit",
                     "BeatSaver is rate limiting requests.",
                     new Dictionary<string, object?> { ["retryAfterSeconds"] = retryAfter.TotalSeconds }),
-            MapProposalDraftService.CreateResponse.Conflict => Conflict()
+            MapProposalDraftService.CreateResponse.Conflict => Conflict(),
+            MapProposalDraftService.CreateResponse.TargetChanged => TargetChanged()
         };
 
     private static async Task<IResult> SubmitAsync(
@@ -600,6 +604,7 @@ public sealed class MapRequestEndpoints : IEndpoints
                 Problem(StatusCodes.Status409Conflict, "invalid_state",
                     "The proposal is no longer in the required state."),
             MapProposalService.TransitionResponse.Conflict => Conflict(),
+            MapProposalService.TransitionResponse.TargetChanged => TargetChanged(),
             MapProposalService.TransitionResponse.LimitReached(var limit) =>
                 Problem(StatusCodes.Status429TooManyRequests, "submission_limit",
                     "The active request allowance is exhausted.",
@@ -636,11 +641,17 @@ public sealed class MapRequestEndpoints : IEndpoints
         MapProposalId proposalId, MapRequestQueries queries, ClaimsPrincipal user, CancellationToken token)
         => response switch
         {
-            MapProposalReviewService.ReviewResponse.Accepted(var proposal, var mapId, _) => TypedResults.Ok(
-                new Acceptance(
+            MapProposalReviewService.ReviewResponse.Accepted(var proposal, var mapId, _) => TypedResults.Ok<Acceptance>(
+                new Acceptance.Ranked(
                     (Proposal.Accepted)(await queries.GetProposalAsync(contextId, threadId, proposal.Id,
                         user.GetPlayerId(),
                         token))!, mapId)),
+            MapProposalReviewService.ReviewResponse.Unranked(var proposal, var removedId, _) => TypedResults
+                .Ok<Acceptance>(
+                    new Acceptance.Unranked(
+                        (Proposal.Accepted)(await queries.GetProposalAsync(contextId, threadId, proposal.Id,
+                            user.GetPlayerId(), token))!, removedId)),
+            MapProposalReviewService.ReviewResponse.TargetChanged => TargetChanged(),
             MapProposalReviewService.ReviewResponse.Denied => TypedResults.Ok(
                 await queries.GetProposalAsync(contextId, threadId, proposalId, user.GetPlayerId(), token)),
             MapProposalReviewService.ReviewResponse.NotFound => TypedResults.NotFound(),
@@ -739,6 +750,10 @@ public sealed class MapRequestEndpoints : IEndpoints
         => await queries.GetBoostsAsync(user.GetPlayerId()!.Value, token) is { } allowance
             ? TypedResults.Ok(allowance)
             : TypedResults.NotFound();
+
+    private static ProblemHttpResult TargetChanged()
+        => Problem(StatusCodes.Status409Conflict, "unranking_target_changed",
+            "The ranked map changed or was removed. Create a new unranking draft to review its current definition.");
 
     private static ProblemHttpResult Conflict() => Problem(StatusCodes.Status409Conflict, "concurrent_change",
         "The request changed concurrently. Refresh before retrying.");

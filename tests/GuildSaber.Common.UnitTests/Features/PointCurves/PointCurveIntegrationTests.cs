@@ -85,8 +85,11 @@ public class PointCurveIntegrationTests
         {
             ThreadId = map.ThreadId,
             CreatedAt = DateTimeOffset.UtcNow,
-            Requirements = map.Requirements,
-            Rating = new MapProposalRating()
+            Change = new MapProposalChange.Rank
+            {
+                Requirements = map.Requirements,
+                Rating = new MapProposalRating()
+            }
         });
 
         await database.Context.SaveChangesAsync();
@@ -94,8 +97,8 @@ public class PointCurveIntegrationTests
 
         (await database.Context.RankedMaps
             .SingleAsync()).Requirements.MinAccuracy.Should().Be(accuracy);
-        (await database.Context.MapProposals
-            .SingleAsync()).Requirements.MinAccuracy.Should().Be(accuracy);
+        ((MapProposalChange.Rank)(await database.Context.MapProposals.Include(x => x.Change)
+            .SingleAsync()).Change).Requirements.MinAccuracy.Should().Be(accuracy);
     }
 
     [Test]

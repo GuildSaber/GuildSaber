@@ -14,6 +14,7 @@ using GuildSaber.Database.Models.Mappers;
 using GuildSaber.Database.Models.Server.Guilds.Achievements;
 using GuildSaber.Database.Models.Server.Guilds.Achievements.Types;
 using GuildSaber.Database.Models.Server.Guilds.Categories;
+using GuildSaber.Database.Models.Server.MapRequests.Proposals;
 using GuildSaber.Database.Models.Server.MapRequests.Proposals.Types;
 using GuildSaber.Database.Models.Server.RankedMaps;
 using GuildSaber.Database.Models.StrongTypes;
@@ -86,6 +87,11 @@ public class LegacyGuildSaberMapImportPipeline(
                         difficulty.GameModeName!, dbContext))
                     .ToArrayAsync(token);
 
+                if (existingRankedMaps.Length == 0 && await WasUnrankedAsync(contextId,
+                        difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId.Value, difficulty.GameModeName!,
+                        token))
+                    continue;
+
                 var achievementKey = new LegacyAchievementKey(difficulty.LevelId, new LegacyCategoryId(0));
                 if (!achievementDict.TryGetValue(achievementKey, out var achievement))
                     throw new InvalidOperationException("Cannot synchronize maps without their legacy achievements.");
@@ -125,7 +131,7 @@ public class LegacyGuildSaberMapImportPipeline(
                     contextId, threadId, difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId.Value,
                     difficulty.GameModeName!, token);
 
-                var proposalRequest = new MapProposalRequests.CreateDraft(
+                var proposalRequest = new MapProposalRequests.CreateDraft.Rank(
                     MapVersions: currentMap is null
                         ?
                         [
@@ -210,6 +216,19 @@ public class LegacyGuildSaberMapImportPipeline(
         return Math.Abs(currentMap.Rating.DiffStar.Value - manualRating.DifficultyStar.Value) > 0.01f;
     }
 
+    private Task<bool> WasUnrankedAsync(
+        ContextId contextId, EDifficulty difficulty, BeatSaverKey key, string gameMode, CancellationToken token)
+        => dbContext.MapRequestThreads.Where(x => x.ContextId == contextId && x.IsLegacyImport && x.RankedMap == null)
+            .AnyAsync(thread => thread.Proposals.OfType<AcceptedProposal>()
+                .OrderByDescending(x => x.AcceptedAt).ThenByDescending(x => x.Id)
+                .Select(x => x.Change is MapProposalChange.Unrank
+                             && ((MapProposalChange.Rank)((MapProposalChange.Unrank)x.Change).TargetAcceptedProposal
+                                 .Change)
+                             .MapVersions.Any(version => version.SongDifficulty.Difficulty == difficulty
+                                                         && version.SongDifficulty.Song.BeatSaverKey == key
+                                                         && version.SongDifficulty.GameMode.Name.Contains(gameMode)))
+                .FirstOrDefault(), token);
+
     private Task<MapProposalId?> GetPendingProposalIdAsync(
         ContextId contextId, MapRequestThreadId? threadId, EDifficulty difficulty, BeatSaverKey beatSaverKey,
         string gameMode, CancellationToken token)
@@ -217,10 +236,11 @@ public class LegacyGuildSaberMapImportPipeline(
             .Where(x => x.Thread.ContextId == contextId && x.Thread.IsLegacyImport && x.AuthorId == null
                         && (x is DraftProposal || x is SubmittedProposal))
             .Where(x => threadId == null ? x.Thread.RankedMap == null : x.ThreadId == threadId)
-            .Where(x => x.MapVersions.Any(version =>
-                version.SongDifficulty.GameMode.Name.Contains(gameMode)
-                && version.SongDifficulty.Difficulty == difficulty
-                && version.SongDifficulty.Song.BeatSaverKey == beatSaverKey))
+            .Where(x => x.Change is MapProposalChange.Rank &&
+                        ((MapProposalChange.Rank)x.Change).MapVersions.Any(version =>
+                            version.SongDifficulty.GameMode.Name.Contains(gameMode)
+                            && version.SongDifficulty.Difficulty == difficulty
+                            && version.SongDifficulty.Song.BeatSaverKey == beatSaverKey))
             .OrderBy(x => x.Id)
             .Select(x => (MapProposalId?)x.Id)
             .FirstOrDefaultAsync(token);
@@ -239,7 +259,7 @@ public class LegacyGuildSaberMapImportPipeline(
 
     private async Task ImportProposalAsync(
         ContextId contextId, MapRequestThreadId? threadId, MapProposalId? proposalId,
-        MapProposalRequests.CreateDraft request, CancellationToken token)
+        MapProposalRequests.CreateDraft.Rank request, CancellationToken token)
     {
         if (proposalId is null)
         {

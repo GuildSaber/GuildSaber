@@ -195,27 +195,33 @@ public partial class MapProposalServiceTests : IDisposable
                 },
                 new DraftProposal
                 {
-                    Id = new MapProposalId(1), ThreadId = new MapRequestThreadId(1), AuthorId = new PlayerId(1),
+                    Id = default,
+                    ThreadId = new MapRequestThreadId(1),
+                    AuthorId = new PlayerId(1),
                     CreatedAt = _createdAt,
-                    Rating = rating ?? new MapProposalRating
+                    Change = new MapProposalChange.Rank
                     {
-                        AccStar = new RankedMapRating.AccuracyStar(2), DiffStar = new RankedMapRating.DifficultyStar(5)
-                    },
-                    Requirements = new RankedMapRequirements(false, false, null, 0, 0, null),
-                    MapVersions =
-                    [
-                        new MapProposalVersion
+                        Rating = rating ?? new MapProposalRating
                         {
-                            SongDifficultyId = new SongDifficultyId(1), PlayModeId = new PlayMode.PlayModeId(1),
-                            PlayModeName = "Standard"
-                        }
-                    ],
-                    Categories = [new MapProposalCategory { CategoryId = new CategoryId(1), Name = "Category" }],
-                    Achievements =
-                    [
-                        new MapProposalAchievement
-                            { AchievementId = new Achievement.AchievementId(1), Name = "Achievement" }
-                    ]
+                            AccStar = new RankedMapRating.AccuracyStar(2),
+                            DiffStar = new RankedMapRating.DifficultyStar(5)
+                        },
+                        Requirements = new RankedMapRequirements(false, false, null, 0, 0, null),
+                        MapVersions =
+                        [
+                            new MapProposalVersion
+                            {
+                                SongDifficultyId = new SongDifficultyId(1), PlayModeId = new PlayMode.PlayModeId(1),
+                                PlayModeName = "Standard"
+                            }
+                        ],
+                        Categories = [new MapProposalCategory { CategoryId = new CategoryId(1), Name = "Category" }],
+                        Achievements =
+                        [
+                            new MapProposalAchievement
+                                { AchievementId = new Achievement.AchievementId(1), Name = "Achievement" }
+                        ]
+                    }
                 });
             await db.SaveChangesAsync();
             db.ChangeTracker.Clear();
@@ -239,12 +245,12 @@ public partial class MapProposalServiceTests : IDisposable
         submitted.ThreadId.Should().Be(new MapRequestThreadId(1));
         submitted.CreatedAt.Should().Be(_createdAt);
         submitted.SubmittedAt.Should().Be(_transitionAt);
-        submitted.Rating.DiffStar.Should().Be(new RankedMapRating.DifficultyStar(5));
-        submitted.Rating.IsAccStarAutoCalculated.Should().BeFalse();
-        submitted.Rating.IsDiffStarAutoCalculated.Should().BeFalse();
-        submitted.MapVersions.Should().ContainSingle();
-        submitted.Categories.Should().ContainSingle();
-        submitted.Achievements.Should().ContainSingle();
+        ((MapProposalChange.Rank)submitted.Change).Rating.DiffStar.Should().Be(new RankedMapRating.DifficultyStar(5));
+        ((MapProposalChange.Rank)submitted.Change).Rating.IsAccStarAutoCalculated.Should().BeFalse();
+        ((MapProposalChange.Rank)submitted.Change).Rating.IsDiffStarAutoCalculated.Should().BeFalse();
+        ((MapProposalChange.Rank)submitted.Change).MapVersions.Should().ContainSingle();
+        ((MapProposalChange.Rank)submitted.Change).Categories.Should().ContainSingle();
+        ((MapProposalChange.Rank)submitted.Change).Achievements.Should().ContainSingle();
 
         db.AddRange(
             new CommunityProposalVote
@@ -272,8 +278,9 @@ public partial class MapProposalServiceTests : IDisposable
         closed.ClosedAt.Should().Be(_transitionAt);
         closed.ClosedById.Should().Be(new PlayerId(1));
         closed.Reason.Should().Be(reason);
-        closed.Rating.DiffStar.Should().Be(submitted.Rating.DiffStar);
-        closed.Categories.Single().Name.Should().Be("Category");
+        ((MapProposalChange.Rank)closed.Change).Rating.DiffStar.Should()
+            .Be(((MapProposalChange.Rank)submitted.Change).Rating.DiffStar);
+        ((MapProposalChange.Rank)closed.Change).Categories.Single().Name.Should().Be("Category");
         (await db.MapProposalVotes.CountAsync()).Should().Be(2);
         (await db.MapProposalVotes.OfType<RankingTeamProposalVote>().SingleAsync()).Reason
             .Should().Be("The difficulty rating needs adjustment.");
@@ -294,19 +301,19 @@ public partial class MapProposalServiceTests : IDisposable
 
         if (wrongContext) result.Should().BeOfType<Response.NotFound>();
         else result.Should().BeOfType<Response.Forbidden>();
-        (await database.Context.MapProposals.SingleAsync()).Should().BeOfType<DraftProposal>();
+        (await database.Context.MapProposals.Include(x => x.Change).SingleAsync()).Should().BeOfType<DraftProposal>();
     }
 
     [Test]
-    [Arguments(nameof(MapProposal.Categories))]
-    [Arguments(nameof(MapProposal.Achievements))]
-    [Arguments(nameof(MapProposal.MapVersions))]
+    [Arguments(nameof(MapProposalChange.Rank.Categories))]
+    [Arguments(nameof(MapProposalChange.Rank.Achievements))]
+    [Arguments(nameof(MapProposalChange.Rank.MapVersions))]
     public async Task DeletedReference_ShouldPreventSubmission(string field)
     {
         await using var database = await TestDatabase.CreateAsync();
         var db = database.Context;
-        if (field == nameof(MapProposal.Categories)) await db.Categories.ExecuteDeleteAsync();
-        else if (field == nameof(MapProposal.Achievements)) await db.Achievements.ExecuteDeleteAsync();
+        if (field == nameof(MapProposalChange.Rank.Categories)) await db.Categories.ExecuteDeleteAsync();
+        else if (field == nameof(MapProposalChange.Rank.Achievements)) await db.Achievements.ExecuteDeleteAsync();
         else await db.PlayModes.ExecuteDeleteAsync();
 
         var service = CreateService(db);
@@ -314,7 +321,7 @@ public partial class MapProposalServiceTests : IDisposable
             CancellationToken.None);
 
         result.Should().BeOfType<Response.ValidationFailure>().Which.Errors.Should().Contain(x => x.Key == field);
-        (await db.MapProposals.SingleAsync()).Should().BeOfType<DraftProposal>();
+        (await db.MapProposals.Include(x => x.Change).SingleAsync()).Should().BeOfType<DraftProposal>();
     }
 
     [Test]
@@ -336,7 +343,7 @@ public partial class MapProposalServiceTests : IDisposable
             .SubmitAsync(new ContextId(1), new MapProposalId(1), new PlayerId(1), CancellationToken.None);
 
         result.Should().BeOfType<Response.ValidationFailure>().Which.Errors
-            .Should().Contain(x => x.Key == nameof(MapProposal.Achievements));
+            .Should().Contain(x => x.Key == nameof(MapProposalChange.Rank.Achievements));
     }
 
     [Test]
@@ -362,7 +369,8 @@ public partial class MapProposalServiceTests : IDisposable
     {
         await using var database = await TestDatabase.CreateAsync();
         var db = database.Context;
-        var draft = await db.MapProposals.AsTracking().Include(x => x.MapVersions).SingleAsync();
+        var draft = await db.MapProposals.AsTracking().Include(x => x.Change)
+            .ThenInclude(x => ((MapProposalChange.Rank)x).MapVersions).SingleAsync();
         var player = await db.Players.AsTracking().SingleAsync();
         player.IsManager = true;
 
@@ -382,11 +390,13 @@ public partial class MapProposalServiceTests : IDisposable
     {
         await using var database = await TestDatabase.CreateAsync();
         var db = database.Context;
-        var draft = await db.MapProposals.AsTracking().Include(x => x.MapVersions).SingleAsync();
+        var draft = await db.MapProposals.AsTracking().Include(x => x.Change)
+            .ThenInclude(x => ((MapProposalChange.Rank)x).MapVersions).SingleAsync();
         if (snapshotChanged)
-            db.Entry(draft.MapVersions.Single()).Property(x => x.Order).CurrentValue = 1;
+            db.Entry(((MapProposalChange.Rank)draft.Change).MapVersions.Single()).Property(x => x.Order).CurrentValue =
+                1;
         else
-            draft.Rating.DiffStar = new RankedMapRating.DifficultyStar(6);
+            ((MapProposalChange.Rank)draft.Change).Rating.DiffStar = new RankedMapRating.DifficultyStar(6);
 
         var service = CreateService(db);
         var submit = ()
@@ -395,9 +405,9 @@ public partial class MapProposalServiceTests : IDisposable
         await submit.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("Save or discard pending proposal changes before transitioning it.");
         db.ChangeTracker.HasChanges().Should().BeTrue();
-        var persisted = await db.MapProposals.SingleAsync();
+        var persisted = await db.MapProposals.Include(x => x.Change).SingleAsync();
         persisted.Should().BeOfType<DraftProposal>();
-        persisted.Rating.DiffStar.Should().Be(new RankedMapRating.DifficultyStar(5));
+        ((MapProposalChange.Rank)persisted.Change).Rating.DiffStar.Should().Be(new RankedMapRating.DifficultyStar(5));
     }
 
     [Test]
@@ -415,7 +425,7 @@ public partial class MapProposalServiceTests : IDisposable
         };
         await using var database = await TestDatabase.CreateAsync(rating);
         var db = database.Context;
-        await db.MapProposals.ExecuteUpdateAsync(setters => setters
+        await db.MapProposalChanges.OfType<MapProposalChange.Rank>().ExecuteUpdateAsync(setters => setters
             .SetProperty(x => x.Requirements.MandatoryModifiers, modifiers));
         if (automaticAccuracy)
             await AddAccuracyCurveAsync(db);
@@ -430,11 +440,14 @@ public partial class MapProposalServiceTests : IDisposable
 
         var submitted = result.Should().BeOfType<Response.Success>().Which.Proposal
             .Should().BeOfType<SubmittedProposal>().Which;
-        var calculated = ScoringUtils.GetExMachinaRating(exMachina, submitted.Requirements);
-        submitted.Rating.AccStar.Should().Be(rating.AccStar ?? calculated.ToAccStar(LegacyAccuracyCalibration.Curve));
-        submitted.Rating.DiffStar.Should().Be(rating.DiffStar ?? calculated.ToDiffStar());
-        submitted.Rating.IsAccStarAutoCalculated.Should().Be(automaticAccuracy);
-        submitted.Rating.IsDiffStarAutoCalculated.Should().Be(automaticDifficulty);
+        var calculated =
+            ScoringUtils.GetExMachinaRating(exMachina, ((MapProposalChange.Rank)submitted.Change).Requirements);
+        ((MapProposalChange.Rank)submitted.Change).Rating.AccStar.Should()
+            .Be(rating.AccStar ?? calculated.ToAccStar(LegacyAccuracyCalibration.Curve));
+        ((MapProposalChange.Rank)submitted.Change).Rating.DiffStar.Should()
+            .Be(rating.DiffStar ?? calculated.ToDiffStar());
+        ((MapProposalChange.Rank)submitted.Change).Rating.IsAccStarAutoCalculated.Should().Be(automaticAccuracy);
+        ((MapProposalChange.Rank)submitted.Change).Rating.IsDiffStarAutoCalculated.Should().Be(automaticDifficulty);
         handler.RequestCount.Should().Be(1);
         handler.RequestUri!.AbsolutePath.Should()
             .Be($"/ppai2/{new string('a', 40)}/Standard/{(int)EDifficulty.ExpertPlus}");
@@ -442,9 +455,11 @@ public partial class MapProposalServiceTests : IDisposable
         // Closing preserves the frozen ratings and provenance, without recalculating them.
         var closed = await service.CloseAsync(new ContextId(1), new MapProposalId(1), new PlayerId(1), null,
             CancellationToken.None);
-        closed.Should().BeOfType<Response.Success>().Which.Proposal.Rating.Should().Be(submitted.Rating);
+        ((MapProposalChange.Rank)closed.Should().BeOfType<Response.Success>().Which.Proposal.Change).Rating.Should()
+            .Be(((MapProposalChange.Rank)submitted.Change).Rating);
         handler.RequestCount.Should().Be(1);
-        (await db.MapProposals.SingleAsync()).Rating.Should().Be(submitted.Rating);
+        ((MapProposalChange.Rank)(await db.MapProposals.Include(x => x.Change).SingleAsync()).Change).Rating.Should()
+            .Be(((MapProposalChange.Rank)submitted.Change).Rating);
     }
 
     [Test]
@@ -528,9 +543,9 @@ public partial class MapProposalServiceTests : IDisposable
             (await submit()).Should().BeOfType<Response.RatingCalculationFailure>()
                 .Which.Message.Should().NotBeNullOrWhiteSpace();
 
-        var persisted = await database.Context.MapProposals.SingleAsync();
+        var persisted = await database.Context.MapProposals.Include(x => x.Change).SingleAsync();
         persisted.Should().BeOfType<DraftProposal>();
-        persisted.Rating.Should().Be(rating);
+        ((MapProposalChange.Rank)persisted.Change).Rating.Should().Be(rating);
     }
 
     [Test]
@@ -548,7 +563,8 @@ public partial class MapProposalServiceTests : IDisposable
 
         var submitted = result.Should().BeOfType<Response.Success>().Which.Proposal.Should()
             .BeOfType<SubmittedProposal>().Which;
-        submitted.Rating.AccStar.Should().Be(exMachina.None.ToAccStar(LegacyAccuracyCalibration.Curve));
+        ((MapProposalChange.Rank)submitted.Change).Rating.AccStar.Should()
+            .Be(exMachina.None.ToAccStar(LegacyAccuracyCalibration.Curve));
         handler.RequestCount.Should().Be(1);
         (await database.Context.Points.AnyAsync()).Should().BeFalse();
     }
@@ -571,22 +587,28 @@ public partial class MapProposalServiceTests : IDisposable
         var submit = () => service.SubmitAsync(new ContextId(1), new MapProposalId(1), new PlayerId(1), token);
 
         await submit.Should().ThrowAsync<OperationCanceledException>();
-        var persisted = await database.Context.MapProposals.SingleAsync();
+        var persisted = await database.Context.MapProposals.Include(x => x.Change).SingleAsync();
         persisted.Should().BeOfType<DraftProposal>();
-        persisted.Rating.Should().Be(rating);
+        ((MapProposalChange.Rank)persisted.Change).Rating.Should().Be(rating);
     }
 
     [Test]
-    public async Task Database_ShouldRejectSubmissionWithUnresolvedRatings()
+    public async Task Acceptance_ShouldRejectUnresolvedRatings()
     {
         await using var database = await TestDatabase.CreateAsync(new MapProposalRating());
         var db = database.Context;
-        var update = () => db.MapProposals.ExecuteUpdateAsync(setters => setters
+        await db.MapProposals.ExecuteUpdateAsync(setters => setters
             .SetProperty(x => EF.Property<MapProposalStatus>(x, "status"), MapProposalStatus.Submitted)
             .SetProperty(x => ((SubmittedProposal)x).SubmittedAt, _transitionAt));
 
-        var exception = await update.Should().ThrowAsync<PostgresException>();
-        exception.Which.ConstraintName.Should().Be("CK_MapProposals_ResolvedRating");
+        var queue = new RecordingQueue();
+        var response = await CreateReviewService(db, queue).AcceptAsync(new ContextId(1), new MapProposalId(1),
+            new PlayerId(1), CancellationToken.None, bypassVoteRequirements: true);
+
+        response.Should().BeOfType<ReviewResponse.ValidationFailure>().Which.Errors
+            .Should().Contain(x => x.Key == nameof(MapProposalChange.Rank.Rating));
+        (await db.RankedMaps.CountAsync()).Should().Be(0);
+        queue.Count.Should().Be(0);
     }
 
     [Test]
@@ -607,9 +629,9 @@ public partial class MapProposalServiceTests : IDisposable
             PlayModeId = new PlayMode.PlayModeId(1), PlayModeName = "Standard", Order = 1
         });
         var revision = CreateDraft(3);
-        revision.Rating.DiffStar = new RankedMapRating.DifficultyStar(9);
-        revision.Categories.Clear();
-        revision.Achievements.Clear();
+        ((MapProposalChange.Rank)revision.Change).Rating.DiffStar = new RankedMapRating.DifficultyStar(9);
+        ((MapProposalChange.Rank)revision.Change).Categories.Clear();
+        ((MapProposalChange.Rank)revision.Change).Achievements.Clear();
         db.MapProposals.AddRange(CreateDraft(2), revision);
         await db.SaveChangesAsync();
         db.ChangeTracker.Clear();
@@ -628,8 +650,10 @@ public partial class MapProposalServiceTests : IDisposable
             .Should().BeOfType<ReviewResponse.Accepted>().Which;
 
         first.AddedDifficultyIds.Should().BeEquivalentTo([new SongDifficultyId(1), new SongDifficultyId(2)]);
-        (await db.MapProposals.SingleAsync(x => x.Id == new MapProposalId(2))).Should().BeOfType<ClosedProposal>();
-        (await db.MapProposals.SingleAsync(x => x.Id == new MapProposalId(3))).Should().BeOfType<DraftProposal>();
+        (await db.MapProposals.Include(x => x.Change).SingleAsync(x => x.Id == new MapProposalId(2))).Should()
+            .BeOfType<ClosedProposal>();
+        (await db.MapProposals.Include(x => x.Change).SingleAsync(x => x.Id == new MapProposalId(3))).Should()
+            .BeOfType<DraftProposal>();
         (await db.MapRequestThreadBoosts.CountAsync()).Should().Be(0);
         var original = await db.RankedMaps.Include(x => x.Categories).Include(x => x.Achievements)
             .Include(x => x.MapVersions).SingleAsync();
@@ -664,12 +688,13 @@ public partial class MapProposalServiceTests : IDisposable
         edited.Rating.DiffStar.Should().Be(new RankedMapRating.DifficultyStar(9));
         edited.Categories.Should().BeEmpty();
         edited.Achievements.Should().BeEmpty();
-        var historical = await db.MapProposals.OfType<AcceptedProposal>().Include(x => x.Categories)
-            .Include(x => x.MapVersions)
+        var historical = await db.MapProposals.OfType<AcceptedProposal>().Include(x => x.Change)
+            .ThenInclude(x => ((MapProposalChange.Rank)x).Categories)
+            .Include(x => x.Change).ThenInclude(x => ((MapProposalChange.Rank)x).MapVersions)
             .SingleAsync(x => x.Id == new MapProposalId(1));
-        historical.Rating.DiffStar.Should().Be(new RankedMapRating.DifficultyStar(5));
-        historical.Categories.Single().Name.Should().Be("Category");
-        historical.MapVersions.Should().HaveCount(2);
+        ((MapProposalChange.Rank)historical.Change).Rating.DiffStar.Should().Be(new RankedMapRating.DifficultyStar(5));
+        ((MapProposalChange.Rank)historical.Change).Categories.Single().Name.Should().Be("Category");
+        ((MapProposalChange.Rank)historical.Change).MapVersions.Should().HaveCount(2);
         queue.Count.Should().Be(2);
     }
 
@@ -752,12 +777,13 @@ public partial class MapProposalServiceTests : IDisposable
                 "Category removed", CancellationToken.None))
             .Should().BeOfType<ReviewResponse.Denied>().Which.Proposal;
         denied.Reason.Should().Be("Category removed");
-        denied.Categories.Single().Name.Should().Be("Category");
+        ((MapProposalChange.Rank)denied.Change).Categories.Single().Name.Should().Be("Category");
         (await db.MapRequestThreadBoosts.CountAsync()).Should().Be(1);
         (await reviews.DenyAsync(new ContextId(1), new MapProposalId(2), new PlayerId(1), null, CancellationToken.None))
             .Should().BeOfType<ReviewResponse.Denied>();
         (await db.MapRequestThreadBoosts.CountAsync()).Should().Be(0);
-        (await db.MapProposals.SingleAsync(x => x.Id == new MapProposalId(3))).Should().BeOfType<DraftProposal>();
+        (await db.MapProposals.Include(x => x.Change).SingleAsync(x => x.Id == new MapProposalId(3))).Should()
+            .BeOfType<DraftProposal>();
         queue.Count.Should().Be(0);
     }
 
@@ -796,22 +822,27 @@ public partial class MapProposalServiceTests : IDisposable
 
     private static DraftProposal CreateDraft(int id) => new()
     {
-        Id = new MapProposalId(id), ThreadId = new MapRequestThreadId(1), AuthorId = new PlayerId(1),
+        Id = new MapProposalId(id),
+        ThreadId = new MapRequestThreadId(1),
+        AuthorId = new PlayerId(1),
         CreatedAt = _createdAt,
-        Rating = new MapProposalRating
-            { AccStar = new RankedMapRating.AccuracyStar(2), DiffStar = new RankedMapRating.DifficultyStar(5) },
-        Requirements = new RankedMapRequirements(false, false, null, 0, 0, null),
-        MapVersions =
-        [
-            new MapProposalVersion
-            {
-                SongDifficultyId = new SongDifficultyId(1), PlayModeId = new PlayMode.PlayModeId(1),
-                PlayModeName = "Standard"
-            }
-        ],
-        Categories = [new MapProposalCategory { CategoryId = new CategoryId(1), Name = "Category" }],
-        Achievements =
-            [new MapProposalAchievement { AchievementId = new Achievement.AchievementId(1), Name = "Achievement" }]
+        Change = new MapProposalChange.Rank
+        {
+            Rating = new MapProposalRating
+                { AccStar = new RankedMapRating.AccuracyStar(2), DiffStar = new RankedMapRating.DifficultyStar(5) },
+            Requirements = new RankedMapRequirements(false, false, null, 0, 0, null),
+            MapVersions =
+            [
+                new MapProposalVersion
+                {
+                    SongDifficultyId = new SongDifficultyId(1), PlayModeId = new PlayMode.PlayModeId(1),
+                    PlayModeName = "Standard"
+                }
+            ],
+            Categories = [new MapProposalCategory { CategoryId = new CategoryId(1), Name = "Category" }],
+            Achievements =
+                [new MapProposalAchievement { AchievementId = new Achievement.AchievementId(1), Name = "Achievement" }]
+        }
     };
 
     [Test]
@@ -939,7 +970,8 @@ public partial class MapProposalServiceTests : IDisposable
                 CancellationToken.None))
             .Should().BeOfType<Response.Duplicates>().Which;
         warning.Matches.Should().ContainSingle().Which.ProposalId.Should().Be(new MapProposalId(1));
-        (await db.MapProposals.SingleAsync(x => x.Id == new MapProposalId(2))).Should().BeOfType<DraftProposal>();
+        (await db.MapProposals.Include(x => x.Change).SingleAsync(x => x.Id == new MapProposalId(2))).Should()
+            .BeOfType<DraftProposal>();
         var limited = new MapProposalService(db, new FixedTimeProvider(), new BeatLeaderApi(_unusedHttpClient),
             Options.Create(new MapRequestSettings { MaxRankingRequestsPerPlayer = 1 }));
         (await limited.SubmitAsync(new ContextId(1), new MapProposalId(2), new PlayerId(1), CancellationToken.None,

@@ -1,14 +1,14 @@
 using System.Text;
 using Discord;
-using GuildSaber.Api.Features.MapRequests.Http;
 using GuildSaber.DiscordBot.Commands.Users;
 using static GuildSaber.Api.Features.MapRequests.Http.MapProposalRequests;
+using static GuildSaber.Api.Features.MapRequests.Http.MapRequestResponses;
 
 namespace GuildSaber.DiscordBot.Core.Extensions;
 
 public static class RankingThreadExtensions
 {
-    extension(MapRequestResponses.ThreadPreview self)
+    extension(ThreadPreview self)
     {
         public ContainerBuilder ToContainerBuilder(int listPage = 1,
                                                    EMapRequestSorter sortBy = EMapRequestSorter.Priority,
@@ -35,10 +35,19 @@ public static class RankingThreadExtensions
                 AppendRating(sb, rankedMap.Rating.DiffStar, rankedMap.Rating.AccStar, rankedMap.MinAccuracy);
 
             foreach (var proposal in proposals)
-                AppendRating(sb.Append("-> "), proposal.Rating.DiffStar!.Value, proposal.Rating.AccStar!.Value,
-                    proposal.MinAccuracy);
+                switch (proposal)
+                {
+                    case ProposalMetadata.Rank rank:
+                        AppendRating(sb.Append("-> "), rank.Rating.DiffStar!.Value, rank.Rating.AccStar!.Value,
+                            rank.MinAccuracy);
+                        break;
+                    case ProposalMetadata.Unrank:
+                        sb.AppendLine("-> **Unranking requested**");
+                        break;
+                }
 
-            if (self.RankedMap is not null || self.Proposals.Any(x => x.Categories.Length != 0))
+            if (self.RankedMap is not null ||
+                self.Proposals.OfType<ProposalMetadata.Rank>().Any(x => x.Categories.Length != 0))
             {
                 sb.AppendLine();
 
@@ -48,7 +57,7 @@ public static class RankingThreadExtensions
                         .Append(current.Categories.Length > 4 ? $" (+{current.Categories.Length - 4} more)" : "")
                         .AppendLine();
 
-                foreach (var proposal in proposals)
+                foreach (var proposal in proposals.OfType<ProposalMetadata.Rank>())
                     sb.Append("-> Categories: ")
                         .Append(proposal.Categories.Length == 0
                             ? "None"
@@ -83,7 +92,7 @@ public static class RankingThreadExtensions
                         $"\n**RT:** +{self.RankingTeamVotes.Positive} / -{self.RankingTeamVotes.Negative}" +
                         $" · **Community:** +{self.CommunityVotes.Positive} / -{self.CommunityVotes.Negative}")
                     .WithAccessory(new ButtonBuilder()
-                        .WithLabel(self.RankedMapId is null ? "Open New Thread" : "Open Edit Thread")
+                        .WithLabel("Open thread")
                         .WithCustomId(
                             $"ranking_thread:{self.ContextId},{self.Id},0,1,1,{listPage},{(int)sortBy},{(int)origin}")
                         .WithStyle(ButtonStyle.Secondary)))

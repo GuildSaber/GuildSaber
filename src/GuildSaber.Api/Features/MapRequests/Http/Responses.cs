@@ -1,9 +1,7 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using GuildSaber.Api.Features.Players.Http;
 using GuildSaber.Api.Features.RankedMaps.Http;
-#if NET10_0_OR_GREATER
-using System.ComponentModel.DataAnnotations;
-#endif
 
 namespace GuildSaber.Api.Features.MapRequests.Http;
 
@@ -72,7 +70,7 @@ public static class MapRequestResponses
     /// Creation time and proposal ID determine which is latest. Private drafts and historical proposals are excluded.
     /// </param>
     /// <param name="PreviewAuthor">Author of the selected preview proposal. Absent for imports or a deleted player.</param>
-    /// <param name="MapVersions">Map previews from the selected proposal, in ascending display order.</param>
+    /// <param name="MapVersions">Map previews from the selected Rank definition or Unrank target, in display order.</param>
     /// <param name="Proposals">Submitted proposal metadata in creation order. Its length is the submitted proposal count.</param>
     /// <param name="CommunityVotes">Community vote counts across all submitted proposals in the thread.</param>
     /// <param name="RankingTeamVotes">Ranking-team vote counts across all submitted proposals in the thread.</param>
@@ -129,24 +127,35 @@ public static class MapRequestResponses
         string PlayModeName,
         byte Order);
 
-    /// <summary>
-    /// Submitted proposal information needed to compare ratings and categories in the queue.
-    /// </summary>
-    /// <param name="Id">Proposal identity, used to open its details.</param>
-    /// <param name="Author">Proposal author. Absent for imports or when the player was deleted.</param>
-    /// <param name="CreatedAt">Proposal creation time.</param>
-    /// <param name="SubmittedAt">Time the proposal was published to the queue.</param>
-    /// <param name="Rating">Resolved ratings and whether they were calculated automatically.</param>
-    /// <param name="MinAccuracy">Minimum qualifying score accuracy in percent. Null imposes no minimum.</param>
-    /// <param name="Categories">Category names and identities captured when the proposal was created.</param>
-    public sealed record ProposalMetadata(
+    /// <summary>Submitted ranking or unranking metadata shown in the queue.</summary>
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
+    [JsonDerivedType(typeof(Rank), "Rank")]
+    [JsonDerivedType(typeof(Unrank), "Unrank")]
+    public closed record ProposalMetadata(
         MapProposalId Id,
         PlayerResponses.Player? Author,
         DateTimeOffset CreatedAt,
-        DateTimeOffset SubmittedAt,
-        Rating Rating,
-        double? MinAccuracy,
-        CategorySnapshot[] Categories);
+        DateTimeOffset SubmittedAt)
+    {
+        public sealed record Rank(
+            MapProposalId Id,
+            PlayerResponses.Player? Author,
+            DateTimeOffset CreatedAt,
+            DateTimeOffset SubmittedAt,
+            Rating Rating,
+            double? MinAccuracy,
+            CategorySnapshot[] Categories)
+            : ProposalMetadata(Id, Author, CreatedAt, SubmittedAt);
+
+        public sealed record Unrank(
+            MapProposalId Id,
+            PlayerResponses.Player? Author,
+            DateTimeOffset CreatedAt,
+            DateTimeOffset SubmittedAt,
+            MapProposalId TargetAcceptedProposalId,
+            [property: MaxLength(2000)] string Reason)
+            : ProposalMetadata(Id, Author, CreatedAt, SubmittedAt);
+    }
 
     /// <summary>
     /// A persistent ranking thread in one context, with at most one current ranked map.
@@ -186,17 +195,30 @@ public static class MapRequestResponses
     /// <param name="Achievements">
     /// Explicit ranked-map-list associations, not dynamically matched star achievements.
     /// </param>
-    /// <param name="Comment">Optional original author comment, up to 2000 characters.</param>
     public sealed record Definition(
         RankedMapRequests.RankedMapRequirements Requirements,
         Rating Rating,
         MapPreview[] MapVersions,
         CategorySnapshot[] Categories,
-        AchievementSnapshot[] Achievements,
-#if NET10_0_OR_GREATER
-        [property: MaxLength(2000)]
-#endif
-        string? Comment);
+        AchievementSnapshot[] Achievements);
+
+    /// <summary>The requested change, independent of its review lifecycle.</summary>
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
+    [JsonDerivedType(typeof(Rank), "Rank")]
+    [JsonDerivedType(typeof(Unrank), "Unrank")]
+    public closed record ProposalChange
+    {
+        public sealed record Rank(Definition Definition) : ProposalChange;
+
+        /// <summary>The immutable accepted definition targeted for removal.</summary>
+        /// <param name="TargetAcceptedProposalId">Accepted Rank proposal captured when the draft was created.</param>
+        /// <param name="Target">Historical map definition used to preview the removal, including after acceptance.</param>
+        /// <param name="Reason">Required explanation for removing the targeted ranked entry.</param>
+        public sealed record Unrank(
+            MapProposalId TargetAcceptedProposalId,
+            Definition Target,
+            [property: MaxLength(2000)] string Reason) : ProposalChange;
+    }
 
     /// <summary>
     /// Your per-context proposal usage and the current configurable rules. Counts are proposals, not threads.
@@ -265,7 +287,7 @@ public static class MapRequestResponses
     public sealed record AchievementSnapshot(int Id, string Name);
 
     /// <summary>
-    /// Complete definition with a lifecycle discriminator: Draft, Submitted, Accepted or Closed.
+    /// Requested change with a lifecycle discriminator, Draft, Submitted, Accepted or Closed.
     /// There is no edit-proposal subtype. A thread with a current ranked map applies accepted proposals as revisions.
     /// </summary>
     /// <param name="Id">Proposal identity, retained throughout its lifecycle.</param>
@@ -273,7 +295,8 @@ public static class MapRequestResponses
     /// <param name="AuthorId">Proposal author. Absent for imports or when the player was deleted.</param>
     /// <param name="Author">Proposal author profile. Absent for imports or when the player was deleted.</param>
     /// <param name="CreatedAt">Draft creation time, not submission or acceptance time.</param>
-    /// <param name="Definition">Entire desired definition, not a patch against an earlier proposal.</param>
+    /// <param name="Comment">Optional author note for a ranking definition.</param>
+    /// <param name="Change">Complete ranking definition or the accepted definition targeted for unranking.</param>
     /// <param name="Votes">
     /// Community and ranking-team votes. These cannot be changed once the proposal is accepted or closed.
     /// </param>
@@ -288,7 +311,8 @@ public static class MapRequestResponses
         PlayerId? AuthorId,
         PlayerResponses.Player? Author,
         DateTimeOffset CreatedAt,
-        Definition Definition,
+        string? Comment,
+        ProposalChange Change,
         Vote[] Votes)
     {
         /// <summary>
@@ -300,12 +324,13 @@ public static class MapRequestResponses
             PlayerId? AuthorId,
             PlayerResponses.Player? Author,
             DateTimeOffset CreatedAt,
-            Definition Definition,
+            string? Comment,
+            ProposalChange Change,
             Vote[] Votes)
-            : Proposal(Id, ThreadId, AuthorId, Author, CreatedAt, Definition, Votes);
+            : Proposal(Id, ThreadId, AuthorId, Author, CreatedAt, Comment, Change, Votes);
 
         /// <summary>
-        /// Published, immutable definition awaiting explicit review. Votes may change while it is submitted.
+        /// Published, immutable ranking or unranking request awaiting explicit review. Votes may change while it is submitted.
         /// </summary>
         public sealed record Submitted(
             MapProposalId Id,
@@ -313,14 +338,15 @@ public static class MapRequestResponses
             PlayerId? AuthorId,
             PlayerResponses.Player? Author,
             DateTimeOffset CreatedAt,
-            Definition Definition,
+            string? Comment,
+            ProposalChange Change,
             Vote[] Votes,
             DateTimeOffset SubmittedAt)
-            : Proposal(Id, ThreadId, AuthorId, Author, CreatedAt, Definition, Votes);
+            : Proposal(Id, ThreadId, AuthorId, Author, CreatedAt, Comment, Change, Votes);
 
         /// <summary>
-        /// Historical definition applied to the ranked map at 'acceptedAt'. Order accepted proposals by 'acceptedAt'
-        /// to reconstruct revisions. An older accepted proposal need not match the current ranked map.
+        /// Historical change applied at 'acceptedAt'. Rank applies its definition and Unrank removes its target.
+        /// Order accepted proposals by 'acceptedAt' to reconstruct revisions and removals.
         /// The 'acceptedById' field is absent for imports or a deleted reviewer. Accepted proposals cannot be applied again.
         /// </summary>
         public sealed record Accepted(
@@ -329,16 +355,17 @@ public static class MapRequestResponses
             PlayerId? AuthorId,
             PlayerResponses.Player? Author,
             DateTimeOffset CreatedAt,
-            Definition Definition,
+            string? Comment,
+            ProposalChange Change,
             Vote[] Votes,
             DateTimeOffset SubmittedAt,
             DateTimeOffset AcceptedAt,
             PlayerId? AcceptedById)
-            : Proposal(Id, ThreadId, AuthorId, Author, CreatedAt, Definition, Votes);
+            : Proposal(Id, ThreadId, AuthorId, Author, CreatedAt, Comment, Change, Votes);
 
         /// <summary>
         /// Proposal withdrawn by its author, denied by a reviewer or superseded by another accepted proposal.
-        /// Definition and votes remain in history. It cannot be reopened. A missing 'submittedAt' means it was never
+        /// The requested change and votes remain in history. It cannot be reopened. A missing 'submittedAt' means it was never
         /// published and remains private. The 'closedById' field may be absent for imports or a deleted player.
         /// The reason is optional.
         /// </summary>
@@ -348,13 +375,21 @@ public static class MapRequestResponses
             PlayerId? AuthorId,
             PlayerResponses.Player? Author,
             DateTimeOffset CreatedAt,
-            Definition Definition,
+            string? Comment,
+            ProposalChange Change,
             Vote[] Votes,
             DateTimeOffset? SubmittedAt,
             DateTimeOffset ClosedAt,
             PlayerId? ClosedById,
             string? Reason)
-            : Proposal(Id, ThreadId, AuthorId, Author, CreatedAt, Definition, Votes);
+            : Proposal(Id, ThreadId, AuthorId, Author, CreatedAt, Comment, Change, Votes);
+
+        /// <summary>The proposed ranking definition or the historical definition targeted for removal.</summary>
+        public Definition GetPreviewDefinition() => Change switch
+        {
+            ProposalChange.Rank rank => rank.Definition,
+            ProposalChange.Unrank unrank => unrank.Target
+        };
     }
 
     /// <summary>
@@ -411,9 +446,17 @@ public static class MapRequestResponses
     /// <summary>
     /// Successful explicit acceptance. Competing submitted proposals are closed and thread boosts released.
     /// </summary>
-    /// <param name="Proposal">Accepted definition snapshot, including its acceptance timestamp and reviewer.</param>
-    /// <param name="RankedMapId">Ranked map created or updated in the proposal's thread.</param>
-    public sealed record Acceptance(Proposal.Accepted Proposal, RankedMapId RankedMapId);
+    /// <param name="Proposal">Accepted change, including its acceptance timestamp and reviewer.</param>
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
+    [JsonDerivedType(typeof(Ranked), "Ranked")]
+    [JsonDerivedType(typeof(Unranked), "Unranked")]
+    public closed record Acceptance(Proposal.Accepted Proposal)
+    {
+        public sealed record Ranked(Proposal.Accepted Proposal, RankedMapId RankedMapId) : Acceptance(Proposal);
+
+        public sealed record Unranked(Proposal.Accepted Proposal, RankedMapId RemovedRankedMapId)
+            : Acceptance(Proposal);
+    }
 
     /// <summary>
     /// Problem details retained by the client, including actionable duplicate and quota information.

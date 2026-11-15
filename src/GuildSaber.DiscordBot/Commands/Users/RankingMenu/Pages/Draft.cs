@@ -2,8 +2,10 @@ using System.Text.Json.Serialization;
 using Discord;
 using Discord.Interactions;
 using GuildSaber.Api.Features.Guilds.Categories.Http;
+using GuildSaber.Common.Helpers;
 using GuildSaber.DiscordBot.Core.Extensions;
 using Microsoft.Extensions.Caching.Hybrid;
+using RankDraft = GuildSaber.Api.Features.MapRequests.Http.MapProposalRequests.CreateDraft.Rank;
 using static GuildSaber.Api.Features.MapRequests.Http.MapProposalRequests;
 using static GuildSaber.Api.Features.MapRequests.Http.MapRequestResponses;
 
@@ -27,9 +29,10 @@ public partial class UserModuleSlash
         ContextId contextId, MapRequestThreadId threadId, MapProposalId proposalId, int listPage,
         EMapRequestSorter sortBy, ERankingThreadOrigin origin, bool isFork)
     {
-        await DeferRankingInteractionAsync();
-
-        var result = await Client.Value.MapRequests.GetProposalAsync(contextId, threadId, proposalId);
+        var result = await (
+            DeferRankingInteractionAsync(),
+            Client.Value.MapRequests.GetProposalAsync(contextId, threadId, proposalId)
+        ).WhenAll();
         if (result.TryGetError(out var error))
         {
             await ReportRankingErrorAsync(error);
@@ -50,17 +53,20 @@ public partial class UserModuleSlash
             isFork
                 ? new RankingDraftTarget.Fork(threadId, proposalId)
                 : new RankingDraftTarget.Revision(threadId, proposalId),
-            proposal.Definition.ToDraft(), listPage, sortBy, origin));
+            proposal.GetPreviewDefinition().ToDraft(proposal.Change is ProposalChange.Rank ? proposal.Comment : null),
+            listPage, sortBy, origin));
         await ShowDraftEditorAsync(sessionId);
     }
 
     [ComponentInteraction("ranking_draft_edit:*")]
     public async Task ShowDraftEditorAsync(string sessionId)
     {
-        await DeferRankingInteractionAsync();
         if (await GetDraftEditorAsync(sessionId) is not { } revision) return;
 
-        var categories = await Cache.GetGuildCategoriesAsync(await GetGuildIdAsync(), Client.Value);
+        var categories = await (
+            DeferRankingInteractionAsync(),
+            Cache.GetGuildCategoriesAsync(await GetGuildIdAsync(), Client.Value).AsTask()
+        ).WhenAll();
         await ModifyOriginalResponseAsync(x =>
         {
             x.Components = RankingDraftView.BuildComponent(sessionId, revision, categories).Build();
@@ -71,18 +77,21 @@ public partial class UserModuleSlash
     [ComponentInteraction("ranking_draft_save:*")]
     public async Task SaveDraftEditorAsync(string sessionId)
     {
-        await DeferRankingInteractionAsync();
         if (await GetDraftEditorAsync(sessionId) is not { } revision) return;
 
-        if (!(await (revision.Target switch
-            {
-                RankingDraftTarget.NewThread => Client.Value.MapRequests.CreateAsync(revision.ContextId,
-                    revision.Definition),
-                RankingDraftTarget.Fork(var threadId, _) => Client.Value.MapRequests.CreateProposalAsync(
-                    revision.ContextId, threadId, revision.Definition),
-                RankingDraftTarget.Revision(var threadId, var proposalId) => Client.Value.MapRequests.ReplaceDraftAsync(
-                    revision.ContextId, threadId, proposalId, revision.Definition)
-            })).TryGetValue(out var proposal, out var error))
+        if (!(await (
+                DeferRankingInteractionAsync(),
+                revision.Target switch
+                {
+                    RankingDraftTarget.NewThread => Client.Value.MapRequests.CreateAsync(revision.ContextId,
+                        revision.Definition),
+                    RankingDraftTarget.Fork(var threadId, _) => Client.Value.MapRequests.CreateProposalAsync(
+                        revision.ContextId, threadId, revision.Definition),
+                    RankingDraftTarget.Revision(var threadId, var proposalId) => Client.Value.MapRequests
+                        .ReplaceDraftAsync(
+                            revision.ContextId, threadId, proposalId, revision.Definition)
+                }
+            ).WhenAll()).TryGetValue(out var proposal, out var error))
         {
             await ReportRankingErrorAsync(error);
             return;
@@ -108,8 +117,7 @@ public partial class UserModuleSlash
     [ComponentInteraction("ranking_draft_cancel:*")]
     public async Task CancelDraftEditorAsync(string sessionId)
     {
-        await DeferRankingInteractionAsync();
-        if (await GetDraftEditorAsync(sessionId) is not { } revision) return;
+        if (await GetDraftEditorAsync(sessionId, defer: true) is not { } revision) return;
 
         if (revision.Target is not RankingDraftTarget.NewThread)
             await Cache.RemoveAsync($"RankingDraftEditor_{sessionId}");
@@ -123,10 +131,13 @@ public partial class UserModuleSlash
         });
     }
 
-    private async ValueTask<RankingDraftEditor?> GetDraftEditorAsync(string sessionId)
+    private async ValueTask<RankingDraftEditor?> GetDraftEditorAsync(string sessionId, bool defer = false)
     {
-        var revision = await Cache.GetOrCreateAsync<RankingDraftEditor?>($"RankingDraftEditor_{sessionId}",
-            static _ => ValueTask.FromResult<RankingDraftEditor?>(null));
+        var revision = await (
+            defer ? DeferRankingInteractionAsync() : Task.CompletedTask,
+            Cache.GetOrCreateAsync<RankingDraftEditor?>($"RankingDraftEditor_{sessionId}",
+                static _ => ValueTask.FromResult<RankingDraftEditor?>(null)).AsTask()
+        ).WhenAll();
 
         if (revision is not null && revision.OwnerId == Context.User.DiscordId) return revision;
 
@@ -150,7 +161,7 @@ public sealed record RankingDraftEditor(
     DiscordId OwnerId,
     ContextId ContextId,
     RankingDraftTarget Target,
-    CreateDraft Definition,
+    RankDraft Definition,
     int ListPage,
     EMapRequestSorter SortBy,
     UserModuleSlash.ERankingThreadOrigin Origin = UserModuleSlash.ERankingThreadOrigin.Queue)
@@ -216,7 +227,7 @@ file static class RankingDraftView
                         },
                         $"ranking_draft_cancel:{sessionId}", ButtonStyle.Secondary)));
 
-    private static string FormatCategories(CreateDraft definition, CategoryResponses.Category[] categories)
+    private static string FormatCategories(RankDraft definition, CategoryResponses.Category[] categories)
         => definition.CategoryIds.Length == 0
             ? "None"
             : string.Join(", ", definition.CategoryIds.Take(8)

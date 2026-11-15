@@ -44,4 +44,15 @@ public sealed class ApplyMapProposalPipeline(
 
         await memberStatsPipeline.ExecuteAsync(context, players, token: token);
     }
+
+    public async Task ExecuteUnrankingAsync(ContextId contextId, CancellationToken token)
+    {
+        var context = await dbContext.Contexts.Include(x => x.Points)
+            .SingleOrDefaultAsync(x => x.Id == contextId, token);
+
+        if (context is null) return;
+
+        await memberStatsPipeline.ExecuteAsync(context,
+            dbContext.ContextMembers.Where(x => x.ContextId == contextId).Select(x => x.PlayerId), token: token);
+    }
 }

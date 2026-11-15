@@ -16,7 +16,8 @@ namespace GuildSaber.Api.Features.MapRequests.Http;
 public static class MapRequestMappers
 {
     private static Func<MapProposal, Proposal>? _mapProposalImpl;
-    private static Func<MapProposal, Definition>? _mapDefinitionImpl;
+    private static Func<MapProposalChange.Rank, Definition>? _mapDefinitionImpl;
+    private static Func<MapProposal, ProposalChange>? _mapChangeImpl;
     private static Func<MapProposal, Vote[]>? _mapVotesImpl;
     private static Func<MapProposalVote, Vote>? _mapVoteImpl;
     private static Func<MapProposalVersion, MapPreview>? _mapPreviewImpl;
@@ -30,8 +31,19 @@ public static class MapRequestMappers
         => (_mapProposalImpl ??= MapProposalExpression().Compile())(self);
 
     [Expandable(nameof(MapDefinitionExpression))]
-    public static Definition MapDefinition(this MapProposal self)
+    public static Definition Map(this MapProposalChange.Rank self)
         => (_mapDefinitionImpl ??= MapDefinitionExpression().Compile())(self);
+
+    [Expandable(nameof(MapChangeExpression))]
+    public static ProposalChange MapChange(this MapProposal self)
+        => (_mapChangeImpl ??= MapChangeExpression().Compile())(self);
+
+    public static Expression<Func<MapProposal, ProposalChange>> MapChangeExpression()
+        => self => self.Change is MapProposalChange.Rank
+            ? new ProposalChange.Rank(((MapProposalChange.Rank)self.Change).Map())
+            : new ProposalChange.Unrank(((MapProposalChange.Unrank)self.Change).TargetAcceptedProposalId,
+                ((MapProposalChange.Rank)((MapProposalChange.Unrank)self.Change).TargetAcceptedProposal.Change).Map(),
+                ((MapProposalChange.Unrank)self.Change).Reason);
 
     [Expandable(nameof(MapVotesExpression))]
     public static Vote[] MapVotes(this MapProposal self)
@@ -76,7 +88,8 @@ public static class MapRequestMappers
             self.AuthorId,
             self.Author == null ? null : self.Author.Map(),
             self.CreatedAt,
-            self.MapDefinition(),
+            self.Comment,
+            self.MapChange(),
             self.MapVotes(),
             self is SubmittedProposal
                 ? ((SubmittedProposal)self).SubmittedAt
@@ -95,20 +108,21 @@ public static class MapRequestMappers
     // Only response values reach this final projection. No entity graph is loaded for mapping.
     private static Proposal CreateProposal(
         MapProposalId id, MapRequestThreadId threadId, PlayerId? authorId, PlayerResponses.Player? author,
-        DateTimeOffset createdAt, Definition definition, Vote[] votes, DateTimeOffset? submittedAt,
+        DateTimeOffset createdAt, string? comment, ProposalChange change, Vote[] votes, DateTimeOffset? submittedAt,
         DateTimeOffset? acceptedAt,
         PlayerId? acceptedById, DateTimeOffset? closedAt, PlayerId? closedById, string? reason)
         => acceptedAt is { } accepted
             ? new Proposal.Accepted(
-                id, threadId, authorId, author, createdAt, definition, votes, submittedAt!.Value, accepted,
+                id, threadId, authorId, author, createdAt, comment, change, votes, submittedAt!.Value, accepted,
                 acceptedById)
             : closedAt is { } closed
                 ? new Proposal.Closed(
-                    id, threadId, authorId, author, createdAt, definition, votes, submittedAt, closed, closedById,
+                    id, threadId, authorId, author, createdAt, comment, change, votes, submittedAt, closed, closedById,
                     reason)
                 : submittedAt is { } submitted
-                    ? new Proposal.Submitted(id, threadId, authorId, author, createdAt, definition, votes, submitted)
-                    : new Proposal.Draft(id, threadId, authorId, author, createdAt, definition, votes);
+                    ? new Proposal.Submitted(id, threadId, authorId, author, createdAt, comment, change, votes,
+                        submitted)
+                    : new Proposal.Draft(id, threadId, authorId, author, createdAt, comment, change, votes);
 
     public static Expression<Func<MapProposalVersion, MapPreview>> MapPreviewExpression()
         => self => new MapPreview(
@@ -119,22 +133,27 @@ public static class MapRequestMappers
             self.Order);
 
     public static Expression<Func<SubmittedProposal, ProposalMetadata>> MapProposalMetadataExpression()
-        => self => new ProposalMetadata(
-            self.Id,
-            self.Author == null ? null : self.Author.Map(),
-            self.CreatedAt,
-            self.SubmittedAt,
-            new Rating(
-                self.Rating.AccStar == null ? null : self.Rating.AccStar.Value.Value,
-                self.Rating.DiffStar == null ? null : self.Rating.DiffStar.Value.Value,
-                self.Rating.IsAccStarAutoCalculated,
-                self.Rating.IsDiffStarAutoCalculated),
-            self.Requirements.MinAccuracy,
-            self.Categories.OrderBy(x => x.CategoryId)
-                .Select(x => new CategorySnapshot(x.CategoryId, x.Name))
-                .ToArray());
+        => self => self.Change is MapProposalChange.Unrank
+            ? new ProposalMetadata.Unrank(
+                self.Id, self.Author == null ? null : self.Author.Map(), self.CreatedAt, self.SubmittedAt,
+                ((MapProposalChange.Unrank)self.Change).TargetAcceptedProposalId,
+                ((MapProposalChange.Unrank)self.Change).Reason)
+            : new ProposalMetadata.Rank(
+                self.Id, self.Author == null ? null : self.Author.Map(), self.CreatedAt, self.SubmittedAt,
+                new Rating(
+                    ((MapProposalChange.Rank)self.Change).Rating.AccStar == null
+                        ? null
+                        : ((MapProposalChange.Rank)self.Change).Rating.AccStar!.Value.Value,
+                    ((MapProposalChange.Rank)self.Change).Rating.DiffStar == null
+                        ? null
+                        : ((MapProposalChange.Rank)self.Change).Rating.DiffStar!.Value.Value,
+                    ((MapProposalChange.Rank)self.Change).Rating.IsAccStarAutoCalculated,
+                    ((MapProposalChange.Rank)self.Change).Rating.IsDiffStarAutoCalculated),
+                ((MapProposalChange.Rank)self.Change).Requirements.MinAccuracy,
+                ((MapProposalChange.Rank)self.Change).Categories.OrderBy(x => x.CategoryId)
+                .Select(x => new CategorySnapshot(x.CategoryId, x.Name)).ToArray());
 
-    public static Expression<Func<MapProposal, Definition>> MapDefinitionExpression()
+    public static Expression<Func<MapProposalChange.Rank, Definition>> MapDefinitionExpression()
         => self => new Definition(
             self.Requirements.Map(),
             new Rating(
@@ -150,8 +169,7 @@ public static class MapRequestMappers
                 .ToArray(),
             self.Achievements.OrderBy(x => x.AchievementId)
                 .Select(x => new AchievementSnapshot(x.AchievementId.Value, x.Name))
-                .ToArray(),
-            self.Comment);
+                .ToArray());
 
     public static Expression<Func<MapProposal, Vote[]>> MapVotesExpression()
         => self => self.Votes.OrderBy(x => x.VotedAt).ThenBy(x => x.PlayerId)
@@ -195,9 +213,13 @@ public static class MapRequestMappers
                 self.IsLegacyImport,
                 proposal.Id,
                 proposal.Author == null ? null : proposal.Author.Map(),
-                proposal.MapVersions.OrderBy(x => x.Order).ThenBy(x => x.SongDifficultyId).ThenBy(x => x.PlayModeId)
-                    .Select(x => x.Map())
-                    .ToArray(),
+                proposal.Change is MapProposalChange.Rank
+                    ? ((MapProposalChange.Rank)proposal.Change).MapVersions.OrderBy(x => x.Order)
+                    .ThenBy(x => x.SongDifficultyId).ThenBy(x => x.PlayModeId).Select(x => x.Map()).ToArray()
+                    : ((MapProposalChange.Rank)((MapProposalChange.Unrank)proposal.Change).TargetAcceptedProposal
+                        .Change)
+                    .MapVersions.OrderBy(x => x.Order).ThenBy(x => x.SongDifficultyId).ThenBy(x => x.PlayModeId)
+                    .Select(x => x.Map()).ToArray(),
                 self.Proposals.OfType<SubmittedProposal>().AsQueryable()
                     .OrderBy(x => x.CreatedAt).ThenBy(x => x.Id)
                     .Select(x => x.MapMetadata())

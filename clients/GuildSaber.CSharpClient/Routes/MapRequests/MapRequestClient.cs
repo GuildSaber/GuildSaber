@@ -158,13 +158,13 @@ public sealed class MapRequestClient(
         }
     }
 
-    /// <summary>Creates a thread and a private draft. Ratings omitted inside Rating are resolved on submission.</summary>
+    /// <summary>Creates a thread and a private Rank draft. Missing ratings are resolved on submission.</summary>
     public Task<Result<Proposal, Error>> CreateAsync(
         ContextId contextId, CreateDraft request, CancellationToken token = default)
         => SendAsync<Proposal>(HttpMethod.Post, $"contexts/{contextId}/map-requests",
             JsonContent.Create(request, options: jsonOptions), token);
 
-    /// <summary>Proposes a complete variant in an existing thread, whether or not its map is already ranked.</summary>
+    /// <summary>Saves a Rank or Unrank draft in an existing thread. Unrank captures the current accepted ranking.</summary>
     public Task<Result<Proposal, Error>> CreateProposalAsync(
         ContextId contextId, MapRequestThreadId threadId, CreateDraft request, CancellationToken token = default)
         => SendAsync<Proposal>(HttpMethod.Post, $"{ThreadUrl(contextId, threadId)}/proposals",
@@ -195,6 +195,7 @@ public sealed class MapRequestClient(
         ContextId contextId, MapRequestThreadId threadId, MapProposalId proposalId, CancellationToken token = default)
         => SendEmptyAsync(HttpMethod.Delete, ProposalUrl(contextId, threadId, proposalId), null, token);
 
+    /// <summary>Accepts a submitted change and returns its Ranked or Unranked result.</summary>
     public Task<Result<Acceptance, Error>> AcceptAsync(
         ContextId contextId, MapRequestThreadId threadId, MapProposalId proposalId, CancellationToken token = default)
         => SendAsync<Acceptance>(HttpMethod.Post, $"{ProposalUrl(contextId, threadId, proposalId)}/accept", null,

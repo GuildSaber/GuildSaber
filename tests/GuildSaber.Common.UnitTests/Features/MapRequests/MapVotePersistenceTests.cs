@@ -67,9 +67,12 @@ public class MapVotePersistenceTests
             CreatedAt = timestamp,
             SubmittedAt = timestamp,
             AcceptedAt = timestamp,
-            Requirements = new RankedMapRequirements(false, false, null, 0, 0, null),
-            Rating = new MapProposalRating
-                { AccStar = new RankedMapRating.AccuracyStar(1), DiffStar = new RankedMapRating.DifficultyStar(1) }
+            Change = new MapProposalChange.Rank
+            {
+                Requirements = new RankedMapRequirements(false, false, null, 0, 0, null),
+                Rating = new MapProposalRating
+                    { AccStar = new RankedMapRating.AccuracyStar(1), DiffStar = new RankedMapRating.DifficultyStar(1) }
+            }
         };
         var communityVote = new CommunityProposalVote
         {

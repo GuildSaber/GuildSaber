@@ -21,8 +21,11 @@ public class MapProposalTransitionTests
             AuthorId = draft.AuthorId,
             CreatedAt = draft.CreatedAt,
             SubmittedAt = draft.CreatedAt,
-            Rating = draft.Rating,
-            Requirements = draft.Requirements
+            Change = new MapProposalChange.Rank
+            {
+                Rating = ((MapProposalChange.Rank)draft.Change).Rating,
+                Requirements = ((MapProposalChange.Rank)draft.Change).Requirements
+            }
         };
 
         MapProposalService.GetTransitionError(draft, new PlayerId(1), MapProposalStatus.Submitted).Should().BeNull();
@@ -43,13 +46,26 @@ public class MapProposalTransitionTests
         [
             new AcceptedProposal
             {
-                AuthorId = draft.AuthorId, CreatedAt = draft.CreatedAt, SubmittedAt = draft.CreatedAt,
-                AcceptedAt = draft.CreatedAt, Rating = draft.Rating, Requirements = draft.Requirements
+                AuthorId = draft.AuthorId,
+                CreatedAt = draft.CreatedAt,
+                SubmittedAt = draft.CreatedAt,
+                AcceptedAt = draft.CreatedAt,
+                Change = new MapProposalChange.Rank
+                {
+                    Rating = ((MapProposalChange.Rank)draft.Change).Rating,
+                    Requirements = ((MapProposalChange.Rank)draft.Change).Requirements
+                }
             },
             new ClosedProposal
             {
-                AuthorId = draft.AuthorId, CreatedAt = draft.CreatedAt, ClosedAt = draft.CreatedAt,
-                Rating = draft.Rating, Requirements = draft.Requirements
+                AuthorId = draft.AuthorId,
+                CreatedAt = draft.CreatedAt,
+                ClosedAt = draft.CreatedAt,
+                Change = new MapProposalChange.Rank
+                {
+                    Rating = ((MapProposalChange.Rank)draft.Change).Rating,
+                    Requirements = ((MapProposalChange.Rank)draft.Change).Requirements
+                }
             }
         ];
 
@@ -66,8 +82,8 @@ public class MapProposalTransitionTests
     public void InvalidRating_ShouldPreventSubmission(float rating)
     {
         var draft = CreateDraft();
-        draft.Rating.AccStar = new RankedMapRating.AccuracyStar(rating);
-        draft.Rating.DiffStar = new RankedMapRating.DifficultyStar(rating);
+        ((MapProposalChange.Rank)draft.Change).Rating.AccStar = new RankedMapRating.AccuracyStar(rating);
+        ((MapProposalChange.Rank)draft.Change).Rating.DiffStar = new RankedMapRating.DifficultyStar(rating);
 
         MapProposalService.GetConfigurationErrors(draft).Select(x => x.Key)
             .Should().BeEquivalentTo("Rating.AccStar", "Rating.DiffStar");
@@ -79,8 +95,8 @@ public class MapProposalTransitionTests
     public void FiniteNonNegativeRatings_ShouldBeValid(float rating)
     {
         var draft = CreateDraft();
-        draft.Rating.AccStar = new RankedMapRating.AccuracyStar(rating);
-        draft.Rating.DiffStar = new RankedMapRating.DifficultyStar(rating);
+        ((MapProposalChange.Rank)draft.Change).Rating.AccStar = new RankedMapRating.AccuracyStar(rating);
+        ((MapProposalChange.Rank)draft.Change).Rating.DiffStar = new RankedMapRating.DifficultyStar(rating);
 
         MapProposalService.GetConfigurationErrors(draft).Should().BeEmpty();
     }
@@ -92,8 +108,8 @@ public class MapProposalTransitionTests
     public void MissingRatings_ShouldBeAllowedBeforeResolution(bool automaticAccuracy, bool automaticDifficulty)
     {
         var draft = CreateDraft();
-        if (automaticAccuracy) draft.Rating.AccStar = null;
-        if (automaticDifficulty) draft.Rating.DiffStar = null;
+        if (automaticAccuracy) ((MapProposalChange.Rank)draft.Change).Rating.AccStar = null;
+        if (automaticDifficulty) ((MapProposalChange.Rank)draft.Change).Rating.DiffStar = null;
 
         MapProposalService.GetConfigurationErrors(draft).Should().BeEmpty();
     }
@@ -107,13 +123,13 @@ public class MapProposalTransitionTests
         bool automaticRating, bool tiedOrder, bool sameDifficulty)
     {
         var draft = CreateDraft();
-        if (automaticRating) draft.Rating.AccStar = null;
-        draft.MapVersions.Clear();
-        draft.MapVersions.Add(new MapProposalVersion
+        if (automaticRating) ((MapProposalChange.Rank)draft.Change).Rating.AccStar = null;
+        ((MapProposalChange.Rank)draft.Change).MapVersions.Clear();
+        ((MapProposalChange.Rank)draft.Change).MapVersions.Add(new MapProposalVersion
         {
             SongDifficultyId = new SongDifficultyId(1), PlayModeName = "Standard", Order = 0
         });
-        draft.MapVersions.Add(new MapProposalVersion
+        ((MapProposalChange.Rank)draft.Change).MapVersions.Add(new MapProposalVersion
         {
             SongDifficultyId = new SongDifficultyId(sameDifficulty ? 1 : 2), PlayModeName = "Alternate",
             Order = (byte)(tiedOrder ? 0 : 1)
@@ -122,7 +138,7 @@ public class MapProposalTransitionTests
         var errors = MapProposalService.GetConfigurationErrors(draft);
 
         if (automaticRating && tiedOrder && !sameDifficulty)
-            errors.Should().ContainSingle().Which.Key.Should().Be(nameof(MapProposal.MapVersions));
+            errors.Should().ContainSingle().Which.Key.Should().Be(nameof(MapProposalChange.Rank.MapVersions));
         else
             errors.Should().BeEmpty();
     }
@@ -131,10 +147,10 @@ public class MapProposalTransitionTests
     public void MissingVersions_ShouldPreventSubmission()
     {
         var draft = CreateDraft();
-        draft.MapVersions.Clear();
+        ((MapProposalChange.Rank)draft.Change).MapVersions.Clear();
 
         MapProposalService.GetConfigurationErrors(draft).Should()
-            .Contain(x => x.Key == nameof(MapProposal.MapVersions));
+            .Contain(x => x.Key == nameof(MapProposalChange.Rank.MapVersions));
     }
 
     [Test]
@@ -142,12 +158,16 @@ public class MapProposalTransitionTests
     {
         var draft = new DraftProposal
         {
-            AuthorId = new PlayerId(1), CreatedAt = DateTimeOffset.UnixEpoch,
-            Rating = new MapProposalRating
-                { AccStar = new RankedMapRating.AccuracyStar(1), DiffStar = new RankedMapRating.DifficultyStar(1) },
-            Requirements = new RankedMapRequirements(false, false, null,
-                AbstractScore.EModifiers.FasterSong, AbstractScore.EModifiers.FasterSong, null),
-            MapVersions = [new MapProposalVersion { PlayModeName = "Standard" }]
+            AuthorId = new PlayerId(1),
+            CreatedAt = DateTimeOffset.UnixEpoch,
+            Change = new MapProposalChange.Rank
+            {
+                Rating = new MapProposalRating
+                    { AccStar = new RankedMapRating.AccuracyStar(1), DiffStar = new RankedMapRating.DifficultyStar(1) },
+                Requirements = new RankedMapRequirements(false, false, null,
+                    AbstractScore.EModifiers.FasterSong, AbstractScore.EModifiers.FasterSong, null),
+                MapVersions = [new MapProposalVersion { PlayModeName = "Standard" }]
+            }
         };
 
         MapProposalService.GetConfigurationErrors(draft).Should()
@@ -158,9 +178,12 @@ public class MapProposalTransitionTests
     {
         AuthorId = new PlayerId(1),
         CreatedAt = DateTimeOffset.UnixEpoch,
-        Rating = new MapProposalRating
-            { AccStar = new RankedMapRating.AccuracyStar(1), DiffStar = new RankedMapRating.DifficultyStar(1) },
-        Requirements = new RankedMapRequirements(false, false, null, 0, 0, null),
-        MapVersions = [new MapProposalVersion { PlayModeName = "Standard" }]
+        Change = new MapProposalChange.Rank
+        {
+            Rating = new MapProposalRating
+                { AccStar = new RankedMapRating.AccuracyStar(1), DiffStar = new RankedMapRating.DifficultyStar(1) },
+            Requirements = new RankedMapRequirements(false, false, null, 0, 0, null),
+            MapVersions = [new MapProposalVersion { PlayModeName = "Standard" }]
+        }
     };
 }

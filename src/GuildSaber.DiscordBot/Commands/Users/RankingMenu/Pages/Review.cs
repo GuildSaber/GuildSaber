@@ -4,6 +4,7 @@ using Discord;
 using Discord.Interactions;
 using GuildSaber.Api.Features.Guilds.Members.Http;
 using GuildSaber.Api.Features.Players.Http;
+using GuildSaber.Common.Helpers;
 using static GuildSaber.Api.Features.MapRequests.Http.MapProposalRequests;
 using static GuildSaber.Api.Features.MapRequests.Http.MapRequestResponses;
 using static GuildSaber.DiscordBot.Commands.Users.UserModuleSlash;
@@ -15,8 +16,18 @@ public partial class UserModuleSlash
 {
     public enum ERankingProposalAction
     {
-        Support, Oppose, RemoveVote, SupportRT, OpposeRT, RemoveRTVote,
-        Accept, Deny, Submit, Withdraw, DeleteDraft, ForceSubmit
+        Support,
+        Oppose,
+        RemoveVote,
+        SupportRT,
+        OpposeRT,
+        RemoveRTVote,
+        Accept,
+        Deny,
+        Submit,
+        Withdraw,
+        DeleteDraft,
+        ForceSubmit
     }
 
     [ComponentInteraction("ranking_vote:*,*,*,*,*,*,*")]
@@ -24,20 +35,21 @@ public partial class UserModuleSlash
         ContextId contextId, MapRequestThreadId threadId, MapProposalId proposalId, ERankingProposalAction action,
         int listPage, EMapRequestSorter sortBy, ERankingThreadOrigin origin)
     {
-        await DeferRankingInteractionAsync();
-
-        var result = await (action switch
-        {
-            ERankingProposalAction.Support => Client.Value.MapRequests.VoteCommunityAsync(
-                contextId, threadId, proposalId, new CommunityVote(true)),
-            ERankingProposalAction.Oppose => Client.Value.MapRequests.VoteCommunityAsync(
-                contextId, threadId, proposalId, new CommunityVote(false)),
-            ERankingProposalAction.RemoveVote => Client.Value.MapRequests.RemoveCommunityVoteAsync(
-                contextId, threadId, proposalId),
-            ERankingProposalAction.RemoveRTVote => Client.Value.MapRequests.RemoveRankingTeamVoteAsync(
-                contextId, threadId, proposalId),
-            _ => throw new ArgumentOutOfRangeException(nameof(action))
-        });
+        var result = await (
+            DeferRankingInteractionAsync(),
+            action switch
+            {
+                ERankingProposalAction.Support => Client.Value.MapRequests.VoteCommunityAsync(
+                    contextId, threadId, proposalId, new CommunityVote(true)),
+                ERankingProposalAction.Oppose => Client.Value.MapRequests.VoteCommunityAsync(
+                    contextId, threadId, proposalId, new CommunityVote(false)),
+                ERankingProposalAction.RemoveVote => Client.Value.MapRequests.RemoveCommunityVoteAsync(
+                    contextId, threadId, proposalId),
+                ERankingProposalAction.RemoveRTVote => Client.Value.MapRequests.RemoveRankingTeamVoteAsync(
+                    contextId, threadId, proposalId),
+                _ => throw new ArgumentOutOfRangeException(nameof(action))
+            }
+        ).WhenAll();
 
         await OpenRankingProposal(contextId, threadId, proposalId, listPage, sortBy, origin);
         if (result.TryGetError(out var error)) await ReportRankingErrorAsync(error);
@@ -63,21 +75,22 @@ public partial class UserModuleSlash
         ContextId contextId, MapRequestThreadId threadId, MapProposalId proposalId, ERankingProposalAction action,
         int listPage, EMapRequestSorter sortBy, ERankingThreadOrigin origin, RankingProposalReasonModal modal)
     {
-        await DeferRankingInteractionAsync();
-
         var reason = string.IsNullOrWhiteSpace(modal.Reason) ? null : modal.Reason.Trim();
-        var error = await (action switch
-        {
-            ERankingProposalAction.SupportRT => GetRankingErrorAsync(Client.Value.MapRequests.VoteRankingTeamAsync(
-                contextId, threadId, proposalId, new RankingTeamVote(true, reason))),
-            ERankingProposalAction.OpposeRT => GetRankingErrorAsync(Client.Value.MapRequests.VoteRankingTeamAsync(
-                contextId, threadId, proposalId, new RankingTeamVote(false, reason))),
-            ERankingProposalAction.Deny => GetRankingErrorAsync(Client.Value.MapRequests.DenyAsync(
-                contextId, threadId, proposalId, reason)),
-            ERankingProposalAction.Withdraw => GetRankingErrorAsync(Client.Value.MapRequests.CloseAsync(
-                contextId, threadId, proposalId, reason)),
-            _ => throw new ArgumentOutOfRangeException(nameof(action))
-        });
+        var error = await (
+            DeferRankingInteractionAsync(),
+            action switch
+            {
+                ERankingProposalAction.SupportRT => GetRankingErrorAsync(Client.Value.MapRequests.VoteRankingTeamAsync(
+                    contextId, threadId, proposalId, new RankingTeamVote(true, reason))),
+                ERankingProposalAction.OpposeRT => GetRankingErrorAsync(Client.Value.MapRequests.VoteRankingTeamAsync(
+                    contextId, threadId, proposalId, new RankingTeamVote(false, reason))),
+                ERankingProposalAction.Deny => GetRankingErrorAsync(Client.Value.MapRequests.DenyAsync(
+                    contextId, threadId, proposalId, reason)),
+                ERankingProposalAction.Withdraw => GetRankingErrorAsync(Client.Value.MapRequests.CloseAsync(
+                    contextId, threadId, proposalId, reason)),
+                _ => throw new ArgumentOutOfRangeException(nameof(action))
+            }
+        ).WhenAll();
 
         await OpenRankingProposal(contextId, threadId, proposalId, listPage, sortBy, origin);
         if (error is not null) await ReportRankingErrorAsync(error);
@@ -88,9 +101,10 @@ public partial class UserModuleSlash
         ContextId contextId, MapRequestThreadId threadId, MapProposalId proposalId, ERankingProposalAction action,
         int listPage, EMapRequestSorter sortBy, ERankingThreadOrigin origin)
     {
-        await DeferRankingInteractionAsync();
-
-        var result = await Client.Value.MapRequests.GetProposalAsync(contextId, threadId, proposalId);
+        var result = await (
+            DeferRankingInteractionAsync(),
+            Client.Value.MapRequests.GetProposalAsync(contextId, threadId, proposalId)
+        ).WhenAll();
         if (result.TryGetError(out var error))
         {
             await ReportRankingErrorAsync(error);
@@ -116,19 +130,20 @@ public partial class UserModuleSlash
         ContextId contextId, MapRequestThreadId threadId, MapProposalId proposalId, ERankingProposalAction action,
         int listPage, EMapRequestSorter sortBy, ERankingThreadOrigin origin)
     {
-        await DeferRankingInteractionAsync();
-
-        var error = await (action switch
-        {
-            ERankingProposalAction.Accept => GetRankingErrorAsync(Client.Value.MapRequests.AcceptAsync(
-                contextId, threadId, proposalId)),
-            ERankingProposalAction.Submit or ERankingProposalAction.ForceSubmit
-                => GetRankingErrorAsync(Client.Value.MapRequests.SubmitAsync(
-                    contextId, threadId, proposalId, force: action == ERankingProposalAction.ForceSubmit)),
-            ERankingProposalAction.DeleteDraft => GetRankingErrorAsync(Client.Value.MapRequests.DeleteDraftAsync(
-                contextId, threadId, proposalId)),
-            _ => throw new ArgumentOutOfRangeException(nameof(action))
-        });
+        var error = await (
+            DeferRankingInteractionAsync(),
+            action switch
+            {
+                ERankingProposalAction.Accept => GetRankingErrorAsync(Client.Value.MapRequests.AcceptAsync(
+                    contextId, threadId, proposalId)),
+                ERankingProposalAction.Submit or ERankingProposalAction.ForceSubmit
+                    => GetRankingErrorAsync(Client.Value.MapRequests.SubmitAsync(
+                        contextId, threadId, proposalId, force: action == ERankingProposalAction.ForceSubmit)),
+                ERankingProposalAction.DeleteDraft => GetRankingErrorAsync(Client.Value.MapRequests.DeleteDraftAsync(
+                    contextId, threadId, proposalId)),
+                _ => throw new ArgumentOutOfRangeException(nameof(action))
+            }
+        ).WhenAll();
 
         if (error is { Code: "duplicate_maps" })
         {
@@ -157,7 +172,7 @@ public partial class UserModuleSlash
             await FollowupAsync(action switch
             {
                 ERankingProposalAction.Accept =>
-                    "Proposal accepted. The ranked map has been updated and competing open proposals closed.",
+                    "Proposal accepted. Its requested change was applied and member stats refresh in the background.",
                 ERankingProposalAction.DeleteDraft => "Your private draft has been deleted.",
                 _ => "Your proposal is now open for review."
             }, ephemeral: true);
@@ -168,11 +183,12 @@ public partial class UserModuleSlash
         ContextId contextId, MapRequestThreadId threadId, bool boost, int listPage, EMapRequestSorter sortBy,
         ERankingThreadOrigin origin, ERankingThreadTab tab, int page, int versionPage)
     {
-        await DeferRankingInteractionAsync();
-
-        var result = await (boost
-            ? Client.Value.MapRequests.BoostAsync(contextId, threadId)
-            : Client.Value.MapRequests.RemoveBoostAsync(contextId, threadId));
+        var result = await (
+            DeferRankingInteractionAsync(),
+            boost
+                ? Client.Value.MapRequests.BoostAsync(contextId, threadId)
+                : Client.Value.MapRequests.RemoveBoostAsync(contextId, threadId)
+        ).WhenAll();
 
         await ShowRankingThreadAsync(contextId, threadId,
             new RankingThreadNavigation(tab, page, versionPage, listPage, sortBy, origin));
@@ -253,7 +269,8 @@ internal static class RankingProposalActions
                 _ => null
             };
 
-            builder.WithActionRow(row => row.WithButton("Fork as draft",
+            builder.WithActionRow(row => row.WithButton(
+                proposal.Change is ProposalChange.Unrank ? "Draft a ranking" : "Fork as draft",
                 $"ranking_fork:{thread.ContextId},{thread.Id},{proposal.Id},{navigation.ListPage},{(int)navigation.SortBy},{(int)navigation.Origin}",
                 disabled: unavailable is not null));
 
@@ -325,7 +342,7 @@ internal static class RankingProposalActions
         {
             builder.WithActionRow(row => row
                 .WithButton("Revise draft",
-                    $"ranking_draft:{thread.ContextId},{thread.Id},{proposal.Id},{navigation.ListPage},{(int)navigation.SortBy},{(int)navigation.Origin}")
+                    $"{(proposal.Change is ProposalChange.Unrank ? "ranking_unrank" : "ranking_draft")}:{thread.ContextId},{thread.Id},{proposal.Id},{navigation.ListPage},{(int)navigation.SortBy},{(int)navigation.Origin}")
                 .WithButton("Submit for review",
                     ActionId("ranking_confirm", thread, proposal, ERankingProposalAction.Submit, navigation),
                     ButtonStyle.Success)
@@ -349,14 +366,17 @@ internal static class RankingProposalActions
             .WithAccentColor(action == ERankingProposalAction.Accept ? Color.Green : Color.Orange)
             .WithTextDisplay($"### {action switch
             {
-                ERankingProposalAction.Accept => "Accept this proposal?",
+                ERankingProposalAction.Accept => proposal.Change is ProposalChange.Unrank
+                    ? "Accept unranking?" : "Accept this proposal?",
                 ERankingProposalAction.DeleteDraft => "Delete this private draft?",
                 ERankingProposalAction.ForceSubmit => "Submit a separate ranking anyway?",
                 ERankingProposalAction.Submit => "Publish this proposal?",
                 _ => throw new ArgumentOutOfRangeException(nameof(action))
-            }}\n**Proposal #{proposal.Id}** · {proposal.Definition.MapVersions.First().Song.Info.BeatSaverName}\n" +
+            }}\n**Proposal #{proposal.Id}** · {proposal.GetPreviewDefinition().MapVersions.First().Song.Info.BeatSaverName}\n" +
                              action switch
                              {
+                                 ERankingProposalAction.Accept when proposal.Change is ProposalChange.Unrank =>
+                                     "This removes the targeted ranked entry and its ranked scores, closes competing open proposals and releases boosts. Member points and achievement progress will be refreshed.",
                                  ERankingProposalAction.Accept =>
                                      "This applies the complete definition to the ranked map, closes competing open proposals and releases boosts. Private drafts stay open.",
                                  ERankingProposalAction.DeleteDraft =>
@@ -364,12 +384,15 @@ internal static class RankingProposalActions
                                  ERankingProposalAction.ForceSubmit =>
                                      "You are deliberately requesting a separate ranking despite the duplicate matches. Existing requests and rankings will not be replaced.",
                                  _ =>
-                                     "The proposal becomes immutable and visible for review. Missing ratings will be calculated before submission."
+                                     proposal.Change is ProposalChange.Unrank
+                                         ? "Publish the unranking request and its reason for community and ranking-team review."
+                                         : "The proposal becomes immutable and visible for review. Missing ratings will be calculated before submission."
                              })
             .WithActionRow(row => row
                 .WithButton(action == ERankingProposalAction.Accept ? "Confirm acceptance" : "Confirm",
                     $"ranking_apply:{contextId},{threadId},{proposal.Id},{(int)action},{listPage},{(int)sortBy},{(int)origin}",
                     action is ERankingProposalAction.DeleteDraft or ERankingProposalAction.ForceSubmit
+                    || action == ERankingProposalAction.Accept && proposal.Change is ProposalChange.Unrank
                         ? ButtonStyle.Danger
                         : ButtonStyle.Success)
                 .WithButton("Cancel",
@@ -379,5 +402,6 @@ internal static class RankingProposalActions
     private static string ActionId(
         string prefix, ThreadResponse thread, Proposal proposal, ERankingProposalAction action,
         RankingThreadNavigation navigation)
-        => $"{prefix}:{thread.ContextId},{thread.Id},{proposal.Id},{(int)action},{navigation.ListPage},{(int)navigation.SortBy},{(int)navigation.Origin}";
+        =>
+            $"{prefix}:{thread.ContextId},{thread.Id},{proposal.Id},{(int)action},{navigation.ListPage},{(int)navigation.SortBy},{(int)navigation.Origin}";
 }

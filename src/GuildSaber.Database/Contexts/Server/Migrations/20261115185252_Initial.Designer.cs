@@ -14,8 +14,8 @@ using NpgsqlTypes;
 namespace GuildSaber.Database.Contexts.Server.Migrations;
 
 [DbContext(typeof(ServerDbContext))]
-[Migration("20261103144308_AccuracyDoublePrecision")]
-partial class _20261103144308_AccuracyDoublePrecision
+[Migration("20261115185252_Initial")]
+partial class _20261115185252_Initial
 {
     /// <inheritdoc />
     protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -782,53 +782,6 @@ partial class _20261103144308_AccuracyDoublePrecision
                 b.Property<byte>("status")
                     .HasColumnType("smallint");
 
-                b.ComplexProperty(typeof(Dictionary<string, object>), "Rating", "GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposal.Rating#MapProposalRating", b1 =>
-                    {
-                        b1.IsRequired();
-
-                        b1.Property<float?>("AccStar")
-                            .HasColumnType("real");
-
-                        b1.Property<float?>("DiffStar")
-                            .HasColumnType("real");
-
-                        b1.Property<bool>("IsAccStarAutoCalculated")
-                            .HasColumnType("boolean")
-                            .HasColumnName("Rating_IsAccStarAutoCalculated");
-
-                        b1.Property<bool>("IsDiffStarAutoCalculated")
-                            .HasColumnType("boolean")
-                            .HasColumnName("Rating_IsDiffStarAutoCalculated");
-                    });
-
-                b.ComplexProperty(typeof(Dictionary<string, object>), "Requirements", "GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposal.Requirements#RankedMapRequirements", b1 =>
-                    {
-                        b1.IsRequired();
-
-                        b1.Property<int>("MandatoryModifiers")
-                            .HasColumnType("integer")
-                            .HasColumnName("Requirements_MandatoryModifiers");
-
-                        b1.Property<float?>("MaxPauseDurationSec")
-                            .HasColumnType("real")
-                            .HasColumnName("Requirements_MaxPauseDurationSec");
-
-                        b1.Property<double?>("MinAccuracy")
-                            .HasColumnType("double precision");
-
-                        b1.Property<bool>("NeedConfirmation")
-                            .HasColumnType("boolean")
-                            .HasColumnName("Requirements_NeedConfirmation");
-
-                        b1.Property<bool>("NeedFullCombo")
-                            .HasColumnType("boolean")
-                            .HasColumnName("Requirements_NeedFullCombo");
-
-                        b1.Property<int>("ProhibitedModifiers")
-                            .HasColumnType("integer")
-                            .HasColumnName("Requirements_ProhibitedModifiers");
-                    });
-
                 b.HasKey("Id");
 
                 b.HasIndex("AuthorId");
@@ -838,11 +791,26 @@ partial class _20261103144308_AccuracyDoublePrecision
                 b.ToTable("MapProposals", t =>
                     {
                         t.HasCheckConstraint("CK_MapProposals_Lifecycle", "(\"status\" = 0\n    AND \"SubmittedAt\" IS NULL AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 1\n    AND \"SubmittedAt\" IS NOT NULL AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 2\n    AND \"SubmittedAt\" IS NOT NULL AND \"AcceptedAt\" IS NOT NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 3\n    AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NOT NULL)");
-
-                        t.HasCheckConstraint("CK_MapProposals_ResolvedRating", "\"SubmittedAt\" IS NULL\nOR (\"Rating_AccStar\" IS NOT NULL\n    AND \"Rating_DiffStar\" IS NOT NULL)");
                     });
 
                 b.HasDiscriminator<byte>("status").IsComplete(true);
+
+                b.UseTphMappingStrategy();
+            });
+
+        modelBuilder.Entity("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposalChange", b =>
+            {
+                b.Property<long>("ProposalId")
+                    .HasColumnType("bigint");
+
+                b.Property<byte>("Kind")
+                    .HasColumnType("smallint");
+
+                b.HasKey("ProposalId");
+
+                b.ToTable("MapProposalChanges");
+
+                b.HasDiscriminator<byte>("Kind").IsComplete(true);
 
                 b.UseTphMappingStrategy();
             });
@@ -1764,8 +1732,6 @@ partial class _20261103144308_AccuracyDoublePrecision
                 b.ToTable(t =>
                     {
                         t.HasCheckConstraint("CK_MapProposals_Lifecycle", "(\"status\" = 0\n    AND \"SubmittedAt\" IS NULL AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 1\n    AND \"SubmittedAt\" IS NOT NULL AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 2\n    AND \"SubmittedAt\" IS NOT NULL AND \"AcceptedAt\" IS NOT NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 3\n    AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NOT NULL)");
-
-                        t.HasCheckConstraint("CK_MapProposals_ResolvedRating", "\"SubmittedAt\" IS NULL\nOR (\"Rating_AccStar\" IS NOT NULL\n    AND \"Rating_DiffStar\" IS NOT NULL)");
                     });
 
                 b.HasDiscriminator().HasValue((byte)2);
@@ -1794,8 +1760,6 @@ partial class _20261103144308_AccuracyDoublePrecision
                 b.ToTable(t =>
                     {
                         t.HasCheckConstraint("CK_MapProposals_Lifecycle", "(\"status\" = 0\n    AND \"SubmittedAt\" IS NULL AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 1\n    AND \"SubmittedAt\" IS NOT NULL AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 2\n    AND \"SubmittedAt\" IS NOT NULL AND \"AcceptedAt\" IS NOT NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 3\n    AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NOT NULL)");
-
-                        t.HasCheckConstraint("CK_MapProposals_ResolvedRating", "\"SubmittedAt\" IS NULL\nOR (\"Rating_AccStar\" IS NOT NULL\n    AND \"Rating_DiffStar\" IS NOT NULL)");
                     });
 
                 b.HasDiscriminator().HasValue((byte)3);
@@ -1808,8 +1772,6 @@ partial class _20261103144308_AccuracyDoublePrecision
                 b.ToTable(t =>
                     {
                         t.HasCheckConstraint("CK_MapProposals_Lifecycle", "(\"status\" = 0\n    AND \"SubmittedAt\" IS NULL AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 1\n    AND \"SubmittedAt\" IS NOT NULL AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 2\n    AND \"SubmittedAt\" IS NOT NULL AND \"AcceptedAt\" IS NOT NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 3\n    AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NOT NULL)");
-
-                        t.HasCheckConstraint("CK_MapProposals_ResolvedRating", "\"SubmittedAt\" IS NULL\nOR (\"Rating_AccStar\" IS NOT NULL\n    AND \"Rating_DiffStar\" IS NOT NULL)");
                     });
 
                 b.HasDiscriminator().HasValue((byte)0);
@@ -1827,9 +1789,78 @@ partial class _20261103144308_AccuracyDoublePrecision
                 b.ToTable(t =>
                     {
                         t.HasCheckConstraint("CK_MapProposals_Lifecycle", "(\"status\" = 0\n    AND \"SubmittedAt\" IS NULL AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 1\n    AND \"SubmittedAt\" IS NOT NULL AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 2\n    AND \"SubmittedAt\" IS NOT NULL AND \"AcceptedAt\" IS NOT NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 3\n    AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NOT NULL)");
-
-                        t.HasCheckConstraint("CK_MapProposals_ResolvedRating", "\"SubmittedAt\" IS NULL\nOR (\"Rating_AccStar\" IS NOT NULL\n    AND \"Rating_DiffStar\" IS NOT NULL)");
                     });
+
+                b.HasDiscriminator().HasValue((byte)1);
+            });
+
+        modelBuilder.Entity("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposalChange+Rank", b =>
+            {
+                b.HasBaseType("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposalChange");
+
+                b.ComplexProperty(typeof(Dictionary<string, object>), "Rating", "GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposalChange+Rank.Rating#MapProposalRating", b1 =>
+                    {
+                        b1.IsRequired();
+
+                        b1.Property<float?>("AccStar")
+                            .HasColumnType("real");
+
+                        b1.Property<float?>("DiffStar")
+                            .HasColumnType("real");
+
+                        b1.Property<bool>("IsAccStarAutoCalculated")
+                            .HasColumnType("boolean")
+                            .HasColumnName("Rating_IsAccStarAutoCalculated");
+
+                        b1.Property<bool>("IsDiffStarAutoCalculated")
+                            .HasColumnType("boolean")
+                            .HasColumnName("Rating_IsDiffStarAutoCalculated");
+                    });
+
+                b.ComplexProperty(typeof(Dictionary<string, object>), "Requirements", "GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposalChange+Rank.Requirements#RankedMapRequirements", b1 =>
+                    {
+                        b1.IsRequired();
+
+                        b1.Property<int>("MandatoryModifiers")
+                            .HasColumnType("integer")
+                            .HasColumnName("Requirements_MandatoryModifiers");
+
+                        b1.Property<float?>("MaxPauseDurationSec")
+                            .HasColumnType("real")
+                            .HasColumnName("Requirements_MaxPauseDurationSec");
+
+                        b1.Property<double?>("MinAccuracy")
+                            .HasColumnType("double precision");
+
+                        b1.Property<bool>("NeedConfirmation")
+                            .HasColumnType("boolean")
+                            .HasColumnName("Requirements_NeedConfirmation");
+
+                        b1.Property<bool>("NeedFullCombo")
+                            .HasColumnType("boolean")
+                            .HasColumnName("Requirements_NeedFullCombo");
+
+                        b1.Property<int>("ProhibitedModifiers")
+                            .HasColumnType("integer")
+                            .HasColumnName("Requirements_ProhibitedModifiers");
+                    });
+
+                b.HasDiscriminator().HasValue((byte)0);
+            });
+
+        modelBuilder.Entity("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposalChange+Unrank", b =>
+            {
+                b.HasBaseType("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposalChange");
+
+                b.Property<string>("Reason")
+                    .IsRequired()
+                    .HasMaxLength(2000)
+                    .HasColumnType("character varying(2000)");
+
+                b.Property<long>("TargetAcceptedProposalId")
+                    .HasColumnType("bigint");
+
+                b.HasIndex("TargetAcceptedProposalId");
 
                 b.HasDiscriminator().HasValue((byte)1);
             });
@@ -2204,31 +2235,42 @@ partial class _20261103144308_AccuracyDoublePrecision
                 b.Navigation("Thread");
             });
 
-        modelBuilder.Entity("GuildSaber.Database.Models.Server.MapRequests.Proposals.Snapshots.MapProposalAchievement", b =>
+        modelBuilder.Entity("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposalChange", b =>
             {
                 b.HasOne("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposal", "Proposal")
+                    .WithOne("Change")
+                    .HasForeignKey("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposalChange", "ProposalId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+
+                b.Navigation("Proposal");
+            });
+
+        modelBuilder.Entity("GuildSaber.Database.Models.Server.MapRequests.Proposals.Snapshots.MapProposalAchievement", b =>
+            {
+                b.HasOne("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposalChange+Rank", "Change")
                     .WithMany("Achievements")
                     .HasForeignKey("ProposalId")
                     .OnDelete(DeleteBehavior.Cascade)
                     .IsRequired();
 
-                b.Navigation("Proposal");
+                b.Navigation("Change");
             });
 
         modelBuilder.Entity("GuildSaber.Database.Models.Server.MapRequests.Proposals.Snapshots.MapProposalCategory", b =>
             {
-                b.HasOne("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposal", "Proposal")
+                b.HasOne("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposalChange+Rank", "Change")
                     .WithMany("Categories")
                     .HasForeignKey("ProposalId")
                     .OnDelete(DeleteBehavior.Cascade)
                     .IsRequired();
 
-                b.Navigation("Proposal");
+                b.Navigation("Change");
             });
 
         modelBuilder.Entity("GuildSaber.Database.Models.Server.MapRequests.Proposals.Snapshots.MapProposalVersion", b =>
             {
-                b.HasOne("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposal", "Proposal")
+                b.HasOne("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposalChange+Rank", "Change")
                     .WithMany("MapVersions")
                     .HasForeignKey("ProposalId")
                     .OnDelete(DeleteBehavior.Cascade)
@@ -2240,7 +2282,7 @@ partial class _20261103144308_AccuracyDoublePrecision
                     .OnDelete(DeleteBehavior.NoAction)
                     .IsRequired();
 
-                b.Navigation("Proposal");
+                b.Navigation("Change");
 
                 b.Navigation("SongDifficulty");
             });
@@ -2495,6 +2537,17 @@ partial class _20261103144308_AccuracyDoublePrecision
                 b.Navigation("ClosedBy");
             });
 
+        modelBuilder.Entity("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposalChange+Unrank", b =>
+            {
+                b.HasOne("GuildSaber.Database.Models.Server.MapRequests.Proposals.Types.AcceptedProposal", "TargetAcceptedProposal")
+                    .WithMany()
+                    .HasForeignKey("TargetAcceptedProposalId")
+                    .OnDelete(DeleteBehavior.NoAction)
+                    .IsRequired();
+
+                b.Navigation("TargetAcceptedProposal");
+            });
+
         modelBuilder.Entity("GuildSaber.Database.Models.Server.Guilds.Context", b =>
             {
                 b.Navigation("Achievements");
@@ -2546,11 +2599,8 @@ partial class _20261103144308_AccuracyDoublePrecision
 
         modelBuilder.Entity("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposal", b =>
             {
-                b.Navigation("Achievements");
-
-                b.Navigation("Categories");
-
-                b.Navigation("MapVersions");
+                b.Navigation("Change")
+                    .IsRequired();
 
                 b.Navigation("Votes");
             });
@@ -2580,6 +2630,14 @@ partial class _20261103144308_AccuracyDoublePrecision
                 b.Navigation("SongDifficulties");
             });
 
+        modelBuilder.Entity("GuildSaber.Database.Models.Server.MapRequests.Proposals.MapProposalChange+Rank", b =>
+            {
+                b.Navigation("Achievements");
+
+                b.Navigation("Categories");
+
+                b.Navigation("MapVersions");
+            });
 #pragma warning restore 612, 618
     }
 }

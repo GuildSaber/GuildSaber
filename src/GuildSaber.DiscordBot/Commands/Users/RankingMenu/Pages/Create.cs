@@ -18,14 +18,16 @@ public partial class UserModuleSlash
     [ModalInteraction("ranking_new_lookup:*")]
     public async Task LookupNewRankingMapAsync(ContextId contextId, RankingNewMapModal modal)
     {
-        await DeferRankingInteractionAsync();
         if (!ParseDraftSong(modal.Song).TryGetValue(out var song, out var inputError))
         {
-            await FollowupAsync(inputError, ephemeral: true);
+            await RespondAsync(inputError, ephemeral: true);
             return;
         }
 
-        if (!(await Client.Value.MapRequests.LookupSongAsync(contextId, song))
+        if (!(await (
+                DeferRankingInteractionAsync(),
+                Client.Value.MapRequests.LookupSongAsync(contextId, song)
+            ).WhenAll())
             .TryGetValue(out var lookup, out var error))
         {
             await ReportRankingErrorAsync(error);
@@ -52,8 +54,7 @@ public partial class UserModuleSlash
     [ComponentInteraction("ranking_new_map:*,*,*")]
     public async Task ShowRankingMapSelectionAsync(string sessionId, int difficultyPage, int playModePage)
     {
-        await DeferRankingInteractionAsync();
-        if (await GetRankingMapSelectionAsync(sessionId) is not { } selection) return;
+        if (await GetRankingMapSelectionAsync(sessionId, defer: true) is not { } selection) return;
 
         var component = RankingMapSelectionView.BuildComponent(sessionId, selection,
             Math.Clamp(difficultyPage, 1, (selection.Lookup.Difficulties.Length + 24) / 25),
@@ -70,8 +71,7 @@ public partial class UserModuleSlash
     public async Task ChooseNewRankingMapAsync(
         string sessionId, ERankingMapChoice choice, int difficultyPage, int playModePage, string[] values)
     {
-        await DeferRankingInteractionAsync();
-        if (await GetRankingMapSelectionAsync(sessionId) is not { } selection) return;
+        if (await GetRankingMapSelectionAsync(sessionId, defer: true) is not { } selection) return;
 
         if (!int.TryParse(values[0], out var index) || index < 0 || index >= (choice == ERankingMapChoice.Difficulty
                 ? selection.Lookup.Difficulties.Length
@@ -97,15 +97,20 @@ public partial class UserModuleSlash
         await ShowRankingMapSelectionAsync(sessionId, difficultyPage, playModePage);
     }
 
-    private async ValueTask<RankingMapSelection?> GetRankingMapSelectionAsync(string sessionId)
+    private async ValueTask<RankingMapSelection?> GetRankingMapSelectionAsync(string sessionId, bool defer = false)
     {
-        var selection = await Cache.GetOrCreateAsync<RankingMapSelection?>($"RankingMapSelection_{sessionId}",
-            static _ => ValueTask.FromResult<RankingMapSelection?>(null));
+        var selection = await (
+            defer ? DeferRankingInteractionAsync() : Task.CompletedTask,
+            Cache.GetOrCreateAsync<RankingMapSelection?>($"RankingMapSelection_{sessionId}",
+                static _ => ValueTask.FromResult<RankingMapSelection?>(null)).AsTask()
+        ).WhenAll();
         if (selection is not null && selection.OwnerId == Context.User.DiscordId) return selection;
 
-        await FollowupAsync(
-            "This map selection has expired or belongs to another player. Start a new request from /ranking.",
-            ephemeral: true);
+        const string message =
+            "This map selection has expired or belongs to another player. Start a new request from /ranking.";
+        await (Context.Interaction.HasResponded
+            ? FollowupAsync(message, ephemeral: true)
+            : RespondAsync(message, ephemeral: true));
         return null;
     }
 

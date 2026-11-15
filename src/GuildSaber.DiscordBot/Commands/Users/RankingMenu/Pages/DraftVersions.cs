@@ -12,8 +12,7 @@ public partial class UserModuleSlash
     [ComponentInteraction("ranking_draft_versions:*,*")]
     public async Task ShowDraftVersionsAsync(string sessionId, int page)
     {
-        await DeferRankingInteractionAsync();
-        if (await GetDraftEditorAsync(sessionId) is not { } revision) return;
+        if (await GetDraftEditorAsync(sessionId, defer: true) is not { } revision) return;
 
         page = Math.Clamp(page, 1, revision.Definition.MapVersions.Length);
         await ModifyOriginalResponseAsync(x =>
@@ -53,8 +52,7 @@ public partial class UserModuleSlash
     [ModalInteraction("ranking_draft_version_save:*,*")]
     public async Task SaveDraftVersionAsync(string sessionId, int index, RankingDraftVersionModal modal)
     {
-        await DeferRankingInteractionAsync();
-        if (await GetDraftEditorAsync(sessionId) is not { } revision) return;
+        if (await GetDraftEditorAsync(sessionId, defer: true) is not { } revision) return;
 
         if (!ParseDraftSong(modal.Song).TryGetValue(out var song, out var error))
         {
@@ -94,8 +92,7 @@ public partial class UserModuleSlash
     [ComponentInteraction("ranking_draft_version_remove:*,*")]
     public async Task RemoveDraftVersionAsync(string sessionId, int index)
     {
-        await DeferRankingInteractionAsync();
-        if (await GetDraftEditorAsync(sessionId) is not { } revision) return;
+        if (await GetDraftEditorAsync(sessionId, defer: true) is not { } revision) return;
 
         if (revision.Definition.MapVersions.Length <= 1)
         {

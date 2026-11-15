@@ -38,11 +38,7 @@ public sealed class MapProposalService(
                   WHEN {0} = {{(byte)MapProposalStatus.Closed}} THEN {1} ELSE NULL END,
               "{{nameof(ClosedProposal.ClosedById)}}" = CASE
                   WHEN {0} = {{(byte)MapProposalStatus.Closed}} THEN {2}::integer ELSE NULL END,
-              "{{nameof(ClosedProposal.Reason)}}" = {3},
-              "{{nameof(MapProposal.Rating)}}_{{nameof(MapProposalRating.AccStar)}}" = {7},
-              "{{nameof(MapProposal.Rating)}}_{{nameof(MapProposalRating.DiffStar)}}" = {8},
-              "{{nameof(MapProposal.Rating)}}_{{nameof(MapProposalRating.IsAccStarAutoCalculated)}}" = {9},
-              "{{nameof(MapProposal.Rating)}}_{{nameof(MapProposalRating.IsDiffStarAutoCalculated)}}" = {10}
+              "{{nameof(ClosedProposal.Reason)}}" = {3}
           WHERE proposal."{{nameof(MapProposal.Id)}}" = {4}
               AND proposal."{{nameof(MapProposal.AuthorId)}}" IS NOT DISTINCT FROM {2}
               AND proposal."status" = {5}
@@ -57,7 +53,7 @@ public sealed class MapProposalService(
         RankedMapRequirements Requirements,
         SongDifficultyId SourceId)
     {
-        public static RatingInput From(DraftProposal proposal)
+        public static RatingInput From(MapProposalChange.Rank proposal)
             => new(proposal.Rating, proposal.Requirements,
                 proposal.MapVersions.MinBy(x => x.Order)!.SongDifficultyId);
     }
@@ -67,15 +63,27 @@ public sealed class MapProposalService(
     public closed record TransitionResponse
     {
         public sealed record Success(MapProposal Proposal) : TransitionResponse;
+
         public sealed record NotFound : TransitionResponse;
+
         public sealed record Forbidden : TransitionResponse;
+
         public sealed record AmendmentTierRequired : TransitionResponse;
+
         public sealed record InvalidState : TransitionResponse;
+
         public sealed record Conflict : TransitionResponse;
+
+        public sealed record TargetChanged : TransitionResponse;
+
         public sealed record Deleted : TransitionResponse;
+
         public sealed record LimitReached(int Limit) : TransitionResponse;
+
         public sealed record Duplicates(MapRequestResponses.DuplicateMatch[] Matches) : TransitionResponse;
+
         public sealed record RatingCalculationFailure(string Message) : TransitionResponse;
+
         public sealed record ValidationFailure(IEnumerable<KeyValuePair<string, string[]>> Errors) : TransitionResponse;
     }
 
@@ -112,7 +120,14 @@ public sealed class MapProposalService(
         if (errors.Count > 0)
             return new TransitionResponse.ValidationFailure(errors);
 
-        var draft = (DraftProposal)proposal;
+        if (proposal.Change is MapProposalChange.Unrank)
+            return await dbContext.Database.CreateExecutionStrategy().ExecuteAsync(
+                (service: this, contextId, proposalId, playerId, force, bypassAmendmentRequirement),
+                static (state, cancellationToken) => state.service.SetStateAsync(
+                    state.contextId, state.proposalId, state.playerId, MapProposalStatus.Submitted, null,
+                    cancellationToken, state.force, state.bypassAmendmentRequirement), token);
+
+        var draft = (MapProposalChange.Rank)proposal.Change;
         var input = RatingInput.From(draft);
 
         // ExMachina can be slow. Keep its response across database retries and recheck the inputs on publication.
@@ -153,6 +168,7 @@ public sealed class MapProposalService(
             var trackedConfiguration = dbContext.ChangeTracker.Entries().Where(entry => entry.Entity switch
             {
                 MapProposal tracked => tracked.Id == proposalId,
+                MapProposalChange change => change.ProposalId == proposalId,
                 MapProposalVersion version => version.ProposalId == proposalId,
                 MapProposalCategory category => category.ProposalId == proposalId,
                 MapProposalAchievement achievement => achievement.ProposalId == proposalId,
@@ -170,7 +186,6 @@ public sealed class MapProposalService(
             if (trackedBoosts.Any(x => x.State is EntityState.Added or EntityState.Modified or EntityState.Deleted))
                 throw new InvalidOperationException("Save or discard pending boost changes before closing a proposal.");
 
-            var rating = proposal.Rating;
             if (proposal is DraftProposal draft)
             {
                 if (playerId is not null && settings.Value.MinimumAmendmentTier > 0 && !bypassAmendmentRequirement
@@ -178,7 +193,8 @@ public sealed class MapProposalService(
                         .AnyAsync(x => x.ThreadId == draft.ThreadId && x.AuthorId != playerId, token))
                     return new TransitionResponse.AmendmentTierRequired();
 
-                var revision = await dbContext.RankedMaps.AnyAsync(x => x.ThreadId == draft.ThreadId, token);
+                var revision = draft.Change is MapProposalChange.Unrank
+                               || await dbContext.RankedMaps.AnyAsync(x => x.ThreadId == draft.ThreadId, token);
 
                 // Automated imports have no player quota; counting all anonymous proposals adds contention.
                 if (playerId is not null)
@@ -189,27 +205,31 @@ public sealed class MapProposalService(
 
                     var count = await dbContext.MapProposals.OfType<SubmittedProposal>()
                         .CountAsync(x => x.AuthorId == playerId && x.Thread.ContextId == contextId
-                                                                && x.Thread.RankedMap != null == revision, token);
+                                                                && (x.Change is MapProposalChange.Unrank ||
+                                                                    x.Thread.RankedMap != null) == revision, token);
 
                     if (count >= limit)
                         return new TransitionResponse.LimitReached(limit);
                 }
 
-                if (!revision && !force)
+                if (!revision && !force && draft.Change is MapProposalChange.Rank)
                 {
                     var duplicates = await FindDuplicatesAsync(contextId, draft, token);
                     if (duplicates.Length > 0)
                         return new TransitionResponse.Duplicates(duplicates);
                 }
 
+                if (draft.Change is MapProposalChange.Unrank unrank
+                    && !await IsUnrankingTargetCurrentAsync(draft.ThreadId, unrank.TargetAcceptedProposalId, token))
+                    return new TransitionResponse.TargetChanged();
+
                 var errors = await ValidateAsync(contextId, draft, token);
                 if (errors.Count > 0)
                     return new TransitionResponse.ValidationFailure(errors);
 
-                if (preparedRating is null || preparedRating.Input != RatingInput.From(draft))
+                if (draft.Change is MapProposalChange.Rank rank
+                    && (preparedRating is null || preparedRating.Input != RatingInput.From(rank)))
                     return new TransitionResponse.Conflict();
-
-                rating = preparedRating.Rating;
             }
 
             var expectedStatus = proposal is DraftProposal ? MapProposalStatus.Draft : MapProposalStatus.Submitted;
@@ -222,15 +242,20 @@ public sealed class MapProposalService(
                     reason!,
                     proposalId.Value,
                     (byte)expectedStatus,
-                    contextId.Value,
-                    rating.AccStar!.Value.Value,
-                    rating.DiffStar!.Value.Value,
-                    rating.IsAccStarAutoCalculated,
-                    rating.IsDiffStarAutoCalculated),
+                    contextId.Value),
                 token);
 
             if (updatedCount == 0)
                 return new TransitionResponse.Conflict();
+
+            if (targetStatus == MapProposalStatus.Submitted && preparedRating is { Rating: var rating })
+                await dbContext.MapProposalChanges.OfType<MapProposalChange.Rank>()
+                    .Where(x => x.ProposalId == proposalId)
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(x => x.Rating.AccStar, rating.AccStar)
+                        .SetProperty(x => x.Rating.DiffStar, rating.DiffStar)
+                        .SetProperty(x => x.Rating.IsAccStarAutoCalculated, rating.IsAccStarAutoCalculated)
+                        .SetProperty(x => x.Rating.IsDiffStarAutoCalculated, rating.IsDiffStarAutoCalculated), token);
 
             var releaseBoosts = targetStatus == MapProposalStatus.Closed
                                 && !await dbContext.MapProposals.OfType<SubmittedProposal>()
@@ -295,7 +320,8 @@ public sealed class MapProposalService(
     private async Task<MapRequestResponses.DuplicateMatch[]> FindDuplicatesAsync(
         ContextId contextId, MapProposal proposal, CancellationToken token)
     {
-        var ids = proposal.MapVersions.Select(x => x.SongDifficultyId).Distinct().ToArray();
+        var ids = ((MapProposalChange.Rank)proposal.Change).MapVersions.Select(x => x.SongDifficultyId).Distinct()
+            .ToArray();
 
         var maps = await dbContext.RankedMaps.Where(x => x.ContextId == contextId && x.ThreadId != proposal.ThreadId
                 && x.MapVersions.Any(version => ((IEnumerable<SongDifficultyId>)ids)
@@ -306,7 +332,9 @@ public sealed class MapProposalService(
         var proposals = await dbContext.MapProposals.OfType<SubmittedProposal>()
             .Where(x => x.Thread.ContextId == contextId
                         && x.ThreadId != proposal.ThreadId
-                        && x.MapVersions.Any(version => ((IEnumerable<SongDifficultyId>)ids)
+                        && x.Change is MapProposalChange.Rank
+                        && ((MapProposalChange.Rank)x.Change).MapVersions.Any(version =>
+                            ((IEnumerable<SongDifficultyId>)ids)
                             .Contains(version.SongDifficultyId)))
             .Select(x => new MapRequestResponses.DuplicateMatch(x.ThreadId, null, x.Id))
             .ToArrayAsync(token);
@@ -317,13 +345,13 @@ public sealed class MapProposalService(
     private IQueryable<MapProposal> GetProposal(ContextId contextId, MapProposalId proposalId)
         => dbContext.MapProposals
             .Where(x => x.Id == proposalId && x.Thread.ContextId == contextId)
-            .Include(x => x.MapVersions)
-            .Include(x => x.Categories)
-            .Include(x => x.Achievements)
+            .Include(x => x.Change).ThenInclude(x => ((MapProposalChange.Rank)x).MapVersions)
+            .Include(x => x.Change).ThenInclude(x => ((MapProposalChange.Rank)x).Categories)
+            .Include(x => x.Change).ThenInclude(x => ((MapProposalChange.Rank)x).Achievements)
             .AsSplitQuery();
 
     private async Task<Result<MapProposalRating>> ResolveRatingAsync(
-        DraftProposal proposal, CancellationToken token)
+        MapProposalChange.Rank proposal, CancellationToken token)
     {
         var rating = proposal.Rating;
         if (rating is { AccStar: not null, DiffStar: not null })
@@ -371,6 +399,15 @@ public sealed class MapProposalService(
         };
     }
 
+    internal async Task<bool> IsUnrankingTargetCurrentAsync(
+        MapRequestThreadId threadId, MapProposalId targetId, CancellationToken token)
+        => await dbContext.RankedMaps.AnyAsync(x => x.ThreadId == threadId, token)
+           && await dbContext.MapProposals.OfType<AcceptedProposal>()
+               .Where(x => x.ThreadId == threadId)
+               .OrderByDescending(x => x.AcceptedAt).ThenByDescending(x => x.Id)
+               .Select(x => x.Id == targetId && x.Change is MapProposalChange.Rank)
+               .FirstOrDefaultAsync(token);
+
     internal static TransitionResponse? GetTransitionError(
         MapProposal proposal, PlayerId? playerId, MapProposalStatus targetStatus)
         => proposal.AuthorId != playerId
@@ -386,19 +423,22 @@ public sealed class MapProposalService(
         ContextId contextId, MapProposal proposal, CancellationToken token)
     {
         var errors = GetConfigurationErrors(proposal);
+        if (proposal.Change is MapProposalChange.Unrank) return errors;
+
+        var rank = (MapProposalChange.Rank)proposal.Change;
         var guildId = await dbContext.Contexts.Where(x => x.Id == contextId)
             .Select(x => x.GuildId).SingleAsync(token);
 
-        var categoryIds = proposal.Categories.Select(x => x.CategoryId).ToArray();
+        var categoryIds = rank.Categories.Select(x => x.CategoryId).ToArray();
         var categories = await dbContext.Categories
             .Where(x => ((IEnumerable<CategoryId>)categoryIds).Contains(x.Id) && x.GuildId == guildId)
             .Select(x => x.Id).ToArrayAsync(token);
         var categoryErrors = categoryIds.Except(categories)
             .Select(id => $"Category with ID '{id}' does not exist in the guild.").ToArray();
         if (categoryErrors.Length > 0)
-            errors.Add(new KeyValuePair<string, string[]>(nameof(MapProposal.Categories), categoryErrors));
+            errors.Add(new KeyValuePair<string, string[]>(nameof(MapProposalChange.Rank.Categories), categoryErrors));
 
-        var achievementIds = proposal.Achievements.Select(x => x.AchievementId).ToArray();
+        var achievementIds = rank.Achievements.Select(x => x.AchievementId).ToArray();
         var achievements = await dbContext.Achievements.OfType<RankedMapListAchievement>()
             .Where(x => ((IEnumerable<AchievementId>)achievementIds).Contains(x.Id)
                         && x.GuildId == guildId && x.ContextId == contextId)
@@ -410,16 +450,17 @@ public sealed class MapProposalService(
                 $"Achievement with ID '{id}' does not exist in the context or is not a ranked-map-list achievement.")
             .ToArray();
         if (achievementErrors.Length > 0)
-            errors.Add(new KeyValuePair<string, string[]>(nameof(MapProposal.Achievements), achievementErrors));
+            errors.Add(new KeyValuePair<string, string[]>(nameof(MapProposalChange.Rank.Achievements),
+                achievementErrors));
 
-        var playModeIds = proposal.MapVersions.Select(x => x.PlayModeId).Distinct().ToArray();
+        var playModeIds = rank.MapVersions.Select(x => x.PlayModeId).Distinct().ToArray();
         var playModes = await dbContext.PlayModes.Where(x => ((IEnumerable<PlayModeId>)playModeIds).Contains(x.Id))
             .Select(x => x.Id).ToArrayAsync(token);
 
         var playModeErrors = playModeIds.Except(playModes)
             .Select(id => $"Play mode with ID '{id}' no longer exists.").ToArray();
         if (playModeErrors.Length > 0)
-            errors.Add(new KeyValuePair<string, string[]>(nameof(MapProposal.MapVersions), playModeErrors));
+            errors.Add(new KeyValuePair<string, string[]>(nameof(MapProposalChange.Rank.MapVersions), playModeErrors));
 
         return errors;
     }
@@ -427,23 +468,38 @@ public sealed class MapProposalService(
     internal static List<KeyValuePair<string, string[]>> GetConfigurationErrors(
         MapProposal proposal, Func<MapProposalVersion, SongDifficultyId>? difficultyIdSelector = null)
     {
+        if (proposal.Change is MapProposalChange.Unrank unrank)
+            return string.IsNullOrWhiteSpace(unrank.Reason) || unrank.Reason.Length > 2000
+                ?
+                [
+                    new KeyValuePair<string, string[]>(nameof(unrank.Reason),
+                        ["An unranking reason between 1 and 2000 characters is required."])
+                ]
+                : [];
+
+        return GetRankDefinitionErrors((MapProposalChange.Rank)proposal.Change, difficultyIdSelector);
+    }
+
+    internal static List<KeyValuePair<string, string[]>> GetRankDefinitionErrors(
+        MapProposalChange.Rank rank, Func<MapProposalVersion, SongDifficultyId>? difficultyIdSelector = null)
+    {
         List<KeyValuePair<string, string[]>> errors = [];
 
-        if (proposal.MapVersions.Count == 0)
+        if (rank.MapVersions.Count == 0)
         {
-            errors.Add(new KeyValuePair<string, string[]>(nameof(MapProposal.MapVersions),
+            errors.Add(new KeyValuePair<string, string[]>(nameof(MapProposalChange.Rank.MapVersions),
                 ["A proposal must contain at least one map version."]));
         }
-        else if (proposal.Rating.AccStar is null || proposal.Rating.DiffStar is null)
+        else if (rank.Rating.AccStar is null || rank.Rating.DiffStar is null)
         {
-            var firstOrder = proposal.MapVersions.Min(x => x.Order);
-            if (proposal.MapVersions.Where(x => x.Order == firstOrder)
+            var firstOrder = rank.MapVersions.Min(x => x.Order);
+            if (rank.MapVersions.Where(x => x.Order == firstOrder)
                 .Select(difficultyIdSelector ?? (static version => version.SongDifficultyId)).Distinct().Skip(1).Any())
-                errors.Add(new KeyValuePair<string, string[]>(nameof(MapProposal.MapVersions),
+                errors.Add(new KeyValuePair<string, string[]>(nameof(MapProposalChange.Rank.MapVersions),
                     ["Automatic ratings require a single song difficulty at the lowest map-version order."]));
         }
 
-        errors.AddRange(GetRequirementsAndRatingErrors(proposal.Requirements, proposal.Rating));
+        errors.AddRange(GetRequirementsAndRatingErrors(rank.Requirements, rank.Rating));
         return errors;
     }
 

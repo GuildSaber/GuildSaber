@@ -23,8 +23,8 @@ public partial class UserModuleSlash
     [ModalInteraction("ranking_draft_ratings_save:*")]
     public async Task SaveDraftRatingsAsync(string sessionId, RankingDraftRatingsModal modal)
     {
-        await DeferRankingInteractionAsync();
-        if (await GetDraftEditorAsync(sessionId) is not { } revision) return;
+        if (await GetDraftEditorAsync(sessionId, defer: true) is not { } revision)
+            return;
 
         if (!TryDraftNumber(modal.DifficultyStar, out var difficulty) ||
             !TryDraftNumber(modal.AccuracyStar, out var accuracy))
@@ -54,8 +54,7 @@ public partial class UserModuleSlash
     [ModalInteraction("ranking_draft_note_save:*")]
     public async Task SaveDraftNoteAsync(string sessionId, RankingDraftNoteModal modal)
     {
-        await DeferRankingInteractionAsync();
-        if (await GetDraftEditorAsync(sessionId) is not { } revision) return;
+        if (await GetDraftEditorAsync(sessionId, defer: true) is not { } revision) return;
 
         await StoreDraftEditorAsync(sessionId, revision with
         {
@@ -70,8 +69,7 @@ public partial class UserModuleSlash
     [ComponentInteraction("ranking_draft_requirements:*")]
     public async Task ShowDraftRequirementsAsync(string sessionId)
     {
-        await DeferRankingInteractionAsync();
-        if (await GetDraftEditorAsync(sessionId) is not { } revision) return;
+        if (await GetDraftEditorAsync(sessionId, defer: true) is not { } revision) return;
 
         await ModifyOriginalResponseAsync(x =>
         {
@@ -102,8 +100,7 @@ public partial class UserModuleSlash
     [ComponentInteraction("ranking_draft_toggle:*,*")]
     public async Task ToggleDraftRequirementAsync(string sessionId, string requirement)
     {
-        await DeferRankingInteractionAsync();
-        if (await GetDraftEditorAsync(sessionId) is not { } revision) return;
+        if (await GetDraftEditorAsync(sessionId, defer: true) is not { } revision) return;
 
         await StoreDraftEditorAsync(sessionId, revision with
         {
@@ -142,8 +139,7 @@ public partial class UserModuleSlash
     [ModalInteraction("ranking_draft_limits_save:*")]
     public async Task SaveDraftLimitsAsync(string sessionId, RankingDraftLimitsModal modal)
     {
-        await DeferRankingInteractionAsync();
-        if (await GetDraftEditorAsync(sessionId) is not { } revision) return;
+        if (await GetDraftEditorAsync(sessionId, defer: true) is not { } revision) return;
 
         if (!TryDraftNumber(modal.MaxPauseDuration, out var pause)
             || !TryDraftAccuracy(modal.MinAccuracy, out var minimum))

@@ -61,9 +61,19 @@ public sealed class MapProposalReviewService(
             RankedMapId RankedMapId,
             SongDifficultyId[] AddedDifficultyIds) : ReviewResponse;
 
+        public sealed record Unranked(
+            AcceptedProposal Proposal,
+            RankedMapId RemovedRankedMapId,
+            ContextId ContextId) : ReviewResponse;
+
+        public sealed record TargetChanged : ReviewResponse;
+
         public sealed record Denied(ClosedProposal Proposal) : ReviewResponse;
+
         public sealed record NotFound : ReviewResponse;
+
         public sealed record InvalidState : ReviewResponse;
+
         public sealed record Conflict : ReviewResponse;
 
         public sealed record VoteRequirementsNotMet(
@@ -73,6 +83,7 @@ public sealed class MapProposalReviewService(
             bool RequireNoNegativeVotes) : ReviewResponse;
 
         public sealed record TooManyRankedMaps(int CurrentCount, int MaximumCount) : ReviewResponse;
+
         public sealed record ValidationFailure(IEnumerable<KeyValuePair<string, string[]>> Errors) : ReviewResponse;
     }
 
@@ -88,6 +99,13 @@ public sealed class MapProposalReviewService(
                 await using var scope = scopeFactory.CreateAsyncScope();
                 await scope.ServiceProvider.GetRequiredService<ApplyMapProposalPipeline>()
                     .ExecuteAsync(mapId, addedDifficulties, cancellationToken);
+            });
+        if (response is ReviewResponse.Unranked { ContextId: var affectedContext })
+            await taskQueue.QueueBackgroundWorkItemAsync(async cancellationToken =>
+            {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                await scope.ServiceProvider.GetRequiredService<ApplyMapProposalPipeline>()
+                    .ExecuteUnrankingAsync(affectedContext, cancellationToken);
             });
         return response;
     }
@@ -158,16 +176,24 @@ public sealed class MapProposalReviewService(
                             settings.Value.MinimumPositiveVotes, settings.Value.RequireNoNegativeVotes);
                 }
 
+                if (submitted.Change is MapProposalChange.Unrank unrank
+                    && !await proposalService.IsUnrankingTargetCurrentAsync(
+                        submitted.ThreadId, unrank.TargetAcceptedProposalId, token))
+                    return new ReviewResponse.TargetChanged();
+
                 var errors = await proposalService.ValidateAsync(contextId, submitted, token);
-                if (submitted.Rating.AccStar is null || submitted.Rating.DiffStar is null)
-                    errors.Add(new KeyValuePair<string, string[]>(nameof(MapProposal.Rating),
+                if (submitted.Change is MapProposalChange.Rank { Rating: { AccStar: null } or { DiffStar: null } })
+                    errors.Add(new KeyValuePair<string, string[]>(nameof(MapProposalChange.Rank.Rating),
                         ["Ratings must be resolved before acceptance."]));
                 if (errors.Count > 0)
                     return new ReviewResponse.ValidationFailure(errors);
 
-                map = await dbContext.RankedMaps.AsTracking().Where(x => x.ThreadId == proposal.ThreadId)
-                    .Include(x => x.MapVersions).Include(x => x.Categories).Include(x => x.Achievements)
-                    .AsSplitQuery().SingleOrDefaultAsync(token);
+                var mapQuery = dbContext.RankedMaps.AsTracking().Where(x => x.ThreadId == proposal.ThreadId);
+                map = submitted.Change is MapProposalChange.Rank
+                    ? await mapQuery.Include(x => x.MapVersions).Include(x => x.Categories)
+                        .Include(x => x.Achievements).AsSplitQuery().SingleOrDefaultAsync(token)
+                    : await mapQuery.SingleOrDefaultAsync(token);
+
                 if (map is not null && (map.ContextId != contextId || map.GuildId != guildId))
                     return new ReviewResponse.ValidationFailure([
                         new KeyValuePair<string, string[]>(nameof(MapRequestThread.ContextId),
@@ -177,27 +203,35 @@ public sealed class MapProposalReviewService(
                 if (map is not null)
                     await RankedScoreUpdateRankPipeline.LockMapsAsync([map.Id], dbContext, token);
 
-                if (map is null)
-                    // The creation limit does not apply when updating the thread's existing ranked map.
-                    if (rankedMapService.ValidateRankedMapCreationLimit(
-                            await rankedMapService.GetCurrentGuildRankedMapCount(guildId),
-                            await rankedMapService.GetBoostsCountsAsync(guildId)).TryGetError(out var limit))
-                        return new ReviewResponse.TooManyRankedMaps(limit.current, limit.max);
-
                 var latestAcceptance = await dbContext.MapProposals.OfType<AcceptedProposal>()
                     .Where(x => x.ThreadId == proposal.ThreadId).Select(x => (DateTimeOffset?)x.AcceptedAt)
                     .MaxAsync(token);
-                // PostgreSQL timestamps have microsecond precision. The latest accepted snapshot must stay unambiguous.
+                // PostgreSQL timestamps have microsecond precision. Accepted changes need an unambiguous order.
                 if (latestAcceptance is { } previous && now < previous.AddMicroseconds(1))
                     now = previous.AddMicroseconds(1);
 
-                var previousDifficulties = map?.MapVersions.Select(x => x.SongDifficultyId).Distinct().ToArray() ?? [];
-                map = await ApplyAsync(map, guildId, contextId, submitted, now, token);
-                addedDifficulties =
-                [
-                    .. submitted.MapVersions.Select(x => x.SongDifficultyId).Distinct()
-                        .Except(previousDifficulties)
-                ];
+                switch (submitted.Change)
+                {
+                    case MapProposalChange.Rank rank:
+                        if (map is null && rankedMapService.ValidateRankedMapCreationLimit(
+                                await rankedMapService.GetCurrentGuildRankedMapCount(guildId),
+                                await rankedMapService.GetBoostsCountsAsync(guildId)).TryGetError(out var limit))
+                            return new ReviewResponse.TooManyRankedMaps(limit.current, limit.max);
+
+                        var previousDifficulties = map?.MapVersions.Select(x => x.SongDifficultyId)
+                            .Distinct().ToArray() ?? [];
+                        map = await ApplyAsync(map, guildId, contextId, submitted.ThreadId, rank, now, token);
+                        addedDifficulties =
+                        [
+                            .. rank.MapVersions.Select(x => x.SongDifficultyId).Distinct()
+                                .Except(previousDifficulties)
+                        ];
+                        break;
+                    case MapProposalChange.Unrank:
+                        if (map is null) return new ReviewResponse.TargetChanged();
+                        dbContext.RankedMaps.Remove(map);
+                        break;
+                }
             }
 
             if (await dbContext.Database.ExecuteSqlAsync(FormattableStringFactory.Create(
@@ -216,7 +250,7 @@ public sealed class MapProposalReviewService(
                     .ExecuteDeleteAsync(token);
 
             await dbContext.SaveChangesAsync(token);
-            if (map is not null)
+            if (map is not null && submitted.Change is MapProposalChange.Rank)
                 await dbContext.RankedScores.Where(score => score.RankedMapId == map.Id
                                                             && !dbContext.MapVersions.Any(version
                                                                 => version.RankedMapId == map.Id
@@ -227,6 +261,8 @@ public sealed class MapProposalReviewService(
             await transaction.CommitAsync(token);
             return updated switch
             {
+                AcceptedProposal accepted when submitted.Change is MapProposalChange.Unrank =>
+                    new ReviewResponse.Unranked(accepted, map!.Id, contextId),
                 AcceptedProposal accepted => new ReviewResponse.Accepted(accepted, map!.Id, addedDifficulties),
                 ClosedProposal closed => new ReviewResponse.Denied(closed),
                 _ => throw new InvalidOperationException(
@@ -250,10 +286,13 @@ public sealed class MapProposalReviewService(
 
     private IQueryable<MapProposal> GetProposal(ContextId contextId, MapProposalId proposalId)
         => dbContext.MapProposals.Where(x => x.Id == proposalId && x.Thread.ContextId == contextId)
-            .Include(x => x.MapVersions).Include(x => x.Categories).Include(x => x.Achievements).AsSplitQuery();
+            .Include(x => x.Change).ThenInclude(x => ((MapProposalChange.Rank)x).MapVersions)
+            .Include(x => x.Change).ThenInclude(x => ((MapProposalChange.Rank)x).Categories)
+            .Include(x => x.Change).ThenInclude(x => ((MapProposalChange.Rank)x).Achievements).AsSplitQuery();
 
     private async Task<RankedMap> ApplyAsync(
-        RankedMap? map, GuildId guildId, ContextId contextId, SubmittedProposal proposal, DateTimeOffset now,
+        RankedMap? map, GuildId guildId, ContextId contextId, MapRequestThreadId threadId,
+        MapProposalChange.Rank proposal, DateTimeOffset now,
         CancellationToken token)
     {
         var categoryIds = proposal.Categories.Select(x => x.CategoryId);
@@ -269,7 +308,7 @@ public sealed class MapProposalReviewService(
             {
                 GuildId = guildId,
                 ContextId = contextId,
-                ThreadId = proposal.ThreadId,
+                ThreadId = threadId,
                 Info = new RankedMapInfo(now, now),
                 Requirements = proposal.Requirements,
                 Rating = new RankedMapRating

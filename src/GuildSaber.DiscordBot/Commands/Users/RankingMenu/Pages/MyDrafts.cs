@@ -1,6 +1,7 @@
 using Discord;
 using Discord.Interactions;
 using GuildSaber.Api.Shared;
+using GuildSaber.Common.Helpers;
 using static GuildSaber.Api.Features.MapRequests.Http.MapProposalRequests;
 using static GuildSaber.Api.Features.MapRequests.Http.MapRequestResponses;
 
@@ -11,11 +12,12 @@ public partial class UserModuleSlash
     [ComponentInteraction("ranking_menu_drafts:*,*")]
     public async Task ShowMyRankingDraftsAsync(ContextId contextId, int page)
     {
-        await DeferRankingInteractionAsync();
-
-        if (!(await Client.Value.MapRequests.GetMineAsync(contextId, new Filters(IsDraft: true),
-                new PaginatedRequestOptions<EMapProposalSorter>(Page: Math.Max(1, page), PageSize: 3,
-                    SortBy: EMapProposalSorter.CreatedAt, Order: EOrder.Desc)))
+        if (!(await (
+                DeferRankingInteractionAsync(),
+                Client.Value.MapRequests.GetMineAsync(contextId, new Filters(IsDraft: true),
+                    new PaginatedRequestOptions<EMapProposalSorter>(Page: Math.Max(1, page), PageSize: 3,
+                        SortBy: EMapProposalSorter.CreatedAt, Order: EOrder.Desc))
+            ).WhenAll())
             .TryGetValue(out var drafts, out var error))
         {
             await ReportRankingErrorAsync(error);
@@ -47,18 +49,21 @@ file static class RankingDraftListView
 
         foreach (var draft in drafts.Data)
         {
-            var version = draft.Definition.MapVersions[0];
+            var definition = draft.GetPreviewDefinition();
+            var version = definition.MapVersions[0];
             builder.WithContainer(container => container.WithAccentColor(Color.Orange)
                 .WithSection(section => section
                     .WithTextDisplay($"**{Format.Sanitize(version.Song.Info.BeatSaverName)}**\n" +
                                      $"{version.Difficulty.Difficulty}, {version.Difficulty.GameMode} · {version.PlayModeName}\n" +
-                                     $"⭐: {draft.Definition.Rating.DiffStar?.ToString("0.00") ?? "Auto"} | " +
-                                     $"✨: {draft.Definition.Rating.AccStar?.ToString("0.00") ?? "Auto"}")
+                                     (draft.Change is ProposalChange.Unrank
+                                         ? "**Unranking draft**"
+                                         : $"⭐: {definition.Rating.DiffStar?.ToString("0.00") ?? "Auto"} | " +
+                                           $"✨: {definition.Rating.AccStar?.ToString("0.00") ?? "Auto"}"))
                     .WithAccessory(
                         new ThumbnailBuilder().WithMedia($"https://cfcdn.beatsaver.com/{version.Song.Hash}.jpg")))
                 .WithSection(section => section
                     .WithTextDisplay($"Draft **#{draft.Id}** · Thread **#{draft.ThreadId}** · " +
-                                     $"**{draft.Definition.MapVersions.Length}** {(draft.Definition.MapVersions.Length == 1 ? "map version" : "map versions")}\n" +
+                                     $"**{definition.MapVersions.Length}** {(definition.MapVersions.Length == 1 ? "map version" : "map versions")}\n" +
                                      TimestampTag.FormatFromDateTimeOffset(draft.CreatedAt,
                                          TimestampTagStyles.Relative))
                     .WithAccessory(new ButtonBuilder().WithLabel("Open draft")

@@ -29,19 +29,43 @@ public sealed class MapProposalDraftService(
     TimeProvider timeProvider,
     IOptions<MapRequestSettings> settings)
 {
+    private closed record PreparedDraft
+    {
+        public sealed record Rank(
+            CreateDraft.Rank Request,
+            RankedMapRequirements Requirements,
+            MapProposalRating Rating,
+            SongService.ResolvedDifficulty[] Versions) : PreparedDraft;
+
+        public sealed record Unrank(string Reason) : PreparedDraft;
+    }
+
     public closed record CreateResponse
     {
         public sealed record Success(DraftProposal Proposal) : CreateResponse;
+
         public sealed record ContextNotFound : CreateResponse;
+
         public sealed record ThreadNotFound : CreateResponse;
+
         public sealed record DraftNotFound : CreateResponse;
+
         public sealed record PlayerNotFound : CreateResponse;
+
         public sealed record ValidationFailure(IEnumerable<KeyValuePair<string, string[]>> Errors) : CreateResponse;
+
         public sealed record NotOnBeatSaver(SongReference Song) : CreateResponse;
+
         public sealed record BeatSaverFailure(string Message) : CreateResponse;
+
         public sealed record RateLimited(TimeSpan RetryAfter) : CreateResponse;
+
         public sealed record ResolutionFailure(int VersionIndex, string Message) : CreateResponse;
+
         public sealed record Conflict : CreateResponse;
+
+        public sealed record TargetChanged : CreateResponse;
+
         public sealed record LimitReached(int Limit) : CreateResponse;
     }
 
@@ -75,6 +99,25 @@ public sealed class MapProposalDraftService(
                                && x.Thread.ContextId == contextId, token))
             return new CreateResponse.DraftNotFound();
 
+        return request switch
+        {
+            CreateDraft.Rank rank => await CreateRankPreparedAsync(
+                contextId, threadId, playerId, rank, token, replacedDraftId),
+            CreateDraft.Unrank unrank when threadId is null || string.IsNullOrWhiteSpace(unrank.Reason)
+                                                            || unrank.Reason.Length > 2000 => new
+                CreateResponse.ValidationFailure([
+                    new KeyValuePair<string, string[]>(nameof(unrank.Reason),
+                        ["Unranking requires an existing ranked thread and a reason between 1 and 2000 characters."])
+                ]),
+            CreateDraft.Unrank unrank => await ExecuteCreationAsync(
+                contextId, threadId, playerId, new PreparedDraft.Unrank(unrank.Reason.Trim()), token, replacedDraftId)
+        };
+    }
+
+    private async Task<CreateResponse> CreateRankPreparedAsync(
+        ContextId contextId, MapRequestThreadId? threadId, PlayerId? playerId, CreateDraft.Rank request,
+        CancellationToken token, MapProposalId? replacedDraftId)
+    {
         var errors = GetInputErrors(request);
         if (errors.Count > 0)
             return new CreateResponse.ValidationFailure(errors);
@@ -128,25 +171,28 @@ public sealed class MapProposalDraftService(
             resolved[index] = difficulty;
         }
 
-        return await dbContext.Database.CreateExecutionStrategy().ExecuteAsync(
-            (service: this, contextId, threadId, playerId, request, requirements, rating, resolved, replacedDraftId),
-            static (state, cancellationToken) => state.service.CreateCoreAsync(
-                state.contextId, state.threadId, state.playerId, state.request, state.requirements,
-                state.rating, state.resolved, cancellationToken, state.replacedDraftId), token);
+        return await ExecuteCreationAsync(contextId, threadId, playerId,
+            new PreparedDraft.Rank(request, requirements, rating, resolved), token, replacedDraftId);
     }
 
+    private Task<CreateResponse> ExecuteCreationAsync(
+        ContextId contextId, MapRequestThreadId? threadId, PlayerId? playerId, PreparedDraft prepared,
+        CancellationToken token, MapProposalId? replacedDraftId)
+        => dbContext.Database.CreateExecutionStrategy().ExecuteAsync(
+            (service: this, contextId, threadId, playerId, prepared, replacedDraftId),
+            static (state, cancellationToken) => state.service.CreateCoreAsync(
+                state.contextId, state.threadId, state.playerId, state.prepared, cancellationToken,
+                state.replacedDraftId), token);
+
     private async Task<CreateResponse> CreateCoreAsync(
-        ContextId contextId, MapRequestThreadId? threadId, PlayerId? playerId, CreateDraft request,
-        RankedMapRequirements requirements, MapProposalRating rating,
-        SongService.ResolvedDifficulty[] resolvedVersions, CancellationToken token, MapProposalId? replacedDraftId)
+        ContextId contextId, MapRequestThreadId? threadId, PlayerId? playerId, PreparedDraft prepared,
+        CancellationToken token, MapProposalId? replacedDraftId)
     {
         var committed = false;
         try
         {
             await using var transaction = await dbContext.Database
                 .BeginTransactionAsync(IsolationLevel.Serializable, token);
-
-            List<KeyValuePair<string, string[]>> errors = [];
 
             var context = await dbContext.Contexts.Where(x => x.Id == contextId)
                 .Select(x => new { x.GuildId })
@@ -186,57 +232,12 @@ public sealed class MapProposalDraftService(
                 >= settings.Value.MaxDraftsPerPlayer)
                 return new CreateResponse.LimitReached(settings.Value.MaxDraftsPerPlayer);
 
-            var categoryIds = request.CategoryIds;
-            var categories = await dbContext.Categories
-                .Where(x => ((IEnumerable<CategoryId>)categoryIds).Contains(x.Id) && x.GuildId == context.GuildId)
-                .Select(x => new MapProposalCategory { CategoryId = x.Id, Name = x.Info.Name }).ToListAsync(token);
-            var achievementIds = request.AchievementIds.Select(x => new AchievementId(x)).ToArray();
-            var achievements = await dbContext.Achievements.OfType<RankedMapListAchievement>()
-                .Where(x => ((IEnumerable<AchievementId>)achievementIds).Contains(x.Id)
-                            && x.GuildId == context.GuildId && x.ContextId == contextId)
-                .Select(x => new MapProposalAchievement { AchievementId = x.Id, Name = x.Info.Name })
-                .ToListAsync(token);
-
-            if (categories.Count != categoryIds.Length)
-                errors.Add(new KeyValuePair<string, string[]>(nameof(request.CategoryIds),
-                    ["Each category must exist in the thread's guild."]));
-
-            if (achievements.Count != achievementIds.Length)
-                errors.Add(new KeyValuePair<string, string[]>(nameof(request.AchievementIds),
-                    ["Each achievement must be a ranked-map-list achievement in the thread's context."]));
-
-            if (errors.Count > 0)
-                return new CreateResponse.ValidationFailure(errors);
-
-            List<MapProposalVersion> versions = [];
-            for (var index = 0; index < request.MapVersions.Length; index++)
+            var changeResult = prepared switch
             {
-                var input = request.MapVersions[index];
-                var gameMode = await dbContext.GameModes
-                    .SingleOrDefaultAsync(x => x.Name == input.Characteristic, token);
-
-                var playMode = await dbContext.PlayModes.SingleOrDefaultAsync(x => x.Name == input.PlayMode, token);
-                if (gameMode is null || playMode is null || gameMode.Id != resolvedVersions[index].GameMode.Id)
-                    return new CreateResponse.ValidationFailure([
-                        new KeyValuePair<string, string[]>($"MapVersions[{index}]",
-                            ["The characteristic and play mode must both be supported."])
-                    ]);
-
-                var resolved = await songService.StageDifficultyAsync(resolvedVersions[index], token);
-
-                if (versions.Any(x => ReferenceEquals(x.SongDifficulty, resolved.difficulty)
-                                      && x.PlayModeId == playMode.Id))
-                    return new CreateResponse.ValidationFailure([
-                        new KeyValuePair<string, string[]>($"MapVersions[{index}]",
-                            ["The same song difficulty and play mode cannot appear twice."])
-                    ]);
-
-                versions.Add(new MapProposalVersion
-                {
-                    SongDifficulty = resolved.difficulty, PlayModeId = playMode.Id,
-                    PlayModeName = playMode.Name, Order = input.Order
-                });
-            }
+                PreparedDraft.Rank rank => await CreateRankChangeAsync(contextId, context.GuildId, rank, token),
+                PreparedDraft.Unrank unrank => await CreateUnrankChangeAsync(threadId!.Value, unrank.Reason, token)
+            };
+            if (!changeResult.TryGetValue(out var change, out var changeError)) return changeError;
 
             var now = timeProvider.GetUtcNow();
             var proposal = new DraftProposal
@@ -248,14 +249,17 @@ public sealed class MapProposalDraftService(
                         ContextId = contextId, AuthorId = playerId, CreatedAt = now, IsLegacyImport = playerId is null
                     }
                     : null!,
-                AuthorId = playerId, CreatedAt = now, Requirements = requirements, Rating = rating,
-                Comment = request.Comment,
-                MapVersions = versions, Categories = categories, Achievements = achievements, Votes = []
+                AuthorId = playerId, CreatedAt = now, Change = change, Votes = [],
+                Comment = prepared switch
+                {
+                    PreparedDraft.Rank rank => rank.Request.Comment,
+                    PreparedDraft.Unrank => null
+                }
             };
             dbContext.MapProposals.Add(proposal);
 
             // New difficulties have distinct temporary IDs in EF, while their CLR key properties are still zero.
-            errors = MapProposalService.GetConfigurationErrors(proposal, version => dbContext.Entry(version)
+            var errors = MapProposalService.GetConfigurationErrors(proposal, version => dbContext.Entry(version)
                 .Property(x => x.SongDifficultyId).CurrentValue);
 
             if (errors.Count > 0)
@@ -275,6 +279,7 @@ public sealed class MapProposalDraftService(
                 foreach (var entry in dbContext.ChangeTracker.Entries().Where(entry => entry.Entity switch
                          {
                              MapProposal tracked => tracked.Id == removed,
+                             MapProposalChange change => change.ProposalId == removed,
                              MapProposalVersion version => version.ProposalId == removed,
                              MapProposalCategory category => category.ProposalId == removed,
                              MapProposalAchievement achievement => achievement.ProposalId == removed,
@@ -299,6 +304,87 @@ public sealed class MapProposalDraftService(
         }
     }
 
+    private async Task<Result<MapProposalChange, CreateResponse>> CreateRankChangeAsync(
+        ContextId contextId, GuildId guildId, PreparedDraft.Rank prepared, CancellationToken token)
+    {
+        var request = prepared.Request;
+        var resolvedVersions = prepared.Versions;
+        List<KeyValuePair<string, string[]>> errors = [];
+        var categoryIds = request.CategoryIds;
+        var categories = await dbContext.Categories
+            .Where(x => ((IEnumerable<CategoryId>)categoryIds).Contains(x.Id) && x.GuildId == guildId)
+            .Select(x => new MapProposalCategory { CategoryId = x.Id, Name = x.Info.Name }).ToListAsync(token);
+        var achievementIds = request.AchievementIds.Select(x => new AchievementId(x)).ToArray();
+        var achievements = await dbContext.Achievements.OfType<RankedMapListAchievement>()
+            .Where(x => ((IEnumerable<AchievementId>)achievementIds).Contains(x.Id)
+                        && x.GuildId == guildId && x.ContextId == contextId)
+            .Select(x => new MapProposalAchievement { AchievementId = x.Id, Name = x.Info.Name })
+            .ToListAsync(token);
+
+        if (categories.Count != categoryIds.Length)
+            errors.Add(new KeyValuePair<string, string[]>(nameof(request.CategoryIds),
+                ["Each category must exist in the thread's guild."]));
+
+        if (achievements.Count != achievementIds.Length)
+            errors.Add(new KeyValuePair<string, string[]>(nameof(request.AchievementIds),
+                ["Each achievement must be a ranked-map-list achievement in the thread's context."]));
+
+        if (errors.Count > 0)
+            return Failure<MapProposalChange, CreateResponse>(new CreateResponse.ValidationFailure(errors));
+
+        List<MapProposalVersion> versions = [];
+        for (var index = 0; index < request.MapVersions.Length; index++)
+        {
+            var input = request.MapVersions[index];
+            var gameMode = await dbContext.GameModes
+                .SingleOrDefaultAsync(x => x.Name == input.Characteristic, token);
+
+            var playMode = await dbContext.PlayModes.SingleOrDefaultAsync(x => x.Name == input.PlayMode, token);
+            if (gameMode is null || playMode is null || gameMode.Id != resolvedVersions[index].GameMode.Id)
+                return Failure<MapProposalChange, CreateResponse>(new CreateResponse.ValidationFailure([
+                    new KeyValuePair<string, string[]>($"MapVersions[{index}]",
+                        ["The characteristic and play mode must both be supported."])
+                ]));
+
+            var resolved = await songService.StageDifficultyAsync(resolvedVersions[index], token);
+
+            if (versions.Any(x => ReferenceEquals(x.SongDifficulty, resolved.difficulty)
+                                  && x.PlayModeId == playMode.Id))
+                return Failure<MapProposalChange, CreateResponse>(new CreateResponse.ValidationFailure([
+                    new KeyValuePair<string, string[]>($"MapVersions[{index}]",
+                        ["The same song difficulty and play mode cannot appear twice."])
+                ]));
+
+            versions.Add(new MapProposalVersion
+            {
+                SongDifficulty = resolved.difficulty, PlayModeId = playMode.Id,
+                PlayModeName = playMode.Name, Order = input.Order
+            });
+        }
+
+
+        return Success<MapProposalChange, CreateResponse>(new MapProposalChange.Rank
+        {
+            Requirements = prepared.Requirements, Rating = prepared.Rating,
+            MapVersions = versions, Categories = categories, Achievements = achievements
+        });
+    }
+
+    private async Task<Result<MapProposalChange, CreateResponse>> CreateUnrankChangeAsync(
+        MapRequestThreadId threadId, string reason, CancellationToken token)
+    {
+        var target = await dbContext.MapProposals.OfType<AcceptedProposal>()
+            .Where(x => x.ThreadId == threadId && x.Thread.RankedMap != null)
+            .OrderByDescending(x => x.AcceptedAt).ThenByDescending(x => x.Id)
+            .Select(x => new { x.Id, IsRank = x.Change is MapProposalChange.Rank })
+            .FirstOrDefaultAsync(token);
+
+        return target is { IsRank: true }
+            ? Success<MapProposalChange, CreateResponse>(new MapProposalChange.Unrank
+                { TargetAcceptedProposalId = target.Id, Reason = reason })
+            : Failure<MapProposalChange, CreateResponse>(new CreateResponse.TargetChanged());
+    }
+
     private Task<Result<BeatMap, CreateResponse>> ResolveBeatMapAsync(SongReference song, CancellationToken token)
         => (song switch
             {
@@ -315,7 +401,7 @@ public sealed class MapProposalDraftService(
                 ? Failure<BeatMap, CreateResponse>(new CreateResponse.NotOnBeatSaver(song))
                 : Success<BeatMap, CreateResponse>(beatMap));
 
-    private static List<KeyValuePair<string, string[]>> GetInputErrors(CreateDraft request)
+    private static List<KeyValuePair<string, string[]>> GetInputErrors(CreateDraft.Rank request)
     {
         List<KeyValuePair<string, string[]>> errors = [];
         if (request.MapVersions.Length == 0)

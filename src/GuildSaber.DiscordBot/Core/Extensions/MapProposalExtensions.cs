@@ -29,9 +29,11 @@ public static class MapProposalExtensions
 
         public ContainerBuilder ToContainerBuilder(Proposal.Accepted? current, int versionPage)
         {
-            var version = self.Definition.MapVersions[versionPage - 1];
+            var definition = self.GetPreviewDefinition();
+            var version = definition.MapVersions[versionPage - 1];
             var song = version.Song;
             var sb = new StringBuilder()
+                .Append(self.Change is ProposalChange.Unrank ? "**Unranking request**\n" : "")
                 .Append(song.Key is { } key
                     ? $"### [{song.Info.BeatSaverName}](https://beatsaver.com/maps/{key}) ({key.ToBsrKey()})"
                     : $"### {song.Info.BeatSaverName}")
@@ -41,24 +43,24 @@ public static class MapProposalExtensions
                 .Append(", ").AppendLine(version.Difficulty.GameMode)
                 .Append("Play mode: ").AppendLine(version.PlayModeName)
                 .AppendLine()
-                .Append("⭐: ").Append(self.Definition.Rating.DiffStar?.ToString("0.00") ?? "Auto on submission")
-                .Append(self.Definition.Rating.IsDiffStarAutoCalculated ? " (auto)" : "")
-                .Append(" | ✨: ").Append(self.Definition.Rating.AccStar?.ToString("0.00") ?? "Auto on submission")
-                .AppendLine(self.Definition.Rating.IsAccStarAutoCalculated ? " (auto)" : "")
-                .Append("Categories: ").AppendLine(self.Definition.Categories.Length == 0
+                .Append("⭐: ").Append(definition.Rating.DiffStar?.ToString("0.00") ?? "Auto on submission")
+                .Append(definition.Rating.IsDiffStarAutoCalculated ? " (auto)" : "")
+                .Append(" | ✨: ").Append(definition.Rating.AccStar?.ToString("0.00") ?? "Auto on submission")
+                .AppendLine(definition.Rating.IsAccStarAutoCalculated ? " (auto)" : "")
+                .Append("Categories: ").AppendLine(definition.Categories.Length == 0
                     ? "None"
-                    : string.Join(", ", self.Definition.Categories.Select(x => x.Name)))
+                    : string.Join(", ", definition.Categories.Select(x => x.Name)))
                 .Append("NJS: ").Append(version.Difficulty.Stats.NJS.ToString("0.##"))
                 .Append(" | Length: ").Append(TimeSpan.FromSeconds(version.Difficulty.Stats.Duration) switch
                 {
                     { Hours: > 0 } ts => ts.ToString(@"hh\:mm\:ss"),
                     var ts => ts.ToString(@"mm\:ss")
                 }).Append(" | BPM: ").AppendLine(song.Stats.BPM.ToString("0.##"))
-                .Append("Score requirements: ").AppendLine(self.Definition.Requirements.ToDisplayText());
+                .Append("Score requirements: ").AppendLine(definition.Requirements.ToDisplayText());
 
-            if (self.Definition.Achievements.Length != 0)
+            if (definition.Achievements.Length != 0)
                 sb.Append("Achievements: ")
-                    .AppendLine(string.Join(", ", self.Definition.Achievements.Select(x => x.Name)));
+                    .AppendLine(string.Join(", ", definition.Achievements.Select(x => x.Name)));
 
             var builder = new ContainerBuilder()
                 .WithAccentColor(self switch
@@ -73,17 +75,27 @@ public static class MapProposalExtensions
                                  TimestampTag.FormatFromDateTimeOffset(self.EventTime, TimestampTagStyles.Relative))
                 .WithRequester(self.Author, "Proposed by");
 
-            if (self is Proposal.Submitted && current is not null)
+            if (self is Proposal.Submitted { Change: ProposalChange.Rank }
+                && current is { Change: ProposalChange.Rank })
                 builder.WithTextDisplay(
-                    $"**Changes from accepted proposal #{current.Id}**\n{self.Definition.ChangesFrom(current.Definition)}");
+                    $"**Changes from accepted proposal #{current.Id}**\n{definition.ChangesFrom(current.GetPreviewDefinition())}");
 
-            if (self is Proposal.Accepted)
+            if (self.Change is ProposalChange.Unrank unrank)
+                builder.WithTextDisplay(
+                    $"**Unranking request** · Targets accepted proposal **#{unrank.TargetAcceptedProposalId}**");
+
+            if (self is Proposal.Accepted && self.Change is ProposalChange.Unrank)
+                builder.WithTextDisplay(
+                    "This unranking request was accepted. The definition above records its target.");
+            else if (self is Proposal.Accepted)
                 builder.WithTextDisplay(current?.Id == self.Id
-                    ? "This is the latest accepted definition of the ranked map."
+                    ? "This is the latest accepted ranking definition in this thread."
                     : "This is a historical accepted definition. It may differ from the current ranked map.");
 
-            if (!string.IsNullOrWhiteSpace(self.Definition.Comment))
-                builder.WithTextDisplay($"**Author's note**\n{self.Definition.Comment}");
+            var comment = self.Change is ProposalChange.Unrank removal ? removal.Reason : self.Comment;
+            if (!string.IsNullOrWhiteSpace(comment))
+                builder.WithTextDisplay(
+                    $"**{(self.Change is ProposalChange.Unrank ? "Unranking reason" : "Author's note")}**\n{comment}");
 
             if (self is Proposal.Closed { Reason: { Length: > 0 } reason })
                 builder.WithTextDisplay($"**Closure reason**\n{reason[..Math.Min(reason.Length, 1000)]}");
@@ -111,7 +123,7 @@ public static class MapProposalExtensions
 
     extension(Definition self)
     {
-        public CreateDraft ToDraft() => new(
+        public CreateDraft.Rank ToDraft(string? comment = null) => new(
             self.MapVersions.Select(x => new MapVersionInput(new SongReference.ByHash(x.Song.Hash),
                 x.Difficulty.GameMode, x.Difficulty.Difficulty, x.PlayModeName, x.Order)).ToArray(),
             self.Requirements,
@@ -120,7 +132,7 @@ public static class MapProposalExtensions
                 self.Rating.IsAccStarAutoCalculated ? null : self.Rating.AccStar),
             self.Categories.Select(x => x.Id).ToArray(),
             self.Achievements.Select(x => x.Id).ToArray(),
-            self.Comment);
+            comment);
 
         public string ChangesFrom(Definition previous)
         {

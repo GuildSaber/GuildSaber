@@ -18,7 +18,7 @@ public sealed class MapProposalVersion
     public required string PlayModeName { get; init; }
     public byte Order { get; init; }
 
-    public MapProposal Proposal { get; init; } = null!;
+    public MapProposalChange.Rank Change { get; init; } = null!;
     public SongDifficulty SongDifficulty { get; init; } = null!;
 }
 
@@ -30,7 +30,7 @@ public class MapProposalVersionConfiguration : IEntityTypeConfiguration<MapPropo
         builder.Property(x => x.PlayModeId).HasGenericConversion<PlayModeId, int>();
         builder.Property(x => x.PlayModeName).HasMaxLength(128);
 
-        builder.HasOne(x => x.Proposal)
+        builder.HasOne(x => x.Change)
             .WithMany(x => x.MapVersions)
             .HasForeignKey(x => x.ProposalId)
             .OnDelete(DeleteBehavior.Cascade);

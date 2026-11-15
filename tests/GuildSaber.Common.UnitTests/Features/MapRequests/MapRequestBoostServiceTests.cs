@@ -371,7 +371,7 @@ public class MapRequestBoostServiceTests
                 CancellationToken.None))
             .Should().BeOfType<MapProposalService.TransitionResponse.Conflict>();
 
-        (await database.Context.MapProposals.SingleAsync(x => x.Id == new MapProposalId(1)))
+        (await database.Context.MapProposals.Include(x => x.Change).SingleAsync(x => x.Id == new MapProposalId(1)))
             .Should().BeOfType<SubmittedProposal>();
         (await database.Context.MapRequestThreadBoosts.SingleAsync()).ThreadId.Should().Be(new MapRequestThreadId(1));
     }
@@ -434,18 +434,29 @@ public class MapRequestBoostServiceTests
 
     private static SubmittedProposal CreateSubmitted(long id, long threadId, int playerId) => new()
     {
-        Id = new MapProposalId(id), ThreadId = new MapRequestThreadId(threadId), AuthorId = new PlayerId(playerId),
+        Id = new MapProposalId(id),
+        ThreadId = new MapRequestThreadId(threadId),
+        AuthorId = new PlayerId(playerId),
         CreatedAt = _createdAt,
         SubmittedAt = _createdAt,
-        Requirements = new RankedMapRequirements(false, false, null, 0, 0, null),
-        Rating = new MapProposalRating
-            { AccStar = new RankedMapRating.AccuracyStar(1), DiffStar = new RankedMapRating.DifficultyStar(1) }
+        Change = new MapProposalChange.Rank
+        {
+            Requirements = new RankedMapRequirements(false, false, null, 0, 0, null),
+            Rating = new MapProposalRating
+                { AccStar = new RankedMapRating.AccuracyStar(1), DiffStar = new RankedMapRating.DifficultyStar(1) }
+        }
     };
 
     private static DraftProposal CreateDraft(long id, long threadId) => new()
     {
-        Id = new MapProposalId(id), ThreadId = new MapRequestThreadId(threadId), AuthorId = new PlayerId(1),
+        Id = new MapProposalId(id),
+        ThreadId = new MapRequestThreadId(threadId),
+        AuthorId = new PlayerId(1),
         CreatedAt = _createdAt,
-        Requirements = new RankedMapRequirements(false, false, null, 0, 0, null), Rating = new MapProposalRating()
+        Change = new MapProposalChange.Rank
+        {
+            Requirements = new RankedMapRequirements(false, false, null, 0, 0, null),
+            Rating = new MapProposalRating()
+        }
     };
 }

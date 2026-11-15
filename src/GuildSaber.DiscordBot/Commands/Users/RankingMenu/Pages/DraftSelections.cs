@@ -4,23 +4,32 @@ using Discord;
 using Discord.Interactions;
 using GuildSaber.Api.Features.Guilds.Achievements.Http;
 using GuildSaber.Api.Features.RankedMaps.Http;
+using GuildSaber.Common.Helpers;
 using GuildSaber.Common.Result;
 using GuildSaber.DiscordBot.Core.Extensions;
-using static GuildSaber.Api.Features.MapRequests.Http.MapProposalRequests;
+using RankDraft = GuildSaber.Api.Features.MapRequests.Http.MapProposalRequests.CreateDraft.Rank;
 
 namespace GuildSaber.DiscordBot.Commands.Users;
 
 public partial class UserModuleSlash
 {
-    public enum ERankingDraftSelection { Categories, Achievements, MandatoryModifiers, ProhibitedModifiers }
+    public enum ERankingDraftSelection
+    {
+        Categories,
+        Achievements,
+        MandatoryModifiers,
+        ProhibitedModifiers
+    }
 
     [ComponentInteraction("ranking_draft_options:*,*,*")]
     public async Task ShowDraftOptionsAsync(string sessionId, ERankingDraftSelection selection, int page)
     {
-        await DeferRankingInteractionAsync();
         if (await GetDraftEditorAsync(sessionId) is not { } revision) return;
 
-        var options = await GetDraftOptionsAsync(revision, selection);
+        var options = await (
+            DeferRankingInteractionAsync(),
+            GetDraftOptionsAsync(revision, selection)
+        ).WhenAll();
         page = Math.Clamp(page, 1, Math.Max(1, (options.Length + 24) / 25));
 
         await ModifyOriginalResponseAsync(x =>
@@ -35,10 +44,12 @@ public partial class UserModuleSlash
     public async Task SelectDraftOptionsAsync(
         string sessionId, ERankingDraftSelection selection, int page, string[] values)
     {
-        await DeferRankingInteractionAsync();
         if (await GetDraftEditorAsync(sessionId) is not { } revision) return;
 
-        var visible = (await GetDraftOptionsAsync(revision, selection)).Skip((page - 1) * 25).Take(25)
+        var visible = (await (
+                DeferRankingInteractionAsync(),
+                GetDraftOptionsAsync(revision, selection)
+            ).WhenAll()).Skip((page - 1) * 25).Take(25)
             .Select(x => x.Id).ToHashSet();
         var selected = RankingDraftSelectionView.GetSelected(revision.Definition, selection)
             .Where(x => !visible.Contains(x))
@@ -55,8 +66,7 @@ public partial class UserModuleSlash
     [ComponentInteraction("ranking_draft_clear:*,*")]
     public async Task ClearDraftOptionsAsync(string sessionId, ERankingDraftSelection selection)
     {
-        await DeferRankingInteractionAsync();
-        if (await GetDraftEditorAsync(sessionId) is not { } revision) return;
+        if (await GetDraftEditorAsync(sessionId, defer: true) is not { } revision) return;
 
         await StoreDraftEditorAsync(sessionId, revision with
         {
@@ -68,8 +78,7 @@ public partial class UserModuleSlash
     [ComponentInteraction("ranking_draft_default_modifiers:*")]
     public async Task ResetDraftModifiersAsync(string sessionId)
     {
-        await DeferRankingInteractionAsync();
-        if (await GetDraftEditorAsync(sessionId) is not { } revision) return;
+        if (await GetDraftEditorAsync(sessionId, defer: true) is not { } revision) return;
 
         await StoreDraftEditorAsync(sessionId, revision with
         {
@@ -109,7 +118,7 @@ public readonly record struct RankingDraftOption(int Id, string Name);
 
 file static class RankingDraftSelectionView
 {
-    public static IEnumerable<int> GetSelected(CreateDraft definition, UserModuleSlash.ERankingDraftSelection selection)
+    public static IEnumerable<int> GetSelected(RankDraft definition, UserModuleSlash.ERankingDraftSelection selection)
         => selection switch
         {
             UserModuleSlash.ERankingDraftSelection.Categories => definition.CategoryIds.Select(x => x.Value),
@@ -122,8 +131,8 @@ file static class RankingDraftSelectionView
                 .Select(x => (int)x)
         };
 
-    public static CreateDraft Apply(
-        CreateDraft definition, UserModuleSlash.ERankingDraftSelection selection, IEnumerable<int> values)
+    public static RankDraft Apply(
+        RankDraft definition, UserModuleSlash.ERankingDraftSelection selection, IEnumerable<int> values)
         => selection switch
         {
             UserModuleSlash.ERankingDraftSelection.Categories => definition with

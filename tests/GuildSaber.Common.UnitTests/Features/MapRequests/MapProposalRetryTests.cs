@@ -120,7 +120,7 @@ public partial class MapProposalServiceTests
         {
             database.Context.Database.CurrentTransaction.Should().BeNull();
             using var other = database.CreateContext();
-            other.MapProposals.ExecuteUpdate(setters => setters.SetProperty(
+            other.MapProposalChanges.OfType<MapProposalChange.Rank>().ExecuteUpdate(setters => setters.SetProperty(
                 x => x.Requirements.MandatoryModifiers, AbstractScore.EModifiers.FasterSong));
 
             return JsonResponse(JsonSerializer.Serialize(CreateExMachinaResponse()));
@@ -131,7 +131,7 @@ public partial class MapProposalServiceTests
                 new ContextId(1), new MapProposalId(1), new PlayerId(1), CancellationToken.None))
             .Should().BeOfType<MapProposalService.TransitionResponse.Conflict>();
 
-        (await database.Context.MapProposals.SingleAsync()).Should().BeOfType<DraftProposal>();
+        (await database.Context.MapProposals.Include(x => x.Change).SingleAsync()).Should().BeOfType<DraftProposal>();
     }
 
     [Test]
@@ -230,7 +230,7 @@ public partial class MapProposalServiceTests
         var songService = new SongService(db, beatLeader, new ScoreSaberApi(_unusedHttpClient));
         var drafts = new MapProposalDraftService(db, new BeatSaverApi(_unusedHttpClient), songService,
             new FixedTimeProvider(), Options.Create(new MapRequestSettings()));
-        var request = new MapProposalRequests.CreateDraft(
+        var request = new MapProposalRequests.CreateDraft.Rank(
             [
                 new MapProposalRequests.MapVersionInput(
                     new MapProposalRequests.SongReference.ByHash(SongHash.CreateUnsafe(new string('a', 40)).Value),

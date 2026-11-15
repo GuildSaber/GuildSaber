@@ -12,7 +12,7 @@ public sealed class MapProposalCategory
 
     public required string Name { get; init; }
 
-    public MapProposal Proposal { get; init; } = null!;
+    public MapProposalChange.Rank Change { get; init; } = null!;
 }
 
 public class MapProposalCategoryConfiguration : IEntityTypeConfiguration<MapProposalCategory>
@@ -24,7 +24,7 @@ public class MapProposalCategoryConfiguration : IEntityTypeConfiguration<MapProp
             .HasConversion(from => from.Value, to => new CategoryId(to));
         builder.Property(x => x.Name).HasMaxLength(50);
 
-        builder.HasOne(x => x.Proposal)
+        builder.HasOne(x => x.Change)
             .WithMany(x => x.Categories)
             .HasForeignKey(x => x.ProposalId)
             .OnDelete(DeleteBehavior.Cascade);

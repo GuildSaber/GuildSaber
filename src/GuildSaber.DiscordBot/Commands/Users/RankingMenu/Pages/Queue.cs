@@ -2,6 +2,7 @@ using Discord;
 using Discord.Interactions;
 using GuildSaber.Api.Features.MapRequests.Http;
 using GuildSaber.Api.Shared;
+using GuildSaber.Common.Helpers;
 using GuildSaber.DiscordBot.Core.Extensions;
 using static GuildSaber.Api.Features.MapRequests.Http.MapProposalRequests;
 
@@ -13,8 +14,6 @@ public partial class UserModuleSlash
     public async Task UpdateCurrentMessageToRankingQueuePagedMenu(
         ContextId contextId, int page, EMapRequestSorter sortBy, ERankingThreadOrigin origin)
     {
-        await DeferRankingInteractionAsync();
-
         var filter = new Filters(IsBoostedByMe: origin == ERankingThreadOrigin.Boosts ? true : null);
         var sorter = new PaginatedRequestOptions<EMapRequestSorter>
         {
@@ -24,7 +23,10 @@ public partial class UserModuleSlash
             Order = EOrder.Desc
         };
 
-        if (!(await Client.Value.MapRequests.GetQueueAsync(contextId, filter, sorter))
+        if (!(await (
+                DeferRankingInteractionAsync(),
+                Client.Value.MapRequests.GetQueueAsync(contextId, filter, sorter)
+            ).WhenAll())
             .TryGetValue(out var submittedThreads, out var error))
         {
             await ReportRankingErrorAsync(error);

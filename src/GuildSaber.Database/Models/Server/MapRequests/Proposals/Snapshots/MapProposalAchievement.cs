@@ -17,7 +17,7 @@ public sealed class MapProposalAchievement
 
     public required string Name { get; init; }
 
-    public MapProposal Proposal { get; init; } = null!;
+    public MapProposalChange.Rank Change { get; init; } = null!;
 }
 
 public class MapProposalAchievementConfiguration : IEntityTypeConfiguration<MapProposalAchievement>
@@ -28,7 +28,7 @@ public class MapProposalAchievementConfiguration : IEntityTypeConfiguration<MapP
         builder.Property(x => x.AchievementId).HasGenericConversion<AchievementId, int>();
         builder.Property(x => x.Name).HasMaxLength(32);
 
-        builder.HasOne(x => x.Proposal)
+        builder.HasOne(x => x.Change)
             .WithMany(x => x.Achievements)
             .HasForeignKey(x => x.ProposalId)
             .OnDelete(DeleteBehavior.Cascade);

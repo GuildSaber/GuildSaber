@@ -9,7 +9,7 @@ using NpgsqlTypes;
 namespace GuildSaber.Database.Contexts.Server.Migrations;
 
 /// <inheritdoc />
-public partial class _20261027081814_Initial : Migration
+public partial class _20261115185252_Initial : Migration
 {
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
@@ -176,7 +176,10 @@ public partial class _20261027081814_Initial : Migration
                     .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                 GuildId = table.Column<int>(type: "integer", nullable: false),
                 CurveSettings_Accuracy = table.Column<NpgsqlPoint[]>(type: "point[]", nullable: false),
+                CurveSettings_AccuracyBonusRatio = table.Column<double>(type: "double precision", nullable: false),
                 CurveSettings_Difficulty = table.Column<NpgsqlPoint[]>(type: "point[]", nullable: false),
+                CurveSettings_MapCurvePolicy = table.Column<byte>(type: "smallint", nullable: false),
+                CurveSettings_RunnerUpRewardFractions = table.Column<double[]>(type: "double precision[]", nullable: false),
                 Info_Description = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
                 Info_Name = table.Column<string>(type: "character varying(6)", maxLength: 6, nullable: false),
                 ModifierValues_BatteryEnergy = table.Column<float>(type: "real", nullable: false),
@@ -554,18 +557,8 @@ public partial class _20261027081814_Initial : Migration
                 ThreadId = table.Column<long>(type: "bigint", nullable: false),
                 AuthorId = table.Column<int>(type: "integer", nullable: true),
                 CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                Comment = table.Column<string>(type: "text", nullable: true),
+                Comment = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
                 status = table.Column<byte>(type: "smallint", nullable: false),
-                Rating_AccStar = table.Column<float>(type: "real", nullable: true),
-                Rating_DiffStar = table.Column<float>(type: "real", nullable: true),
-                Rating_IsAccStarAutoCalculated = table.Column<bool>(type: "boolean", nullable: false),
-                Rating_IsDiffStarAutoCalculated = table.Column<bool>(type: "boolean", nullable: false),
-                Requirements_MandatoryModifiers = table.Column<int>(type: "integer", nullable: false),
-                Requirements_MaxPauseDurationSec = table.Column<float>(type: "real", nullable: true),
-                Requirements_MinAccuracy = table.Column<float>(type: "real", nullable: true),
-                Requirements_NeedConfirmation = table.Column<bool>(type: "boolean", nullable: false),
-                Requirements_NeedFullCombo = table.Column<bool>(type: "boolean", nullable: false),
-                Requirements_ProhibitedModifiers = table.Column<int>(type: "integer", nullable: false),
                 SubmittedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                 AcceptedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                 AcceptedById = table.Column<int>(type: "integer", nullable: true),
@@ -577,7 +570,6 @@ public partial class _20261027081814_Initial : Migration
             {
                 table.PrimaryKey("PK_MapProposals", x => x.Id);
                 table.CheckConstraint("CK_MapProposals_Lifecycle", "(\"status\" = 0\n    AND \"SubmittedAt\" IS NULL AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 1\n    AND \"SubmittedAt\" IS NOT NULL AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 2\n    AND \"SubmittedAt\" IS NOT NULL AND \"AcceptedAt\" IS NOT NULL AND \"ClosedAt\" IS NULL)\nOR (\"status\" = 3\n    AND \"AcceptedAt\" IS NULL AND \"ClosedAt\" IS NOT NULL)");
-                table.CheckConstraint("CK_MapProposals_ResolvedRating", "\"SubmittedAt\" IS NULL\nOR (\"Rating_AccStar\" IS NOT NULL\n    AND \"Rating_DiffStar\" IS NOT NULL)");
                 table.ForeignKey(
                     name: "FK_MapProposals_MapRequestThreads_ThreadId",
                     column: x => x.ThreadId,
@@ -643,7 +635,7 @@ public partial class _20261027081814_Initial : Migration
                 Rating_DiffStar = table.Column<float>(type: "real", nullable: false),
                 Requirements_MandatoryModifiers = table.Column<int>(type: "integer", nullable: false),
                 Requirements_MaxPauseDurationSec = table.Column<float>(type: "real", nullable: true),
-                Requirements_MinAccuracy = table.Column<float>(type: "real", nullable: true),
+                Requirements_MinAccuracy = table.Column<double>(type: "double precision", nullable: true),
                 Requirements_NeedConfirmation = table.Column<bool>(type: "boolean", nullable: false),
                 Requirements_NeedFullCombo = table.Column<bool>(type: "boolean", nullable: false),
                 Requirements_ProhibitedModifiers = table.Column<int>(type: "integer", nullable: false)
@@ -702,66 +694,37 @@ public partial class _20261027081814_Initial : Migration
             });
 
         migrationBuilder.CreateTable(
-            name: "MapProposalAchievements",
+            name: "MapProposalChanges",
             columns: table => new
             {
                 ProposalId = table.Column<long>(type: "bigint", nullable: false),
-                AchievementId = table.Column<int>(type: "integer", nullable: false),
-                Name = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false)
+                Kind = table.Column<byte>(type: "smallint", nullable: false),
+                Rating_AccStar = table.Column<float>(type: "real", nullable: true),
+                Rating_DiffStar = table.Column<float>(type: "real", nullable: true),
+                Rating_IsAccStarAutoCalculated = table.Column<bool>(type: "boolean", nullable: true),
+                Rating_IsDiffStarAutoCalculated = table.Column<bool>(type: "boolean", nullable: true),
+                Requirements_MandatoryModifiers = table.Column<int>(type: "integer", nullable: true),
+                Requirements_MaxPauseDurationSec = table.Column<float>(type: "real", nullable: true),
+                Requirements_MinAccuracy = table.Column<double>(type: "double precision", nullable: true),
+                Requirements_NeedConfirmation = table.Column<bool>(type: "boolean", nullable: true),
+                Requirements_NeedFullCombo = table.Column<bool>(type: "boolean", nullable: true),
+                Requirements_ProhibitedModifiers = table.Column<int>(type: "integer", nullable: true),
+                TargetAcceptedProposalId = table.Column<long>(type: "bigint", nullable: true),
+                Reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true)
             },
             constraints: table =>
             {
-                table.PrimaryKey("PK_MapProposalAchievements", x => new { x.ProposalId, x.AchievementId });
+                table.PrimaryKey("PK_MapProposalChanges", x => x.ProposalId);
                 table.ForeignKey(
-                    name: "FK_MapProposalAchievements_MapProposals_ProposalId",
-                    column: x => x.ProposalId,
-                    principalTable: "MapProposals",
-                    principalColumn: "Id",
-                    onDelete: ReferentialAction.Cascade);
-            });
-
-        migrationBuilder.CreateTable(
-            name: "MapProposalCategories",
-            columns: table => new
-            {
-                ProposalId = table.Column<long>(type: "bigint", nullable: false),
-                CategoryId = table.Column<int>(type: "integer", nullable: false),
-                Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
-            },
-            constraints: table =>
-            {
-                table.PrimaryKey("PK_MapProposalCategories", x => new { x.ProposalId, x.CategoryId });
-                table.ForeignKey(
-                    name: "FK_MapProposalCategories_MapProposals_ProposalId",
-                    column: x => x.ProposalId,
-                    principalTable: "MapProposals",
-                    principalColumn: "Id",
-                    onDelete: ReferentialAction.Cascade);
-            });
-
-        migrationBuilder.CreateTable(
-            name: "MapProposalVersions",
-            columns: table => new
-            {
-                ProposalId = table.Column<long>(type: "bigint", nullable: false),
-                SongDifficultyId = table.Column<long>(type: "bigint", nullable: false),
-                PlayModeId = table.Column<int>(type: "integer", nullable: false),
-                PlayModeName = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                Order = table.Column<byte>(type: "smallint", nullable: false)
-            },
-            constraints: table =>
-            {
-                table.PrimaryKey("PK_MapProposalVersions", x => new { x.ProposalId, x.SongDifficultyId, x.PlayModeId });
-                table.ForeignKey(
-                    name: "FK_MapProposalVersions_MapProposals_ProposalId",
+                    name: "FK_MapProposalChanges_MapProposals_ProposalId",
                     column: x => x.ProposalId,
                     principalTable: "MapProposals",
                     principalColumn: "Id",
                     onDelete: ReferentialAction.Cascade);
                 table.ForeignKey(
-                    name: "FK_MapProposalVersions_SongDifficulties_SongDifficultyId",
-                    column: x => x.SongDifficultyId,
-                    principalTable: "SongDifficulties",
+                    name: "FK_MapProposalChanges_MapProposals_TargetAcceptedProposalId",
+                    column: x => x.TargetAcceptedProposalId,
+                    principalTable: "MapProposals",
                     principalColumn: "Id");
             });
 
@@ -854,6 +817,33 @@ public partial class _20261027081814_Initial : Migration
                     name: "FK_MapVersions_Songs_SongId",
                     column: x => x.SongId,
                     principalTable: "Songs",
+                    principalColumn: "Id",
+                    onDelete: ReferentialAction.Cascade);
+            });
+
+        migrationBuilder.CreateTable(
+            name: "RankedMapPointCurves",
+            columns: table => new
+            {
+                RankedMapId = table.Column<long>(type: "bigint", nullable: false),
+                PointId = table.Column<int>(type: "integer", nullable: false),
+                Curve = table.Column<NpgsqlPoint[]>(type: "point[]", nullable: false),
+                BenchmarkAccuracies = table.Column<double[]>(type: "double precision[]", nullable: false),
+                UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_RankedMapPointCurves", x => new { x.RankedMapId, x.PointId });
+                table.ForeignKey(
+                    name: "FK_RankedMapPointCurves_Points_PointId",
+                    column: x => x.PointId,
+                    principalTable: "Points",
+                    principalColumn: "Id",
+                    onDelete: ReferentialAction.Cascade);
+                table.ForeignKey(
+                    name: "FK_RankedMapPointCurves_RankedMaps_RankedMapId",
+                    column: x => x.RankedMapId,
+                    principalTable: "RankedMaps",
                     principalColumn: "Id",
                     onDelete: ReferentialAction.Cascade);
             });
@@ -1044,6 +1034,70 @@ public partial class _20261027081814_Initial : Migration
                     onDelete: ReferentialAction.Cascade);
             });
 
+        migrationBuilder.CreateTable(
+            name: "MapProposalAchievements",
+            columns: table => new
+            {
+                ProposalId = table.Column<long>(type: "bigint", nullable: false),
+                AchievementId = table.Column<int>(type: "integer", nullable: false),
+                Name = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_MapProposalAchievements", x => new { x.ProposalId, x.AchievementId });
+                table.ForeignKey(
+                    name: "FK_MapProposalAchievements_MapProposalChanges_ProposalId",
+                    column: x => x.ProposalId,
+                    principalTable: "MapProposalChanges",
+                    principalColumn: "ProposalId",
+                    onDelete: ReferentialAction.Cascade);
+            });
+
+        migrationBuilder.CreateTable(
+            name: "MapProposalCategories",
+            columns: table => new
+            {
+                ProposalId = table.Column<long>(type: "bigint", nullable: false),
+                CategoryId = table.Column<int>(type: "integer", nullable: false),
+                Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_MapProposalCategories", x => new { x.ProposalId, x.CategoryId });
+                table.ForeignKey(
+                    name: "FK_MapProposalCategories_MapProposalChanges_ProposalId",
+                    column: x => x.ProposalId,
+                    principalTable: "MapProposalChanges",
+                    principalColumn: "ProposalId",
+                    onDelete: ReferentialAction.Cascade);
+            });
+
+        migrationBuilder.CreateTable(
+            name: "MapProposalVersions",
+            columns: table => new
+            {
+                ProposalId = table.Column<long>(type: "bigint", nullable: false),
+                SongDifficultyId = table.Column<long>(type: "bigint", nullable: false),
+                PlayModeId = table.Column<int>(type: "integer", nullable: false),
+                PlayModeName = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                Order = table.Column<byte>(type: "smallint", nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_MapProposalVersions", x => new { x.ProposalId, x.SongDifficultyId, x.PlayModeId });
+                table.ForeignKey(
+                    name: "FK_MapProposalVersions_MapProposalChanges_ProposalId",
+                    column: x => x.ProposalId,
+                    principalTable: "MapProposalChanges",
+                    principalColumn: "ProposalId",
+                    onDelete: ReferentialAction.Cascade);
+                table.ForeignKey(
+                    name: "FK_MapProposalVersions_SongDifficulties_SongDifficultyId",
+                    column: x => x.SongDifficultyId,
+                    principalTable: "SongDifficulties",
+                    principalColumn: "Id");
+            });
+
         migrationBuilder.CreateIndex(
             name: "IX_Achievements_CategoryId",
             table: "Achievements",
@@ -1129,6 +1183,11 @@ public partial class _20261027081814_Initial : Migration
             table: "Hmds",
             column: "ScoreSaberKey",
             unique: true);
+
+        migrationBuilder.CreateIndex(
+            name: "IX_MapProposalChanges_TargetAcceptedProposalId",
+            table: "MapProposalChanges",
+            column: "TargetAcceptedProposalId");
 
         migrationBuilder.CreateIndex(
             name: "IX_MapProposals_AcceptedById",
@@ -1271,6 +1330,11 @@ public partial class _20261027081814_Initial : Migration
             name: "IX_Points_GuildId",
             table: "Points",
             column: "GuildId");
+
+        migrationBuilder.CreateIndex(
+            name: "IX_RankedMapPointCurves_PointId_RankedMapId",
+            table: "RankedMapPointCurves",
+            columns: new[] { "PointId", "RankedMapId" });
 
         migrationBuilder.CreateIndex(
             name: "IX_RankedMapRankedMapListAchievement_RankedMapsId",
@@ -1432,6 +1496,9 @@ public partial class _20261027081814_Initial : Migration
             name: "MemberPointStats");
 
         migrationBuilder.DropTable(
+            name: "RankedMapPointCurves");
+
+        migrationBuilder.DropTable(
             name: "RankedMapRankedMapListAchievement");
 
         migrationBuilder.DropTable(
@@ -1441,7 +1508,7 @@ public partial class _20261027081814_Initial : Migration
             name: "Sessions");
 
         migrationBuilder.DropTable(
-            name: "MapProposals");
+            name: "MapProposalChanges");
 
         migrationBuilder.DropTable(
             name: "PlayModes");
@@ -1462,13 +1529,13 @@ public partial class _20261027081814_Initial : Migration
             name: "Scores");
 
         migrationBuilder.DropTable(
+            name: "MapProposals");
+
+        migrationBuilder.DropTable(
             name: "Members");
 
         migrationBuilder.DropTable(
             name: "Categories");
-
-        migrationBuilder.DropTable(
-            name: "MapRequestThreads");
 
         migrationBuilder.DropTable(
             name: "Controllers");
@@ -1477,16 +1544,19 @@ public partial class _20261027081814_Initial : Migration
             name: "SongDifficulties");
 
         migrationBuilder.DropTable(
-            name: "Contexts");
-
-        migrationBuilder.DropTable(
-            name: "Players");
+            name: "MapRequestThreads");
 
         migrationBuilder.DropTable(
             name: "GameModes");
 
         migrationBuilder.DropTable(
             name: "Songs");
+
+        migrationBuilder.DropTable(
+            name: "Contexts");
+
+        migrationBuilder.DropTable(
+            name: "Players");
 
         migrationBuilder.DropTable(
             name: "Guilds");

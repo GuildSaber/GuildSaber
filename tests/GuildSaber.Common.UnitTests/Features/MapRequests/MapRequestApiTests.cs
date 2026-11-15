@@ -232,8 +232,9 @@ public partial class MapProposalServiceTests
             (await api.GetQueueAsync(new ContextId(1), new ClientRequests.Filters(),
                 new PaginatedRequestOptions<ClientRequests.EMapRequestSorter>())).Value.Data.Should().BeEmpty();
             (await api.GetThreadAsync(new ContextId(1), new MapRequestThreadId(1))).Value!.RankedMapId.Should()
-                .Be(accepted.Value.RankedMapId);
-            (await client.RankedMaps.GetByIdAsync(accepted.Value.RankedMapId)).Value!.ThreadId.Should()
+                .Be(((ClientResponses.Acceptance.Ranked)accepted.Value).RankedMapId);
+            (await client.RankedMaps.GetByIdAsync(((ClientResponses.Acceptance.Ranked)accepted.Value).RankedMapId))
+                .Value!.ThreadId.Should()
                 .Be(new MapRequestThreadId(1));
             (await api.AcceptAsync(new ContextId(1), new MapRequestThreadId(1), new MapProposalId(1))).Error.Code
                 .Should().Be("invalid_state");
@@ -246,24 +247,62 @@ public partial class MapProposalServiceTests
                 Id = new MapRequestThreadId(2), ContextId = new ContextId(1), AuthorId = new PlayerId(1),
                 CreatedAt = _createdAt
             });
-            var alternative = CreateDraft(2);
+            var alternative = CreateDraft(1000);
             db.MapProposals.Add(alternative);
             db.Entry(alternative).Property(x => x.ThreadId).CurrentValue = new MapRequestThreadId(2);
             await db.SaveChangesAsync();
-            (await api.SubmitAsync(new ContextId(1), new MapRequestThreadId(1), new MapProposalId(2))).Error.Status
+            (await api.SubmitAsync(new ContextId(1), new MapRequestThreadId(1), new MapProposalId(1000))).Error.Status
                 .Should().Be(404);
-            var duplicate = await api.SubmitAsync(new ContextId(1), new MapRequestThreadId(2), new MapProposalId(2));
+            var duplicate = await api.SubmitAsync(new ContextId(1), new MapRequestThreadId(2), new MapProposalId(1000));
             duplicate.Error.Code.Should().Be("duplicate_maps");
             duplicate.Error.Duplicates.Should().ContainSingle().Which.RankedMapId.Should()
-                .Be(accepted.Value.RankedMapId);
-            (await api.SubmitAsync(new ContextId(1), new MapRequestThreadId(2), new MapProposalId(2), force: true))
+                .Be(((ClientResponses.Acceptance.Ranked)accepted.Value).RankedMapId);
+            (await api.SubmitAsync(new ContextId(1), new MapRequestThreadId(2), new MapProposalId(1000), force: true))
                 .IsSuccess.Should().BeTrue();
-            (await api.CloseAsync(new ContextId(1), new MapRequestThreadId(2), new MapProposalId(2), "Changed my mind"))
+            (await api.CloseAsync(new ContextId(1), new MapRequestThreadId(2), new MapProposalId(1000),
+                    "Changed my mind"))
                 .Value.Should()
                 .BeOfType<ClientResponses.Proposal.Closed>();
             using var removedEndpoint = await client.HttpClient.PostAsync("contexts/1/ranked-maps", null);
             removedEndpoint.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
             queue.Count.Should().Be(1);
+
+            var removal = await api.CreateProposalAsync(new ContextId(1), new MapRequestThreadId(1),
+                new ClientRequests.CreateDraft.Unrank("The map should be removed."));
+            removal.IsSuccess.Should().BeTrue();
+            removal.Value.Change.Should().BeOfType<ClientResponses.ProposalChange.Unrank>()
+                .Which.TargetAcceptedProposalId.Should().Be(new MapProposalId(1));
+            ((ClientResponses.ProposalChange.Unrank)removal.Value.Change).Reason.Should()
+                .Be("The map should be removed.");
+            (await api.SubmitAsync(new ContextId(1), new MapRequestThreadId(1), removal.Value.Id))
+                .IsSuccess.Should().BeTrue();
+            (await api.VoteCommunityAsync(new ContextId(1), new MapRequestThreadId(1), removal.Value.Id,
+                    new ClientRequests.CommunityVote(true)))
+                .IsSuccess.Should().BeTrue();
+            (await api.BoostAsync(new ContextId(1), new MapRequestThreadId(1))).IsSuccess.Should().BeTrue();
+            var removalQueue = await api.GetQueueAsync(new ContextId(1),
+                new ClientRequests.Filters(Search: new string('a', 40)),
+                new PaginatedRequestOptions<ClientRequests.EMapRequestSorter>());
+            removalQueue.IsSuccess.Should().BeTrue();
+            removalQueue.Value.Data.Should().ContainSingle().Which.Proposals.Should().ContainSingle()
+                .Which.Should().BeOfType<ClientResponses.ProposalMetadata.Unrank>();
+            removalQueue.Value.Data[0].MapVersions.Should().ContainSingle();
+
+            var unranked = await api.AcceptAsync(new ContextId(1), new MapRequestThreadId(1), removal.Value.Id);
+            unranked.IsSuccess.Should().BeTrue();
+            unranked.Value.Should().BeOfType<ClientResponses.Acceptance.Unranked>().Which.RemovedRankedMapId
+                .Should().Be(((ClientResponses.Acceptance.Ranked)accepted.Value).RankedMapId);
+            var afterRemoval = (await api.GetThreadAsync(new ContextId(1), new MapRequestThreadId(1))).Value!;
+            afterRemoval.RankedMapId.Should().BeNull();
+            afterRemoval.Proposals.OfType<ClientResponses.Proposal.Accepted>().Should().HaveCount(2);
+            afterRemoval.Proposals.Single(x => x.Id == removal.Value.Id).Votes.Should().ContainSingle();
+            (await api.GetBoostsAsync()).Value.Allocations.Should().BeEmpty();
+            (await client.RankedMaps.GetByIdAsync(((ClientResponses.Acceptance.Ranked)accepted.Value).RankedMapId))
+                .Value.Should().BeNull();
+            (await api.CreateProposalAsync(new ContextId(1), new MapRequestThreadId(1),
+                    new ClientRequests.CreateDraft.Unrank("Another removal"))).Error.Code
+                .Should().Be("unranking_target_changed");
+            queue.Count.Should().Be(2);
         }
         finally
         {

@@ -2885,7 +2885,7 @@
           "Context.MapRequests"
         ],
         "summary": "Gets a paginated ranking queue of thread previews with submitted proposal metadata.",
-        "description": "Get map previews, submitted proposal metadata and vote counts without full definitions or individual votes. The preview uses the creator's latest submitted proposal, falling back to the latest submitted proposal by another author. Private drafts and historical proposals are excluded, including from vote counts. Community and ranking-team votes are counted separately across all submitted proposals. Ranked threads include current ratings, minimum accuracy and category names for comparison. Ordering is calculated for each request, so positions may change between pages. Use sortBy and order to select the sort field and direction. Priority defaults to descending. WaitingSince ascending shows the oldest requests first. BoostCount and CommunityVotes ties use oldest waiting time. Final ties use thread ID ascending. Ranking-team votes do not affect ordering. Use the thread endpoint to read proposal history.",
+        "description": "Get map previews, submitted proposal metadata and vote counts without full definitions or individual votes. The preview uses the creator's latest submitted proposal, falling back to the latest submitted proposal by another author. Unrank previews use the targeted accepted definition. Private drafts and historical proposals are excluded, including from vote counts. Community and ranking-team votes are counted separately across all submitted proposals. Ranked threads include current ratings, minimum accuracy and category names for comparison. Ordering is calculated for each request, so positions may change between pages. Use sortBy and order to select the sort field and direction. Priority defaults to descending. WaitingSince ascending shows the oldest requests first. BoostCount and CommunityVotes ties use oldest waiting time. Final ties use thread ID ascending. Ranking-team votes do not affect ordering. Use the thread endpoint to read proposal history.",
         "operationId": "GetMapRequestQueue",
         "parameters": [
           {
@@ -3007,7 +3007,7 @@
           "Context.MapRequests"
         ],
         "summary": "Create a ranking-request thread and its first private draft.",
-        "description": "Create a thread in this context without publishing it or ranking a map. Song versions and leaderboard IDs are resolved now and missing ratings are calculated on submission. The draft will need to be submitted and explicitly accepted before a ranked map can be created. Exceeding the maximum allowed draft count returns 429 with code 'draft_limit' and limit. BeatSaver rate limits return 'upstream_rate_limit' and retryAfterSeconds.",
+        "description": "Create a thread from a Rank draft. Unrank drafts require an existing ranked thread. Song versions and leaderboard IDs are resolved now and missing ratings are calculated on submission. The draft will need to be submitted and explicitly accepted before a ranked map can be created. Exceeding the maximum allowed draft count returns 429 with code 'draft_limit' and limit. BeatSaver rate limits return 'upstream_rate_limit' and retryAfterSeconds.",
         "operationId": "CreateMapRequest",
         "parameters": [
           {
@@ -3577,7 +3577,7 @@
           "Context.MapRequests"
         ],
         "summary": "Get your per-context proposal usage and the configured submission, review and queue rules.",
-        "description": "Limits count proposals per player and context, not threads. New-ranking and revision proposals have separate limits. Boost allowances are global and returned by GET /players/@me/map-request-boosts.",
+        "description": "Limits count proposals per player and context, not threads. New-ranking and revision proposals have separate limits. Unranking uses the revision-request allowance. Boost allowances are global and returned by GET /players/@me/map-request-boosts.",
         "operationId": "GetMyMapRequestAllowance",
         "parameters": [
           {
@@ -3616,8 +3616,8 @@
         "tags": [
           "Context.MapRequests"
         ],
-        "summary": "Create a private draft with a complete alternative definition in an existing thread.",
-        "description": "Supply a complete definition, not a patch, whether the thread already has a ranked map or not. The draft remains private until submitted. Competing with another author's submitted proposal may require a configured subscription tier. Ranking-team members, guild leaders and managers bypass that restriction.",
+        "summary": "Create a private Rank or Unrank draft in an existing thread.",
+        "description": "Rank supplies a complete proposed definition. Unrank requires a currently ranked thread and a reason. Its target is the latest accepted Rank proposal captured at creation. Submission and acceptance return 409 with code 'unranking_target_changed' if that revision changes or the map is removed. Drafts are private until submitted. Competing with another author's submitted proposal may require a configured subscription tier. Ranking-team members, guild leaders and managers bypass that restriction.",
         "operationId": "CreateMapProposal",
         "parameters": [
           {
@@ -4159,7 +4159,7 @@
           "Context.MapRequests"
         ],
         "summary": "Revise your private draft by saving a replacement and deleting the original.",
-        "description": "Supply a complete definition. Creates a new private draft with a new ID in the same thread, then deletes the author's original draft in one transaction. A failed replacement leaves the original intact. Does not consume another draft allowance slot. Submitted and historical proposals cannot be replaced. Missing drafts and other authors' drafts return 404.",
+        "description": "Supply a Rank definition or an Unrank reason. Unrank captures the current accepted ranking as its target. Creates a new private draft with a new ID in the same thread, then deletes the author's original draft in one transaction. A failed replacement leaves the original intact. Does not consume another draft allowance slot. Submitted and historical proposals cannot be replaced. Missing drafts and other authors' drafts return 404.",
         "operationId": "ReplaceMapProposalDraft",
         "parameters": [
           {
@@ -4636,8 +4636,8 @@
         "tags": [
           "Context.MapRequests"
         ],
-        "summary": "Explicitly accept a submitted proposal and apply its complete definition to the ranked map.",
-        "description": "Requires ranking-team, guild-leader or manager permissions. Ranking-team vote requirements apply unless a guild leader or manager accepts. Community votes do not count. Acceptance creates or updates the ranked map, closes competing submitted proposals and releases boosts. Private drafts remain open. Score/stat refresh is queued afterwards. Unmet vote requirements return 409 with code 'vote_requirements', positiveVotes, negativeVotes, requiredPositiveVotes and requireNoNegativeVotes.",
+        "summary": "Explicitly accept a submitted ranking change or unranking request.",
+        "description": "Requires ranking-team, guild-leader or manager permissions. Ranking-team vote requirements apply unless a guild leader or manager accepts. Community votes do not count. Acceptance applies a Rank definition or removes the Unrank target, closes competing submitted proposals and releases boosts. Private drafts remain open. Score/stat refresh is queued afterwards. Unmet vote requirements return 409 with code 'vote_requirements', positiveVotes, negativeVotes, requiredPositiveVotes and requireNoNegativeVotes. An outdated Unrank target returns 409 with code 'unranking_target_changed'.",
         "operationId": "AcceptMapProposal",
         "parameters": [
           {
@@ -6922,7 +6922,7 @@
           "Guilds.Categories"
         ],
         "summary": "Delete a category of a guild.",
-        "description": "Delete a category of a guild by its Id.",
+        "description": "Delete a category and its achievements across the guild's contexts. Ranked-map category associations and category-specific member stats are removed. Proposal history retains its category and achievement snapshots.",
         "operationId": "DeleteCategory",
         "parameters": [
           {
@@ -7146,6 +7146,261 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "Context.Achievements"
+        ],
+        "summary": "Create an achievement.",
+        "description": "Create a difficulty-star, accuracy-star or map-list achievement in this context. Creation queues a member-stat refresh. Map-list associations are added through ranked-map proposals. Star upper bounds are exclusive. An omitted upper bound is unbounded.",
+        "operationId": "CreateAchievement",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Definition"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Achievement"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "POST contexts/{contextId}/achievements/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "POST contexts/{contextId}/achievements/",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      }
+    },
+    "/contexts/{contextId}/achievements/{achievementId}": {
+      "put": {
+        "tags": [
+          "Context.Achievements"
+        ],
+        "summary": "Update an achievement.",
+        "description": "Update an achievement in its current context. Rule and progression changes queue a member-stat refresh. The completion rule must match the existing achievement type. Star upper bounds are exclusive. An omitted upper bound is unbounded.",
+        "operationId": "UpdateAchievement",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "achievementId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Definition"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Achievement"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "One or more validation errors occurred.",
+                  "status": 400,
+                  "detail": null,
+                  "instance": "PUT contexts/{contextId}/achievements/{achievementId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00",
+                  "errors": {
+                    "propertyName": [
+                      "Error message"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "PUT contexts/{contextId}/achievements/{achievementId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Context.Achievements"
+        ],
+        "summary": "Delete an achievement.",
+        "description": "Delete an achievement and its stored member progress and ranked-map associations. Remaining level progression refreshes in the background. Proposal history retains its achievement snapshots.",
+        "operationId": "DeleteAchievement",
+        "parameters": [
+          {
+            "name": "contextId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "achievementId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+                  "title": "Not Found",
+                  "status": 404,
+                  "instance": "DELETE contexts/{contextId}/achievements/{achievementId}",
+                  "traceId": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [ ],
+            "X-GuildSaber-Request": [ ]
+          },
+          {
+            "Basic": [ ]
+          }
+        ]
       }
     },
     "/debug/import-old-gs-maps/{guildId}": {
@@ -8306,21 +8561,69 @@
     "schemas": {
       "Acceptance": {
         "required": [
-          "proposal",
-          "rankedMapId"
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/AcceptanceRanked"
+          },
+          {
+            "$ref": "#/components/schemas/AcceptanceUnranked"
+          }
+        ],
+        "description": "Successful explicit acceptance. Competing submitted proposals are closed and thread boosts released.",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Ranked": "#/components/schemas/AcceptanceRanked",
+            "Unranked": "#/components/schemas/AcceptanceUnranked"
+          }
+        }
+      },
+      "AcceptanceRanked": {
+        "required": [
+          "rankedMapId",
+          "proposal"
         ],
         "type": "object",
         "properties": {
-          "proposal": {
-            "description": "Accepted definition snapshot, including its acceptance timestamp and reviewer.",
-            "$ref": "#/components/schemas/Accepted"
+          "type": {
+            "enum": [
+              "Ranked"
+            ],
+            "type": "string"
           },
           "rankedMapId": {
-            "description": "Ranked map created or updated in the proposal's thread.",
             "$ref": "#/components/schemas/RankedMapId"
+          },
+          "proposal": {
+            "description": "Accepted change, including its acceptance timestamp and reviewer.",
+            "$ref": "#/components/schemas/Accepted"
           }
-        },
-        "description": "Successful explicit acceptance. Competing submitted proposals are closed and thread boosts released."
+        }
+      },
+      "AcceptanceUnranked": {
+        "required": [
+          "removedRankedMapId",
+          "proposal"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Unranked"
+            ],
+            "type": "string"
+          },
+          "removedRankedMapId": {
+            "$ref": "#/components/schemas/RankedMapId"
+          },
+          "proposal": {
+            "description": "Accepted change, including its acceptance timestamp and reviewer.",
+            "$ref": "#/components/schemas/Accepted"
+          }
+        }
       },
       "Accepted": {
         "required": [
@@ -8332,7 +8635,8 @@
           "authorId",
           "author",
           "createdAt",
-          "definition",
+          "comment",
+          "change",
           "votes"
         ],
         "type": "object",
@@ -8390,9 +8694,16 @@
             "description": "Draft creation time, not submission or acceptance time.",
             "format": "date-time"
           },
-          "definition": {
-            "description": "Entire desired definition, not a patch against an earlier proposal.",
-            "$ref": "#/components/schemas/Definition"
+          "comment": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional author note for a ranking definition."
+          },
+          "change": {
+            "description": "Complete ranking definition or the accepted definition targeted for unranking.",
+            "$ref": "#/components/schemas/ProposalChange"
           },
           "votes": {
             "type": "array",
@@ -8402,7 +8713,7 @@
             "description": "Community and ranking-team votes. These cannot be changed once the proposal is accepted or closed."
           }
         },
-        "description": "Historical definition applied to the ranked map at 'acceptedAt'. Order accepted proposals by 'acceptedAt'\nto reconstruct revisions. An older accepted proposal need not match the current ranked map.\nThe 'acceptedById' field is absent for imports or a deleted reviewer. Accepted proposals cannot be applied again."
+        "description": "Historical change applied at 'acceptedAt'. Rank applies its definition and Unrank removes its target.\nOrder accepted proposals by 'acceptedAt' to reconstruct revisions and removals.\nThe 'acceptedById' field is absent for imports or a deleted reviewer. Accepted proposals cannot be applied again."
       },
       "AccuracyTracker": {
         "required": [
@@ -9227,14 +9538,39 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "Display name, between 2 and 50 characters after trimming."
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "description": "Description, between 1 and 256 characters after trimming."
+          }
+        },
+        "description": "Create a category shared by the guild's contexts."
+      },
+      "CreateDraft": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/CreateDraftRank"
+          },
+          {
+            "$ref": "#/components/schemas/CreateDraftUnrank"
+          }
+        ],
+        "description": "A ranking definition or an unranking request to save as a private draft.",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Rank": "#/components/schemas/CreateDraftRank",
+            "Unrank": "#/components/schemas/CreateDraftUnrank"
           }
         }
       },
-      "CreateDraft": {
+      "CreateDraftRank": {
         "required": [
           "mapVersions",
           "requirements",
@@ -9244,6 +9580,12 @@
         ],
         "type": "object",
         "properties": {
+          "type": {
+            "enum": [
+              "Rank"
+            ],
+            "type": "string"
+          },
           "mapVersions": {
             "type": "array",
             "items": {
@@ -9285,6 +9627,26 @@
           }
         },
         "description": "Complete proposed definition, not a patch. Creates a private draft without publishing it to the queue.\nRevising a private draft saves a replacement through the replace endpoint and deletes the original atomically.\nWithdraw submitted proposals and create another variant to change a published definition."
+      },
+      "CreateDraftUnrank": {
+        "required": [
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Unrank"
+            ],
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "type": "string",
+            "description": "Explanation retained with the proposal, up to 2000 characters."
+          }
+        },
+        "description": "Request removal of the current ranked map in an existing thread."
       },
       "CreateGuild": {
         "required": [
@@ -9349,8 +9711,7 @@
           "rating",
           "mapVersions",
           "categories",
-          "achievements",
-          "comment"
+          "achievements"
         ],
         "type": "object",
         "properties": {
@@ -9382,14 +9743,6 @@
               "$ref": "#/components/schemas/AchievementSnapshot"
             },
             "description": "Explicit ranked-map-list associations, not dynamically matched star achievements."
-          },
-          "comment": {
-            "maxLength": 2000,
-            "type": [
-              "null",
-              "string"
-            ],
-            "description": "Optional original author comment, up to 2000 characters."
           }
         },
         "description": "Complete proposed definition retained independently of the current ranked map."
@@ -11569,7 +11922,7 @@
             "$ref": "#/components/schemas/ProposalClosed"
           }
         ],
-        "description": "Complete definition with a lifecycle discriminator: Draft, Submitted, Accepted or Closed.\nThere is no edit-proposal subtype. A thread with a current ranked map applies accepted proposals as revisions.",
+        "description": "Requested change with a lifecycle discriminator, Draft, Submitted, Accepted or Closed.\nThere is no edit-proposal subtype. A thread with a current ranked map applies accepted proposals as revisions.",
         "discriminator": {
           "propertyName": "type",
           "mapping": {
@@ -11590,7 +11943,8 @@
           "authorId",
           "author",
           "createdAt",
-          "definition",
+          "comment",
+          "change",
           "votes"
         ],
         "type": "object",
@@ -11654,9 +12008,16 @@
             "description": "Draft creation time, not submission or acceptance time.",
             "format": "date-time"
           },
-          "definition": {
-            "description": "Entire desired definition, not a patch against an earlier proposal.",
-            "$ref": "#/components/schemas/Definition"
+          "comment": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional author note for a ranking definition."
+          },
+          "change": {
+            "description": "Complete ranking definition or the accepted definition targeted for unranking.",
+            "$ref": "#/components/schemas/ProposalChange"
           },
           "votes": {
             "type": "array",
@@ -11666,7 +12027,76 @@
             "description": "Community and ranking-team votes. These cannot be changed once the proposal is accepted or closed."
           }
         },
-        "description": "Historical definition applied to the ranked map at 'acceptedAt'. Order accepted proposals by 'acceptedAt'\nto reconstruct revisions. An older accepted proposal need not match the current ranked map.\nThe 'acceptedById' field is absent for imports or a deleted reviewer. Accepted proposals cannot be applied again."
+        "description": "Historical change applied at 'acceptedAt'. Rank applies its definition and Unrank removes its target.\nOrder accepted proposals by 'acceptedAt' to reconstruct revisions and removals.\nThe 'acceptedById' field is absent for imports or a deleted reviewer. Accepted proposals cannot be applied again."
+      },
+      "ProposalChange": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ProposalChangeRank"
+          },
+          {
+            "$ref": "#/components/schemas/ProposalChangeUnrank"
+          }
+        ],
+        "description": "The requested change, independent of its review lifecycle.",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Rank": "#/components/schemas/ProposalChangeRank",
+            "Unrank": "#/components/schemas/ProposalChangeUnrank"
+          }
+        }
+      },
+      "ProposalChangeRank": {
+        "required": [
+          "definition"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Rank"
+            ],
+            "type": "string"
+          },
+          "definition": {
+            "$ref": "#/components/schemas/Definition"
+          }
+        }
+      },
+      "ProposalChangeUnrank": {
+        "required": [
+          "targetAcceptedProposalId",
+          "target",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Unrank"
+            ],
+            "type": "string"
+          },
+          "targetAcceptedProposalId": {
+            "description": "Accepted Rank proposal captured when the draft was created.",
+            "$ref": "#/components/schemas/MapProposalId"
+          },
+          "target": {
+            "description": "Historical map definition used to preview the removal, including after acceptance.",
+            "$ref": "#/components/schemas/Definition"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "type": "string",
+            "description": "Required explanation for removing the targeted ranked entry."
+          }
+        },
+        "description": "The immutable accepted definition targeted for removal."
       },
       "ProposalClosed": {
         "required": [
@@ -11679,7 +12109,8 @@
           "authorId",
           "author",
           "createdAt",
-          "definition",
+          "comment",
+          "change",
           "votes"
         ],
         "type": "object",
@@ -11752,9 +12183,16 @@
             "description": "Draft creation time, not submission or acceptance time.",
             "format": "date-time"
           },
-          "definition": {
-            "description": "Entire desired definition, not a patch against an earlier proposal.",
-            "$ref": "#/components/schemas/Definition"
+          "comment": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional author note for a ranking definition."
+          },
+          "change": {
+            "description": "Complete ranking definition or the accepted definition targeted for unranking.",
+            "$ref": "#/components/schemas/ProposalChange"
           },
           "votes": {
             "type": "array",
@@ -11764,7 +12202,7 @@
             "description": "Community and ranking-team votes. These cannot be changed once the proposal is accepted or closed."
           }
         },
-        "description": "Proposal withdrawn by its author, denied by a reviewer or superseded by another accepted proposal.\nDefinition and votes remain in history. It cannot be reopened. A missing 'submittedAt' means it was never\npublished and remains private. The 'closedById' field may be absent for imports or a deleted player.\nThe reason is optional."
+        "description": "Proposal withdrawn by its author, denied by a reviewer or superseded by another accepted proposal.\nThe requested change and votes remain in history. It cannot be reopened. A missing 'submittedAt' means it was never\npublished and remains private. The 'closedById' field may be absent for imports or a deleted player.\nThe reason is optional."
       },
       "ProposalDraft": {
         "required": [
@@ -11773,7 +12211,8 @@
           "authorId",
           "author",
           "createdAt",
-          "definition",
+          "comment",
+          "change",
           "votes"
         ],
         "type": "object",
@@ -11819,9 +12258,16 @@
             "description": "Draft creation time, not submission or acceptance time.",
             "format": "date-time"
           },
-          "definition": {
-            "description": "Entire desired definition, not a patch against an earlier proposal.",
-            "$ref": "#/components/schemas/Definition"
+          "comment": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional author note for a ranking definition."
+          },
+          "change": {
+            "description": "Complete ranking definition or the accepted definition targeted for unranking.",
+            "$ref": "#/components/schemas/ProposalChange"
           },
           "votes": {
             "type": "array",
@@ -11835,43 +12281,45 @@
       },
       "ProposalMetadata": {
         "required": [
+          "type"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ProposalMetadataRank"
+          },
+          {
+            "$ref": "#/components/schemas/ProposalMetadataUnrank"
+          }
+        ],
+        "description": "Submitted ranking or unranking metadata shown in the queue.",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Rank": "#/components/schemas/ProposalMetadataRank",
+            "Unrank": "#/components/schemas/ProposalMetadataUnrank"
+          }
+        }
+      },
+      "ProposalMetadataRank": {
+        "required": [
+          "rating",
+          "minAccuracy",
+          "categories",
           "id",
           "author",
           "createdAt",
-          "submittedAt",
-          "rating",
-          "minAccuracy",
-          "categories"
+          "submittedAt"
         ],
         "type": "object",
         "properties": {
-          "id": {
-            "description": "Proposal identity, used to open its details.",
-            "$ref": "#/components/schemas/MapProposalId"
-          },
-          "author": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "description": "Proposal author. Absent for imports or when the player was deleted.",
-                "$ref": "#/components/schemas/Player"
-              }
-            ]
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "Proposal creation time.",
-            "format": "date-time"
-          },
-          "submittedAt": {
-            "type": "string",
-            "description": "Time the proposal was published to the queue.",
-            "format": "date-time"
+          "type": {
+            "enum": [
+              "Rank"
+            ],
+            "type": "string"
           },
           "rating": {
-            "description": "Resolved ratings and whether they were calculated automatically.",
             "$ref": "#/components/schemas/Rating"
           },
           "minAccuracy": {
@@ -11881,18 +12329,83 @@
               "number",
               "string"
             ],
-            "description": "Minimum qualifying score accuracy in percent. Null imposes no minimum.",
             "format": "double"
           },
           "categories": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CategorySnapshot"
-            },
-            "description": "Category names and identities captured when the proposal was created."
+            }
+          },
+          "id": {
+            "$ref": "#/components/schemas/MapProposalId"
+          },
+          "author": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Player"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
           }
-        },
-        "description": "Submitted proposal information needed to compare ratings and categories in the queue."
+        }
+      },
+      "ProposalMetadataUnrank": {
+        "required": [
+          "targetAcceptedProposalId",
+          "reason",
+          "id",
+          "author",
+          "createdAt",
+          "submittedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "Unrank"
+            ],
+            "type": "string"
+          },
+          "targetAcceptedProposalId": {
+            "$ref": "#/components/schemas/MapProposalId"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "type": "string"
+          },
+          "id": {
+            "$ref": "#/components/schemas/MapProposalId"
+          },
+          "author": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Player"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       },
       "ProposalSubmitted": {
         "required": [
@@ -11902,7 +12415,8 @@
           "authorId",
           "author",
           "createdAt",
-          "definition",
+          "comment",
+          "change",
           "votes"
         ],
         "type": "object",
@@ -11952,9 +12466,16 @@
             "description": "Draft creation time, not submission or acceptance time.",
             "format": "date-time"
           },
-          "definition": {
-            "description": "Entire desired definition, not a patch against an earlier proposal.",
-            "$ref": "#/components/schemas/Definition"
+          "comment": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional author note for a ranking definition."
+          },
+          "change": {
+            "description": "Complete ranking definition or the accepted definition targeted for unranking.",
+            "$ref": "#/components/schemas/ProposalChange"
           },
           "votes": {
             "type": "array",
@@ -11964,7 +12485,7 @@
             "description": "Community and ranking-team votes. These cannot be changed once the proposal is accepted or closed."
           }
         },
-        "description": "Published, immutable definition awaiting explicit review. Votes may change while it is submitted."
+        "description": "Published, immutable ranking or unranking request awaiting explicit review. Votes may change while it is submitted."
       },
       "PutCurve": {
         "required": [
@@ -13812,7 +14333,7 @@
             "items": {
               "$ref": "#/components/schemas/MapPreview"
             },
-            "description": "Map previews from the selected proposal, in ascending display order."
+            "description": "Map previews from the selected Rank definition or Unrank target, in display order."
           },
           "proposals": {
             "type": "array",
@@ -13847,12 +14368,15 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "Display name, between 2 and 50 characters after trimming."
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "description": "Description, between 1 and 256 characters after trimming."
           }
-        }
+        },
+        "description": "Update a category's name and description."
       },
       "UpdateSettings": {
         "required": [
@@ -14130,7 +14654,7 @@
     },
     {
       "name": "Context.MapRequests",
-      "description": "Thread-based ranking requests, immutable proposals, votes and boosts."
+      "description": "Thread-based ranking and unranking requests, immutable proposals, votes and boosts."
     },
     {
       "name": "Context.Members.AchievementStats",
