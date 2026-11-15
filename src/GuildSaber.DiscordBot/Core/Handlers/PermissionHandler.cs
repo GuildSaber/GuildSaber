@@ -17,9 +17,15 @@ namespace GuildSaber.DiscordBot.Core.Handlers;
 public static class PermissionHandler
 {
     /// <summary>
-    /// Check if the user have all the required permission flag set.
+    /// Check if the user has the required permission flags.
     /// </summary>
-    public class RequirePermissionAttributeSlash(MemberResponses.EPermission permissions, bool requireManager = false)
+    /// <param name="permissions">Required guild permissions.</param>
+    /// <param name="requireManager">Whether the user must be a GuildSaber manager.</param>
+    /// <param name="matchAny">If true, accepts any of the requested flags. Otherwise, requires all of them.</param>
+    public class RequirePermissionAttributeSlash(
+        MemberResponses.EPermission permissions,
+        bool requireManager = false,
+        bool matchAny = false)
         : PreconditionAttribute
     {
         private HybridCache? _cache;
@@ -48,7 +54,7 @@ public static class PermissionHandler
                                 var userPermFromDiscordGuild
                             }
                             when userPermFromDiscordGuild.TryGetValue(context.Guild.DiscordId, out var permission)
-                                 && permission.HasFlag(permissions)
+                                 && (matchAny ? (permission & permissions) != 0 : permission.HasFlag(permissions))
                             => await ValidateGuildIdAndContextIdOwnership(services, context,
                                 bypassIfMissingGuild: false),
                         _ => await Error("You don't have the required permissions to execute this command.", context)

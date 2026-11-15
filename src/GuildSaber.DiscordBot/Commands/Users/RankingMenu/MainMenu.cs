@@ -1,5 +1,6 @@
 using Discord;
 using Discord.Interactions;
+using GuildSaber.Api.Features.Guilds.Members.Http;
 using GuildSaber.Api.Features.MapRequests.Http;
 using GuildSaber.Api.Shared;
 using GuildSaber.Common.Helpers;
@@ -13,16 +14,16 @@ public partial class UserModuleSlash
     [SlashCommand("ranking", "Open the ranking menu")]
     public async Task RankingMenu([Autocomplete<ContextAutocompleteHandler>] ContextId contextId)
     {
-        var guild = await (
+        var (guild, (queueResult, allowanceResult, boostsResult, viewerResult)) = await (
             Context.Interaction.HasResponded ? Task.CompletedTask : DeferAsync(ephemeral: true),
-            GetGuildAsync().AsTask()
-        ).WhenAll();
-
-        var (queueResult, allowanceResult, boostsResult) = await (
-            Client.Value.MapRequests.GetQueueAsync(contextId, new MapProposalRequests.Filters(),
-                new PaginatedRequestOptions<MapProposalRequests.EMapRequestSorter>(Page: 1, PageSize: 1)),
-            Client.Value.MapRequests.GetAllowanceAsync(contextId),
-            Client.Value.MapRequests.GetBoostsAsync()
+            GetGuildAsync().AsTask(),
+            (
+                Client.Value.MapRequests.GetQueueAsync(contextId, new MapProposalRequests.Filters(),
+                    new PaginatedRequestOptions<MapProposalRequests.EMapRequestSorter>(Page: 1, PageSize: 1)),
+                Client.Value.MapRequests.GetAllowanceAsync(contextId),
+                Client.Value.MapRequests.GetBoostsAsync(),
+                Client.Value.Players.GetExtendedAtMeAsync()
+            ).WhenAll()
         ).WhenAll();
 
         if (!queueResult.TryGetValue(out var queue, out var error))
@@ -69,13 +70,23 @@ public partial class UserModuleSlash
                 .WithTextDisplay(
                     "Start a new request with a BeatSaver link, key or hash. Existing threads are shown before creating a draft. " +
                     "Use /search to find a ranked map, open its thread and fork the current accepted proposal. " +
-                    "You can also fork an open proposal from the queue. Forks stay private until submitted."))
-            .Build();
+                    "You can also fork an open proposal from the queue. Forks stay private until submitted."));
+
+        var viewer = viewerResult.GetValueOrDefault();
+        var permissions = viewer?.Members.FirstOrDefault(x => x.GuildId == guild.Id)?.Permissions
+                          ?? MemberResponses.EPermission.None;
+        if (viewer?.Player.IsManager is true ||
+            (permissions & (MemberResponses.EPermission.RankingTeam | MemberResponses.EPermission.GuildLeader)) != 0)
+            component.WithContainer(container => container.WithAccentColor(Color.Red)
+                .WithActionRow(row => row
+                    .WithButton("Manage achievements", $"ranking_achievements:{contextId},-1,1,1",
+                        ButtonStyle.Secondary)
+                    .WithButton("Manage categories", $"ranking_categories:{contextId},1", ButtonStyle.Secondary)));
 
         await ModifyOriginalResponseAsync(x =>
         {
             x.Flags = MessageFlags.ComponentsV2;
-            x.Components = component;
+            x.Components = component.Build();
             x.AllowedMentions = AllowedMentions.None;
         });
     }

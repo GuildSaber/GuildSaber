@@ -62,6 +62,12 @@ public static class HybridCacheExtensions
                     Expiration = TimeSpan.FromHours(5)
                 });
 
+        public async ValueTask InvalidateGuildCategoriesAsync(GuildId guildId, CategoryId categoryId)
+            => await Task.WhenAll(
+                self.RemoveAsync($"GuildCategories_{guildId}").AsTask(),
+                self.RemoveAsync($"CategoryById_{categoryId}").AsTask(),
+                self.RemoveAsync($"GuildExtended_{guildId}").AsTask());
+
         public ValueTask<PlayerResponses.Player?> GetPlayerByIdAsync(PlayerId? id, GuildSaberClient client)
             => id is not { } playerId
                 ? ValueTask.FromResult<PlayerResponses.Player?>(null)
