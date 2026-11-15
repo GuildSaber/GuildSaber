@@ -47,6 +47,9 @@
         <PackageReference Include="System.Configuration.ConfigurationManager">
             <GeneratePathProperty>true</GeneratePathProperty>
         </PackageReference>
+        <PackageReference Include="System.ComponentModel.Annotations">
+            <GeneratePathProperty>true</GeneratePathProperty>
+        </PackageReference>
         <PackageReference Include="System.Runtime.Caching">
             <GeneratePathProperty>true</GeneratePathProperty>
         </PackageReference>

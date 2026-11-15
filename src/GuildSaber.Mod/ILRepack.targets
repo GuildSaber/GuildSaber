@@ -20,6 +20,7 @@
         <ILRepackInput Include="$(PkgSystem_Memory)\lib\netstandard2.0\System.Memory.dll" />
         <ILRepackInput Include="$(PkgSystem_Threading_Tasks_Extensions)\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll" />
         <ILRepackInput Include="$(PkgSystem_Numerics_Vectors)\lib\netstandard2.0\System.Numerics.Vectors.dll" />
+        <ILRepackInput Include="$(PkgSystem_ComponentModel_Annotations)\lib\netstandard2.1\System.ComponentModel.Annotations.dll" />
 
         <!-- Cache dependencies -->
         <ILRepackInput Include="$(PkgSystem_Runtime_Caching)\lib\netstandard2.0\System.Runtime.Caching.dll" />
