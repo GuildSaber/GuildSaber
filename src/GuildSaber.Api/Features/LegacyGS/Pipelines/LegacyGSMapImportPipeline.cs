@@ -308,7 +308,8 @@ public class LegacyGuildSaberMapImportPipeline(
             return;
         }
 
-        await applyPipeline.ExecuteAsync(accepted.RankedMapId, accepted.AddedDifficultyIds, token);
+        await applyPipeline.ExecuteAsync(
+            accepted.RankedMapId, accepted.AddedDifficultyIds, token, fetchLeaderboardScores: false);
     }
 
     public async Task<Dictionary<LegacyCategoryId, Category>> SyncCategoriesWithLegacyAsync(

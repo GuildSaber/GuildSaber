@@ -7,7 +7,9 @@ using GuildSaber.Api.Features.Scores.Pipelines;
 using GuildSaber.Api.Features.Scores.Services;
 using GuildSaber.Api.Queuing;
 using GuildSaber.Common.Services.BeatLeader;
+using GuildSaber.Common.Services.BeatLeader.Models.StrongTypes;
 using GuildSaber.Common.Services.ScoreSaber;
+using GuildSaber.Common.Services.ScoreSaber.Models.StrongTypes;
 using GuildSaber.Common.StrongTypes;
 using GuildSaber.Common.UnitTests.Features.PointCurves;
 using GuildSaber.Database.Models.Server.Guilds.Achievements;
@@ -83,21 +85,29 @@ public class MemberStatsPipelineTests
             .BuildServiceProvider();
 
     [Test]
-    [Arguments(false)]
-    [Arguments(true)]
-    public async Task ProposalApplication_ShouldRefreshEachMemberOnceAfterScoring(bool addedVersion)
+    [Arguments(false, true)]
+    [Arguments(true, true)]
+    [Arguments(true, false)]
+    public async Task ProposalApplication_ShouldRefreshEachMemberOnceAfterScoring(
+        bool addedVersion, bool fetchLeaderboardScores)
     {
         await using var database = await PointCurveTestDatabase.CreateAsync();
         await database.AddPlayerAsync(2);
         await database.AddScoreAsync(1, 600);
         await database.AddScoreAsync(2, 800, playerId: 2);
 
+        if (!fetchLeaderboardScores)
+            await database.Context.SongDifficulties.ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.BLLeaderboardId, BLLeaderboardId.CreateUnsafe("1"))
+                .SetProperty(x => x.SSLeaderboardId, SSLeaderboardId.CreateUnsafe(1)));
+
         var queries = new StatsQueries();
         await using var provider = Services(database, queries);
         await using var scope = provider.CreateAsyncScope();
 
         await scope.ServiceProvider.GetRequiredService<ApplyMapProposalPipeline>()
-            .ExecuteAsync(_map, addedVersion ? [new SongDifficultyId(1)] : [], CancellationToken.None);
+            .ExecuteAsync(_map, addedVersion ? [new SongDifficultyId(1)] : [], CancellationToken.None,
+                fetchLeaderboardScores: fetchLeaderboardScores);
 
         // Each member refresh reads categories once and achievements once for this point.
         queries.CategoryReads.Should().Be(2);

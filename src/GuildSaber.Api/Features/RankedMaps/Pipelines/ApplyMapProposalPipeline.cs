@@ -12,7 +12,8 @@ public sealed class ApplyMapProposalPipeline(
     MemberStatsPipeline memberStatsPipeline)
 {
     public async Task ExecuteAsync(
-        RankedMapId rankedMapId, SongDifficultyId[] addedDifficultyIds, CancellationToken token)
+        RankedMapId rankedMapId, SongDifficultyId[] addedDifficultyIds, CancellationToken token,
+        bool fetchLeaderboardScores = true)
     {
         var context = await dbContext.RankedMaps
             .Where(x => x.Id == rankedMapId)
@@ -23,18 +24,22 @@ public sealed class ApplyMapProposalPipeline(
         if (context is null)
             return;
 
-        // Another proposal may have been accepted while this work waited in the queue.
-        var addedDifficulties = await dbContext.SongDifficulties
-            .Where(x =>
-                ((IEnumerable<SongDifficultyId>)addedDifficultyIds).Contains(x.Id)
-                && dbContext.MapVersions.Any(version =>
-                    version.RankedMapId == rankedMapId
-                    && version.SongDifficultyId == x.Id))
-            .ToArrayAsync(token);
+        if (fetchLeaderboardScores)
+        {
+            // Another proposal may have been accepted while this work waited in the queue.
+            var addedDifficulties = await dbContext.SongDifficulties
+                .Where(x =>
+                    ((IEnumerable<SongDifficultyId>)addedDifficultyIds).Contains(x.Id)
+                    && dbContext.MapVersions.Any(version =>
+                        version.RankedMapId == rankedMapId
+                        && version.SongDifficultyId == x.Id))
+                .ToArrayAsync(token);
 
-        foreach (var difficulty in addedDifficulties)
-            await addRankedMapPipeline.ExecuteAsync(difficulty, token);
+            foreach (var difficulty in addedDifficulties)
+                await addRankedMapPipeline.ExecuteAsync(difficulty, token);
+        }
 
+        // Stored scores are recalculated even when leaderboard downloads are disabled.
         await editRankedMapPipeline.ExecuteAsync(rankedMapId, refreshMemberStats: false, token);
 
         // Removed versions and changed achievement/category membership can affect players without a remaining score.
