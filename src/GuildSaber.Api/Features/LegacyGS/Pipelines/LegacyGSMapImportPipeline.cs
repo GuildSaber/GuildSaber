@@ -31,10 +31,11 @@ public class LegacyGuildSaberMapImportPipeline(
     MapProposalService proposalService,
     MapProposalReviewService reviewService,
     ApplyMapProposalPipeline applyPipeline,
-    MemberPointStatsPipeline memberPointStatsPipeline,
-    MemberAchievementStatsPipeline memberAchievementStatsPipeline,
+    MemberStatsPipeline memberStatsPipeline,
     ILogger<LegacyGuildSaberMapImportPipeline> logger)
 {
+    private const int LeaderboardScoreImportThreshold = 500;
+
     private readonly record struct LegacyAchievementKey(
         LegacyLevelId LegacyLevelId,
         LegacyCategoryId LegacyCategoryId);
@@ -49,152 +50,159 @@ public class LegacyGuildSaberMapImportPipeline(
         CancellationToken token)
     {
         logger.LogInformation("Starting legacy GuildSaber map import for guild {GuildId}", guildId);
-        var request = new LegacyGuildSaberApi.PaginatedRequestOptions<RankedMapsSortBy>
+        try
         {
-            Page = 1,
-            PageSize = 10,
-            MaxPage = int.MaxValue,
-            SortBy = RankedMapsSortBy.EditedTime,
-            Reverse = true
-        };
-
-        var categoryDict = await SyncCategoriesWithLegacyAsync(guildId, token);
-        var achievementDict = await SyncAchievementsWithLegacyAsync(guildId, contextId, categoryDict, token);
-
-        var rankedMapIdsToRemove = await dbContext.RankedMaps
-            .Where(x => x.ContextId == contextId && x.Thread.IsLegacyImport)
-            .Select(x => x.Id)
-            .ToHashSetAsync(token);
-
-        await foreach (var guildRankedMapsResult in legacyGuildSaberApi.GetGuildRankedMaps(guildId, request)
-                           .WithCancellation(token))
-        {
-            if (!guildRankedMapsResult.TryGetValue(out var guildRankedMaps))
+            var request = new LegacyGuildSaberApi.PaginatedRequestOptions<RankedMapsSortBy>
             {
-                logger.LogWarning("Legacy map enumeration failed. Skipping deletion of unseen maps.");
-                return;
+                Page = 1,
+                PageSize = 10,
+                MaxPage = int.MaxValue,
+                SortBy = RankedMapsSortBy.EditedTime,
+                Reverse = true
+            };
+
+            var categoryDict = await SyncCategoriesWithLegacyAsync(guildId, token);
+            var achievementDict = await SyncAchievementsWithLegacyAsync(guildId, contextId, categoryDict, token);
+
+            var rankedMapIdsToRemove = await dbContext.RankedMaps
+                .Where(x => x.ContextId == contextId && x.Thread.IsLegacyImport)
+                .Select(x => x.Id)
+                .ToHashSetAsync(token);
+
+            var fetchLeaderboardScores = rankedMapIdsToRemove.Count >= LeaderboardScoreImportThreshold;
+
+            await foreach (var guildRankedMapsResult in legacyGuildSaberApi.GetGuildRankedMaps(guildId, request)
+                               .WithCancellation(token))
+            {
+                if (!guildRankedMapsResult.TryGetValue(out var guildRankedMaps))
+                {
+                    logger.LogWarning("Legacy map enumeration failed. Skipping deletion of unseen maps.");
+                    return;
+                }
+
+                foreach (var rankedMap in guildRankedMaps.Where(x => x.BeatSaverId is not null))
+                foreach (var difficulty in rankedMap.Difficulties.Where(x => x.GameModeName is not null))
+                {
+                    var existingRankedMaps = await dbContext.RankedMaps
+                        .Include(x => x.Categories)
+                        .Include(x => x.Achievements)
+                        .Where(x => x.ContextId == contextId && x.Thread.IsLegacyImport)
+                        .Where(MapDifficultyIsAlreadyRankedOnGuild(
+                            guildId, difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId!.Value,
+                            difficulty.GameModeName!, dbContext))
+                        .ToArrayAsync(token);
+
+                    if (existingRankedMaps.Length == 0 && await WasUnrankedAsync(contextId,
+                            difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId.Value, difficulty.GameModeName!,
+                            token))
+                        continue;
+
+                    var achievementKey = new LegacyAchievementKey(difficulty.LevelId, new LegacyCategoryId(0));
+                    if (!achievementDict.TryGetValue(achievementKey, out var achievement))
+                        throw new InvalidOperationException(
+                            "Cannot synchronize maps without their legacy achievements.");
+
+                    var requirements = new RankedMapRequests.RankedMapRequirements(
+                        NeedConfirmation: difficulty.Requirements.HasFlag(ERequirements.NeedAdminConfirmation),
+                        NeedFullCombo: difficulty.Requirements.HasFlag(ERequirements.FullCombo),
+                        MaxPauseDurationSec: difficulty.Requirements.HasFlag(ERequirements.MaxPauses)
+                            ? 2f
+                            : null,
+                        ProhibitedModifiers: ModifiersMapper.ToModifiers(difficulty.ProhibitedModifiers).Map(),
+                        MandatoryModifiers: ModifiersMapper.ToModifiers(difficulty.MandatoryModifiers).Map(),
+                        MinAccuracy: difficulty.MinScoreRequirement is not 0
+                            ? (int)((float)difficulty.MinScoreRequirement / difficulty.MaxScore * 100f)
+                            : null);
+
+                    var manualRating = new RankedMapRequests.ManualRating(
+                        DifficultyStar: achievement.MinStar,
+                        //TODO: Remove for production. Bypass BeatLeader ExMachina for the legacy import.
+                        AccuracyStar: 0);
+
+                    int[] categoryIds = difficulty.GuildCategoryId.HasValue && difficulty.GuildCategoryId != 0
+                        ? [categoryDict[difficulty.GuildCategoryId.Value].Id]
+                        : [];
+
+                    // A difficulty may intentionally occur in multiple rankings. Do not merge or remove duplicates here.
+                    foreach (var current in existingRankedMaps)
+                        rankedMapIdsToRemove.Remove(current.Id);
+
+                    var currentMap = existingRankedMaps.FirstOrDefault();
+                    if (currentMap is not null &&
+                        !MapShouldBeUpdated(currentMap, requirements, manualRating, categoryIds))
+                        continue;
+
+                    // Retry pending imports instead of opening another thread when acceptance failed.
+                    var threadId = currentMap?.ThreadId;
+                    var pendingProposalId = await GetPendingProposalIdAsync(
+                        contextId, threadId, difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId.Value,
+                        difficulty.GameModeName!, token);
+
+                    var proposalRequest = new MapProposalRequests.CreateDraft.Rank(
+                        MapVersions: currentMap is null
+                            ?
+                            [
+                                new MapProposalRequests.MapVersionInput(
+                                    new MapProposalRequests.SongReference.ByKey(rankedMap.BeatSaverId.Value),
+                                    difficulty.GameModeName!, difficulty.BeatSaverDifficultyValue, "Standard", 0)
+                            ]
+                            : await GetMapVersionsAsync(currentMap.Id, token),
+                        Requirements: requirements,
+                        Rating: manualRating with
+                        {
+                            AccuracyStar = currentMap?.Rating.AccStar.Value ?? manualRating.AccuracyStar
+                        },
+                        CategoryIds: categoryIds.Select(id => new CategoryId(id)).ToArray(),
+                        AchievementIds: []);
+
+                    await ImportProposalAsync(
+                        contextId, threadId, pendingProposalId, proposalRequest, fetchLeaderboardScores, token);
+                }
             }
 
-            foreach (var rankedMap in guildRankedMaps.Where(x => x.BeatSaverId is not null))
-            foreach (var difficulty in rankedMap.Difficulties.Where(x => x.GameModeName is not null))
+            if (rankedMapIdsToRemove.Count > 0)
             {
-                var existingRankedMaps = await dbContext.RankedMaps
-                    .Include(x => x.Categories)
-                    .Include(x => x.Achievements)
-                    .Where(x => x.ContextId == contextId && x.Thread.IsLegacyImport)
-                    .Where(MapDifficultyIsAlreadyRankedOnGuild(
-                        guildId, difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId!.Value,
-                        difficulty.GameModeName!, dbContext))
-                    .ToArrayAsync(token);
+                logger.LogInformation(
+                    "Removing {Count} ranked maps that are no longer present on legacy GuildSaber for guild {GuildId}",
+                    rankedMapIdsToRemove.Count, guildId);
 
-                if (existingRankedMaps.Length == 0 && await WasUnrankedAsync(contextId,
-                        difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId.Value, difficulty.GameModeName!,
-                        token))
-                    continue;
+                var affectedRows = await dbContext.RankedMaps.Where(x => rankedMapIdsToRemove.Contains(x.Id))
+                    .ExecuteDeleteAsync(token);
 
-                var achievementKey = new LegacyAchievementKey(difficulty.LevelId, new LegacyCategoryId(0));
-                if (!achievementDict.TryGetValue(achievementKey, out var achievement))
-                    throw new InvalidOperationException("Cannot synchronize maps without their legacy achievements.");
-
-                var requirements = new RankedMapRequests.RankedMapRequirements(
-                    NeedConfirmation: difficulty.Requirements.HasFlag(ERequirements.NeedAdminConfirmation),
-                    NeedFullCombo: difficulty.Requirements.HasFlag(ERequirements.FullCombo),
-                    MaxPauseDurationSec: difficulty.Requirements.HasFlag(ERequirements.MaxPauses)
-                        ? 2f
-                        : null,
-                    ProhibitedModifiers: ModifiersMapper.ToModifiers(difficulty.ProhibitedModifiers).Map(),
-                    MandatoryModifiers: ModifiersMapper.ToModifiers(difficulty.MandatoryModifiers).Map(),
-                    MinAccuracy: difficulty.MinScoreRequirement is not 0
-                        ? (int)((float)difficulty.MinScoreRequirement / difficulty.MaxScore * 100f)
-                        : null);
-
-                var manualRating = new RankedMapRequests.ManualRating(
-                    DifficultyStar: achievement.MinStar,
-                    //TODO: Remove for production. Bypass BeatLeader ExMachina for the legacy import.
-                    AccuracyStar: 0);
-
-                int[] categoryIds = difficulty.GuildCategoryId.HasValue && difficulty.GuildCategoryId != 0
-                    ? [categoryDict[difficulty.GuildCategoryId.Value].Id]
-                    : [];
-
-                // A difficulty may intentionally occur in multiple rankings. Do not merge or remove duplicates here.
-                foreach (var current in existingRankedMaps)
-                    rankedMapIdsToRemove.Remove(current.Id);
-
-                var currentMap = existingRankedMaps.FirstOrDefault();
-                if (currentMap is not null && !MapShouldBeUpdated(currentMap, requirements, manualRating, categoryIds))
-                    continue;
-
-                // Retry pending imports instead of opening another thread when acceptance failed.
-                var threadId = currentMap?.ThreadId;
-                var pendingProposalId = await GetPendingProposalIdAsync(
-                    contextId, threadId, difficulty.BeatSaverDifficultyValue, rankedMap.BeatSaverId.Value,
-                    difficulty.GameModeName!, token);
-
-                var proposalRequest = new MapProposalRequests.CreateDraft.Rank(
-                    MapVersions: currentMap is null
-                        ?
-                        [
-                            new MapProposalRequests.MapVersionInput(
-                                new MapProposalRequests.SongReference.ByKey(rankedMap.BeatSaverId.Value),
-                                difficulty.GameModeName!, difficulty.BeatSaverDifficultyValue, "Standard", 0)
-                        ]
-                        : await GetMapVersionsAsync(currentMap.Id, token),
-                    Requirements: requirements,
-                    Rating: manualRating with
-                    {
-                        AccuracyStar = currentMap?.Rating.AccStar.Value ?? manualRating.AccuracyStar
-                    },
-                    CategoryIds: categoryIds.Select(id => new CategoryId(id)).ToArray(),
-                    AchievementIds: []);
-
-                await ImportProposalAsync(contextId, threadId, pendingProposalId, proposalRequest, token);
+                if (affectedRows != rankedMapIdsToRemove.Count)
+                    logger.LogWarning(
+                        "Expected to delete {ExpectedCount} ranked maps but actually deleted {ActualCount} ranked maps for guild {GuildId}",
+                        rankedMapIdsToRemove.Count, affectedRows, guildId);
+                else
+                    logger.LogInformation("Deleted {DeletedCount} ranked maps for guild {GuildId}", affectedRows,
+                        guildId);
             }
+            else
+                logger.LogInformation("No ranked maps to remove for guild {GuildId}", guildId);
         }
-
-        if (rankedMapIdsToRemove.Count == 0)
+        finally
         {
-            logger.LogInformation("No ranked maps to remove for guild {GuildId}", guildId);
-            logger.LogInformation("Completed legacy GuildSaber map import for guild {GuildId}", guildId);
-            return;
+            await RefreshMemberStatsAsync(contextId, token);
         }
 
-        logger.LogInformation(
-            "Removing {Count} ranked maps that are no longer present on legacy GuildSaber for guild {GuildId}",
-            rankedMapIdsToRemove.Count, guildId);
-        var (playerIds, contextsWithPoints) = (
-            await dbContext.RankedMaps
-                .Where(x => rankedMapIdsToRemove.Contains(x.Id))
-                .SelectMany(x => x.RankedScores.Select(y => y.PlayerId))
-                .Distinct()
-                .ToArrayAsync(token),
-            await dbContext.Contexts
-                .Include(x => x.Points)
-                .Where(x => x.GuildId == guildId)
-                .ToArrayAsync(token)
-        );
-
-        var affectedRows = await dbContext.RankedMaps.Where(x => rankedMapIdsToRemove.Contains(x.Id))
-            .ExecuteDeleteAsync(token);
-
-        if (affectedRows != rankedMapIdsToRemove.Count)
-            logger.LogWarning(
-                "Expected to delete {ExpectedCount} ranked maps but actually deleted {ActualCount} ranked maps for guild {GuildId}",
-                rankedMapIdsToRemove.Count, affectedRows, guildId);
-        else
-            logger.LogInformation("Deleted {DeletedCount} ranked maps for guild {GuildId}", affectedRows, guildId);
-
-        logger.LogInformation("Recalculating member stats for affected players in guild {GuildId}", guildId);
-        foreach (var playerId in playerIds)
-        foreach (var context in contextsWithPoints)
-        {
-            await memberPointStatsPipeline.ExecuteAsync(playerId, context);
-            foreach (var point in context.Points)
-                await memberAchievementStatsPipeline.ExecuteAsync(playerId, context.GuildId, context.Id, point.Id);
-        }
-
-        logger.LogInformation("Completed recalculating member stats for affected players in guild {GuildId}", guildId);
         logger.LogInformation("Completed legacy GuildSaber map import for guild {GuildId}", guildId);
+    }
+
+    private async Task RefreshMemberStatsAsync(ContextId contextId, CancellationToken token)
+    {
+        dbContext.ChangeTracker.Clear();
+
+        var context = await dbContext.Contexts
+            .Include(x => x.Points)
+            .SingleOrDefaultAsync(x => x.Id == contextId, token);
+
+        if (context is null)
+            return;
+
+        logger.LogInformation("Recalculating member stats for context {ContextId}", contextId);
+        await memberStatsPipeline.ExecuteAsync(context,
+            dbContext.ContextMembers.Where(x => x.ContextId == contextId).Select(x => x.PlayerId), token: token);
+        logger.LogInformation("Completed recalculating member stats for context {ContextId}", contextId);
     }
 
     private static bool MapShouldBeUpdated(
@@ -259,7 +267,7 @@ public class LegacyGuildSaberMapImportPipeline(
 
     private async Task ImportProposalAsync(
         ContextId contextId, MapRequestThreadId? threadId, MapProposalId? proposalId,
-        MapProposalRequests.CreateDraft.Rank request, CancellationToken token)
+        MapProposalRequests.CreateDraft.Rank request, bool fetchLeaderboardScores, CancellationToken token)
     {
         if (proposalId is null)
         {
@@ -309,7 +317,8 @@ public class LegacyGuildSaberMapImportPipeline(
         }
 
         await applyPipeline.ExecuteAsync(
-            accepted.RankedMapId, accepted.AddedDifficultyIds, token, fetchLeaderboardScores: false);
+            accepted.RankedMapId, accepted.AddedDifficultyIds, token,
+            fetchLeaderboardScores: fetchLeaderboardScores, refreshMemberStats: false);
     }
 
     public async Task<Dictionary<LegacyCategoryId, Category>> SyncCategoriesWithLegacyAsync(

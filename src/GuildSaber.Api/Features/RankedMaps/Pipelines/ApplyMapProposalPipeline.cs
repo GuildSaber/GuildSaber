@@ -13,7 +13,7 @@ public sealed class ApplyMapProposalPipeline(
 {
     public async Task ExecuteAsync(
         RankedMapId rankedMapId, SongDifficultyId[] addedDifficultyIds, CancellationToken token,
-        bool fetchLeaderboardScores = true)
+        bool fetchLeaderboardScores = true, bool refreshMemberStats = true)
     {
         var context = await dbContext.RankedMaps
             .Where(x => x.Id == rankedMapId)
@@ -41,6 +41,9 @@ public sealed class ApplyMapProposalPipeline(
 
         // Stored scores are recalculated even when leaderboard downloads are disabled.
         await editRankedMapPipeline.ExecuteAsync(rankedMapId, refreshMemberStats: false, token);
+
+        if (!refreshMemberStats)
+            return;
 
         // Removed versions and changed achievement/category membership can affect players without a remaining score.
         var players = dbContext.ContextMembers
