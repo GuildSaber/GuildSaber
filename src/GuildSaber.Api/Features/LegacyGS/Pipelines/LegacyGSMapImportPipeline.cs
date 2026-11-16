@@ -49,7 +49,8 @@ public class LegacyGuildSaberMapImportPipeline(
         ContextId contextId,
         CancellationToken token)
     {
-        logger.LogInformation("Starting legacy GuildSaber map import for guild {GuildId}", guildId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Starting legacy GuildSaber map import for guild {GuildId}", guildId);
         try
         {
             var request = new LegacyGuildSaberApi.PaginatedRequestOptions<RankedMapsSortBy>
@@ -162,9 +163,10 @@ public class LegacyGuildSaberMapImportPipeline(
 
             if (rankedMapIdsToRemove.Count > 0)
             {
-                logger.LogInformation(
-                    "Removing {Count} ranked maps that are no longer present on legacy GuildSaber for guild {GuildId}",
-                    rankedMapIdsToRemove.Count, guildId);
+                if (logger.IsEnabled(LogLevel.Information))
+                    logger.LogInformation(
+                        "Removing {Count} ranked maps that are no longer present on legacy GuildSaber for guild {GuildId}",
+                        rankedMapIdsToRemove.Count, guildId);
 
                 var affectedRows = await dbContext.RankedMaps.Where(x => rankedMapIdsToRemove.Contains(x.Id))
                     .ExecuteDeleteAsync(token);
@@ -173,11 +175,11 @@ public class LegacyGuildSaberMapImportPipeline(
                     logger.LogWarning(
                         "Expected to delete {ExpectedCount} ranked maps but actually deleted {ActualCount} ranked maps for guild {GuildId}",
                         rankedMapIdsToRemove.Count, affectedRows, guildId);
-                else
+                else if (logger.IsEnabled(LogLevel.Information))
                     logger.LogInformation("Deleted {DeletedCount} ranked maps for guild {GuildId}", affectedRows,
                         guildId);
             }
-            else
+            else if (logger.IsEnabled(LogLevel.Information))
                 logger.LogInformation("No ranked maps to remove for guild {GuildId}", guildId);
         }
         finally
@@ -185,7 +187,8 @@ public class LegacyGuildSaberMapImportPipeline(
             await RefreshMemberStatsAsync(contextId, token);
         }
 
-        logger.LogInformation("Completed legacy GuildSaber map import for guild {GuildId}", guildId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Completed legacy GuildSaber map import for guild {GuildId}", guildId);
     }
 
     private async Task RefreshMemberStatsAsync(ContextId contextId, CancellationToken token)
@@ -199,10 +202,12 @@ public class LegacyGuildSaberMapImportPipeline(
         if (context is null)
             return;
 
-        logger.LogInformation("Recalculating member stats for context {ContextId}", contextId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Recalculating member stats for context {ContextId}", contextId);
         await memberStatsPipeline.ExecuteAsync(context,
             dbContext.ContextMembers.Where(x => x.ContextId == contextId).Select(x => x.PlayerId), token: token);
-        logger.LogInformation("Completed recalculating member stats for context {ContextId}", contextId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Completed recalculating member stats for context {ContextId}", contextId);
     }
 
     private static bool MapShouldBeUpdated(

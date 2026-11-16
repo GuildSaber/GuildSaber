@@ -103,8 +103,10 @@ public sealed class MemberAchievementStatsPipeline(
         PlayerId playerId, GuildId guildId, ContextId contextId, Point.PointId pointId,
         CancellationToken token = default)
     {
-        logger.LogInformation("Recalculating member achievement stats for player {PlayerId} in context {ContextId}",
-            playerId, contextId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Recalculating member achievement stats for player {PlayerId} in context {ContextId}",
+                playerId, contextId);
+
         var (achievements, achievementStats) = (
             await dbContext.Achievements
                 .Where(x => x.ContextId == contextId)
@@ -156,9 +158,10 @@ public sealed class MemberAchievementStatsPipeline(
         }
 
         await dbContext.SaveChangesAsync(token);
-        logger.LogInformation(
-            "Completed recalculating member achievement stats for player {PlayerId} in context {ContextId}",
-            playerId, contextId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation(
+                "Completed recalculating member achievement stats for player {PlayerId} in context {ContextId}",
+                playerId, contextId);
     }
 
     public ValueTask RecalculateMemberAchievementStat(

@@ -11,7 +11,9 @@ public class DeleteRankedMapPipeline(
 {
     public async Task ExecuteAsync(RankedMapId rankedMapId, CancellationToken token)
     {
-        logger.LogInformation("Executing delete pipeline for ranked map with RankedMapId {RankedMapId}", rankedMapId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Executing delete pipeline for ranked map with RankedMapId {RankedMapId}",
+                rankedMapId);
 
         var versions = await dbContext.MapVersions
             .Where(x => x.RankedMapId == rankedMapId)
@@ -25,6 +27,8 @@ public class DeleteRankedMapPipeline(
                            .WithCancellation(token))
             await scoreAddOrUpdatePipeline.ExecuteAsync(score, token: token);
 
-        logger.LogInformation("Completed delete pipeline for ranked map with RankedMapId {RankedMapId}", rankedMapId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Completed delete pipeline for ranked map with RankedMapId {RankedMapId}",
+                rankedMapId);
     }
 }

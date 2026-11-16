@@ -20,9 +20,11 @@ public class LegacyGSImportAdminConfPipeline(
     /// <returns>True if any confirmations were imported; otherwise, false.</returns>
     public async Task<bool> ExecuteAsync(GuildId guildId, PlayerId playerId, CancellationToken token)
     {
-        logger.LogInformation(
-            "Importing legacy GuildSaber admin confirmations for player {PlayerId} in guild {GuildId}",
-            playerId, guildId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation(
+                "Importing legacy GuildSaber admin confirmations for player {PlayerId} in guild {GuildId}",
+                playerId, guildId);
+
         var (beatleaderId, scoreSaberId) = await dbContext.Players
             .Where(x => x.Id == playerId)
             .Select(x => new Tuple<BeatLeaderId?, ScoreSaberId?>(
@@ -103,14 +105,18 @@ public class LegacyGSImportAdminConfPipeline(
 
         if (impactedContextPoints.Count == 0)
         {
-            logger.LogInformation(
-                "No legacy GuildSaber admin confirmations to import for player {PlayerId} in guild {GuildId}",
-                playerId, guildId);
+            if (logger.IsEnabled(LogLevel.Information))
+                logger.LogInformation(
+                    "No legacy GuildSaber admin confirmations to import for player {PlayerId} in guild {GuildId}",
+                    playerId, guildId);
             return false;
         }
 
-        logger.LogInformation("Completed importing {count} legacy GuildSaber admin confirmations for player {PlayerId}",
-            impactedContextPoints.Count, playerId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation(
+                "Completed importing {count} legacy GuildSaber admin confirmations for player {PlayerId}",
+                impactedContextPoints.Count, playerId);
+
         await RankedScoreUpdateRankPipeline.UpdateRanksForRankedMapsAsync(impactedRankedMapIds, dbContext,
             token: token);
 

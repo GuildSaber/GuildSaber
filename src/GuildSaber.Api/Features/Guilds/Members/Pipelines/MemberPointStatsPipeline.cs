@@ -54,8 +54,9 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<
     public async Task ExecuteAsync(PlayerId playerId, Context context, CancellationToken token = default)
     {
         ArgumentNullException.ThrowIfNull(context.Points);
-        logger.LogInformation("Calculating member point stats for player {PlayerId} in context {ContextId}",
-            playerId, context.Id);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Calculating member point stats for player {PlayerId} in context {ContextId}",
+                playerId, context.Id);
 
         var categories = await dbContext.Categories
             .Where(c => c.GuildId == context.GuildId)
@@ -69,8 +70,10 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<
                 await GetOrCreateMemberStatAsync(context.GuildId, context.Id, playerId, category.Id, point, token);
         }
 
-        logger.LogInformation("Completed calculating member point stats for player {PlayerId} in context {ContextId}",
-            playerId, context.Id);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation(
+                "Completed calculating member point stats for player {PlayerId} in context {ContextId}",
+                playerId, context.Id);
         await dbContext.SaveChangesAsync(token);
     }
 
@@ -122,11 +125,12 @@ public sealed class MemberPointStatsPipeline(ServerDbContext dbContext, ILogger<
             : await validPassesQuery.SumAsync(x => x.RawPoints, token);
 
         memberStat.PassCount = await validPassesQuery.CountAsync(token);
-        logger.LogDebug(
-            "Calculated member point stat for player {PlayerId} in context {ContextId}, point {PointId}, category {CategoryId}: Points={Points}, PassCount={PassCount}",
-            playerId, contextId, point.Id, categoryId?.ToString() ?? "null",
-            memberStat.Points, memberStat.PassCount
-        );
+        if (logger.IsEnabled(LogLevel.Debug))
+            logger.LogDebug(
+                "Calculated member point stat for player {PlayerId} in context {ContextId}, point {PointId}, category {CategoryId}: Points={Points}, PassCount={PassCount}",
+                playerId, contextId, point.Id, categoryId?.ToString() ?? "null",
+                memberStat.Points, memberStat.PassCount
+            );
     }
 
     public static Task<float> CalculateMemberPointsWithWeightQuery(

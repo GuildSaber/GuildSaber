@@ -14,9 +14,10 @@ public sealed class RankedScoreConfirmationPipeline(
 {
     public async Task ExecuteAsync(ContextId contextId, RankedScoreId rankedScoreId, CancellationToken token)
     {
-        logger.LogInformation(
-            "Processing confirmation side effects for ranked score {RankedScoreId} in context {ContextId}.",
-            rankedScoreId, contextId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation(
+                "Processing confirmation side effects for ranked score {RankedScoreId} in context {ContextId}.",
+                rankedScoreId, contextId);
 
         var rankedScore = await dbContext.RankedScores
             .Include(x => x.Score)
@@ -41,8 +42,9 @@ public sealed class RankedScoreConfirmationPipeline(
                     pointId, token);
         }
 
-        logger.LogInformation(
-            "Processed confirmation side effects for ranked score {RankedScoreId} in context {ContextId}.",
-            rankedScoreId, contextId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation(
+                "Processed confirmation side effects for ranked score {RankedScoreId} in context {ContextId}.",
+                rankedScoreId, contextId);
     }
 }

@@ -6,7 +6,9 @@ public class QueueProcessingService(
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("{QueueProcessingService} is running.\n\n", nameof(QueueProcessingService));
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("{QueueProcessingService} is running.\n\n", nameof(QueueProcessingService));
+
         return ProcessTaskQueueAsync(stoppingToken);
     }
 
@@ -32,7 +34,9 @@ public class QueueProcessingService(
 
     public override async Task StopAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("{QueueProcessingService} is stopping.", nameof(QueueProcessingService));
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("{QueueProcessingService} is stopping.", nameof(QueueProcessingService));
+
         await base.StopAsync(stoppingToken);
     }
 }

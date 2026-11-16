@@ -10,7 +10,8 @@ public sealed class MemberJoinPipeline(
 {
     public async Task ExecuteAsync(GuildId guildId, PlayerId playerId, CancellationToken token)
     {
-        logger.LogInformation("Starting member join pipeline for player {PlayerId}.", playerId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Starting member join pipeline for player {PlayerId}.", playerId);
 
         /* Since ALL player scores are stored by default on ScoreAddOrUpdate pipeline when they create
          * their account, we don't need to re-import them here. */
@@ -21,6 +22,7 @@ public sealed class MemberJoinPipeline(
         var importedAny = await legacyGSImportAdminConfPipeline.ExecuteAsync(guildId, playerId, token);
         if (importedAny) await playerScoresPipeline.RecalculatePlayerScoresAsync(playerId, token);
 
-        logger.LogInformation("Finished member join pipeline for player {PlayerId}.", playerId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Finished member join pipeline for player {PlayerId}.", playerId);
     }
 }
