@@ -40,30 +40,7 @@ public partial class UserModuleSlash
             return;
         }
 
-        var component = RankingMenuView.BuildComponent(submittedThreads.Data, submittedThreads.Page, sortBy, origin)
-            .WithTextDisplay(
-                $"Page: **{submittedThreads.Page}**/{Math.Max(1, submittedThreads.TotalPages)} " +
-                $"(**{submittedThreads.TotalCount}** Threads)")
-            .WithActionRow(x => x.WithSelectMenu(new SelectMenuBuilder()
-                .WithCustomId($"ranking_menu_queue_sort:{contextId},{(int)origin}")
-                .WithPlaceholder(sortBy == EMapRequestSorter.BoostCount ? "Most boosted" : "Priority")
-                .AddOption("Priority", nameof(EMapRequestSorter.Priority),
-                    emote: new Emoji("👀"), isDefault: sortBy == EMapRequestSorter.Priority)
-                .AddOption("Most boosted", nameof(EMapRequestSorter.BoostCount),
-                    emote: new Emoji("🪙"), isDefault: sortBy == EMapRequestSorter.BoostCount)))
-            .WithActionRow(x => x
-                .WithButton(label: "Back to menu", customId: $"ranking:{contextId}", style: ButtonStyle.Secondary)
-                .WithButton(
-                    label: "Prev",
-                    disabled: !submittedThreads.HasPreviousPage,
-                    customId: $"ranking_menu_queue:{contextId},{submittedThreads.Page - 1},{(int)sortBy},{(int)origin}",
-                    style: ButtonStyle.Primary)
-                .WithButton(
-                    label: "Next",
-                    disabled: !submittedThreads.HasNextPage,
-                    customId: $"ranking_menu_queue:{contextId},{submittedThreads.Page + 1},{(int)sortBy},{(int)origin}",
-                    style: ButtonStyle.Primary))
-            .Build();
+        var component = RankingMenuView.BuildComponent(contextId, submittedThreads, sortBy, origin).Build();
 
         await ModifyOriginalResponseAsync(x =>
         {
@@ -81,20 +58,47 @@ public partial class UserModuleSlash
 file static class RankingMenuView
 {
     public static ComponentBuilderV2 BuildComponent(
-        MapRequestResponses.ThreadPreview[] submittedThreads, int page, EMapRequestSorter sortBy,
+        ContextId contextId, PagedList<MapRequestResponses.ThreadPreview> submittedThreads, EMapRequestSorter sortBy,
         UserModuleSlash.ERankingThreadOrigin origin)
     {
         var builder = new ComponentBuilderV2().WithTextDisplay(
             origin == UserModuleSlash.ERankingThreadOrigin.Boosts ? "### My boosted threads" : "### Ranking queue");
 
-        if (submittedThreads.Length == 0)
-            return builder.WithTextDisplay(origin == UserModuleSlash.ERankingThreadOrigin.Boosts
-                ? "You have no boosted threads in this context. Boost an open thread from the queue to find it here."
+        if (submittedThreads.TotalCount > 1)
+            builder.WithActionRow(row => row.WithSelectMenu(new SelectMenuBuilder()
+                .WithCustomId($"ranking_menu_queue_sort:{contextId},{(int)origin}")
+                .WithPlaceholder(sortBy == EMapRequestSorter.BoostCount ? "Most boosted" : "Priority")
+                .AddOption("Priority", nameof(EMapRequestSorter.Priority),
+                    emote: new Emoji("👀"), isDefault: sortBy == EMapRequestSorter.Priority)
+                .AddOption("Most boosted", nameof(EMapRequestSorter.BoostCount),
+                    emote: new Emoji("🪙"), isDefault: sortBy == EMapRequestSorter.BoostCount)));
+
+        if (submittedThreads.Data.Length == 0)
+            builder.WithTextDisplay(origin == UserModuleSlash.ERankingThreadOrigin.Boosts
+                ? "No boosted threads in this context. Boost a thread from the queue."
                 : "No open proposals in the queue.");
 
-        foreach (var thread in submittedThreads)
-            builder.WithContainer(thread.ToContainerBuilder(page, sortBy, origin));
+        foreach (var thread in submittedThreads.Data)
+            builder.WithContainer(thread.ToContainerBuilder(submittedThreads.Page, sortBy, origin));
 
-        return builder;
+        if (submittedThreads.TotalPages > 1)
+            builder.WithTextDisplay($"-# Page {submittedThreads.Page}/{submittedThreads.TotalPages}");
+
+        return builder.WithActionRow(row =>
+        {
+            row.WithButton("Back to menu", $"ranking:{contextId}", ButtonStyle.Secondary);
+
+            if (submittedThreads.TotalPages > 1)
+                row.WithButton("Prev",
+                        $"ranking_menu_queue:{contextId},{submittedThreads.Page - 1},{(int)sortBy},{(int)origin}",
+                        disabled: !submittedThreads.HasPreviousPage)
+                    .WithButton("Next",
+                        $"ranking_menu_queue:{contextId},{submittedThreads.Page + 1},{(int)sortBy},{(int)origin}",
+                        disabled: !submittedThreads.HasNextPage);
+
+            row.WithButton("Refresh",
+                $"ranking_menu_queue:{contextId},{submittedThreads.Page},{(int)sortBy},{(int)origin}",
+                ButtonStyle.Secondary);
+        });
     }
 }

@@ -54,10 +54,12 @@ public partial class UserModuleSlash
         ).WhenAll();
         if (editor is null) return;
 
+        var coverUrl = editor.Original is { } original ? Client.Value.Achievements.GetCoverUrl(original.Id) : null;
+        var component = RankingAchievementEditorView.BuildComponent(sessionId, editor, categories, coverUrl).Build();
         await ModifyOriginalResponseAsync(x =>
         {
             x.Flags = MessageFlags.ComponentsV2;
-            x.Components = RankingAchievementEditorView.BuildComponent(sessionId, editor, categories).Build();
+            x.Components = component;
             x.AllowedMentions = AllowedMentions.None;
         });
     }
@@ -177,20 +179,28 @@ public sealed record RankingAchievementEditor(
 file static class RankingAchievementEditorView
 {
     public static ComponentBuilderV2 BuildComponent(
-        string sessionId, RankingAchievementEditor editor, CategoryResponses.Category[] categories)
+        string sessionId, RankingAchievementEditor editor, CategoryResponses.Category[] categories, Uri? coverUrl)
     {
         var definition = editor.Definition;
         var args = $"{editor.ContextId},{sessionId}";
-        var builder = new ComponentBuilderV2().WithContainer(container => container
-            .WithAccentColor(new Color((uint)definition.Color & 0xFFFFFF))
-            .WithTextDisplay(editor.Original is { } original
-                ? $"### Edit {Format.Sanitize(original.Info.Name)}\nAchievement **#{original.Id}** · " +
-                  (editor.HasChanges ? "Unsaved changes · Saved → Proposed" : "No changes yet")
-                : "### Create an achievement\nPending creation")
+        var header = editor.Original is { } original
+            ? $"### Edit {Format.Sanitize(original.Info.Name)}\nAchievement **#{original.Id}** · " +
+              (editor.HasChanges ? "Unsaved changes · Saved → Proposed" : "No changes yet")
+            : "### Create an achievement";
+        var container = new ContainerBuilder().WithAccentColor(new Color((uint)definition.Color & 0xFFFFFF));
+
+        if (coverUrl is null)
+            container.WithTextDisplay(header);
+        else
+            container.WithSection(section => section.WithTextDisplay(header)
+                .WithAccessory(new ThumbnailBuilder().WithMedia(coverUrl.ToString())));
+
+        var builder = new ComponentBuilderV2().WithContainer(container
             .WithTextDisplay(definition.DescribeValues(editor.Original?.ToDefinition() ?? definition, categories))
-            .WithTextDisplay("**Display mode**\n" + definition.ProgressionDescription +
+            .WithTextDisplay(definition.ProgressionDescription +
                              (definition.Requirement is Requirement.RankedMapList
-                                 ? "\nMap membership is changed through ranked-map proposals." : ""))
+                                 ? "\nAssign maps through ranked-map proposals."
+                                 : ""))
             .WithActionRow(row => row
                 .WithButton("Standalone achievement", $"ranking_achievement_standalone:{args}",
                     definition.ProgressionOrder is null ? ButtonStyle.Primary : ButtonStyle.Secondary,
@@ -199,8 +209,6 @@ file static class RankingAchievementEditorView
                     definition.ProgressionOrder is not null ? ButtonStyle.Primary : ButtonStyle.Secondary,
                     disabled: definition.ProgressionOrder is not null))
             .WithSeparator()
-            .WithTextDisplay("Review the complete setup before saving. " +
-                             "This editor expires 20 minutes after your last change.")
             .WithActionRow(row => row
                 .WithButton("Name and color", $"ranking_achievement_appearance:{args}", ButtonStyle.Secondary)
                 .WithButton(definition.Requirement is Requirement.RankedMapList ? "Map-list rule" : "Star rule",
@@ -221,10 +229,11 @@ file static class RankingAchievementEditorView
                     .WithPlaceholder("Completion rule")
                     .WithOptions(RankingAchievementCreationView.TypeOptions(definition.Requirement))));
 
-        return builder.WithActionRow(row => row
-            .WithButton(editor.Original is null ? "Create achievement" : "Save changes",
-                $"ranking_achievement_save:{args}", ButtonStyle.Success,
-                disabled: !editor.HasChanges || string.IsNullOrWhiteSpace(definition.Name))
-            .WithButton("Cancel", $"ranking_achievement_cancel:{args}", ButtonStyle.Secondary));
+        return builder.WithTextDisplay("-# Unsaved edits expire 20 minutes after your last change.")
+            .WithActionRow(row => row
+                .WithButton(editor.Original is null ? "Create achievement" : "Save changes",
+                    $"ranking_achievement_save:{args}", ButtonStyle.Success,
+                    disabled: !editor.HasChanges || string.IsNullOrWhiteSpace(definition.Name))
+                .WithButton("Cancel", $"ranking_achievement_cancel:{args}", ButtonStyle.Secondary));
     }
 }

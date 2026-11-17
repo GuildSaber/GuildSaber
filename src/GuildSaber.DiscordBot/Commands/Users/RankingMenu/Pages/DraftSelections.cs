@@ -164,9 +164,14 @@ file static class RankingDraftSelectionView
         string sessionId, RankingDraftEditor revision, UserModuleSlash.ERankingDraftSelection selection,
         RankingDraftOption[] options, int page)
     {
-        var builder = new ComponentBuilderV2().WithTextDisplay(
-            $"### {(selection == UserModuleSlash.ERankingDraftSelection.Achievements ? "Map-list associations" : Regex.Replace(selection.ToString(), "(?<=[a-z])(?=[A-Z])", " "))}\n" +
-            "Selections on other pages are kept. Changes are saved only when you save the draft.");
+        var builder = new ComponentBuilderV2().WithTextDisplay("### " + selection switch
+        {
+            UserModuleSlash.ERankingDraftSelection.Categories => "Categories",
+            UserModuleSlash.ERankingDraftSelection.Achievements => "Map-list associations",
+            UserModuleSlash.ERankingDraftSelection.MandatoryModifiers => "Required modifiers",
+            UserModuleSlash.ERankingDraftSelection.ProhibitedModifiers => "Forbidden modifiers",
+            _ => throw new ArgumentOutOfRangeException(nameof(selection))
+        });
         var selected = GetSelected(revision.Definition, selection).ToHashSet();
         var visible = options.Skip((page - 1) * 25).Take(25).ToArray();
         var backToRequirements = selection is UserModuleSlash.ERankingDraftSelection.MandatoryModifiers
@@ -174,9 +179,8 @@ file static class RankingDraftSelectionView
 
         if (visible.Length == 0)
             builder.WithTextDisplay(selection == UserModuleSlash.ERankingDraftSelection.Achievements
-                ? "There are no map-list achievements in this context yet.\n" +
-                  "Create a map-list achievement in this context before selecting it for the draft. " +
-                  "Star-based achievements are matched automatically from the map's ratings and categories."
+                ? "No map-list achievements exist in this context.\n" +
+                  "Star achievements match automatically from ratings and categories."
                 : "No available options.");
         else
             builder.WithActionRow(row => row.WithSelectMenu(new SelectMenuBuilder()
@@ -187,7 +191,7 @@ file static class RankingDraftSelectionView
                     isDefault: selected.Contains(x.Id))).ToList())));
 
         if (selection == UserModuleSlash.ERankingDraftSelection.ProhibitedModifiers)
-            builder.WithActionRow(row => row.WithButton("Restore default forbidden modifiers",
+            builder.WithActionRow(row => row.WithButton("Restore defaults",
                 $"ranking_draft_default_modifiers:{sessionId}", ButtonStyle.Secondary));
 
         return builder
@@ -201,7 +205,7 @@ file static class RankingDraftSelectionView
                     ButtonStyle.Secondary)
                 .WithButton("Clear all", $"ranking_draft_clear:{sessionId},{selection}", ButtonStyle.Secondary,
                     disabled: selected.Count == 0)
-                .WithButton("Previous", $"ranking_draft_options:{sessionId},{selection},{page - 1}",
+                .WithButton("Prev", $"ranking_draft_options:{sessionId},{selection},{page - 1}",
                     disabled: page <= 1)
                 .WithButton("Next", $"ranking_draft_options:{sessionId},{selection},{page + 1}",
                     disabled: page * 25 >= options.Length));

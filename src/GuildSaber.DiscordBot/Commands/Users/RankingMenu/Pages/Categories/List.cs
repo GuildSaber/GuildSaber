@@ -50,20 +50,29 @@ file static class RankingCategoryListView
     public static ComponentBuilderV2 BuildComponent(ContextId contextId, Category[] categories, int page)
     {
         var builder = new ComponentBuilderV2().WithContainer(container => container.WithAccentColor(Color.Red)
-            .WithTextDisplay("### Categories\n" +
-                             $"**{categories.Length}** categories shared across this guild's contexts.\n" +
-                             "Create a category or choose one to view and edit its name and description."));
+            .WithTextDisplay($"### Categories ({categories.Length})\n" +
+                             "Categories apply across all contexts in a guild."));
 
         if (categories.Length == 0)
+        {
             builder.WithTextDisplay("There are no categories in this guild yet.");
+        }
         else
+        {
+            var duplicateNames = categories.GroupBy(x => x.Info.Name, StringComparer.OrdinalIgnoreCase)
+                .Where(x => x.Count() > 1).Select(x => x.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
             builder.WithActionRow(row => row.WithSelectMenu(new SelectMenuBuilder()
                 .WithCustomId($"ranking_category_pick:{contextId}")
                 .WithPlaceholder("Choose a category")
                 .WithOptions(categories.OrderBy(x => x.Info.Name, StringComparer.OrdinalIgnoreCase)
                     .ThenBy(x => x.Id.Value).Skip((page - 1) * 25).Take(25)
-                    .Select(x => new SelectMenuOptionBuilder(x.Info.Name.Truncate(100), x.Id.ToString(),
-                        $"#{x.Id} · {x.Info.Description}".Truncate(100))).ToList())));
+                    .Select(x => new SelectMenuOptionBuilder(
+                        duplicateNames.Contains(x.Info.Name) ? $"{x.Info.Name} (#{x.Id})" : x.Info.Name,
+                        x.Id.ToString(), string.IsNullOrWhiteSpace(x.Info.Description)
+                            ? null
+                            : x.Info.Description.Trim().Truncate(100))).ToList())));
+        }
 
         return builder.WithTextDisplay($"Page: **{page}**/{Math.Max(1, (categories.Length + 24) / 25)}")
             .WithActionRow(row => row

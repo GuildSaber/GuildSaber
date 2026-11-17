@@ -41,7 +41,10 @@ public static class MapProposalExtensions
                 .Append("Mapper(s): ").AppendLine(song.Info.MapperName)
                 .Append("Difficulty: ").Append(version.Difficulty.Difficulty.ToString())
                 .Append(", ").AppendLine(version.Difficulty.GameMode)
-                .Append("Play mode: ").AppendLine(version.PlayModeName)
+                .Append("Play mode: ").Append(version.PlayModeName)
+                .AppendLine(definition.MapVersions.Length > 1
+                    ? $" · Map version {versionPage}/{definition.MapVersions.Length}"
+                    : "")
                 .AppendLine()
                 .Append("⭐: ").Append(definition.Rating.DiffStar?.ToString("0.00") ?? "Auto on submission")
                 .Append(definition.Rating.IsDiffStarAutoCalculated ? " (auto)" : "")
@@ -72,7 +75,13 @@ public static class MapProposalExtensions
                 .WithSection(section => section.WithTextDisplay(sb.ToString())
                     .WithAccessory(new ThumbnailBuilder().WithMedia($"https://cfcdn.beatsaver.com/{song.Hash}.jpg")))
                 .WithTextDisplay($"**{self.StateLabel} #{self.Id}** · " +
-                                 TimestampTag.FormatFromDateTimeOffset(self.EventTime, TimestampTagStyles.Relative))
+                                 TimestampTag.FormatFromDateTimeOffset(self.EventTime, TimestampTagStyles.Relative) +
+                                 self switch
+                                 {
+                                     Proposal.Accepted when current?.Id == self.Id => " · Current",
+                                     Proposal.Accepted => " · Historical",
+                                     _ => ""
+                                 })
                 .WithRequester(self.Author, "Proposed by");
 
             if (self is Proposal.Submitted { Change: ProposalChange.Rank }
@@ -82,15 +91,7 @@ public static class MapProposalExtensions
 
             if (self.Change is ProposalChange.Unrank unrank)
                 builder.WithTextDisplay(
-                    $"**Unranking request** · Targets accepted proposal **#{unrank.TargetAcceptedProposalId}**");
-
-            if (self is Proposal.Accepted && self.Change is ProposalChange.Unrank)
-                builder.WithTextDisplay(
-                    "This unranking request was accepted. The definition above records its target.");
-            else if (self is Proposal.Accepted)
-                builder.WithTextDisplay(current?.Id == self.Id
-                    ? "This is the latest accepted ranking definition in this thread."
-                    : "This is a historical accepted definition. It may differ from the current ranked map.");
+                    $"Targets accepted proposal **#{unrank.TargetAcceptedProposalId}**");
 
             var comment = self.Change is ProposalChange.Unrank removal ? removal.Reason : self.Comment;
             if (!string.IsNullOrWhiteSpace(comment))

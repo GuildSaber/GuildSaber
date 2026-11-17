@@ -44,8 +44,7 @@ file static class RankingDraftListView
 {
     public static ComponentBuilderV2 BuildComponent(ContextId contextId, PagedList<Proposal> drafts)
     {
-        var builder = new ComponentBuilderV2().WithTextDisplay("### My private drafts\n" +
-                                                               "Only you can see these. Open a draft to revise it, submit it for review or delete it.");
+        var builder = new ComponentBuilderV2().WithTextDisplay("### My private drafts");
 
         foreach (var draft in drafts.Data)
         {
@@ -73,18 +72,22 @@ file static class RankingDraftListView
         }
 
         if (drafts.Data.Length == 0)
-            builder.WithTextDisplay("You have no private drafts in this context. Fork a proposal from the queue, " +
-                                    "or use /search to fork a ranked map's current accepted proposal.");
+            builder.WithTextDisplay("No private drafts in this context.");
 
-        return builder
-            .WithTextDisplay(
-                $"Page: **{drafts.Page}**/{Math.Max(1, drafts.TotalPages)} (**{drafts.TotalCount}** drafts)")
-            .WithActionRow(row => row
-                .WithButton("Back to menu", $"ranking:{contextId}", ButtonStyle.Secondary)
-                .WithButton("Prev", $"ranking_menu_drafts:{contextId},{drafts.Page - 1}",
-                    disabled: !drafts.HasPreviousPage)
-                .WithButton("Next", $"ranking_menu_drafts:{contextId},{drafts.Page + 1}",
-                    disabled: !drafts.HasNextPage)
-                .WithButton("Refresh", $"ranking_menu_drafts:{contextId},{drafts.Page}", ButtonStyle.Secondary));
+        if (drafts.TotalPages > 1)
+            builder.WithTextDisplay($"-# Page {drafts.Page}/{drafts.TotalPages}");
+
+        return builder.WithActionRow(row =>
+        {
+            row.WithButton("Back to menu", $"ranking:{contextId}", ButtonStyle.Secondary);
+
+            if (drafts.TotalPages > 1)
+                row.WithButton("Prev", $"ranking_menu_drafts:{contextId},{drafts.Page - 1}",
+                        disabled: !drafts.HasPreviousPage)
+                    .WithButton("Next", $"ranking_menu_drafts:{contextId},{drafts.Page + 1}",
+                        disabled: !drafts.HasNextPage);
+
+            row.WithButton("Refresh", $"ranking_menu_drafts:{contextId},{drafts.Page}", ButtonStyle.Secondary);
+        });
     }
 }

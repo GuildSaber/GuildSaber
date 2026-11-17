@@ -82,14 +82,15 @@ file static class RankingAchievementListView
         var pageCount = Math.Max(1, (achievements.Length + 24) / 25);
         var builder = new ComponentBuilderV2().WithContainer(container => container.WithAccentColor(Color.Red)
             .WithTextDisplay("### Manage achievements\n" +
-                             $"**{Format.Sanitize(categoryName)}** · **{achievements.Length}** achievements\n" +
-                             "Create an achievement or choose one to view and edit.")
+                             $"**{achievements.Length}** achievements")
             .WithActionRow(row => row.WithSelectMenu(new SelectMenuBuilder()
                 .WithCustomId($"ranking_achievements_category:{contextId},{navigation.CategoryPage}")
                 .WithPlaceholder($"Category: {categoryName}".Truncate(150))
                 .WithOptions([
-                    new SelectMenuOptionBuilder("All categories", "-1", isDefault: navigation.CategoryFilter == -1),
-                    new SelectMenuOptionBuilder("Global", "0", isDefault: navigation.CategoryFilter == 0),
+                    new SelectMenuOptionBuilder("All categories", "-1", "Includes global achievements",
+                        isDefault: navigation.CategoryFilter == -1),
+                    new SelectMenuOptionBuilder("Global", "0", "Achievements without a category",
+                        isDefault: navigation.CategoryFilter == 0),
                     .. categories.OrderBy(x => x.Info.Name, StringComparer.OrdinalIgnoreCase)
                         .Skip((navigation.CategoryPage - 1) * 23).Take(23)
                         .Select(x => new SelectMenuOptionBuilder(x.Info.Name.Truncate(100), x.Id.ToString(),
@@ -106,7 +107,12 @@ file static class RankingAchievementListView
                     ButtonStyle.Secondary, disabled: navigation.CategoryPage * 23 >= categories.Length));
 
         if (achievements.Length == 0)
-            builder.WithTextDisplay("There are no achievements in this category.");
+            builder.WithTextDisplay(navigation.CategoryFilter switch
+            {
+                -1 => "No achievements in this context.",
+                0 => "No global achievements.",
+                _ => $"No achievements in **{Format.Sanitize(categoryName)}**."
+            });
         else
             builder.WithActionRow(row => row.WithSelectMenu(new SelectMenuBuilder()
                 .WithCustomId("ranking_achievement_pick:" +
@@ -117,9 +123,13 @@ file static class RankingAchievementListView
                     .ThenBy(x => x.Info.Name, StringComparer.OrdinalIgnoreCase).ThenBy(x => x.Id)
                     .Skip((navigation.Page - 1) * 25).Take(25)
                     .Select(x => new SelectMenuOptionBuilder(x.Info.Name.Truncate(100), x.Id.ToString(),
-                        ($"{x.GetCategoryName(categories)} · {x.KindName} · " +
-                         (x.Progression is AchievementProgression.Ordered ordered ? $"Level {ordered.Order} · " : "")
-                         + $"#{x.Id}").Truncate(100))).ToList())));
+                        ($"{x.GetCategoryName(categories)} · " +
+                         (x.Progression is AchievementProgression.Ordered ordered
+                             ? $"Level {ordered.Order}"
+                             : "Standalone") +
+                         $" · {x.KindName} · " +
+                         $"{x.QualifyingMapCount} qualifying {(x.QualifyingMapCount == 1 ? "map" : "maps")}")
+                        .Truncate(100))).ToList())));
 
         return builder.WithTextDisplay($"Page: **{navigation.Page}**/{pageCount}")
             .WithActionRow(row => row

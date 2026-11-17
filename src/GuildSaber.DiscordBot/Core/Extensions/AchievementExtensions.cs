@@ -10,6 +10,20 @@ public static class AchievementExtensions
 {
     extension(Achievement self)
     {
+        public int QualifyingMapCount => self switch
+        {
+            Achievement.DiffStarAchievement diff => diff.TotalCount,
+            Achievement.AccStarAchievement acc => acc.TotalCount,
+            Achievement.RankedMapListAchievement mapList => mapList.TotalCount
+        };
+
+        public string KindName => self switch
+        {
+            Achievement.RankedMapListAchievement => "Map list",
+            Achievement.DiffStarAchievement => "Difficulty stars",
+            Achievement.AccStarAchievement => "Accuracy stars"
+        };
+
         public Definition ToDefinition() => new(
             Name: self.Info.Name,
             Color: self.Info.Color,
@@ -28,13 +42,6 @@ public static class AchievementExtensions
                     acc.MinStar, acc.RequiredPassCount, acc.MaxStar)
             });
 
-        public string KindName => self switch
-        {
-            Achievement.RankedMapListAchievement => "Map list",
-            Achievement.DiffStarAchievement => "Difficulty stars",
-            Achievement.AccStarAchievement => "Accuracy stars"
-        };
-
         public string GetCategoryName(IEnumerable<CategoryResponses.Category> categories)
             => self.CategoryId is { } categoryId
                 ? categories.Where(x => x.Id == categoryId).Select(x => x.Info.Name)
@@ -44,21 +51,15 @@ public static class AchievementExtensions
 
     extension(Definition self)
     {
+        public string ProgressionDescription => self.ProgressionOrder is null
+            ? "Earned independently of the level progression."
+            : "Shown as a level on player cards and in /progress.";
+
         public string GetCategoryName(IEnumerable<CategoryResponses.Category> categories)
             => self.CategoryId is { } categoryId
                 ? categories.Where(x => x.Id == categoryId).Select(x => x.Info.Name)
                     .DefaultIfEmpty("Deleted category").First()
                 : "Global";
-
-        public string ProgressionDescription =>
-            "Progression levels appear on player cards and in /progress. " +
-            "Standalone achievements are earned independently of that progression." +
-            (self switch
-            {
-                { ProgressionOrder: null } => "",
-                { IsLocking: true } => "\nThis level blocks later levels until completed.",
-                _ => "\nCompletion is optional for unlocking later levels."
-            });
 
         public string DescribeValues(
             Definition saved, IReadOnlyCollection<CategoryResponses.Category> categories, bool onlyChanges = false)

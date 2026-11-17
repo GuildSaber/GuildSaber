@@ -34,7 +34,8 @@ public partial class UserModuleSlash
 
         var page = categories.OrderBy(x => x.Info.Name, StringComparer.OrdinalIgnoreCase).ThenBy(x => x.Id.Value)
             .Index().Where(x => x.Item.Id == categoryId).Select(x => x.Index / 25 + 1).First();
-        var component = RankingCategoryView.BuildComponent(contextId, category, page).Build();
+        var component = RankingCategoryView.BuildComponent(contextId, category, page,
+            Client.Value.Categories.GetLogoUrl(category.Id)).Build();
 
         await ModifyOriginalResponseAsync(x =>
         {
@@ -47,10 +48,11 @@ public partial class UserModuleSlash
 
 file static class RankingCategoryView
 {
-    public static ComponentBuilderV2 BuildComponent(ContextId contextId, Category category, int page)
+    public static ComponentBuilderV2 BuildComponent(ContextId contextId, Category category, int page, Uri logoUrl)
         => new ComponentBuilderV2().WithContainer(container => container.WithAccentColor(Color.Red)
-                .WithTextDisplay($"### {Format.Sanitize(category.Info.Name)}\nCategory **#{category.Id}**\n" +
-                                 "Shared across this guild's contexts.")
+                .WithSection(section => section
+                    .WithTextDisplay($"### {Format.Sanitize(category.Info.Name)}\nCategory **#{category.Id}**")
+                    .WithAccessory(new ThumbnailBuilder().WithMedia(logoUrl.ToString())))
                 .WithSeparator()
                 .WithTextDisplay(string.IsNullOrWhiteSpace(category.Info.Description)
                     ? "No description."

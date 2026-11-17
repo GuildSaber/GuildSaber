@@ -188,17 +188,10 @@ file static class RankingDraftView
             .WithContainer(container => container.WithAccentColor(Color.Orange)
                 .WithTextDisplay(revision.Target switch
                 {
-                    RankingDraftTarget.NewThread => "### New ranking request\n" +
-                                                    "Adjust the definition, then save a private draft in a new thread. Submit it separately when ready for review. " +
-                                                    "Saving also verifies leaderboard availability. Unsaved changes expire after 20 minutes.",
-                    RankingDraftTarget.Fork(_, var id) => $"### Fork proposal #{id} as a private draft\n" +
-                                                          "Adjust the copied definition, then save your own draft in this thread. Submit it separately when ready for review. " +
-                                                          "Unsaved changes expire after 20 minutes.",
-                    RankingDraftTarget.Revision(_, var id) => $"### Revise private draft #{id}\n" +
-                                                              "Changes stay in this editor until you save. Saving creates a new private draft and deletes the previous one. " +
-                                                              "Cancel keeps the original draft. Unsaved changes expire after 20 minutes."
+                    RankingDraftTarget.NewThread => "### New ranking request",
+                    RankingDraftTarget.Fork(_, var id) => $"### Draft from proposal #{id}",
+                    RankingDraftTarget.Revision(_, var id) => $"### Revise private draft #{id}"
                 })
-                .WithSeparator()
                 .WithTextDisplay(
                     $"**Difficulty stars:** {revision.Definition.Rating.DifficultyStar?.ToString("0.00") ?? "Auto on submission"}\n" +
                     $"**Accuracy stars:** {revision.Definition.Rating.AccuracyStar?.ToString("0.00") ?? "Auto on submission"}\n" +
@@ -209,6 +202,10 @@ file static class RankingDraftView
                 .WithTextDisplay(string.IsNullOrWhiteSpace(revision.Definition.Comment)
                     ? "**Author's note:** None"
                     : $"**Author's note**\n{revision.Definition.Comment}")
+                .WithTextDisplay(revision.Target is RankingDraftTarget.Revision(_, var draftId)
+                    ? $"Saving creates a new draft and deletes **#{draftId}**.\n" +
+                      "-# Unsaved edits expire 20 minutes after your last change."
+                    : "Private until submitted.\n-# Unsaved edits expire 20 minutes after your last change.")
                 .WithActionRow(row => row
                     .WithButton("Ratings", $"ranking_draft_ratings:{sessionId}", ButtonStyle.Secondary)
                     .WithButton("Requirements", $"ranking_draft_requirements:{sessionId}", ButtonStyle.Secondary)

@@ -64,8 +64,15 @@ public partial class UserModuleSlash
     public Task ChangeRankingThreadTab(
         ContextId contextId, MapRequestThreadId threadId, int listPage, EMapRequestSorter sortBy,
         ERankingThreadOrigin origin, string[] values)
+        => SwitchRankingThreadViewAsync(contextId, threadId, listPage, sortBy, origin,
+            Enum.Parse<ERankingThreadTab>(values[0]));
+
+    [ComponentInteraction("ranking_thread_view:*,*,*,*,*,*")]
+    public Task SwitchRankingThreadViewAsync(
+        ContextId contextId, MapRequestThreadId threadId, int listPage, EMapRequestSorter sortBy,
+        ERankingThreadOrigin origin, ERankingThreadTab tab)
         => ShowRankingThreadAsync(contextId, threadId,
-            new RankingThreadNavigation(Enum.Parse<ERankingThreadTab>(values[0]), 1, 1, listPage, sortBy, origin));
+            new RankingThreadNavigation(tab, 1, 1, listPage, sortBy, origin));
 
     [ComponentInteraction("ranking_pick:*,*,*,*,*,*")]
     public Task OpenRankingProposal(
@@ -210,43 +217,46 @@ file static class RankingThreadView
         GuildId guildId, ThreadResponse thread, Proposal[] proposals, PlayerResponses.PlayerExtended? viewer,
         PlayerResponses.Player?[] reviewers, Allowance? allowance, RankingThreadNavigation navigation)
     {
+        var current = GetCurrentProposal(thread);
+        var openCount = thread.Proposals.Count(x => x is Proposal.Submitted);
+        var draftCount = thread.Proposals.Count(x => x is Proposal.Draft);
+        var historyCount = thread.Proposals.Count(x => x is Proposal.Accepted or Proposal.Closed);
+        var tabs = new ActionRowBuilder();
+
+        void AddTab(UserModuleSlash.ERankingThreadTab tab, string label, int count)
+        {
+            var selected = navigation.Tab == tab;
+            if (count == 0 && !selected) return;
+
+            var buttonLabel = tab == UserModuleSlash.ERankingThreadTab.Current ? label
+                : selected && count > 1 ? $"{label} ({navigation.Page}/{count})" : $"{label} ({count})";
+            tabs.WithButton(buttonLabel,
+                $"ranking_thread_view:{thread.ContextId},{thread.Id},{navigation.ListPage},{(int)navigation.SortBy},{(int)navigation.Origin},{(int)tab}",
+                selected ? ButtonStyle.Primary : ButtonStyle.Secondary, disabled: selected);
+        }
+
+        AddTab(UserModuleSlash.ERankingThreadTab.Current, "Current", current is null ? 0 : 1);
+        AddTab(UserModuleSlash.ERankingThreadTab.Open, "Open", openCount);
+        AddTab(UserModuleSlash.ERankingThreadTab.Drafts, "Drafts", draftCount);
+        if (historyCount > (current is null ? 0 : 1) || navigation.Tab == UserModuleSlash.ERankingThreadTab.History)
+            AddTab(UserModuleSlash.ERankingThreadTab.History, "History", historyCount);
+
+        if (viewer is not null && (thread.IsBoostedByMe || openCount > 0))
+            tabs.WithButton(
+                thread.IsBoostedByMe ? $"Release boost ({thread.BoostCount})" : $"Boost ({thread.BoostCount})",
+                $"ranking_boost:{thread.ContextId},{thread.Id},{!thread.IsBoostedByMe},{navigation.ListPage},{(int)navigation.SortBy},{(int)navigation.Origin},{(int)navigation.Tab},{navigation.Page},{navigation.VersionPage}",
+                thread.IsBoostedByMe ? ButtonStyle.Success : ButtonStyle.Secondary);
+
         var builder = new ComponentBuilderV2()
-            .WithContainer(container => container.WithAccentColor(Color.Red)
-                .WithSection(section => section
-                    .WithTextDisplay(
-                        $"### {(thread.RankedMapId is not null ? "Ranked-map changes"
-                            : GetCurrentProposal(thread)?.Change is ProposalChange.Unrank ? "Unranked map" : "New ranking")} · Thread #{thread.Id}\n" +
-                        $"**{thread.Proposals.OfType<Proposal.Submitted>().Count()}** open proposals · **{thread.BoostCount}** boosts")
-                    .WithAccessory(new ButtonBuilder()
-                        .WithLabel(thread.IsBoostedByMe ? "Release my boost" : "Boost thread")
-                        .WithCustomId(
-                            $"ranking_boost:{thread.ContextId},{thread.Id},{!thread.IsBoostedByMe},{navigation.ListPage},{(int)navigation.SortBy},{(int)navigation.Origin},{(int)navigation.Tab},{navigation.Page},{navigation.VersionPage}")
-                        .WithStyle(thread.IsBoostedByMe ? ButtonStyle.Success : ButtonStyle.Secondary)
-                        .WithDisabled(viewer is null || !thread.IsBoostedByMe
-                            && !thread.Proposals.Any(x => x is Proposal.Submitted))))
-                .WithActionRow(row =>
-                {
-                    var menu = new SelectMenuBuilder()
-                        .WithCustomId(
-                            $"ranking_thread_tab:{thread.ContextId},{thread.Id},{navigation.ListPage},{(int)navigation.SortBy},{(int)navigation.Origin}")
-                        .WithPlaceholder("Choose proposals to view");
+            .WithContainer(container =>
+            {
+                container.WithAccentColor(Color.Red).WithTextDisplay(
+                    $"### {(thread.RankedMapId is not null ? "Ranked-map changes"
+                        : current?.Change is ProposalChange.Unrank ? "Unranked map" : "New ranking")} · Thread #{thread.Id}");
 
-                    if (GetCurrentProposal(thread) is not null)
-                        menu.AddOption(thread.RankedMapId is null ? "Current unranked status" : "Current ranked map",
-                            "Current",
-                            isDefault: navigation.Tab == UserModuleSlash.ERankingThreadTab.Current);
-
-                    menu.AddOption($"Open proposals ({thread.Proposals.OfType<Proposal.Submitted>().Count()})", "Open",
-                            isDefault: navigation.Tab == UserModuleSlash.ERankingThreadTab.Open)
-                        .AddOption(
-                            $"History ({thread.Proposals.Count(x => x is Proposal.Accepted or Proposal.Closed)})",
-                            "History",
-                            isDefault: navigation.Tab == UserModuleSlash.ERankingThreadTab.History)
-                        .AddOption($"My private drafts ({thread.Proposals.OfType<Proposal.Draft>().Count()})", "Drafts",
-                            isDefault: navigation.Tab == UserModuleSlash.ERankingThreadTab.Drafts);
-
-                    row.WithSelectMenu(menu);
-                }));
+                if (tabs.Components.Count > 1 || proposals.Length > 1)
+                    container.WithActionRow(tabs);
+            });
 
         if (proposals.Length == 0)
         {
@@ -255,28 +265,24 @@ file static class RankingThreadView
                 UserModuleSlash.ERankingThreadTab.Drafts => "You have no private drafts in this thread.",
                 UserModuleSlash.ERankingThreadTab.History => "No proposals have been accepted or closed yet.",
                 UserModuleSlash.ERankingThreadTab.Current => "There is no current accepted proposal.",
-                _ => GetCurrentProposal(thread) is not null
-                    ? "There are no open proposals. Choose the current status to prepare a ranking draft."
-                    : "There are no open proposals. Choose History to fork a previous definition."
+                _ => "No open proposals."
             });
         }
         else
         {
             var proposal = proposals[navigation.Page - 1];
-            var current = GetCurrentProposal(thread);
+            var versionCount = proposal.GetPreviewDefinition().MapVersions.Length;
 
-            builder.WithContainer(proposal.ToContainerBuilder(current, navigation.VersionPage))
-                .WithTextDisplay($"Proposal **{navigation.Page}**/{proposals.Length} · " +
-                                 $"Map version **{navigation.VersionPage}**/{proposal.GetPreviewDefinition().MapVersions.Length}");
+            builder.WithContainer(proposal.ToContainerBuilder(current, navigation.VersionPage));
 
-            if (proposal.GetPreviewDefinition().MapVersions.Length > 1)
+            if (versionCount > 1)
                 builder.WithActionRow(row => row
-                    .WithButton("Previous map", (navigation with { VersionPage = navigation.VersionPage - 1 })
+                    .WithButton("Prev map", (navigation with { VersionPage = navigation.VersionPage - 1 })
                         .CustomId(thread.ContextId, thread.Id), ButtonStyle.Secondary,
                         disabled: navigation.VersionPage == 1)
                     .WithButton("Next map", (navigation with { VersionPage = navigation.VersionPage + 1 })
                         .CustomId(thread.ContextId, thread.Id), ButtonStyle.Secondary,
-                        disabled: navigation.VersionPage == proposal.GetPreviewDefinition().MapVersions.Length));
+                        disabled: navigation.VersionPage == versionCount));
 
             RankingProposalActions.AddComponents(builder, thread, proposal, viewer, reviewers, guildId, allowance,
                 navigation);
@@ -288,8 +294,9 @@ file static class RankingThreadView
                     ButtonStyle.Danger));
         }
 
-        return builder.WithActionRow(row => row
-            .WithButton(navigation.Origin switch
+        return builder.WithActionRow(row =>
+        {
+            row.WithButton(navigation.Origin switch
                 {
                     UserModuleSlash.ERankingThreadOrigin.Drafts => "Back to my drafts",
                     UserModuleSlash.ERankingThreadOrigin.Boosts => "Back to my boosts",
@@ -298,12 +305,15 @@ file static class RankingThreadView
                     _ => "Back to queue"
                 },
                 $"ranking_back:{thread.ContextId},{navigation.ListPage},{(int)navigation.SortBy},{(int)navigation.Origin}",
-                ButtonStyle.Secondary)
-            .WithButton("Prev", (navigation with { Page = navigation.Page - 1, VersionPage = 1 })
-                .CustomId(thread.ContextId, thread.Id), disabled: navigation.Page <= 1)
-            .WithButton("Next", (navigation with { Page = navigation.Page + 1, VersionPage = 1 })
-                .CustomId(thread.ContextId, thread.Id),
-                disabled: navigation.Page >= proposals.Length)
-            .WithButton("Refresh", navigation.CustomId(thread.ContextId, thread.Id), ButtonStyle.Secondary));
+                ButtonStyle.Secondary);
+
+            if (proposals.Length > 1)
+                row.WithButton("Prev", (navigation with { Page = navigation.Page - 1, VersionPage = 1 })
+                        .CustomId(thread.ContextId, thread.Id), disabled: navigation.Page <= 1)
+                    .WithButton("Next", (navigation with { Page = navigation.Page + 1, VersionPage = 1 })
+                        .CustomId(thread.ContextId, thread.Id), disabled: navigation.Page >= proposals.Length);
+
+            row.WithButton("Refresh", navigation.CustomId(thread.ContextId, thread.Id), ButtonStyle.Secondary);
+        });
     }
 }

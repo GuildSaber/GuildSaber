@@ -104,13 +104,12 @@ file static class RankingMapMatchesView
         var builder = new ComponentBuilderV2().WithContainer(container => container
             .WithAccentColor(matches.TotalCount == 0 ? Color.Green : Color.Orange)
             .WithTextDisplay(
-                $"### Check existing threads\n**[{Format.Sanitize(selection.Lookup.Song.Info.BeatSaverName)}](https://beatsaver.com/maps/{selection.Lookup.Song.Key})** ({selection.Lookup.Song.Key.ToBsrKey()})\n" +
+                $"### Matching threads\n**[{Format.Sanitize(selection.Lookup.Song.Info.BeatSaverName)}](https://beatsaver.com/maps/{selection.Lookup.Song.Key})** ({selection.Lookup.Song.Key.ToBsrKey()})\n" +
                 $"{difficulty.Difficulty}, {difficulty.Characteristic} · {selection.Lookup.PlayModes[selection.PlayModeIndex]}")
             .WithTextDisplay(matches.TotalCount == 0
-                ? "No matching threads are visible in this context. Continue to prepare a private draft."
-                : $"**{matches.TotalCount}** matching {(matches.TotalCount == 1 ? "thread" : "threads")} in this context. Open one to fork its current or proposed definition. " +
-                  "Start a separate request when you intend to create a different ranking for this difficulty. " +
-                  "Matches cover every play mode."));
+                ? "No matching threads in this context."
+                : $"**{matches.TotalCount}** matching {(matches.TotalCount == 1 ? "thread" : "threads")} across all play modes.\n" +
+                  "Use an existing thread to suggest changes, or create a separate ranking request."));
 
         foreach (var match in matches.Data)
         {
@@ -126,13 +125,13 @@ file static class RankingMapMatchesView
                 .WithSection(section => section.WithTextDisplay(match switch
                     {
                         ThreadMatch.Ranked(_, var rankedMapId) =>
-                            $"**Ranked map #{rankedMapId}** · Thread #{match.ThreadId}\nFork its current accepted proposal to suggest changes.",
+                            $"**Ranked map #{rankedMapId}** · Thread #{match.ThreadId}",
                         ThreadMatch.Open =>
-                            $"**Open request** · Thread #{match.ThreadId}\nProposal #{proposalId} is open for review.",
+                            $"**Open proposal #{proposalId}** · Thread #{match.ThreadId}",
                         ThreadMatch.Draft =>
-                            $"**Your private draft #{proposalId}** · Thread #{match.ThreadId}\nYou already have a draft for this difficulty.",
+                            $"**Your private draft #{proposalId}** · Thread #{match.ThreadId}",
                         ThreadMatch.History =>
-                            $"**Previous request** · Thread #{match.ThreadId}\nProposal #{proposalId} is retained in history."
+                            $"**Previous proposal #{proposalId}** · Thread #{match.ThreadId}"
                     })
                     .WithAccessory(new ButtonBuilder()
                         .WithLabel(match is ThreadMatch.Draft ? "Open draft" : "Open thread")

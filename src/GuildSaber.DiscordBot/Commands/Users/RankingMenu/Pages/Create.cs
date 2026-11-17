@@ -158,13 +158,11 @@ file static class RankingMapSelectionView
                         {
                             { Hours: > 0 } duration => duration.ToString(@"hh\:mm\:ss"),
                             var duration => duration.ToString(@"mm\:ss")
-                        } + $" | BPM: {song.Stats.BPM:0.##}")
-                    .WithAccessory(new ThumbnailBuilder().WithMedia($"https://cfcdn.beatsaver.com/{song.Hash}.jpg")))
-                .WithTextDisplay("Choose the difficulty and play mode, then check existing threads. " +
-                                 "The version shown here is kept when you save a private draft from the editor." +
-                                 (selection.EditorId is null
-                                     ? ""
-                                     : " Your unsaved definition is kept. Changing difficulty or play mode starts a new definition.")))
+                        } + $" | BPM: {song.Stats.BPM:0.##}" +
+                        (selection.EditorId is null
+                            ? ""
+                            : "\nChanging difficulty or play mode starts a new draft setup."))
+                    .WithAccessory(new ThumbnailBuilder().WithMedia($"https://cfcdn.beatsaver.com/{song.Hash}.jpg"))))
             .WithActionRow(row => row.WithSelectMenu(new SelectMenuBuilder()
                 .WithCustomId($"ranking_new_choose:{sessionId},Difficulty,{difficultyPage},{playModePage}")
                 .WithPlaceholder("Choose a difficulty")

@@ -188,7 +188,7 @@ public partial class UserModuleSlash
 
 public class RankingDraftRatingsModal : IModal
 {
-    public string Title => "Revise draft ratings";
+    public string Title => "Draft ratings";
 
     [InputLabel("Difficulty stars", "Leave blank to calculate when submitting. Use a dot for decimals.")]
     [ModalTextInput("difficultyStar", maxLength: 64)]
@@ -203,7 +203,7 @@ public class RankingDraftRatingsModal : IModal
 
 public class RankingDraftNoteModal : IModal
 {
-    public string Title => "Revise author's note";
+    public string Title => "Author's note";
 
     [InputLabel("Author's note", "Optional explanation of the proposed changes.")]
     [ModalTextInput("comment", TextInputStyle.Paragraph, maxLength: 2000)]
@@ -213,7 +213,7 @@ public class RankingDraftNoteModal : IModal
 
 public class RankingDraftLimitsModal : IModal
 {
-    public string Title => "Revise score limits";
+    public string Title => "Score limits";
 
     [InputLabel("Minimum accuracy (%)", "Leave blank for no minimum. Use a dot for decimals.")]
     [ModalTextInput("minAccuracy", maxLength: 64)]

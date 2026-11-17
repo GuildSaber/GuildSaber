@@ -78,7 +78,7 @@ public static class RankingThreadExtensions
 
             if (self.Proposals.Length > 3)
                 sb.AppendLine()
-                    .Append($"And **{self.Proposals.Length - 3}** more alternatives. Open the thread to compare them.");
+                    .Append($"**{self.Proposals.Length - 3}** more proposals");
 
             return new ContainerBuilder()
                 .WithAccentColor(Color.FromDifficulty(version.Difficulty.Difficulty))

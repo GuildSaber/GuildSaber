@@ -183,7 +183,7 @@ file static class RankingDraftVersionView
                 .WithActionRow(row => row
                     .WithButton(revision.IsRevision ? "Back to revision" : "Back to draft",
                         $"ranking_draft_edit:{sessionId}", ButtonStyle.Secondary)
-                    .WithButton("Previous", $"ranking_draft_versions:{sessionId},{page - 1}", disabled: page <= 1)
+                    .WithButton("Prev", $"ranking_draft_versions:{sessionId},{page - 1}", disabled: page <= 1)
                     .WithButton("Next", $"ranking_draft_versions:{sessionId},{page + 1}",
                         disabled: page >= revision.Definition.MapVersions.Length)));
     }

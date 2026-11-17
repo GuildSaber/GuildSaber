@@ -88,9 +88,7 @@ internal static class RankingAchievementCreationView
 {
     public static ComponentBuilderV2 BuildComponent(ContextId contextId, RankingAchievementNavigation navigation)
         => new ComponentBuilderV2().WithContainer(container => container.WithAccentColor(Color.Orange)
-                .WithTextDisplay("### Create an achievement\nChoose how players complete it. " +
-                                 "Then choose its category, Discord role and whether it appears " +
-                                 "in the level progression.")
+                .WithTextDisplay("### Create an achievement")
                 .WithActionRow(row => row.WithSelectMenu(new SelectMenuBuilder()
                     .WithCustomId("ranking_achievement_create:" +
                                   $"{contextId},{navigation.CategoryFilter},{navigation.Page}," +

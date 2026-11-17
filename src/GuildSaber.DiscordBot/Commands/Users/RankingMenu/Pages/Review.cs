@@ -166,7 +166,11 @@ public partial class UserModuleSlash
             return;
         }
 
-        await OpenRankingProposal(contextId, threadId, proposalId, listPage, sortBy, origin);
+        if (error is null && action == ERankingProposalAction.DeleteDraft && origin == ERankingThreadOrigin.Drafts)
+            await ShowMyRankingDraftsAsync(contextId, listPage);
+        else
+            await OpenRankingProposal(contextId, threadId, proposalId, listPage, sortBy, origin);
+
         if (error is not null) await ReportRankingErrorAsync(error);
         else
             await FollowupAsync(action switch
@@ -224,12 +228,15 @@ internal static class RankingProposalActions
                          ?? MemberResponses.EPermission.None;
         var leader = viewer?.Player.IsManager is true || permission.HasFlag(MemberResponses.EPermission.GuildLeader);
         var reviewer = leader || permission.HasFlag(MemberResponses.EPermission.RankingTeam);
+        var positiveVotes = rankingTeam.Count(x => x.IsPositive);
+        var negativeVotes = rankingTeam.Count(x => !x.IsPositive);
+        var acceptBlocked = !leader && (allowance is null || positiveVotes < allowance.MinimumPositiveVotes
+                                                          || allowance.RequireNoNegativeVotes && negativeVotes > 0);
 
         var sb = new StringBuilder()
             .AppendLine(
-                $"**Community:** +{community.Count(x => x.IsPositive)} / -{community.Count(x => !x.IsPositive)}")
-            .AppendLine(
-                $"**Ranking team:** +{rankingTeam.Count(x => x.IsPositive)} / -{rankingTeam.Count(x => !x.IsPositive)}");
+                $"**Community:** +{community.Count(x => x.IsPositive)} / -{community.Count(x => !x.IsPositive)}" +
+                $" · **Ranking team:** +{positiveVotes} / -{negativeVotes}");
 
         foreach (var vote in rankingTeam.Where(x => x.Reason is { Length: > 0 })
                      .OrderByDescending(x => x.VotedAt).Take(3))
@@ -240,16 +247,14 @@ internal static class RankingProposalActions
                 .Append(": ")
                 .AppendLine(vote.Reason is { Length: > 200 } reason ? $"{reason[..200]}..." : vote.Reason);
 
-        if (proposal is Proposal.Submitted && reviewer)
+        if (proposal is Proposal.Submitted && reviewer && acceptBlocked)
             sb.AppendLine().Append(allowance is null
-                ? "Review rules could not be loaded. Refresh before accepting."
-                : $"Acceptance requires **{allowance.MinimumPositiveVotes}** positive RT votes" +
-                  (allowance.RequireNoNegativeVotes ? " and **no negative RT votes**." : ".") +
-                  (leader
-                      ? " You can bypass the vote requirement as a leader/manager."
-                      : " RT votes do not accept a proposal automatically."));
+                ? "Review rules unavailable. Refresh before accepting."
+                : $"To accept: **{positiveVotes}/{allowance.MinimumPositiveVotes}** positive RT votes" +
+                  (allowance.RequireNoNegativeVotes ? " · No negative RT votes allowed" : ""));
 
-        builder.WithTextDisplay(sb.ToString());
+        if (proposal is not Proposal.Draft)
+            builder.WithTextDisplay(sb.ToString());
 
         if (viewer is null)
             return builder.WithTextDisplay("Link your Discord account on GuildSaber to vote or manage your proposals.");
@@ -314,11 +319,7 @@ internal static class RankingProposalActions
                         row.WithButton("Accept proposal",
                                 ActionId("ranking_confirm", thread, proposal, ERankingProposalAction.Accept,
                                     navigation),
-                                ButtonStyle.Success, disabled: !leader && (allowance is null
-                                                                           || rankingTeam.Count(x => x.IsPositive) <
-                                                                           allowance.MinimumPositiveVotes
-                                                                           || allowance.RequireNoNegativeVotes &&
-                                                                           rankingTeam.Any(x => !x.IsPositive)))
+                                ButtonStyle.Success, disabled: acceptBlocked)
                             .WithButton("Deny proposal",
                                 ActionId("ranking_reason", thread, proposal, ERankingProposalAction.Deny, navigation),
                                 ButtonStyle.Danger);
@@ -329,9 +330,6 @@ internal static class RankingProposalActions
                                     navigation),
                                 ButtonStyle.Secondary);
                     });
-            else
-                builder.WithTextDisplay(
-                    "Community votes are feedback. Only the ranking team can accept or deny proposals.");
 
             if (!reviewer && proposal.AuthorId == viewer.Player.Id)
                 builder.WithActionRow(row => row.WithButton("Withdraw my proposal",
@@ -349,11 +347,6 @@ internal static class RankingProposalActions
                 .WithButton("Delete draft",
                     ActionId("ranking_confirm", thread, proposal, ERankingProposalAction.DeleteDraft, navigation),
                     ButtonStyle.Danger));
-        }
-        else
-        {
-            builder.WithTextDisplay(
-                "Its definition and votes are retained in history. Fork a private draft to suggest a change.");
         }
 
         return builder;
@@ -376,20 +369,29 @@ internal static class RankingProposalActions
                              action switch
                              {
                                  ERankingProposalAction.Accept when proposal.Change is ProposalChange.Unrank =>
-                                     "This removes the targeted ranked entry and its ranked scores, closes competing open proposals and releases boosts. Member points and achievement progress will be refreshed.",
+                                     "Remove this ranked map and its ranked scores, close competing open proposals and release boosts. Member stats are recalculated.",
                                  ERankingProposalAction.Accept =>
-                                     "This applies the complete definition to the ranked map, closes competing open proposals and releases boosts. Private drafts stay open.",
+                                     "Apply this proposal, close competing open proposals and release boosts. Private drafts stay open.",
                                  ERankingProposalAction.DeleteDraft =>
-                                     "Only this draft will be deleted. This cannot be undone.",
+                                     "Permanently delete this draft.",
                                  ERankingProposalAction.ForceSubmit =>
-                                     "You are deliberately requesting a separate ranking despite the duplicate matches. Existing requests and rankings will not be replaced.",
+                                     "Submit a separate ranking request alongside the matching threads.",
                                  _ =>
                                      proposal.Change is ProposalChange.Unrank
-                                         ? "Publish the unranking request and its reason for community and ranking-team review."
+                                         ? "Publish this unranking request and its reason for review."
                                          : "The proposal becomes immutable and visible for review. Missing ratings will be calculated before submission."
                              })
             .WithActionRow(row => row
-                .WithButton(action == ERankingProposalAction.Accept ? "Confirm acceptance" : "Confirm",
+                .WithButton(action switch
+                    {
+                        ERankingProposalAction.Accept => proposal.Change is ProposalChange.Unrank
+                            ? "Accept unranking"
+                            : "Accept proposal",
+                        ERankingProposalAction.DeleteDraft => "Delete draft",
+                        ERankingProposalAction.ForceSubmit => "Submit separate request",
+                        ERankingProposalAction.Submit => "Submit for review",
+                        _ => throw new ArgumentOutOfRangeException(nameof(action))
+                    },
                     $"ranking_apply:{contextId},{threadId},{proposal.Id},{(int)action},{listPage},{(int)sortBy},{(int)origin}",
                     action is ERankingProposalAction.DeleteDraft or ERankingProposalAction.ForceSubmit
                     || action == ERankingProposalAction.Accept && proposal.Change is ProposalChange.Unrank

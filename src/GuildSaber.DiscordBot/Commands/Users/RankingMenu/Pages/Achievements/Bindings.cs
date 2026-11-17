@@ -53,7 +53,7 @@ public partial class UserModuleSlash
         {
             [] => request with { RoleId = null },
             [var value, ..] when DiscordRoleId.TryParse(value).TryGetValue(out var roleId)
-                                && Context.Guild.GetRole(roleId) is not null
+                                 && Context.Guild.GetRole(roleId) is not null
                 => request with { RoleId = roleId },
             _ => Failure<Definition>("This role is no longer available in this Discord server.")
         }, bindingPage);
@@ -84,13 +84,12 @@ file static class RankingAchievementBindingsView
         var definition = editor.Definition;
         var args = $"{editor.ContextId},{sessionId}";
         var categoryName = definition.GetCategoryName(categories);
+        var name = editor.Original?.Info.Name ?? definition.Name;
         var builder = new ComponentBuilderV2().WithContainer(container => container
             .WithAccentColor(new Color((uint)definition.Color & 0xFFFFFF))
-            .WithTextDisplay($"### {Format.Sanitize(editor.Original?.Info.Name ?? definition.Name)}\n" +
-                             "Category and Discord role\n" +
-                             $"Category **{Format.Sanitize(categoryName)}**\n" +
-                             "A global achievement can use ranked maps from every category. " +
-                             "Choose Back to review and save your changes.")
+            .WithTextDisplay($"### {Format.Sanitize(name.Length == 0 ? "New achievement" : name)}\n" +
+                             "Category and Discord role" +
+                             (definition.CategoryId is null ? "\nGlobal covers every category." : ""))
             .WithActionRow(row => row.WithSelectMenu(new SelectMenuBuilder()
                 .WithCustomId($"ranking_achievement_category:{args},{page}")
                 .WithPlaceholder($"Category: {categoryName}".Truncate(150))
@@ -111,7 +110,7 @@ file static class RankingAchievementBindingsView
                 .WithDefaultValues(role is null ? [] : [SelectMenuDefaultValue.FromRole(role)]))));
 
         if (editor is { Original: { } saved, HasChanges: true })
-            builder.WithTextDisplay("**Unsaved changes**\nSaved → Proposed\n" +
+            builder.WithTextDisplay("**Unsaved changes** · Saved → Proposed\n" +
                                     definition.DescribeValues(saved.ToDefinition(), categories, onlyChanges: true));
 
         if (categories.Length > 24)
