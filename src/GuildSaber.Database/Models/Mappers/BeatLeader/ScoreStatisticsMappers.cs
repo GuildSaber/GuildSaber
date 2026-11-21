@@ -54,7 +54,7 @@ public static class ScoreStatisticsMappers
         TotalScore: self.TotalScore,
         MaxScore: self.MaxScore)
     {
-        // Complex property can't be mapped from contructor parameters.
+        // Complex property can't be mapped from constructor parameters.
         PauseStatistics = new PauseStatistics(self.NbOfPause, self.TotalPauseDuration),
         AverageHeadPosition = self.AverageHeadPosition.Map()
     };
