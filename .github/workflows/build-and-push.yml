@@ -30,8 +30,8 @@ jobs:
           dotnet-version: |
             10.x.x
 
-      - name: Install Aspire CLI
-        run: dotnet tool install -g Aspire.Cli --version 13.6.5
+      - name: Restore .NET tools
+        run: dotnet tool restore
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -42,7 +42,7 @@ jobs:
 
       - name: Build, tag and push image
         run: |
-          aspire deploy --step build-${{ matrix.project }}
+          dotnet tool run aspire do build-${{ matrix.project }} --non-interactive
           docker tag ${{ matrix.project }}:latest ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ env.IMAGE_PREFIX }}-${{ matrix.project }}:${{ github.ref_name }}
           docker push ${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ env.IMAGE_PREFIX }}-${{ matrix.project }}:${{ github.ref_name }}
 

@@ -23,7 +23,7 @@ internal static class PostgresTestServer
 
     private static async Task<PostgreSqlContainer> StartAsync()
     {
-        var container = new PostgreSqlBuilder("postgres:18.6").Build();
+        var container = new PostgreSqlBuilder("postgres:19.0").Build();
 
         try
         {

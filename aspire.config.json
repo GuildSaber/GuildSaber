@@ -1,5 +1,8 @@
 {
   "appHost": {
     "path": "aspire/GuildSaber.AppHost/GuildSaber.AppHost.csproj"
+  },
+  "sdk": {
+    "version": "17.0.0"
   }
 }
