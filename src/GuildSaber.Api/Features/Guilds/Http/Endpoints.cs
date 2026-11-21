@@ -9,6 +9,7 @@ using GuildSaber.Database.Extensions;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.JsonPatch.SystemTextJson;
 using Microsoft.EntityFrameworkCore;
+using SkiaSharp;
 using ServerGuild = GuildSaber.Database.Models.Server.Guilds.Guild;
 using static GuildSaber.Api.Features.Guilds.Http.GuildRequests;
 using static GuildSaber.Api.Features.Guilds.Http.GuildResponses;
@@ -61,6 +62,24 @@ public class GuildEndpoints : IEndpoints
             .WithDescription("Edit fields of a guild only by the given properties (json patch rfc6902).")
             .RequireGuildPermission(EPermission.GuildLeader);
 
+        group.MapPut("/{guildId}/logo", UploadGuildLogoAsync)
+            .WithName("UploadGuildLogo")
+            .WithSummary("Upload a guild logo")
+            .WithDescription("Replace the guild logo using the form field `file`. Upload a square JPEG up to 2 MiB "
+                             + $"and {ImageUploadLimits.MaxGuildImageDimension} pixels per side.")
+            .WithImageUpload()
+            .RequireGuildPermission(EPermission.GuildLeader);
+
+        var (bannerWidth, bannerHeight) = ImageUploadLimits.GuildBannerAspectRatio;
+        group.MapPut("/{guildId}/banner", UploadGuildBannerAsync)
+            .WithName("UploadGuildBanner")
+            .WithSummary("Upload a guild banner")
+            .WithDescription("Replace the guild banner using the form field `file`. "
+                             + $"Upload a {bannerWidth}:{bannerHeight} JPEG up to 2 MiB "
+                             + $"and {ImageUploadLimits.MaxGuildImageDimension} pixels per side.")
+            .WithImageUpload()
+            .RequireGuildPermission(EPermission.GuildLeader);
+
         group.MapDelete("/{guildId}", DeleteGuildAsync)
             .WithName("DeleteGuild")
             .WithSummary("Delete a guild")
@@ -72,6 +91,27 @@ public class GuildEndpoints : IEndpoints
             .WithSummary("Lookup guild ID by Discord guild ID")
             .WithDescription("Resolve a guild's ID from its linked Discord guild ID.");
     }
+
+    private static async Task<Results<NotFound, Results<NoContent, ProblemHttpResult>>> UploadGuildLogoAsync(
+        GuildId guildId, IFormFile file, ServerDbContext dbContext, GuildStorage storage, CancellationToken token)
+        => await dbContext.Guilds.AnyAsync(x => x.Id == guildId, token) switch
+        {
+            false => TypedResults.NotFound(),
+            true => await file.WithValidatedImageAsync(
+                SKEncodedImageFormat.Jpeg, ImageUploadLimits.MaxGuildImageDimension, (1, 1), (storage, guildId),
+                static (state, jpeg, token) => state.storage.UploadLogoAsync(state.guildId, jpeg, token), token)
+        };
+
+    private static async Task<Results<NotFound, Results<NoContent, ProblemHttpResult>>> UploadGuildBannerAsync(
+        GuildId guildId, IFormFile file, ServerDbContext dbContext, GuildStorage storage, CancellationToken token)
+        => await dbContext.Guilds.AnyAsync(x => x.Id == guildId, token) switch
+        {
+            false => TypedResults.NotFound(),
+            true => await file.WithValidatedImageAsync(
+                SKEncodedImageFormat.Jpeg, ImageUploadLimits.MaxGuildImageDimension,
+                ImageUploadLimits.GuildBannerAspectRatio, (storage, guildId),
+                static (state, jpeg, token) => state.storage.UploadBannerAsync(state.guildId, jpeg, token), token)
+        };
 
     private static async Task<Results<NoContent, NotFound>> DeleteGuildAsync(GuildId guildId, ServerDbContext dbContext)
     {

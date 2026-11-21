@@ -18,7 +18,13 @@ public class GlobalHooks
     public static async Task SetUp()
     {
         var appHost = await DistributedApplicationTestingBuilder.CreateAsync<GuildSaber_AppHost>(
-            args: [],
+            args:
+            [
+                "--Parameters:S3Settings-Endpoint=https://storage.example.invalid",
+                "--Parameters:S3Settings-BucketName=test",
+                "--Parameters:S3Settings-AccessKeyId=test",
+                "--Parameters:S3Settings-SecretAccessKey=test"
+            ],
             configureBuilder: (appOptions, _) => appOptions.AllowUnsecuredTransport = true);
 
         appHost.WithContainersLifetime(ContainerLifetime.Session);

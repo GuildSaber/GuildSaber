@@ -1,7 +1,10 @@
+using Amazon.Runtime;
+using Amazon.S3;
 using GuildSaber.Common.Services.BeatLeader;
 using GuildSaber.Common.Services.BeatSaver;
 using GuildSaber.Common.Services.LegacyGuildSaber;
 using GuildSaber.Common.Services.ScoreSaber;
+using Microsoft.Extensions.Options;
 
 namespace GuildSaber.Api.Setup;
 
@@ -49,6 +52,20 @@ public static class ExternalApisSetup
             var uri = builder.Configuration.GetValue<Uri>("services:beatleader-socket:default:0")
                       ?? new Uri("wss://sockets.api.beatleader.com/");
             return new BeatLeaderGeneralSocketStream(uri);
+        });
+
+        builder.Services.AddSingleton(static provider =>
+        {
+            var settings = provider.GetRequiredService<IOptions<S3Settings>>().Value;
+            return new AmazonS3Client(
+                new BasicAWSCredentials(settings.AccessKeyId, settings.SecretAccessKey),
+                new AmazonS3Config
+                {
+                    ServiceURL = settings.Endpoint.AbsoluteUri,
+                    AuthenticationRegion = "auto",
+                    ForcePathStyle = true,
+                    RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED
+                });
         });
 
         return builder;

@@ -208,6 +208,24 @@ public sealed class GuildClient(
         };
     }
 
+    /// <summary>Replaces the guild logo with a square JPEG image up to 2 MiB and 2048 pixels per side.</summary>
+    /// <param name="guildId">The ID of the guild.</param>
+    /// <param name="jpeg">The JPEG image stream. The request disposes the stream after sending it.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result indicating whether the logo was uploaded.</returns>
+    public Task<Result> UploadLogoAsync(GuildId guildId, Stream jpeg, CancellationToken token = default)
+        => httpClient.UploadImageAsync($"guilds/{guildId}/logo", jpeg, "logo.jpg", "image/jpeg",
+            authenticationHeader, jsonOptions, "guild logo", $"Guild with ID {guildId} not found.", token);
+
+    /// <summary>Replaces the guild banner with a 15:2 JPEG image up to 2 MiB and 2048 pixels per side.</summary>
+    /// <param name="guildId">The ID of the guild.</param>
+    /// <param name="jpeg">The JPEG image stream. The request disposes the stream after sending it.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result indicating whether the banner was uploaded.</returns>
+    public Task<Result> UploadBannerAsync(GuildId guildId, Stream jpeg, CancellationToken token = default)
+        => httpClient.UploadImageAsync($"guilds/{guildId}/banner", jpeg, "banner.jpg", "image/jpeg",
+            authenticationHeader, jsonOptions, "guild banner", $"Guild with ID {guildId} not found.", token);
+
     public Uri GetLogoUrl(GuildId id) => new(cdnBaseUri, $"guilds/{id}/logo.jpg");
     public Uri GetGuildBannerUrl(GuildId id) => new(cdnBaseUri, $"guilds/{id}/banner.jpg");
 }

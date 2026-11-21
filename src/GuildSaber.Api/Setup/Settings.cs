@@ -1,3 +1,4 @@
+using System.Reflection;
 using GuildSaber.Api.Features.Auth;
 using GuildSaber.Api.Features.Guilds;
 using GuildSaber.Api.Features.MapRequests.Settings;
@@ -43,6 +44,15 @@ public static class SettingsSetup
         builder.Services
             .AddOptionsWithValidateOnStart<GuildCreationSettings>()
             .Bind(guildSettings.GetSection(nameof(GuildSettings.Creation))).ValidateDataAnnotations();
+
+        var s3Options = builder.Services.AddOptions<S3Settings>()
+            .Bind(builder.Configuration.GetSection(S3Settings.SectionKey)).ValidateDataAnnotations()
+            .Validate(x => x.Endpoint is { IsAbsoluteUri: true, Scheme: "https" },
+                "S3 requires an absolute HTTPS endpoint.");
+
+        // The OpenAPI build starts a mock host without the deployment's storage settings.
+        if (Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider")
+            s3Options.ValidateOnStart();
 
         builder.Services
             .AddOptionsWithValidateOnStart<RankedMapSettings>()

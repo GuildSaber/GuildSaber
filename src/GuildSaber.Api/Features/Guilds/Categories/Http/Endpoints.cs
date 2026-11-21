@@ -10,6 +10,7 @@ using GuildSaber.Database.Extensions;
 using GuildSaber.Database.Models.StrongTypes;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using SkiaSharp;
 using ServerCategory = GuildSaber.Database.Models.Server.Guilds.Categories.Category;
 using ServerCategoryInfo = GuildSaber.Database.Models.Server.Guilds.Categories.CategoryInfo;
 using static GuildSaber.Api.Features.Guilds.Categories.Http.CategoryResponses;
@@ -57,6 +58,14 @@ public class CategoryEndpoints : IEndpoints
             .ProducesProblem(statusCode: StatusCodes.Status400BadRequest)
             .RequireAnyGuildPermission(EPermission.RankingTeam | EPermission.GuildLeader);
 
+        guildsGroup.MapPut("/{categoryId}/logo", UploadCategoryLogoAsync)
+            .WithName("UploadCategoryLogo")
+            .WithSummary("Upload a category logo.")
+            .WithDescription("Replace the category logo using the form field `file`. Upload a square static PNG "
+                             + $"up to 2 MiB and {ImageUploadLimits.MaxIconDimension} pixels per side.")
+            .WithImageUpload()
+            .RequireGuildPermission(EPermission.RankingTeam);
+
         guildsGroup.MapDelete("/{categoryId}", DeleteCategoryAsync)
             .WithName("DeleteCategory")
             .WithSummary("Delete a category of a guild.")
@@ -66,20 +75,6 @@ public class CategoryEndpoints : IEndpoints
                 "Proposal history retains its category and achievement snapshots.")
             .RequireAnyGuildPermission(EPermission.RankingTeam | EPermission.GuildLeader);
     }
-
-    /* For later cover and banner image upload. Perhaps FileUploadCollection could also be investigated..
-
-     const long MaxFileBytes = 200;
-
-    app.MapPost("/", IResult (IFormFile file) =>
-    {
-        if (file.Length is 0 or > MaxFileBytes)
-            return Results.BadRequest("Invalid file size.");
-
-        return Results.Ok(file.FileName);
-    })
-    .WithFormOptions(multipartBodyLengthLimit: MaxFileBytes)
-        .DisableAntiforgery();*/
 
     private static async Task<Results<Ok<Category>, NotFound>> GetCategoryAsync(
         CategoryId categoryId, ServerDbContext dbContext)
@@ -139,6 +134,17 @@ public class CategoryEndpoints : IEndpoints
 
         return TypedResults.Ok(category.Map());
     }
+
+    private static async Task<Results<NotFound, Results<NoContent, ProblemHttpResult>>> UploadCategoryLogoAsync(
+        GuildId guildId, CategoryId categoryId, IFormFile file, ServerDbContext dbContext,
+        CategoryStorage storage, CancellationToken token)
+        => await dbContext.Categories.AnyAsync(x => x.GuildId == guildId && x.Id == categoryId, token) switch
+        {
+            false => TypedResults.NotFound(),
+            true => await file.WithValidatedImageAsync(
+                SKEncodedImageFormat.Png, ImageUploadLimits.MaxIconDimension, (1, 1), (storage, categoryId),
+                static (state, png, token) => state.storage.UploadLogoAsync(state.categoryId, png, token), token)
+        };
 
     private static async Task<Results<NoContent, NotFound>> DeleteCategoryAsync(
         GuildId guildId, CategoryId categoryId, ServerDbContext dbContext)

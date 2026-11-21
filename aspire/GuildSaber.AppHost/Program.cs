@@ -65,6 +65,10 @@ var apiService = builder.AddDotnetProject("api", "../../src/GuildSaber.Api",
         service.Networks.Add("dokploy-network");
     });
 
+BindParameters(apiService, ["S3Settings:Endpoint", "S3Settings:BucketName"], useServiceSettingsWhenUnset: true);
+BindParameters(apiService, ["S3Settings:AccessKeyId", "S3Settings:SecretAccessKey"], secret: true,
+    useServiceSettingsWhenUnset: true);
+
 var discordBot = builder.AddDotnetProject("discord-bot", "../../src/GuildSaber.DiscordBot",
         options => options.ExcludeLaunchProfile = true)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", environment)
@@ -149,8 +153,14 @@ builder.Build().Run();
 return;
 
 void BindParameters<T>(
-    IResourceBuilder<T> resource, string[] keys, bool secret = false) where T : IResourceWithEnvironment
+    IResourceBuilder<T> resource, string[] keys, bool secret = false,
+    bool useServiceSettingsWhenUnset = false) where T : IResourceWithEnvironment
 {
     foreach (var key in keys)
-        resource.WithEnvironment(key, builder.AddParameter(key.Replace(':', '-'), secret: secret));
+    {
+        var name = key.Replace(':', '-');
+        if (!useServiceSettingsWhenUnset || builder.ExecutionContext.IsPublishMode ||
+            !string.IsNullOrWhiteSpace(builder.Configuration[$"Parameters:{name}"]))
+            resource.WithEnvironment(key, builder.AddParameter(name, secret: secret));
+    }
 }

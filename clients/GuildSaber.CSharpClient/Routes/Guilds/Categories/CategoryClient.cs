@@ -150,5 +150,19 @@ public sealed class CategoryClient(
                 _ => Success(true)
             };
 
+    /// <summary>
+    /// Replaces the logo of a category with a square static PNG image up to 2 MiB and 1024 pixels per side.
+    /// </summary>
+    /// <param name="guildId">The ID of the guild the category belongs to.</param>
+    /// <param name="categoryId">The ID of the category to update.</param>
+    /// <param name="png">The PNG image stream. The request disposes the stream after sending it.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result indicating whether the logo was uploaded.</returns>
+    public Task<Result> UploadLogoAsync(
+        GuildId guildId, CategoryId categoryId, Stream png, CancellationToken token = default)
+        => httpClient.UploadImageAsync($"guilds/{guildId}/categories/{categoryId}/logo", png, "logo.png", "image/png",
+            authenticationHeader, jsonOptions, "category logo",
+            $"Category {categoryId} not found in guild {guildId}.", token);
+
     public Uri GetLogoUrl(int id) => new(cdnBaseUri, $"categories/{id}/logo.png");
 }

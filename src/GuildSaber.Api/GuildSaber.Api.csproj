@@ -60,6 +60,7 @@
 
     <ItemGroup>
         <PackageReference Include="AspNet.Security.OAuth.Discord" />
+        <PackageReference Include="AWSSDK.S3" />
         <PackageReference Include="CSharpFunctionalExtensions.HttpResults" />
         <PackageReference Include="LinqKit.Microsoft.EntityFrameworkCore" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
@@ -78,6 +79,8 @@
         <PackageReference Include="MyCSharp.HttpUserAgentParser.AspNetCore" />
         <PackageReference Include="Scalar.AspNetCore" />
         <PackageReference Include="Scalar.AspNetCore.Microsoft" />
+        <PackageReference Include="SkiaSharp" />
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
         <PackageReference Include="Cronos" />
     </ItemGroup>
 

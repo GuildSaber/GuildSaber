@@ -11,6 +11,7 @@
     <PackageVersion Include="Aspire.Hosting.Redis" Version="17.0.0" />
     <PackageVersion Include="Aspire.Hosting.Valkey" Version="17.0.0" />
     <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="17.0.0-preview.1.26567.5" />
+    <PackageVersion Include="AWSSDK.S3" Version="4.1.2" />
     <PackageVersion Include="ILRepack.Lib.MSBuild.Task" Version="2.0.48" />
     <PackageVersion Include="MessagePack" Version="3.1.12" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="11.0.0" />
@@ -45,6 +46,8 @@
     <PackageVersion Include="QuestPDF" Version="2026.9.2" />
     <PackageVersion Include="Scalar.AspNetCore" Version="3.1.1" />
     <PackageVersion Include="Scalar.AspNetCore.Microsoft" Version="3.1.1" />
+    <PackageVersion Include="SkiaSharp" Version="4.157.0" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.157.0" />
     <PackageVersion Include="JetBrains.Annotations" Version="2026.2.0" />
     <PackageVersion Include="Discord.Net" Version="3.20.2" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="17.0.0" />

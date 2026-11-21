@@ -130,5 +130,17 @@ public sealed class AchievementClient(
     private Task<Result<Achievement?>> ReadAchievementAsync(HttpContent content, CancellationToken token)
         => TryAsync(() => content.ReadFromJsonAsync<Achievement?>(jsonOptions, token), token);
 
+    /// <summary>Replaces the achievement cover with a square PNG image up to 2 MiB and 1024 pixels per side.</summary>
+    /// <param name="contextId">Context containing the achievement.</param>
+    /// <param name="achievementId">Achievement to update.</param>
+    /// <param name="png">The PNG image stream. The request disposes the stream after sending it.</param>
+    /// <param name="token">Cancellation token.</param>
+    /// <returns>A result indicating whether the cover was uploaded.</returns>
+    public Task<Result> UploadCoverAsync(
+        ContextId contextId, int achievementId, Stream png, CancellationToken token = default)
+        => httpClient.UploadImageAsync($"contexts/{contextId}/achievements/{achievementId}/cover", png, "cover.png",
+            "image/png", authenticationHeader, jsonOptions, "achievement cover",
+            $"Achievement {achievementId} not found in context {contextId}.", token);
+
     public Uri GetCoverUrl(int achievementId) => new(cdnBaseUri, $"achievements/{achievementId}/cover.png");
 }

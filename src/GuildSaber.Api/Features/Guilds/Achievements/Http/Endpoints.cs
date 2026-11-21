@@ -1,10 +1,12 @@
 using GuildSaber.Api.Extensions;
 using GuildSaber.Api.Features.Auth.Authorization;
 using GuildSaber.Api.Features.Guilds.Achievements.Services;
+using GuildSaber.Api.Shared;
 using GuildSaber.Api.Transformers;
 using GuildSaber.Database.Contexts.Server;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using SkiaSharp;
 using static GuildSaber.Api.Features.Guilds.Achievements.Http.AchievementResponses;
 
 namespace GuildSaber.Api.Features.Guilds.Achievements.Http;
@@ -54,6 +56,14 @@ public class AchievementEndpoints : IEndpoints
             .ProducesValidationProblem()
             .RequireAnyGuildPermission(EPermission.RankingTeam | EPermission.GuildLeader);
 
+        group.MapPut("/{achievementId}/cover", UploadAchievementCoverAsync)
+            .WithName("UploadAchievementCover")
+            .WithSummary("Upload an achievement cover.")
+            .WithDescription("Replace the achievement cover using the form field `file`. Upload a square static PNG "
+                             + $"up to 2 MiB and {ImageUploadLimits.MaxIconDimension} pixels per side.")
+            .WithImageUpload()
+            .RequireGuildPermission(EPermission.RankingTeam);
+
         group.MapDelete("/{achievementId}", DeleteAchievementAsync)
             .WithName("DeleteAchievement")
             .WithSummary("Delete an achievement.")
@@ -63,6 +73,17 @@ public class AchievementEndpoints : IEndpoints
                 "Proposal history retains its achievement snapshots.")
             .RequireAnyGuildPermission(EPermission.RankingTeam | EPermission.GuildLeader);
     }
+
+    private static async Task<Results<NotFound, Results<NoContent, ProblemHttpResult>>> UploadAchievementCoverAsync(
+        ContextId contextId, int achievementId, IFormFile file, ServerDbContext dbContext,
+        AchievementStorage storage, CancellationToken token)
+        => await dbContext.Achievements.AnyAsync(x => x.ContextId == contextId && x.Id == achievementId, token) switch
+        {
+            false => TypedResults.NotFound(),
+            true => await file.WithValidatedImageAsync(
+                SKEncodedImageFormat.Png, ImageUploadLimits.MaxIconDimension, (1, 1), (storage, achievementId),
+                static (state, png, token) => state.storage.UploadCoverAsync(state.achievementId, png, token), token)
+        };
 
     private static async Task<Results<NoContent, NotFound>> DeleteAchievementAsync(
         ContextId contextId, int achievementId, AchievementService service, CancellationToken token)
