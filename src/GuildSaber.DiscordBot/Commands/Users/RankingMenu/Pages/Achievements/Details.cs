@@ -17,10 +17,11 @@ public partial class UserModuleSlash
     public async Task ShowRankingAchievementAsync(
         ContextId contextId, int achievementId, int categoryFilter, int page, int categoryPage)
     {
-        var (result, categories) = await (
+        var (result, categories, permissions) = await (
             DeferRankingInteractionAsync(),
             Client.Value.Achievements.GetByIdAsync(achievementId),
-            Cache.GetGuildCategoriesAsync(await GetGuildIdAsync(), Client.Value).AsTask()
+            Cache.GetGuildCategoriesAsync(await GetGuildIdAsync(), Client.Value).AsTask(),
+            Cache.GetUserPermissionsOnDiscordGuildsAsync(Context.User.DiscordId, Services).AsTask()
         ).WhenAll();
 
         if (!result.TryGetValue(out var achievement, out var error))
@@ -38,9 +39,11 @@ public partial class UserModuleSlash
             return;
         }
 
+        var canUploadCover = permissions.IsManager || permissions.DiscordGuildPermissions
+            .GetValueOrDefault(Context.Guild.DiscordId).HasFlag(MemberResponses.EPermission.RankingTeam);
         var component = RankingAchievementView.BuildComponent(achievement, categories,
             new RankingAchievementNavigation(categoryFilter, page, categoryPage),
-            Client.Value.Achievements.GetCoverUrl(achievement.Id)).Build();
+            Client.Value.Achievements.GetCoverUrl(achievement.Id), canUploadCover).Build();
 
         await ModifyOriginalResponseAsync(x =>
         {
@@ -55,7 +58,7 @@ file static class RankingAchievementView
 {
     public static ComponentBuilderV2 BuildComponent(
         Achievement achievement, CategoryResponses.Category[] categories, RankingAchievementNavigation navigation,
-        Uri coverUrl)
+        Uri coverUrl, bool canUploadCover)
     {
         var args = navigation.Arguments(achievement.ContextId, achievement.Id);
         var categoryName = achievement.GetCategoryName(categories);
@@ -94,9 +97,13 @@ file static class RankingAchievementView
                                  } + $"\nUnlock XP (reserved): **{achievement.UnlockXp}**\nDiscord role: " +
                                  (achievement.DiscordBindings.RoleId is { } roleId ? $"<@&{roleId}>" : "None"))
                 .WithTextDisplay($"**Qualifying maps:** {achievement.QualifyingMapCount}")
-                .WithActionRow(row => row
-                    .WithButton("Edit achievement", $"ranking_achievement_edit:{args}")
-                    .WithButton("Delete achievement", $"ranking_achievement_delete:{args}", ButtonStyle.Danger)))
+                .WithActionRow(row =>
+                {
+                    row.WithButton("Edit achievement", $"ranking_achievement_edit:{args}");
+                    if (canUploadCover)
+                        row.WithButton("Upload cover", $"ranking_achievement_cover:{args}", ButtonStyle.Secondary);
+                    row.WithButton("Delete achievement", $"ranking_achievement_delete:{args}", ButtonStyle.Danger);
+                }))
             .WithActionRow(row => row
                 .WithButton("Back", navigation.ListId(achievement.ContextId), ButtonStyle.Secondary)
                 .WithButton("Refresh", $"ranking_achievement:{args}", ButtonStyle.Secondary));

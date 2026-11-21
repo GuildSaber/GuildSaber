@@ -32,6 +32,7 @@ public partial class UserModuleSlash : InteractionModuleBase<SocketInteractionCo
         IOptions<EmojiSettings> emojiSettings,
         IOptions<LinkSettings> linkSettings,
         HybridCache cache,
+        IHttpClientFactory httpClientFactory,
         IServiceProvider services)
     {
         Client = new Lazy<GuildSaberClient>(() => GuildSaberClient
@@ -40,6 +41,8 @@ public partial class UserModuleSlash : InteractionModuleBase<SocketInteractionCo
         EmojiSettings = emojiSettings;
         LinkSettings = linkSettings;
         Cache = cache;
+        HttpClientFactory = httpClientFactory;
+        Services = services;
     }
 
     private Lazy<GuildSaberClient> Client { get; }
@@ -47,6 +50,8 @@ public partial class UserModuleSlash : InteractionModuleBase<SocketInteractionCo
     private IOptions<EmojiSettings> EmojiSettings { get; }
     private IOptions<LinkSettings> LinkSettings { get; }
     private HybridCache Cache { get; }
+    private IHttpClientFactory HttpClientFactory { get; }
+    private IServiceProvider Services { get; }
 
     public enum EDisplayChoice
     {

@@ -66,12 +66,13 @@ public partial class UserModuleSlash
         var viewer = viewerResult.GetValueOrDefault();
         var permissions = viewer?.Members.FirstOrDefault(x => x.GuildId == guild.Id)?.Permissions
                           ?? MemberResponses.EPermission.None;
-        if (viewer?.Player.IsManager is true ||
-            (permissions & (MemberResponses.EPermission.RankingTeam | MemberResponses.EPermission.GuildLeader)) != 0)
-            component.WithContainer(container => container.WithAccentColor(Color.Red)
+        if (viewer?.Player.IsManager is true
+            || permissions.HasFlag(MemberResponses.EPermission.GuildLeader)
+            || permissions.HasFlag(MemberResponses.EPermission.RankingTeam))
+            component.WithContainer(container => container
+                .WithAccentColor(Color.Red)
                 .WithActionRow(row => row
-                    .WithButton("Manage achievements", $"ranking_achievements:{contextId},-1,1,1",
-                        ButtonStyle.Secondary)
+                    .WithButton("Manage achievements", $"ranking_achievements:{contextId},-1,1,1", ButtonStyle.Secondary)
                     .WithButton("Manage categories", $"ranking_categories:{contextId},1", ButtonStyle.Secondary)));
 
         await ModifyOriginalResponseAsync(x =>
